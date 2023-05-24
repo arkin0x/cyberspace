@@ -63,14 +63,15 @@ Operators rez into their cyberspace journey at their home coordinate and then ut
 
 Each subsequent drift event must reference the previous drift event in the e tag and supply the remaining amount of velocity from any previous drifts. Velocity is decayed by 0.99 at a rate of 60 times per second. This continuous chain of drift events referencing their previous drift events is called a __movement chain__.
 
-The movement chain allows anyone to verify that the movements are legitimate and that the operator followed the rules to arrive at the position their currently occupy.
+The movement chain allows anyone to verify that the movements are legitimate and that the operator followed the rules to arrive at the position they currently occupy.
 
 To verify a movement chain, one must query and receive EOSE for an operator's drift events. Then, starting with the oldest event, the movement must be simulated and checked against each subsequent drift to ensure they are within an acceptable tolerance (TBD). Checks include velocity, created_at timestamps, and resulting coordinates.
 
 If a drift event goes outside of those tolerances, it is considered "broken" and the last valid drift event is considered the "tip" of the broken movement chain. Other ways a movement chain can break:
 
-a new drift event is published that does not reference the most recent drift event before it. In this case, the last drift event in the previous chain is the tip.
-a new drift event is published that references a previous drift event which is already referenced by another drift event (movement chain fork). In this case, the last valid drift event published before the fork is the tip.
+- a new drift event is published that does not reference the most recent drift event before it. In this case, the last drift event in the previous chain is the tip
+- a new drift event is published that references a previous drift event which is already referenced by another drift event (movement chain fork). In this case, the last valid drift event published before the fork is the tip.
+
 When a movement chain is broken, the new (technically invalid) movement chain is treated as if it is valid, but the tip of the broken chain acts like a frozen ghost copy of that operator. This copy is vulnerable to Derezz attacks just like any operator is, but more vulnerable because the copy is stationary.
 
 ## Aggression
@@ -84,6 +85,7 @@ A Derezz must reference a drift event of the victim and the attacker's previous 
 A Derezz attack may be performed on any drift event. However, the newest drift events are the most vulnerable. The older a drift event is in its movement chain, the less vulnerable it is to a successful Derezz. This is why the tip of a broken movement chain makes the operator extremely vulnerable to Derezz, because the broken chain no longer has any new drift events to defend it from attack. Here is how it works:
 
 A Derezz event "X" references the victim drift event "D" in the e tag.
+
 The sum of proof-of-work of all events in the victim movement chain following event D but having a timestamp before X is considered temporal armor against the Derezz attack.
 The power of a Derezz attack is the amount of proof-of-work in a kind 86 event. Only 1 unit of Derezz is enough to kill a target operator. However, the Derezz power is applied like this:
 
@@ -94,7 +96,7 @@ The power of a Derezz attack is the amount of proof-of-work in a kind 86 event. 
 
 If the remaining Derezz power is negative or zero, it has no effect.
 
-By these rules, the tip of a broken movement chain will never have temporal armor. Drift events are essentially permanent, so a broken movement chain will remain vulnerable as long as the operator has not been killed. Once Derezzed, an operator starts fresh with a new movement chain at their home coordinate and no prior chains can be targeted.
+By these rules, the tip of a broken movement chain will never have temporal armor. Drift events are essentially permanent, so a broken movement chain will remain vulnerable as long as the operator has not been killed. Once Derezzed, an operator starts fresh with a new movement chain at their home coordinate and no chains prior to the Derezz event can be targeted any more.
 
 **Armor**. An operator may publish a kind 10087 "Armor" PoW event. The valid PoW in this event is subtracted from any incoming Derezz as a defensive measure.
 
