@@ -12,7 +12,7 @@ Likewise, all actions in reality have a thermodynamic cost that must be paid to 
 
 ### Reality is a permissionless thermodynamic protocol.
 
-This is what makes doing these things in real life different from doing them in a video game.
+This is what makes doing things in real life different from doing them in a video game.
 
 A video game is not permissionless. You need permission from abstract rules (coded logic) to play and perform actions in a video game. Furthermore, the video game has no thermodynamic constraints on the virtual actions you can take. The actions you take are abstract, and governed by abstract rules enforced by a centralized controller, which is subject to bias and can be tricked with clever abstract logic (hacked). Abstract actions you take in a video game have little value or impact on reality (aside from how people feel about those actions.)
 
