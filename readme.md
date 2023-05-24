@@ -39,7 +39,7 @@ All actions require the publishing of an event with at least 1 unit of NIP-13 pr
 
 You can mine this event ID to get the desired coordinates with a nonce and a target coordinate in the form of a 256-bit hex string (although the lsb is ignored). Unlike NIP-13 PoW, there is no invalidation for this coordinate proof-of-work. You simply hash until you get "close enough" to your target coordinate for your own satisfaction.
 
-The construct's valid proof-of-work _P_ determines its bounding box size, where the length of a side is equal to _2^P_. _P_ is calculated by taking 255 minus the Hamming distance between the event ID and the target coordinate.
+The construct's valid proof-of-work _P_ determines its bounding box size, where the length of a side is equal to _2<sup>P</sup>_. _P_ is calculated by taking 255 minus the Hamming distance between the event ID and the target coordinate.
 
 **Shards**. Once you've gotten your construct published, you will be able to put 3D objects into it. I am still working on the spec for the 3D format, but you will be able to publish a kind 33334 "Shard" event and set the e tag to reference your construct. The coordinates of the Shard will be relative to the construct's origin; Shards outside of the bounding box will simply be invisible. Shards will require proof-of-work but I am still working on the mechanics. Shards will be zappable and may represent purchasable goods or services.
 
@@ -59,7 +59,7 @@ If the operator does not have a NIP-05 identity, their home coordinate will defa
 
 ## Movement
 
-Operators rez into their cyberspace journey at their home coordinate and then utilize proof-of-work to move around cyberspace. By publishing a kind 333 "Drift" event, the operator can specify their current coordinate (which will be their home coordinate for their very first drift event) and the direction they wish to move. The amount of NIP-13 proof-of-work _P_ on the drift event will determine the acceleration, equal to _2^P_. Acceleration is added to their velocity, which begins at 0.
+Operators rez into their cyberspace journey at their home coordinate and then utilize proof-of-work to move around cyberspace. By publishing a kind 333 "Drift" event, the operator can specify their current coordinate (which will be their home coordinate for their very first drift event) and the direction they wish to move. The amount of NIP-13 proof-of-work _P_ on the drift event, which is determined by the number of leading consecutive binary zeroes on the event ID, will determine the acceleration, equal to _2<sup>P</sup>_. Acceleration is added to their velocity, which begins at 0.
 
 Each subsequent drift event must reference the previous drift event in the e tag and supply the remaining amount of velocity from any previous drifts. Velocity is decayed by 0.99 at a rate of 60 times per second. This continuous chain of drift events referencing their previous drift events is called a __movement chain__.
 
