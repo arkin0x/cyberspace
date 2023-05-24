@@ -35,13 +35,13 @@ All actions require the publishing of an event with at least 1 unit of NIP-13 pr
 
 ## Building
 
-**Constructs**. A construct is a zappable portion of cyberspace that you own. You obtain a construct by publishing a kind 33333 "Construct" event. The 256-bit event ID is used to determine the coordinates of your construct. The first 85 bits is the X coordinate. The second 85 bits is the Y coordinate. The third 85 bits is the Z coordinate. The last bit (the least significant bit) is ignored.
+**Constructs**. A construct is a zappable portion of cyberspace that you own. You obtain a construct by publishing a kind 33333 (replaceable parameterized) "Construct" event. The 256-bit event ID is used to determine the coordinates of your construct. The first 85 bits is the X coordinate. The second 85 bits is the Y coordinate. The third 85 bits is the Z coordinate. The last bit (the least significant bit) is ignored.
 
 You can mine this event ID to get the desired coordinates with a nonce and a target coordinate in the form of a 256-bit hex string (although the lsb is ignored). Unlike NIP-13 PoW, there is no invalidation for this coordinate proof-of-work. You simply hash until you get "close enough" to your target coordinate for your own satisfaction.
 
-The construct's valid proof-of-work _P_ determines its bounding box size, where the length of a side is equal to _2<sup>P</sup>_. _P_ is calculated by taking 255 minus the Hamming distance between the event ID and the target coordinate.
+The construct's valid proof-of-work _P_ determines its bounding box size, where the length of a side is equal to _P_. _P_ is calculated by taking 255 minus the Hamming distance between the event ID and the target coordinate.
 
-**Shards**. Once you've gotten your construct published, you will be able to put 3D objects into it. I am still working on the spec for the 3D format, but you will be able to publish a kind 33334 "Shard" event and set the e tag to reference your construct. The coordinates of the Shard will be relative to the construct's origin; Shards outside of the bounding box will simply be invisible. Shards will require proof-of-work but I am still working on the mechanics. Shards will be zappable and may represent purchasable goods or services.
+**Shards**. Once you've gotten your construct published, you will be able to put 3D objects into it. I am still working on the spec for the 3D format, but you will be able to publish a kind 33334 (replaceable parameterized) "Shard" event and set the e tag to reference your construct. The coordinates of the Shard will be relative to the construct's origin; Shards outside of the bounding box will simply be invisible. In order to be valid, Shards will require proof-of-work relative to their complexity (TBD; may relate to vertex count or bytes). Shards will be zappable and may represent purchasable goods or services.
 
 ### Overwriting
 
