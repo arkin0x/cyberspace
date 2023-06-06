@@ -73,10 +73,10 @@ You can mine the Construct event ID to get the desired coordinates (target) with
 
 Example Construct proof-of-work event tag:
 ```
-tags: [["nonce", <nonce>, <256-bit hexadecimal target>]]
+tags: [["nonce", "<nonce>", "<256-bit hexadecimal target>"]]
 ```
 
-The nonce is simply an incremented integer starting with 0.
+The nonce is simply an incremented integer, expressed as a string as required of all tag values by the nostr spec, starting with 0.
 
 The Construct's valid proof-of-work _P_ determines its bounding box size, where the length of a side is equal to _P_. _P_ is calculated like this:
 
