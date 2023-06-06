@@ -5,7 +5,7 @@
 1. [Purpose](#Purpose)
 2. [Abstract](#abstract)
 3. [Cyberspace Meta-protocol](#cyberspace-meta-protocol)
-4. [Claiming Real Estate and Building Structures](#building)
+4. [Claiming Real Estate and Building Structures](#claiming-real-estate-and-building-structures)
 5. [Operators and Acting Within Cyberspace](#operators)
 
 # Purpose
@@ -74,7 +74,9 @@ The Construct's valid proof-of-work _P_ determines its bounding box size, where 
 
 This is the valid proof-of-work.
 
-**Shards**. Once you've published a Construct, you will be able to put 3D objects into it called Shards. In cyberspace terms, Shards are child objects of Constructs, but exist as a separate event in nostr. The spec for the 3D format is in development, but you will be able to publish a kind 33332 (replaceable parameterized) "Shard" event and set the e tag to reference your Construct. The coordinates, stored in the `content` of the Shard event will be relative to the Construct's origin; Shards outside of the bounding box will simply be invisible. In order to be valid, Shards will require proof-of-work relative to their complexity (TBD; may relate to vertex count or bytes). Shards will be zappable and may represent purchasable goods or services. Shards may also be marked as "traversable" allowing Operators to attach to them temporarily; this is how you can implement ground/gravity or pathways within your Construct that Operators may use as an anchor to interact in a more human way (as opposed to floating in 3D space).
+A Construct's coordinate may exist on an edge or vertex of cyberspace's valid coordinate bounds. In this case, even though the bounding box of the construct may extend beyond valid cyberspace coordinates, it is considered valid and may be fully utilized; Shards are addressed relative to the Construct, so a Construct that spills outside of valid cyberspace coordinates may be permitted with no problems.
+
+**Shards**. Once you've published a Construct, you will be able to put 3D objects into it called Shards. In cyberspace terms, Shards are child objects of Constructs, but exist as a separate event in nostr. The spec for the 3D format is in development, but you will be able to publish a kind 33332 (replaceable parameterized) "Shard" event containing 3D data and set the e tag to reference your Construct. The coordinates of the Shard event will be relative to the Construct's origin; Shards outside of the bounding box will simply be invisible. In order to be valid, Shards will require proof-of-work relative to their complexity (TBD; may relate to vertex count or bytes). Shards will be zappable and may represent purchasable goods or services. Shards may also be marked as "traversable" allowing Operators to attach to them temporarily; this is how you can implement ground/gravity or pathways within your Construct that Operators may use as an anchor to interact in a more human way (as opposed to floating in 3D space).
 
 ### Overwriting
 
