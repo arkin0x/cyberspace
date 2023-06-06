@@ -5,7 +5,7 @@
 1. [Purpose](#Purpose)
 2. [Abstract](#abstract)
 3. [Cyberspace Meta-Protocol](#cyberspace-meta-protocol)
-4. [Claiming Real Estate and Building Structures](#claiming-real-estate-and-building-structures)
+4. [Claiming Space and Building Structures](#claiming-space-and-building-structures)
 5. [Human and AI Agents in Cyberspace](#human-and-ai-agents-in-cyberspace)
 
 # Purpose
@@ -34,7 +34,7 @@ A permissionless virtual action with a thermodynamic cost is effectively **as re
 
 The Cyberspace Meta-Protocol is a protocol built on top of nostr to enable interaction with cyberspace. It provides generalized tools to interact with other cyberspace users and provides a way to secure and modify the scarce space within cyberspace.
 
-Cyberspace is a digital space that has 3 axes each 2^85 long. Objects from the nostr protocol can be addressed in this space in several ways. The method usually depends on the event's kind. Generally, all coordinates are derived from a 256-bit number by discarding the least significant bit and then decoding it into three 85-bit twos-compliment integers representing X, Y and Z coordinates; this is referred to as embedding. This process is [discussed below](#claiming-real-estate-and-building-structures).
+Cyberspace is a digital space that has 3 axes each 2^85 long. Objects from the nostr protocol can be addressed in this space in several ways. The method usually depends on the event's kind. Generally, all coordinates are derived from a 256-bit number by discarding the least significant bit and then decoding it into three 85-bit twos-compliment integers representing X, Y and Z coordinates; this is referred to as embedding. This process is [discussed below](#claiming-space-and-building-structures).
 
 - Kind 1 "notes" are addressed by simhashing the content of the event to obtain a 256-bit hash, which can be embedded into X, Y, and Z coordinates. This is referred to as a semantic coordinate because there is a relationship between the coordinate and the meaning of the event.
 - Constructs are kind 33333 (replaceable) events. The construct event ID, a 256-bit hash, can be embedded into X, Y, and Z coordinates.
@@ -45,7 +45,7 @@ Below are the initial actions defined for cyberspace. The basis for these action
 
 All actions require the publishing of an event with at least 1 unit of NIP-13 proof-of-work (PoW) except for constructs which use a special kind of proof-of-work.
 
-# Claiming Real Estate and Building Structures
+# Claiming Space and Building Structures
 
 ## Constructs
 
@@ -98,7 +98,7 @@ A Construct's coordinate may exist on an edge or vertex of cyberspace's valid co
 
 ### Overwriting
 
-If someone else publishes a Construct that overlaps with yours, only the Construct with the most proof-of-work will be visible. Therefore, it is in your best interest to continually hash higher proof-of-work versions of your Constructs and be ready to publish them should your real estate ever be overwritten. 
+If someone else publishes a Construct that overlaps with yours, only the Construct with the most proof-of-work will be visible. Therefore, it is in your best interest to continually hash higher proof-of-work versions of your Constructs and be ready to publish them should your space ever be overwritten. 
 
 In this way, nobody can lay claim to a space forever, all space is scarce, and all space is tied to real-world costs.
 
@@ -108,7 +108,7 @@ In this way, nobody can lay claim to a space forever, all space is scarce, and a
 
 Operators are a zappable presence in cyberspace controlled by a human or AI agent in reality.
 
-The home coordinate is the spawning location for an operator. It is first derived from the simhash of the operator's NIP-05 identity, such as adam@jensen.dx. This means there will be clusters of operators belonging to the same NIP-05 identity server such as nostrplebs.com, and in turn high-traffic/high-value real-estate for Constructs near these clusters.
+The home coordinate is the spawning location for an operator. It is first derived from the simhash of the operator's NIP-05 identity, such as adam@jensen.dx. This means there will be clusters of operators belonging to the same NIP-05 identity server such as nostrplebs.com, and in turn high-traffic/high-value space for Constructs near these clusters.
 
 If the operator does not have a NIP-05 identity, their home coordinate will default to a coordinate derived from their pubkey (85 bits for x, y, then z, discarding the least significant bit).
 
