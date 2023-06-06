@@ -1,5 +1,13 @@
 # The Cyberspace Meta-Protocol: An Extension of Reality
 
+# Table of Contents
+
+1. [Purpose](#Purpose)
+2. [Abstract](#abstract)
+3. [Cyberspace Meta-protocol](#cyberspace-meta-protocol)
+4. [Claiming Real Estate and Building Structures](#building)
+5. [Operators and Acting Within Cyberspace](#operators)
+
 # Purpose
 
 The purpose of the cyberspace meta-protocol is to create an extension of reality in digital space. This is accomplished by combining the properties of the permissionless [nostr protocol](https://github.com/nostr-protocol/nostr) and [proof-of-work](https://github.com/nostr-protocol/nips/blob/master/13.md).
@@ -33,19 +41,44 @@ Below are the initial actions defined for cyberspace. The basis for these action
 
 All actions require the publishing of an event with at least 1 unit of NIP-13 proof-of-work (PoW) except for constructs which use a special kind of proof-of-work.
 
-## Building
+## Claiming Real Estate and Building Structures
 
-**Constructs**. A construct is a zappable portion of cyberspace that you own. You obtain a construct by publishing a kind 33333 (replaceable parameterized) "Construct" event. The 256-bit event ID is used to determine the coordinates of your construct. The first 85 bits is the X coordinate. The second 85 bits is the Y coordinate. The third 85 bits is the Z coordinate. The last bit (the least significant bit) is ignored.
+**Constructs**. A Construct is a zappable portion of cyberspace that you own. You obtain a Construct by publishing a kind 332 "Construct" event. The 256-bit event ID is used to determine the coordinates of your Construct. 
 
-You can mine this event ID to get the desired coordinates with a nonce and a target coordinate in the form of a 256-bit hex string (although the lsb is ignored). Unlike NIP-13 PoW, there is no invalidation for this coordinate proof-of-work. You simply hash until you get "close enough" to your target coordinate for your own satisfaction.
+The nostr event ID is a hexadecimal string representing 256 bits. Coordinates are decoded from 256 bits in the following way:
 
-The construct's valid proof-of-work _P_ determines its bounding box size, where the length of a side is equal to _P_. _P_ is calculated by taking 255 minus the Hamming distance between the event ID and the target coordinate.
+If the current bit index modulo 3 is 0, make that bit the least significant bit of the X coordinate and then shift left.
+If the current bit index modulo 3 is 1, make that bit the least significant bit of the Y coordinate and then shift left.
+If the current bit index modulo 3 is 2, make that bit the least significant bit of the Z coordinate and then shift left.
 
-**Shards**. Once you've gotten your construct published, you will be able to put 3D objects into it. I am still working on the spec for the 3D format, but you will be able to publish a kind 33334 (replaceable parameterized) "Shard" event and set the e tag to reference your construct. The coordinates of the Shard will be relative to the construct's origin; Shards outside of the bounding box will simply be invisible. In order to be valid, Shards will require proof-of-work relative to their complexity (TBD; may relate to vertex count or bytes). Shards will be zappable and may represent purchasable goods or services.
+Repeat this for bits 0 thru 254. The final bit is ignored.
+
+The X, Y, and Z coordinates are interleaved throughout the event ID to allow location-based equerying via the nostr protocol, because the most significant bits of the coordinate are also the most significant bits of the event ID.
+
+One can query relays for the most significant event ID bits of a kind 332 Construct event to find all Constructs in a given area of cyberspace; the search area size corresponds to the precision of the search.
+
+For example, a partial event ID search of hexadecimal "e" (binary 0x1110) will only return Constructs in the left half of the right, back, upper quadrant of cyberspace. The left half is because of the final 0 in the binary form; this is a second X coordinate filter that can't be avoided when querying in hexadecimal. This means the largest query-able area of cyberspace is 1/16 of it. To extend the example, searching for hexadecimal "f" (binary 0x1111) would yield all Constructs in the right half of the right, back, upper quadrant of cyberspace.
+
+You can mine this event ID to get the desired coordinates (target) with a nonce and a target coordinate in the form of a 256-bit hex string (even though the lsb is ignored). Unlike NIP-13 PoW, there is no invalidation for this coordinate proof-of-work. You simply hash until you get "close enough" to your target coordinate for your own satisfaction. The nonce is simply an incremented number starting with 0.
+
+Example proof-of-work event tag:
+```
+tags: [["nonce", <nonce>, <256-bit hexadecimal target>]]
+```
+
+The Construct's valid proof-of-work _P_ determines its bounding box size, where the length of a side is equal to _P_. _P_ is calculated like this:
+
+- zero the last bit in the event ID and the target (255th bit)
+- get the binary Hamming distance between the modified event ID and the modified target.
+- taking 255 minus the Hamming distance output
+
+This is the valid proof-of-work.
+
+**Shards**. Once you've published a Construct, you will be able to put 3D objects into it called Shards. In cyberspace terms, Shards are child objects of Constructs, but exist as a separate event in nostr. The spec for the 3D format is in development, but you will be able to publish a kind 33332 (replaceable parameterized) "Shard" event and set the e tag to reference your Construct. The coordinates, stored in the `content` of the Shard event will be relative to the Construct's origin; Shards outside of the bounding box will simply be invisible. In order to be valid, Shards will require proof-of-work relative to their complexity (TBD; may relate to vertex count or bytes). Shards will be zappable and may represent purchasable goods or services. Shards may also be marked as "traversable" allowing Operators to attach to them temporarily; this is how you can implement ground/gravity or pathways within your Construct that Operators may use as an anchor to interact in a more human way (as opposed to floating in 3D space).
 
 ### Overwriting
 
-If someone else publishes a construct that overlaps with yours, only the construct with the most proof-of-work will be visible. Therefore, it is in your best interest to continually hash higher proof-of-work versions of your constructs and be ready to publish them should your real estate ever be overwritten. 
+If someone else publishes a Construct that overlaps with yours, only the Construct with the most proof-of-work will be visible. Therefore, it is in your best interest to continually hash higher proof-of-work versions of your Constructs and be ready to publish them should your real estate ever be overwritten. 
 
 In this way, nobody can lay claim to a space forever, all space is scarce, and all space is tied to real-world costs.
 
@@ -53,7 +86,7 @@ In this way, nobody can lay claim to a space forever, all space is scarce, and a
 
 Operators are a zappable presence in cyberspace controlled by a human or AI agent in reality.
 
-The home coordinate is the spawning location for an operator. It is first derived from the simhash of the operator's NIP-05 identity, such as adam@jensen.dx. This means there will be clusters of operators belonging to the same NIP-05 identity server such as nostrplebs.com, and in turn high-traffic/high-value real-estate for constructs near these clusters.
+The home coordinate is the spawning location for an operator. It is first derived from the simhash of the operator's NIP-05 identity, such as adam@jensen.dx. This means there will be clusters of operators belonging to the same NIP-05 identity server such as nostrplebs.com, and in turn high-traffic/high-value real-estate for Constructs near these clusters.
 
 If the operator does not have a NIP-05 identity, their home coordinate will default to a coordinate derived from their pubkey (85 bits for x, y, then z, discarding the least significant bit).
 
@@ -98,15 +131,15 @@ If the remaining Derezz power is negative or zero, it has no effect.
 
 By these rules, the tip of a broken movement chain will never have temporal armor. Drift events are essentially permanent, so a broken movement chain will remain vulnerable as long as the operator has not been killed. Once Derezzed, an operator starts fresh with a new movement chain at their home coordinate and no chains prior to the Derezz event can be targeted any more.
 
-**Armor**. An operator may publish a kind 10087 "Armor" PoW event. The valid PoW in this event is subtracted from any incoming Derezz as a defensive measure.
-
-Defenders against Derezz have an asymmetric advantage because they can generate Armor PoW any time before they encounter an attacker, whereas the attacker must generate enough Derezz to overcome their victim's Armor in a very short period of time. Therefore, an additional aggressive action is available to balance out this defender's advantage...
-
 **Vortex**. A Vortex exerts a constant gravitational force that pulls a victim toward it while the attacker can generate higher PoW for a Derezz, as an example. An attacker may publish a kind 88 "Vortex" PoW event and specify the victim's pubkey (only 1 allowed) and e tag the respective movement chains. The content of the event should specify the coordinates where the Vortex should appear; if omitted it should appear at the victim's location. If the Vortex's PoW is 10 and the victim is 7 units away from it, 3 units of acceleration are applied to pull the victim toward the center.
+
+**Bubble**. Securing one's property is a human right, and so it is necessary to provide tools for operators to defend their cyber property. Bubble is an event kind 90 that represents the creation of a constant anti-gravitational force that pushes an aggressor away from it. It functions as the exact opposite to a Vortex. The range and force of repulsion is constant regardless of the aggressor's distance from the origin.
 
 ## Defense
 
-**Bubble**. Securing one's property is a human right, and so it is necessary to provide tools for operators to defend their cyber property. Bubble is an event kind 90 that represents the creation of a constant anti-gravitational force that pushes an aggressor away from it. It functions as the exact opposite to a Vortex. The range and force of repulsion is constant regardless of the aggressor's distance from the origin.
+**Armor**. An operator may publish a kind 10087 "Armor" PoW event. The valid PoW in this event is subtracted from any incoming Derezz as a defensive measure.
+
+Defenders against Derezz have an asymmetric advantage because they can generate Armor PoW any time before they encounter an attacker, whereas the attacker must generate enough Derezz to overcome their victim's Armor in a very short period of time. Therefore, an additional aggressive action is available to balance out this defender's advantage in the form of Vortex.
 
 **Stealth**. The state of the nostr network does not reflect whether an operator is actively controlling their Presence or not. Your latest Drift event determines where you are located. If you close your cyberspace client, other operators will still see you in that location and you are still vulnerable to attack. Therefore, it is important to be able to conceal one's location so that when the human controller is not present the operator is less vulnerable.
 
@@ -115,6 +148,26 @@ Stealth is an event kind 10085 that simply publishes proof-of-work to define a s
 When an operator has published a valid Stealth event, they may publish their Drift events differently without breaking their movement chain. Instead of publishing their coordinates directly in the Drift event, they may publish a zk-snark that will only reveal their coordinates if the input to the zk-snark is a coordinate within the boundary radius. This is called a Stealth Drift event.
 
 Someone hunting this stealth operator may see their Stealth Drift events and input their own coordinates into the zk-snark. If they are not within the stealth boundary radius, they will simply receive a rejection. If they are within the stealth boundary radius, they will receive the actual coordinates of the operator.
+
+**Echo Resistance**. It is possible that an aggressor may be creating valid aggressive events against you but not publishing them intentionally. If you publish movement events that do not respect these aggressive events, you will break your movement chain; however, if you were not aware of those events, you can be forced to unintentionally break your movement chain if an aggressor witholds the events until you have moved enough to contradict their would-be effect.
+
+Because this late publishing (which could also be due to latency) is like an echo of the original event's creation, I refer to it as an Echo attack.
+
+In order to combat this, the Echo Resistance mechanic is introduced. Operators may add an additional "echo" tag to any Drift event that contains NIP-13-like proof-of-work. The tag should include ["echo", <nonce>, <target>, <sha256>]. Drifts with a valid echo proof are immune to all aggression events (except Derezz), meaning they may omit them from their velocity/position calculations. The reason why Derezz is omitted is because if successful Derezz resets the Operator's position anyway, so withholding it does not supply any significant benefit to the aggressor.
+
+There are restrictions on usage of echo resistance. Each consecutive echo-resistant Drift event (n) requires 2^(ceil(n)) valid Pow ("target" in the echo tag). This means the PoW cost for consecutive echo events is 1, 2, 4, 8, 16, 32, 64, ... . This exponential increase is designed to make sustained use of echo resistance expensive and therefore strategic.
+
+For every non-echo-resistant event published, the count (n) is reduced by 0.5 until it hits 1, which is the minimum PoW target/cost for a valid echo-resistant event. This means that for each consecutive echo-drift event, double the number of non-shielded events are required for cooldown. This prevents overuse or spamming of echo resistance.
+
+Aggression events must be included in an aggressor's movement chain. This means that the aggressor must stop publishing Drift events (stop moving) to successfully withhold an aggression event. If a nearby operator has suddenly stopped moving, it may be a cue to begin applying echo resistance to your Drift events and moving away from that operator as fast as possible.
+
+The increasing PoW requirement for consecutive echo-drifts means that the defender will be slowed down as their thermodynamic resources are directed towards generating the echo PoW. This offers an inherent balance: the more you use echo resistance, the more vulnerable you are to Derezz attacks due to your reduced speed.
+
+The Echo Resistance mechanism provides a strategic balance between movement chain defense and speed, providing players with more agency in how they interact within the environment.
+
+Echo Resistance also provides a natural counter to Vortex and Bubble events even when there is no risk of a withheld event or movement chain break, as the echo resistance negates their effects.
+
+Echo shielding is an additional NIP-13-like proof-of-work on a Drift event. 
 
 ## Communication
 
