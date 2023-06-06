@@ -59,7 +59,7 @@ The nostr event ID is a hexadecimal string representing 256 bits. Coordinates ar
 - If the current bit index modulo 3 is 1, make that bit the least significant bit of the Y coordinate and then shift left.
 - If the current bit index modulo 3 is 2, make that bit the least significant bit of the Z coordinate and then shift left.
 
-Repeat this for bits 0 thru 254. The final bit is ignored.
+Repeat this for bits 0 thru 254. The final bit is ignored. Once complete, the X, Y, and Z coordinates will each be an 85-bit number.
 
 The X, Y, and Z coordinates are interleaved throughout the event ID to allow location-based equerying via the nostr protocol, because the most significant bits of the coordinate are also the most significant bits of the event ID.
 
