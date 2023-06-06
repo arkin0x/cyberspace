@@ -4,9 +4,9 @@
 
 1. [Purpose](#Purpose)
 2. [Abstract](#abstract)
-3. [Cyberspace Meta-protocol](#cyberspace-meta-protocol)
+3. [Cyberspace Meta-Protocol](#cyberspace-meta-protocol)
 4. [Claiming Real Estate and Building Structures](#claiming-real-estate-and-building-structures)
-5. [Operators and Acting Within Cyberspace](#operators)
+5. [Human and AI Agents in Cyberspace](#human-and-ai-agents-in-cyberspace)
 
 # Purpose
 
@@ -30,7 +30,7 @@ A permissionless virtual action with a thermodynamic cost is effectively **as re
 
 # Cyberspace Meta-Protocol
 
-Cyberspace is a digital space that has 3 axes each 2^85 long. Objects from the nostr protocol can be addressed in this space in several ways. The method usually depends on the event's kind. Generally, all coordinates are derived from a 256-bit number by discarding the least significant bit and then dividing it into three 85-bit twos-compliment integers representing X, Y and Z coordinates; this is referred to as embedding.
+Cyberspace is a digital space that has 3 axes each 2^85 long. Objects from the nostr protocol can be addressed in this space in several ways. The method usually depends on the event's kind. Generally, all coordinates are derived from a 256-bit number by discarding the least significant bit and then decoding it into three 85-bit twos-compliment integers representing X, Y and Z coordinates; this is referred to as embedding. This process is [discussed below](#claiming-real-estate-and-building-structures).
 
 - Kind 1 "notes" are addressed by simhashing the content of the event to obtain a 256-bit hash, which can be embedded into X, Y, and Z coordinates. This is referred to as a semantic coordinate because there is a relationship between the coordinate and the meaning of the event.
 - Constructs are kind 33333 (replaceable) events. The construct event ID, a 256-bit hash, can be embedded into X, Y, and Z coordinates.
@@ -41,15 +41,19 @@ Below are the initial actions defined for cyberspace. The basis for these action
 
 All actions require the publishing of an event with at least 1 unit of NIP-13 proof-of-work (PoW) except for constructs which use a special kind of proof-of-work.
 
-## Claiming Real Estate and Building Structures
+# Claiming Real Estate and Building Structures
 
-**Constructs**. A Construct is a zappable portion of cyberspace that you own. You obtain a Construct by publishing a kind 332 "Construct" event. The 256-bit event ID is used to determine the coordinates of your Construct. 
+## Constructs
+
+A Construct is a zappable portion of cyberspace that you own. You obtain a Construct by publishing a kind 332 "Construct" event. The 256-bit event ID is used to determine the coordinates of your Construct. The size of the bounding box of your construct is determined by proof-of-work.
+
+### Decoding Coordinates from a 256-bit number
 
 The nostr event ID is a hexadecimal string representing 256 bits. Coordinates are decoded from 256 bits in the following way:
 
-If the current bit index modulo 3 is 0, make that bit the least significant bit of the X coordinate and then shift left.
-If the current bit index modulo 3 is 1, make that bit the least significant bit of the Y coordinate and then shift left.
-If the current bit index modulo 3 is 2, make that bit the least significant bit of the Z coordinate and then shift left.
+- If the current bit index modulo 3 is 0, make that bit the least significant bit of the X coordinate and then shift left.
+- If the current bit index modulo 3 is 1, make that bit the least significant bit of the Y coordinate and then shift left.
+- If the current bit index modulo 3 is 2, make that bit the least significant bit of the Z coordinate and then shift left.
 
 Repeat this for bits 0 thru 254. The final bit is ignored.
 
@@ -59,30 +63,42 @@ One can query relays for the most significant event ID bits of a kind 332 Constr
 
 For example, a partial event ID search of hexadecimal "e" (binary 0x1110) will only return Constructs in the left half of the right, back, upper quadrant of cyberspace. The left half is because of the final 0 in the binary form; this is a second X coordinate filter that can't be avoided when querying in hexadecimal. This means the largest query-able area of cyberspace is 1/16 of it. To extend the example, searching for hexadecimal "f" (binary 0x1111) would yield all Constructs in the right half of the right, back, upper quadrant of cyberspace.
 
-You can mine this event ID to get the desired coordinates (target) with a nonce and a target coordinate in the form of a 256-bit hex string (even though the lsb is ignored). Unlike NIP-13 PoW, there is no invalidation for this coordinate proof-of-work. You simply hash until you get "close enough" to your target coordinate for your own satisfaction. The nonce is simply an incremented number starting with 0.
+### Mining Your Construct
 
-Example proof-of-work event tag:
+You can mine the Construct event ID to get the desired coordinates (target) with a nonce integer and a target coordinate in the form of a 256-bit hex string (even though the lsb is ignored). Unlike [NIP-13 PoW](https://github.com/nostr-protocol/nips/blob/master/13.md), there is no invalidation for this coordinate proof-of-work. You simply hash until you get "close enough" to your target coordinate for your own satisfaction; then the amount of proof-of-work is quantified to determine the bounding box size of your Construct.
+
+Example Construct proof-of-work event tag:
 ```
 tags: [["nonce", <nonce>, <256-bit hexadecimal target>]]
 ```
 
+The nonce is simply an incremented integer starting with 0.
+
 The Construct's valid proof-of-work _P_ determines its bounding box size, where the length of a side is equal to _P_. _P_ is calculated like this:
 
-- zero the last bit in the event ID and the target (255th bit)
+- zero out the last bit in the event ID and the target (255th bit)
 - get the binary Hamming distance between the modified event ID and the modified target.
-- taking 255 minus the Hamming distance output
+- take 255 minus the Hamming distance output
 
-This is the valid proof-of-work.
+This is the amount of valid proof-of-work.
+
+While mining you will calculate the valid proof-of-work for each iteration to determine if it is close enough to your desired target coordinate, or, if the Construct is at least the size you want it to be.
+
+## Shards
+
+Once you've published a Construct, you will be able to put 3D objects into it called Shards. In cyberspace terms, Shards are child objects of Constructs, but exist as a separate event in nostr. The spec for the 3D format is in development, but you will be able to publish a kind 33332 (replaceable parameterized) "Shard" event containing 3D data and set the e tag to reference your Construct. The coordinates of the Shard event will be relative to the Construct's origin; Shards outside of the bounding box will simply be invisible. In order to be valid, Shards will require proof-of-work relative to their complexity (TBD; may relate to vertex count or bytes). Shards will be zappable and may represent purchasable goods or services. Shards may also be marked as "traversable" allowing Operators to attach to them temporarily; this is how you can implement ground/gravity or pathways within your Construct that Operators may use as an anchor to interact in a more human way (as opposed to floating in 3D space).
+
+### Edge Case
 
 A Construct's coordinate may exist on an edge or vertex of cyberspace's valid coordinate bounds. In this case, even though the bounding box of the construct may extend beyond valid cyberspace coordinates, it is considered valid and may be fully utilized; Shards are addressed relative to the Construct, so a Construct that spills outside of valid cyberspace coordinates may be permitted with no problems.
-
-**Shards**. Once you've published a Construct, you will be able to put 3D objects into it called Shards. In cyberspace terms, Shards are child objects of Constructs, but exist as a separate event in nostr. The spec for the 3D format is in development, but you will be able to publish a kind 33332 (replaceable parameterized) "Shard" event containing 3D data and set the e tag to reference your Construct. The coordinates of the Shard event will be relative to the Construct's origin; Shards outside of the bounding box will simply be invisible. In order to be valid, Shards will require proof-of-work relative to their complexity (TBD; may relate to vertex count or bytes). Shards will be zappable and may represent purchasable goods or services. Shards may also be marked as "traversable" allowing Operators to attach to them temporarily; this is how you can implement ground/gravity or pathways within your Construct that Operators may use as an anchor to interact in a more human way (as opposed to floating in 3D space).
 
 ### Overwriting
 
 If someone else publishes a Construct that overlaps with yours, only the Construct with the most proof-of-work will be visible. Therefore, it is in your best interest to continually hash higher proof-of-work versions of your Constructs and be ready to publish them should your real estate ever be overwritten. 
 
 In this way, nobody can lay claim to a space forever, all space is scarce, and all space is tied to real-world costs.
+
+# Human and AI Agents In Cyberspace
 
 ## Operators
 
@@ -92,7 +108,7 @@ The home coordinate is the spawning location for an operator. It is first derive
 
 If the operator does not have a NIP-05 identity, their home coordinate will default to a coordinate derived from their pubkey (85 bits for x, y, then z, discarding the least significant bit).
 
-## Movement
+### Movement
 
 Operators rez into their cyberspace journey at their home coordinate and then utilize proof-of-work to move around cyberspace. By publishing a kind 333 "Drift" event, the operator can specify their current coordinate (which will be their home coordinate for their very first drift event) and the direction they wish to move. The amount of NIP-13 proof-of-work _P_ on the drift event, which is determined by the number of leading consecutive binary zeroes on the event ID, will determine the acceleration, equal to _2<sup>P</sup>_. Acceleration is added to their velocity, which begins at 0.
 
@@ -109,7 +125,7 @@ If a drift event goes outside of those tolerances, it is considered "broken" and
 
 When a movement chain is broken, the new (technically invalid) movement chain is treated as if it is valid, but the tip of the broken chain acts like a frozen ghost copy of that operator. This copy is vulnerable to Derezz attacks just like any operator is, but more vulnerable because the copy is stationary.
 
-## Aggression
+### Aggression
 
 **Derezz**. To keep operators honest in their movement chains and to allow the thermodynamic resolution of disputes, aggressive actions are enabled by proof-of-work.
 
@@ -137,7 +153,7 @@ By these rules, the tip of a broken movement chain will never have temporal armo
 
 **Bubble**. Securing one's property is a human right, and so it is necessary to provide tools for operators to defend their cyber property. Bubble is an event kind 90 that represents the creation of a constant anti-gravitational force that pushes an aggressor away from it. It functions as the exact opposite to a Vortex. The range and force of repulsion is constant regardless of the aggressor's distance from the origin.
 
-## Defense
+### Defense
 
 **Armor**. An operator may publish a kind 10087 "Armor" PoW event. The valid PoW in this event is subtracted from any incoming Derezz as a defensive measure.
 
@@ -171,7 +187,7 @@ Echo Resistance also provides a natural counter to Vortex and Bubble events even
 
 Echo shielding is an additional NIP-13-like proof-of-work on a Drift event. 
 
-## Communication
+### Communication
 
 **Shout**. You may publish an event of kind 20333 "Shout" (ephemeral) with PoW to broadcast a public message to nearby operators. The more proof-of-work the event has, the larger the broadcast radius. The event must reference in its e tag the tip of the Shouting operator's movement chain; this is the coordinate from which the Shout emanates. Operators will ignore Shouts whose radius they do not fall within.
 
