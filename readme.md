@@ -32,6 +32,8 @@ A permissionless virtual action with a thermodynamic cost is effectively **as re
 
 # Cyberspace Meta-Protocol
 
+The Cyberspace Meta-Protocol is a protocol built on top of nostr to enable interaction with cyberspace. It provides generalized tools to interact with other cyberspace users and provides a way to secure and modify the scarce space within cyberspace.
+
 Cyberspace is a digital space that has 3 axes each 2^85 long. Objects from the nostr protocol can be addressed in this space in several ways. The method usually depends on the event's kind. Generally, all coordinates are derived from a 256-bit number by discarding the least significant bit and then decoding it into three 85-bit twos-compliment integers representing X, Y and Z coordinates; this is referred to as embedding. This process is [discussed below](#claiming-real-estate-and-building-structures).
 
 - Kind 1 "notes" are addressed by simhashing the content of the event to obtain a 256-bit hash, which can be embedded into X, Y, and Z coordinates. This is referred to as a semantic coordinate because there is a relationship between the coordinate and the meaning of the event.
