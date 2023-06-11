@@ -37,7 +37,7 @@ The Cyberspace Meta-Protocol is a protocol built on top of nostr to enable inter
 Cyberspace is a digital space that has 3 axes each 2^85 long. Objects from the nostr protocol can be addressed in this space in several ways. The method usually depends on the event's kind. Generally, all coordinates are derived from a 256-bit number by discarding the least significant bit and then decoding it into three 85-bit twos-compliment integers representing X, Y and Z coordinates; this is referred to as embedding. This process is [discussed below](#claiming-space-and-building-structures).
 
 - Kind 1 "notes" are addressed by simhashing the content of the event to obtain a 256-bit hash, which can be embedded into X, Y, and Z coordinates. This is referred to as a semantic coordinate because there is a relationship between the coordinate and the meaning of the event.
-- Constructs are kind 33333 (replaceable) events. The construct event ID, a 256-bit hash, can be embedded into X, Y, and Z coordinates.
+- Constructs are kind 332 (replaceable) events. The construct event ID, a 256-bit hash, can be embedded into X, Y, and Z coordinates.
 - Operators' home coordinate is derived from their 256-bit pubkey which can be embedded into X, Y, and Z coordinates.
 - Operators that have a kind 0 with a valid NIP-05 will have their home coordinate addressed to the semantic coordinate of their NIP-05 identifier (e.x. the embedded simhash of arkinox@arkinox.tech)
 
@@ -130,7 +130,7 @@ In this way, nobody can lay claim to a space forever, all space is scarce, and a
 
 Operators are a zappable presence in cyberspace controlled by a human or AI agent in reality.
 
-The home coordinate is the spawning location for an operator. It is first derived from the simhash of the operator's NIP-05 identity, such as adam@jensen.dx. This means there will be clusters of operators belonging to the same NIP-05 identity server such as nostrplebs.com, and in turn high-traffic/high-value space for Constructs near these clusters.
+The home coordinate is the spawning location for an operator. It is first derived from the simhash of the operator's NIP-05 identity, such as arkinox@arkinox.tech. This means there will be clusters of operators belonging to the same NIP-05 identity server such as nostrplebs.com, and in turn high-traffic/high-value space for Constructs near these clusters.
 
 If the operator does not have a NIP-05 identity, their home coordinate will default to a coordinate derived from their pubkey (85 bits for x, y, then z, discarding the least significant bit).
 
