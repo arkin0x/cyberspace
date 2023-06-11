@@ -78,13 +78,35 @@ tags: [["nonce", "<nonce>", "<256-bit hexadecimal target>"]]
 
 The nonce is simply an incremented integer, expressed as a string as required of all tag values by the nostr spec, starting with 0.
 
-The Construct's valid proof-of-work _P_ determines its bounding box size, where the length of a side is equal to _P_. _P_ is calculated like this:
+The Construct's valid proof-of-work _P_ determines its bounding box size _B_. _P_ is calculated like this:
 
 - zero out the last bit in the event ID and the target (255th bit)
 - get the binary Hamming distance between the modified event ID and the modified target.
-- take 255 minus the Hamming distance output
+- take 255 minus the Hamming distance output. This is the similarity.
+- take the maximum of 0 or (similarity minus 128). This is the amount of valid proof-of-work, _P_.
 
-This is the amount of valid proof-of-work.
+To calculate the side length of the construct's bounding box _B_:
+
+$$
+\text{B = }\text{floor}\left(\left(\sum_{{i=1}}^{{P}} i\right)^{1 + \frac{P}{32}}\right)
+$$
+
+or in Python:
+
+```
+def summation(n):
+    if n < 2:
+        return n
+    else:
+        return n + summation(n - 1)
+
+def size(pow):
+    return math.floor(summation(pow) ** (1 + pow / 32))
+```
+
+Where `pow` is the valid proof-of-work.
+
+
 
 While mining you will calculate the valid proof-of-work for each iteration to determine if it is close enough to your desired target coordinate, or, if the Construct is at least the size you want it to be.
 
