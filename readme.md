@@ -227,63 +227,63 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 
 # Dictionary
 
-action - a nostr event specified by the cyberspace meta-protocol that operators may publish to interact with cyberspace
+**action** - a nostr event specified by the cyberspace meta-protocol that operators may publish to interact with cyberspace
 
-action chain - (previously referred to as action chain) - a hash chain of all actions an operator issues in cyberspace. Each subsequent event refers to the previous event by its event id. This chain can be verified by any other operator. An action chain becomes invalid or "broken" if its drift events leave a certain range of tolerance, if an invalid action is published, if a fork in the chain is detected, or if a new chain is begun.
+**action chain** - (previously referred to as action chain) - a hash chain of all actions an operator issues in cyberspace. Each subsequent event refers to the previous event by its event id. This chain can be verified by any other operator. An action chain becomes invalid or "broken" if its drift events leave a certain range of tolerance, if an invalid action is published, if a fork in the chain is detected, or if a new chain is begun.
 
-agent - a human or AI
+**agent** - a human or AI
 
-armor - a kind 10087 event representing a reduction in magnitude of any incoming derezz attack. The reduction is equal to the amount of proof-of-work on the kind 10087 event.
+**armor** - a kind 10087 event representing a reduction in magnitude of any incoming derezz attack. The reduction is equal to the amount of proof-of-work on the kind 10087 event.
 
-bubble - a kind 90 event representing a constant repulsive gravitational force emanating from a coordinate that affects a single target operator. The proof-of-work on a kind 90 event determines the radius and constant force of the repulsion applied in units/second.
+**bubble** - a kind 90 event representing a constant repulsive gravitational force emanating from a coordinate that affects a single target operator. The proof-of-work on a kind 90 event determines the radius and constant force of the repulsion applied in units/second.
 
-c-space - colloquially referred to as "cyberspace", but specifically referring to the wholly virtual digital space enabled by the cyberspace meta-protocol. "Wholly virtual" means no point in c-space represents a point in reality.
+**c-space** - colloquially referred to as "cyberspace", but specifically referring to the wholly virtual digital space enabled by the cyberspace meta-protocol. "Wholly virtual" means no point in c-space represents a point in reality.
 
-caster - referring to the creator of an action specified by the cyberspace meta-protocol.
+**caster** - referring to the creator of an action specified by the cyberspace meta-protocol.
 
-construct - a cubic portion of cyberspace that is claimed by an agent by publishing a kind 332 event with the highest proof-of-work of any kind 332 in that location. The amount of proof-of-work on the kind 332 also determines the size of the space claimed.
+**construct** - a cubic portion of cyberspace that is claimed by an agent by publishing a kind 332 event with the highest proof-of-work of any kind 332 in that location. The amount of proof-of-work on the kind 332 also determines the size of the space claimed.
 
-cyberspace - a permissionless and thermodynamic digital extension of reality. Colloquially refers to c-space, but may be used to accurately refer to the composite of both c-space and d-space.
+**cyberspace** - a permissionless and thermodynamic digital extension of reality. Colloquially refers to c-space, but may be used to accurately refer to the composite of both c-space and d-space.
 
-cyberspace meta-protocol - the rules and algorithms that enable cyberspace to exist on the nostr protocol
+**cyberspace meta-protocol** - the rules and algorithms that enable cyberspace to exist on the nostr protocol
 
-d-space - another name for dataspace, which is the digital space enabled by the cyberspace meta-protocol where all points in d-space represent a point in reality. D-space is meant to be overlaid on reality to create a digital/physical composite space. This combination of digital and physical is commonly referred to as augmented reality.
+**d-space** - another name for dataspace, which is the digital space enabled by the cyberspace meta-protocol where all points in d-space represent a point in reality. D-space is meant to be overlaid on reality to create a digital/physical composite space. This combination of digital and physical is commonly referred to as augmented reality.
 
-dataspace - the formal name of d-space
+**dataspace** - the formal name of d-space
 
-derezz - a thermodynamic action that, if successful, teleports a single victim to their home coordinate and nullifies their proof-of-work actions, excluding constructs
+**derezz** - a thermodynamic action that, if successful, teleports a single victim to their home coordinate and nullifies their proof-of-work actions, excluding constructs
 
-drift - a kind 333 event representing the current coordinate and the application of acceleration to an operator's current vector. The proof-of-work on a kind 333 represents the amount of velocity added to the operator.
+**drift** - a kind 333 event representing the current coordinate and the application of acceleration to an operator's current vector. The proof-of-work on a kind 333 represents the amount of velocity added to the operator.
 
-echo - referring to an action event that would affect a target operator if published but is purposely withheld in order to be published later so as to invalidate the target operator's action chain
+**echo** - referring to an action event that would affect a target operator if published but is purposely withheld in order to be published later so as to invalidate the target operator's action chain
 
-echo attack - the intentional act of withholding an action that would affect an operator and then publishing it later to try and invalidate the target operator's action chain. This is possible because the echo event introduces new information when published that alters the valid possible drifts the victim can make.
+**echo attack** - the intentional act of withholding an action that would affect an operator and then publishing it later to try and invalidate the target operator's action chain. This is possible because the echo event introduces new information when published that alters the valid possible drifts the victim can make.
 
-echo resistance - an additional proof-of-work that may be applied to one's drift event in order to cancel any potential echo actions that would affect it. A drift event with echo resistance may also ignore legitimate non-echo actions, but the cost to publish echo-resistant drifts doubles each time it is used consecutively.
+**echo resistance** - an additional proof-of-work that may be applied to one's drift event in order to cancel any potential echo actions that would affect it. A drift event with echo resistance may also ignore legitimate non-echo actions, but the cost to publish echo-resistant drifts doubles each time it is used consecutively.
 
-event - a nostr event that is also an action
+**event** - a nostr event that is also an action
 
-operator - an agent's presence in cyberspace that is subject to the forces of cyberspace
+**operator** - an agent's presence in cyberspace that is subject to the forces of cyberspace
 
-magnitude - a value derived from an amount of proof-of-work. E.g., the armor's magnitude was 5 because the kind 10087 event had 5 units of proof-of-work.
+**magnitude** - a value derived from an amount of proof-of-work. E.g., the armor's magnitude was 5 because the kind 10087 event had 5 units of proof-of-work.
 
-permissionless - relating to a mechanism whose use cannot be prevented
+**permissionless** - relating to a mechanism whose use cannot be prevented
 
-presence - the visible representation of an operator in cyberspace
+**presence** - the visible representation of an operator in cyberspace
 
-rez - when an operator publishes their first action in history, or, after being derezzed
+**rez** - when an operator publishes their first action in history, or, after being derezzed
 
-shard - a kind 33332 event that represents an object that belongs to a construct. Shards may represent 3D models, boundaries, rules, or interactive elements. Shards do not exist outside their construct. The proof-of-work on a kind 33332 must exceed the complexity of the data it stores.
+**shard** - a kind 33332 event that represents an object that belongs to a construct. Shards may represent 3D models, boundaries, rules, or interactive elements. Shards do not exist outside their construct. The proof-of-work on a kind 33332 must exceed the complexity of the data it stores.
 
-shout - a kind 20333 event that represents the broadcast of a message from the location of the caster. The proof-of-work on a kind 20333 determines the unit range at which other operators will "hear" the message.
+**shout** - a kind 20333 event that represents the broadcast of a message from the location of the caster. The proof-of-work on a kind 20333 determines the unit range at which other operators will "hear" the message.
 
-stealth - a kind 10085 event that represents a stealth boundary radius around caster where other operators outside the radius cannot determine the caster's exact coordinates because they are encoded in a zk-snarks proof. A kind 10085 event must be published to the action chain before subsequent drift events are zk-snarks encoded.
+**stealth** - a kind 10085 event that represents a stealth boundary radius around caster where other operators outside the radius cannot determine the caster's exact coordinates because they are encoded in a zk-snarks proof. A kind 10085 event must be published to the action chain before subsequent drift events are zk-snarks encoded.
 
-thermodynamic - relating to a mechanism that increases the entropy of the universe proportionally to an action's magnitude
+**thermodynamic** - relating to a mechanism that increases the entropy of the universe proportionally to an action's magnitude
 
-unit - the fundamental measurement quanta of cyberspace. Each axis of cyberspace is 2^85 units long. An operator's default presence is an icosahedron with a 1 unit diameter.
+**unit** - the fundamental measurement quanta of cyberspace. Each axis of cyberspace is 2^85 units long. An operator's default presence is an icosahedron with a 1 unit diameter.
 
-vortex - a kind 88 event representing an attractive gravitational well pulling toward a coordinate that affects a single target operator. The proof-of-work on a kind 88 event determines the radius of the well and the attraction force is the radius minus the target operator's distance from the center applied in units/second.
+**vortex** - a kind 88 event representing an attractive gravitational well pulling toward a coordinate that affects a single target operator. The proof-of-work on a kind 88 event determines the radius of the well and the attraction force is the radius minus the target operator's distance from the center applied in units/second.
 
 # Cyberspace Clients
 
