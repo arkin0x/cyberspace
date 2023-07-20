@@ -269,6 +269,8 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 
 **permissionless** - relating to a mechanism whose use cannot be prevented
 
+**plane** - a coordinate subset of cyberspace; referring to either c-space or d-space
+
 **presence** - the visible representation of an operator in cyberspace
 
 **rez** - when an operator publishes their first action in history, or, after being derezzed
