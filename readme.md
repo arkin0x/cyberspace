@@ -34,6 +34,8 @@ A permissionless virtual action with a thermodynamic cost is effectively **as re
 
 # Cyberspace Meta-Protocol
 
+<img width="2292" alt="Cyberspace Venn Diagram" src="https://github.com/arkin0x/cyberspace/assets/99223753/a7e34e9c-65fb-4e43-b78a-ce2e0f554e3f">
+
 The Cyberspace Meta-Protocol is a protocol built on top of nostr to enable interaction with cyberspace. It provides generalized tools to interact with other cyberspace users and provides a way to secure and modify the scarce space within cyberspace.
 
 Cyberspace is a digital space that has 3 axes each 2^85 long. Objects from the nostr protocol can be addressed in this space in several ways. The method usually depends on the event's kind. Generally, all coordinates are derived from a 256-bit number by decoding it into three 85-bit twos-compliment integers representing X, Y and Z coordinates and interpreting the least significant bit to determine which plane the coordinate falls within; this interpretation is referred to as embedding. This process is [discussed below](#claiming-space-and-building-structures).
