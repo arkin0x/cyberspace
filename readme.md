@@ -271,6 +271,8 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 
 **plane** - a coordinate subset of cyberspace; referring to either c-space or d-space
 
+**portal** - an object constructed via proof-of-work that allows operators to travel between c-space and d-space.
+
 **presence** - the visible representation of an operator in cyberspace
 
 **rez** - when an operator publishes their first action in history, or, after being derezzed
