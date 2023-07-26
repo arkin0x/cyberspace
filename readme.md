@@ -243,7 +243,7 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 
 **caster** - referring to the creator of an action specified by the cyberspace meta-protocol.
 
-**construct** - a cubic portion of cyberspace that is claimed by an agent by publishing a kind 332 event with the highest proof-of-work of any kind 332 in that location. The amount of proof-of-work on the kind 332 also determines the size of the space claimed.
+**construct** - a cubic portion of cyberspace that is claimed by an agent by publishing a kind 331 event with the highest proof-of-work of any kind 331 in that location. The amount of proof-of-work on the kind 331 also determines the size of the space claimed.
 
 **cyberspace** - a permissionless and thermodynamic digital extension of reality. Colloquially refers to c-space, but may be used to accurately refer to the composite of both c-space and d-space.
 
