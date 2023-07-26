@@ -37,7 +37,7 @@ The Cyberspace Meta-Protocol is a protocol built on top of nostr to enable inter
 Cyberspace is a digital space that has 3 axes each 2^85 long. Objects from the nostr protocol can be addressed in this space in several ways. The method usually depends on the event's kind. Generally, all coordinates are derived from a 256-bit number by discarding the least significant bit and then decoding it into three 85-bit twos-compliment integers representing X, Y and Z coordinates; this is referred to as embedding. This process is [discussed below](#claiming-space-and-building-structures).
 
 - Kind 1 "notes" are addressed by simhashing the content of the event to obtain a 256-bit hash, which can be embedded into X, Y, and Z coordinates. This is referred to as a semantic coordinate because there is a relationship between the coordinate and the meaning of the event.
-- Constructs are kind 332 (replaceable) events. The construct event ID, a 256-bit hash, can be embedded into X, Y, and Z coordinates.
+- Constructs are kind 331 events. The construct event ID, a 256-bit hash, can be embedded into X, Y, and Z coordinates.
 - Operators' home coordinate is derived from their 256-bit pubkey which can be embedded into X, Y, and Z coordinates.
 - Operators that have a kind 0 with a valid NIP-05 will have their home coordinate addressed to the semantic coordinate of their NIP-05 identifier (e.x. the embedded simhash of arkinox@arkinox.tech)
 
@@ -49,7 +49,7 @@ All actions require the publishing of an event with at least 1 unit of NIP-13 pr
 
 ## Constructs
 
-A Construct is a zappable portion of cyberspace that you own. You obtain a Construct by publishing a kind 332 "Construct" event. The 256-bit event ID is used to determine the coordinates of your Construct. The size of the bounding box of your construct is determined by proof-of-work.
+A Construct is a cubic region of cyberspace that you own. You obtain a Construct by publishing a kind 331 "Construct" event. The 256-bit event ID is used to determine the coordinates of your Construct. The size of the bounding box of your construct is determined by proof-of-work.
 
 ### Decoding Coordinates from a 256-bit number
 
@@ -63,7 +63,7 @@ Repeat this for bits 0 thru 254. The final bit is ignored. Once complete, the X,
 
 The X, Y, and Z coordinates are interleaved throughout the event ID to allow location-based equerying via the nostr protocol, because the most significant bits of the coordinate are also the most significant bits of the event ID.
 
-One can query relays for the most significant event ID bits of a kind 332 Construct event to find all Constructs in a given area of cyberspace; the search area size corresponds to the precision of the search.
+One can query relays for the most significant event ID bits of a kind 331 Construct event to find all Constructs in a given area of cyberspace; the search area size corresponds to the precision of the search.
 
 For example, a partial event ID search of hexadecimal "e" (binary 0x1110) will only return Constructs in the left half of the right, back, upper quadrant of cyberspace. The left half is because of the final 0 in the binary form; this is a second X coordinate filter that can't be avoided when querying in hexadecimal. This means the largest query-able area of cyberspace is 1/16 of it. To extend the example, searching for hexadecimal "f" (binary 0x1111) would yield all Constructs in the right half of the right, back, upper quadrant of cyberspace.
 
