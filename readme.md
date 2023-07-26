@@ -7,12 +7,14 @@
 3. [Cyberspace Meta-Protocol](#cyberspace-meta-protocol)
 4. [Claiming Space and Building Structures](#claiming-space-and-building-structures)
 5. [Human and AI Agents in Cyberspace](#human-and-ai-agents-in-cyberspace)
+6. [Dictionary](#dictionary)
+7. [Cyberspace Clients](#cyberspace-clients)
 
 # Purpose
 
 The purpose of the cyberspace meta-protocol is to create an extension of reality in digital space. This is accomplished by constructing a digital system that contains the same fundamental properties as reality: being permissionless (no actions can be prevented) and thermodynamic (every action has a cost paid to the universe in entropy).
 
-Combining the properties of the permissionless [nostr protocol](https://github.com/nostr-protocol/nostr) and [proof-of-work](https://github.com/nostr-protocol/nips/blob/master/13.md) enables this, allowing for the construction of a consequential metaverse similar to those predicted in sci-fi.
+Combining the properties of the permissionless [nostr protocol](https://github.com/nostr-protocol/nostr) and [proof-of-work](https://github.com/nostr-protocol/nips/blob/master/13.md) enables this, allowing for the construction of a consequential metaverse similar to those predicted in sci-fi. 
 
 # Abstract
 
@@ -32,9 +34,11 @@ A permissionless virtual action with a thermodynamic cost is effectively **as re
 
 # Cyberspace Meta-Protocol
 
+<img width="2292" alt="Cyberspace Venn Diagram" src="https://github.com/arkin0x/cyberspace/assets/99223753/a7e34e9c-65fb-4e43-b78a-ce2e0f554e3f">
+
 The Cyberspace Meta-Protocol is a protocol built on top of nostr to enable interaction with cyberspace. It provides generalized tools to interact with other cyberspace users and provides a way to secure and modify the scarce space within cyberspace.
 
-Cyberspace is a digital space that has 3 axes each 2^85 long. Objects from the nostr protocol can be addressed in this space in several ways. The method usually depends on the event's kind. Generally, all coordinates are derived from a 256-bit number by discarding the least significant bit and then decoding it into three 85-bit twos-compliment integers representing X, Y and Z coordinates; this is referred to as embedding. This process is [discussed below](#claiming-space-and-building-structures).
+Cyberspace is a digital space that has 2 planes which both have 3 axes each 2^85 long. Objects from the nostr protocol can be addressed in this space in several ways. The method usually depends on the event's kind. Generally, all coordinates are derived from a 256-bit number by decoding it into three 85-bit twos-compliment integers representing X, Y and Z coordinates and interpreting the least significant bit to determine which plane the coordinate falls within; this interpretation is referred to as embedding. This process is [discussed below](#claiming-space-and-building-structures).
 
 - Kind 1 "notes" are addressed by simhashing the content of the event to obtain a 256-bit hash, which can be embedded into X, Y, and Z coordinates. This is referred to as a semantic coordinate because there is a relationship between the coordinate and the meaning of the event.
 - Constructs are kind 331 events. The construct event ID, a 256-bit hash, can be embedded into X, Y, and Z coordinates.
@@ -59,7 +63,9 @@ The nostr event ID is a hexadecimal string representing 256 bits. Coordinates ar
 - If the current bit index modulo 3 is 1, make that bit the least significant bit of the Y coordinate and then shift left.
 - If the current bit index modulo 3 is 2, make that bit the least significant bit of the Z coordinate and then shift left.
 
-Repeat this for bits 0 thru 254. The final bit is ignored. Once complete, the X, Y, and Z coordinates will each be an 85-bit number.
+Repeat this for bits 0 thru 254. Once complete, the X, Y, and Z coordinates will each be an 85-bit number.
+
+The final (least significant) bit 255 determines which plane the coordinate belongs to: [c-space](#dictionary) or [d-space](#dictionary).
 
 The X, Y, and Z coordinates are interleaved throughout the event ID to allow location-based equerying via the nostr protocol, because the most significant bits of the coordinate are also the most significant bits of the event ID.
 
@@ -138,44 +144,44 @@ If the operator does not have a NIP-05 identity, their home coordinate will defa
 
 Operators rez into their cyberspace journey at their home coordinate and then utilize proof-of-work to move around cyberspace. By publishing a kind 333 "Drift" event, the operator can specify their current coordinate (which will be their home coordinate for their very first drift event) and the direction they wish to move. The amount of NIP-13 proof-of-work _P_ on the drift event, which is determined by the number of leading consecutive binary zeroes on the event ID, will determine the acceleration, equal to _2<sup>P</sup>_. Acceleration is added to their velocity, which begins at 0.
 
-Each subsequent drift event must reference the previous drift event in the e tag and supply the remaining amount of velocity from any previous drifts. Velocity is decayed by 0.99 at a rate of 60 times per second. This continuous chain of drift events referencing their previous drift events is called a __movement chain__.
+Each subsequent drift event must reference the previous drift event in the e tag and supply the remaining amount of velocity from any previous drifts. Velocity is decayed by 0.99 at a rate of 60 times per second. This continuous chain of drift events referencing their previous drift events is called a __action chain__.
 
-The movement chain allows anyone to verify that the movements are legitimate and that the operator followed the rules to arrive at the position they currently occupy.
+The action chain allows anyone to verify that the movements are legitimate and that the operator followed the rules to arrive at the position they currently occupy.
 
-To verify a movement chain, one must query and receive EOSE for an operator's drift events. Then, starting with the oldest event, the movement must be simulated and checked against each subsequent drift to ensure they are within an acceptable tolerance (TBD). Checks include velocity, created_at timestamps, and resulting coordinates.
+To verify a action chain, one must query and receive EOSE for an operator's drift events. Then, starting with the oldest event, the movement must be simulated and checked against each subsequent drift to ensure they are within an acceptable tolerance (TBD). Checks include velocity, created_at timestamps, and resulting coordinates.
 
-If a drift event goes outside of those tolerances, it is considered "broken" and the last valid drift event is considered the "tip" of the broken movement chain. Other ways a movement chain can break:
+If a drift event goes outside of those tolerances, it is considered "broken" and the last valid drift event is considered the "tip" of the broken action chain. Other ways a action chain can break:
 
 - a new drift event is published that does not reference the most recent drift event before it. In this case, the last drift event in the previous chain is the tip
-- a new drift event is published that references a previous drift event which is already referenced by another drift event (movement chain fork). In this case, the last valid drift event published before the fork is the tip.
+- a new drift event is published that references a previous drift event which is already referenced by another drift event (action chain fork). In this case, the last valid drift event published before the fork is the tip.
 
-When a movement chain is broken, the new (technically invalid) movement chain is treated as if it is valid, but the tip of the broken chain acts like a frozen ghost copy of that operator. This copy is vulnerable to Derezz attacks just like any operator is, but more vulnerable because the copy is stationary.
+When a action chain is broken, the new (technically invalid) action chain is treated as if it is valid, but the tip of the broken chain acts like a frozen ghost copy of that operator. This copy is vulnerable to Derezz attacks just like any operator is, but more vulnerable because the copy is stationary.
 
 ### Aggression
 
-**Derezz**. To keep operators honest in their movement chains and to allow the thermodynamic resolution of disputes, aggressive actions are enabled by proof-of-work.
+**Derezz**. To keep operators honest in their action chains and to allow the thermodynamic resolution of disputes, aggressive actions are enabled by proof-of-work.
 
 A Derezz attack, if successful, will "kill" the victim and teleport them back to their home coordinate while also nullifying all of their proof-of-work Armor, Stealth, Vortex, and Bubble events before their demise.
 
 A Derezz must reference a drift event of the victim and the attacker's previous drift event in the e tag. The p tag must reference the victim.
 
-A Derezz attack may be performed on any drift event. However, the newest drift events are the most vulnerable. The older a drift event is in its movement chain, the less vulnerable it is to a successful Derezz. This is why the tip of a broken movement chain makes the operator extremely vulnerable to Derezz, because the broken chain no longer has any new drift events to defend it from attack. Here is how it works:
+A Derezz attack may be performed on any drift event. However, the newest drift events are the most vulnerable. The older a drift event is in its action chain, the less vulnerable it is to a successful Derezz. This is why the tip of a broken action chain makes the operator extremely vulnerable to Derezz, because the broken chain no longer has any new drift events to defend it from attack. Here is how it works:
 
 A Derezz event "X" references the victim drift event "D" in the e tag.
 
-The sum of proof-of-work of all events in the victim movement chain following event D but having a timestamp before X is considered temporal armor against the Derezz attack.
+The sum of proof-of-work of all events in the victim action chain following event D but having a timestamp before X is considered temporal armor against the Derezz attack.
 The power of a Derezz attack is the amount of proof-of-work in a kind 86 event. Only 1 unit of Derezz is enough to kill a target operator. However, the Derezz power is applied like this:
 
-- The maximum applied power of the Derezz attack is floor( attacker valid movement chain length / 1000 )
+- The maximum applied power of the Derezz attack is floor( attacker valid action chain length / 1000 )
 - The distance between the attacker and the victim drift event is subtracted from the Derezz power.
 - The victim's Armor proof-of-work (kind 10087) is subtracted from the Derezz power.
 - The victim's temporal armor is subtracted from the Derezz power.
 
 If the remaining Derezz power is negative or zero, it has no effect.
 
-By these rules, the tip of a broken movement chain will never have temporal armor. Drift events are essentially permanent, so a broken movement chain will remain vulnerable as long as the operator has not been killed. Once Derezzed, an operator starts fresh with a new movement chain at their home coordinate and no chains prior to the Derezz event can be targeted any more.
+By these rules, the tip of a broken action chain will never have temporal armor. Drift events are essentially permanent, so a broken action chain will remain vulnerable as long as the operator has not been killed. Once Derezzed, an operator starts fresh with a new action chain at their home coordinate and no chains prior to the Derezz event can be targeted any more.
 
-**Vortex**. A Vortex exerts a constant gravitational force that pulls a victim toward it while the attacker can generate higher PoW for a Derezz, as an example. An attacker may publish a kind 88 "Vortex" PoW event and specify the victim's pubkey (only 1 allowed) and e tag the respective movement chains. The content of the event should specify the coordinates where the Vortex should appear; if omitted it should appear at the victim's location. If the Vortex's PoW is 10 and the victim is 7 units away from it, 3 units of acceleration are applied to pull the victim toward the center.
+**Vortex**. A Vortex exerts a constant gravitational force that pulls a victim toward it while the attacker can generate higher PoW for a Derezz, as an example. An attacker may publish a kind 88 "Vortex" PoW event and specify the victim's pubkey (only 1 allowed) and e tag the respective action chains. The content of the event should specify the coordinates where the Vortex should appear; if omitted it should appear at the victim's location. If the Vortex's PoW is 10 and the victim is 7 units away from it, 3 units of acceleration are applied to pull the victim toward the center.
 
 **Bubble**. Securing one's property is a human right, and so it is necessary to provide tools for operators to defend their cyber property. Bubble is an event kind 90 that represents the creation of a constant anti-gravitational force that pushes an aggressor away from it. It functions as the exact opposite to a Vortex. The range and force of repulsion is constant regardless of the aggressor's distance from the origin.
 
@@ -189,11 +195,11 @@ Defenders against Derezz have an asymmetric advantage because they can generate 
 
 Stealth is an event kind 10085 that simply publishes proof-of-work to define a stealth boundary. Each unit of proof-of-work results in a stealth radius = 4096 / (POW+1). A smaller stealth radius is better. 4096 is the length of 1 sector.
 
-When an operator has published a valid Stealth event, they may publish their Drift events differently without breaking their movement chain. Instead of publishing their coordinates directly in the Drift event, they may publish a zk-snark that will only reveal their coordinates if the input to the zk-snark is a coordinate within the boundary radius. This is called a Stealth Drift event.
+When an operator has published a valid Stealth event, they may publish their Drift events differently without breaking their action chain. Instead of publishing their coordinates directly in the Drift event, they may publish a zk-snark that will only reveal their coordinates if the input to the zk-snark is a coordinate within the boundary radius. This is called a Stealth Drift event.
 
 Someone hunting this stealth operator may see their Stealth Drift events and input their own coordinates into the zk-snark. If they are not within the stealth boundary radius, they will simply receive a rejection. If they are within the stealth boundary radius, they will receive the actual coordinates of the operator.
 
-**Echo Resistance**. It is possible that an aggressor may be creating valid aggressive events against you but not publishing them intentionally. If you publish movement events that do not respect these aggressive events, you will break your movement chain; however, if you were not aware of those events, you can be forced to unintentionally break your movement chain if an aggressor witholds the events until you have moved enough to contradict their would-be effect.
+**Echo Resistance**. It is possible that an aggressor may be creating valid aggressive events against you but not publishing them intentionally. If you publish movement events that do not respect these aggressive events, you will break your action chain; however, if you were not aware of those events, you can be forced to unintentionally break your action chain if an aggressor witholds the events until you have moved enough to contradict their would-be effect.
 
 Because this late publishing (which could also be due to latency) is like an echo of the original event's creation, I refer to it as an Echo attack.
 
@@ -203,23 +209,87 @@ There are restrictions on usage of echo resistance. Each consecutive echo-resist
 
 For every non-echo-resistant event published, the count (n) is reduced by 0.5 until it hits 1, which is the minimum PoW target/cost for a valid echo-resistant event. This means that for each consecutive echo-drift event, double the number of non-shielded events are required for cooldown. This prevents overuse or spamming of echo resistance.
 
-Aggression events must be included in an aggressor's movement chain. This means that the aggressor must stop publishing Drift events (stop moving) to successfully withhold an aggression event. If a nearby operator has suddenly stopped moving, it may be a cue to begin applying echo resistance to your Drift events and moving away from that operator as fast as possible.
+Aggression events must be included in an aggressor's action chain. This means that the aggressor must stop publishing Drift events (stop moving) to successfully withhold an aggression event. If a nearby operator has suddenly stopped moving, it may be a cue to begin applying echo resistance to your Drift events and moving away from that operator as fast as possible.
 
 The increasing PoW requirement for consecutive echo-drifts means that the defender will be slowed down as their thermodynamic resources are directed towards generating the echo PoW. This offers an inherent balance: the more you use echo resistance, the more vulnerable you are to Derezz attacks due to your reduced speed.
 
-The Echo Resistance mechanism provides a strategic balance between movement chain defense and speed, providing players with more agency in how they interact within the environment.
+The Echo Resistance mechanism provides a strategic balance between action chain defense and speed, providing players with more agency in how they interact within the environment.
 
-Echo Resistance also provides a natural counter to Vortex and Bubble events even when there is no risk of a withheld event or movement chain break, as the echo resistance negates their effects.
+Echo Resistance also provides a natural counter to Vortex and Bubble events even when there is no risk of a withheld event or action chain break, as the echo resistance negates their effects.
 
 Echo shielding is an additional NIP-13-like proof-of-work on a Drift event. 
 
 ### Communication
 
-**Shout**. You may publish an event of kind 20333 "Shout" (ephemeral) with PoW to broadcast a public message to nearby operators. The more proof-of-work the event has, the larger the broadcast radius. The event must reference in its e tag the tip of the Shouting operator's movement chain; this is the coordinate from which the Shout emanates. Operators will ignore Shouts whose radius they do not fall within.
+**Shout**. You may publish an event of kind 20333 "Shout" (ephemeral) with PoW to broadcast a public message to nearby operators. The more proof-of-work the event has, the larger the broadcast radius. The event must reference in its e tag the tip of the Shouting operator's action chain; this is the coordinate from which the Shout emanates. Operators will ignore Shouts whose radius they do not fall within.
 
 The Shout may have an optional parameter to be broadcast as voice or text. Text shouts show up in a chat box on the interface, while voice Shouts will be heard via text-to-speech engines built into the web browser. This, of course, can be muted globally on the receiving operator's interface, which will force the speech to the text chat box.
 
 Clients should have optional speech-to-text via the web browser too so that a human controller can speak naturally to broadcast a Shout without typing.
+
+# Dictionary
+
+**action** - a nostr event specified by the cyberspace meta-protocol that operators may publish to interact with cyberspace
+
+**action chain** - (previously referred to as action chain) - a hash chain of all actions an operator issues in cyberspace. Each subsequent event refers to the previous event by its event id. This chain can be verified by any other operator. An action chain becomes invalid or "broken" if its drift events leave a certain range of tolerance, if an invalid action is published, if a fork in the chain is detected, or if a new chain is begun.
+
+**agent** - a human or AI
+
+**armor** - a kind 10087 event representing a reduction in magnitude of any incoming derezz attack. The reduction is equal to the amount of proof-of-work on the kind 10087 event.
+
+**bubble** - a kind 90 event representing a constant repulsive gravitational force emanating from a coordinate that affects a single target operator. The proof-of-work on a kind 90 event determines the radius and constant force of the repulsion applied in units/second.
+
+**c-space** - colloquially referred to as "cyberspace", but specifically referring to the wholly virtual digital space enabled by the cyberspace meta-protocol. "Wholly virtual" means no point in c-space represents a point in reality.
+
+**caster** - referring to the creator of an action specified by the cyberspace meta-protocol.
+
+**construct** - a cubic portion of cyberspace that is claimed by an agent by publishing a kind 332 event with the highest proof-of-work of any kind 332 in that location. The amount of proof-of-work on the kind 332 also determines the size of the space claimed.
+
+**cyberspace** - a permissionless and thermodynamic digital extension of reality. Colloquially refers to c-space, but may be used to accurately refer to the composite of both c-space and d-space.
+
+**cyberspace meta-protocol** - the rules and algorithms that enable cyberspace to exist on the nostr protocol
+
+**d-space** - another name for dataspace, which is the digital space enabled by the cyberspace meta-protocol where all points in d-space represent a point in reality. D-space is meant to be overlaid on reality to create a digital/physical composite space. This combination of digital and physical is commonly referred to as augmented reality.
+
+**dataspace** - the formal name of d-space
+
+**derezz** - a thermodynamic action that, if successful, teleports a single victim to their home coordinate and nullifies their proof-of-work actions, excluding constructs
+
+**drift** - a kind 333 event representing the current coordinate and the application of acceleration to an operator's current vector. The proof-of-work on a kind 333 represents the amount of velocity added to the operator.
+
+**echo** - referring to an action event that would affect a target operator if published but is purposely withheld in order to be published later so as to invalidate the target operator's action chain
+
+**echo attack** - the intentional act of withholding an action that would affect an operator and then publishing it later to try and invalidate the target operator's action chain. This is possible because the echo event introduces new information when published that alters the valid possible drifts the victim can make.
+
+**echo resistance** - an additional proof-of-work that may be applied to one's drift event in order to cancel any potential echo actions that would affect it. A drift event with echo resistance may also ignore legitimate non-echo actions, but the cost to publish echo-resistant drifts doubles each time it is used consecutively.
+
+**event** - a nostr event that is also an action
+
+**operator** - an agent's presence in cyberspace that is subject to the forces of cyberspace
+
+**magnitude** - a value derived from an amount of proof-of-work. E.g., the armor's magnitude was 5 because the kind 10087 event had 5 units of proof-of-work.
+
+**permissionless** - relating to a mechanism whose use cannot be prevented
+
+**plane** - a coordinate subset of cyberspace; referring to either c-space or d-space
+
+**portal** - an object constructed via proof-of-work that allows operators to travel between c-space and d-space.
+
+**presence** - the visible representation of an operator in cyberspace
+
+**rez** - when an operator publishes their first action in history, or, after being derezzed
+
+**shard** - a kind 33332 event that represents an object that belongs to a construct. Shards may represent 3D models, boundaries, rules, or interactive elements. Shards do not exist outside their construct. The proof-of-work on a kind 33332 must exceed the complexity of the data it stores.
+
+**shout** - a kind 20333 event that represents the broadcast of a message from the location of the caster. The proof-of-work on a kind 20333 determines the unit range at which other operators will "hear" the message.
+
+**stealth** - a kind 10085 event that represents a stealth boundary radius around caster where other operators outside the radius cannot determine the caster's exact coordinates because they are encoded in a zk-snarks proof. A kind 10085 event must be published to the action chain before subsequent drift events are zk-snarks encoded.
+
+**thermodynamic** - relating to a mechanism that increases the entropy of the universe proportionally to an action's magnitude
+
+**unit** - the fundamental measurement quanta of cyberspace. Each axis of cyberspace is 2^85 units long. An operator's default presence is an icosahedron with a 1 unit diameter.
+
+**vortex** - a kind 88 event representing an attractive gravitational well pulling toward a coordinate that affects a single target operator. The proof-of-work on a kind 88 event determines the radius of the well and the attraction force is the radius minus the target operator's distance from the center applied in units/second.
 
 # Cyberspace Clients
 
