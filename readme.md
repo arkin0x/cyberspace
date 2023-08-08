@@ -34,7 +34,7 @@ A permissionless virtual action with a thermodynamic cost is effectively **as re
 
 # Cyberspace Meta-Protocol
 
-<img width="2292" alt="Cyberspace Venn Diagram" src="https://github.com/arkin0x/cyberspace/assets/99223753/a7e34e9c-65fb-4e43-b78a-ce2e0f554e3f">
+<img width="2292" alt="Cyberspace Venn Diagram" src="https://github.com/arkin0x/cyberspace/assets/99223753/dfabe081-9e33-4d16-8158-728935cf39fa">
 
 The Cyberspace Meta-Protocol is a protocol built on top of nostr to enable interaction with cyberspace. It provides generalized tools to interact with other cyberspace users and provides a way to secure and modify the scarce space within cyberspace.
 
