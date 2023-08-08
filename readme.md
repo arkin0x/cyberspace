@@ -6,7 +6,7 @@
 2. [Abstract](#abstract)
 3. [Cyberspace Meta-Protocol](#cyberspace-meta-protocol)
 4. [Claiming Space and Building Structures](#claiming-space-and-building-structures)
-5. [Human and AI Agents in Cyberspace](#human-and-ai-agents-in-cyberspace)
+5. [Human and AI Avatars in Cyberspace](#human-and-ai-avatars-in-cyberspace)
 6. [Dictionary](#dictionary)
 7. [Cyberspace Clients](#cyberspace-clients)
 
@@ -136,7 +136,7 @@ If someone else publishes a Construct that overlaps with yours, only the Constru
 
 In this way, nobody can lay claim to a space forever, all space is scarce, and all space is tied to real-world costs.
 
-# Human and AI Agents In Cyberspace
+# Human and AI Avatars In Cyberspace
 
 ## Avatars
 
