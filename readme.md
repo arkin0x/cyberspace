@@ -1,5 +1,7 @@
 # The Cyberspace Meta-Protocol: An Extension of Reality
 
+⚠️ [2023/09/26] WARNING: A large breaking-change update is coming to this specification soon. The meta-protocol has been streamlined to be more efficient and simple.
+
 # Table of Contents
 
 1. [Purpose](#Purpose)
