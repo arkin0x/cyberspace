@@ -1,7 +1,5 @@
 # The Cyberspace Meta-Protocol: An Extension of Reality
 
-⚠️ [2023/09/26] WARNING: A large breaking-change update is coming to this specification soon. The meta-protocol has been streamlined to be more efficient and simple.
-
 # Table of Contents
 
 1. [Purpose](#Purpose)
@@ -24,42 +22,47 @@ In reality we are able to do anything that we have the thermodynamic energy to d
 
 Likewise, all actions in reality have a thermodynamic cost that must be paid to the universe in the form of entropy.
 
-### Reality is a permissionless thermodynamic protocol.
+### Therefore, reality is a permissionless thermodynamic protocol.
 
 This is what makes doing things in real life different from doing them in a video game.
 
 A video game is not permissionless. You need permission from abstract rules (coded logic) to play and perform actions in a video game. Furthermore, the video game has no thermodynamic constraints on the virtual actions you can take. The actions you take are abstract, and governed by abstract rules enforced by a centralized controller, which is subject to bias and can be tricked with clever abstract logic (hacked). Abstract actions you take in a video game have little value or impact on reality (aside from how people feel about those actions.)
 
-Being permissioned and wholly abstract is why no virtual world has ever nor could ever be meaningfully utilized by humanity as an extension of reality. However, cyberspace is different because it is built on top of a permissionless protocol (nostr) and all actions in cyberspace are constrained by thermodynamics via proof-of-work.
+Being permissioned and wholly abstract is why no virtual world or metaverse has ever nor could ever be meaningfully utilized by humanity as an extension of reality. However, cyberspace is different because it is built on top of a permissionless protocol (nostr) and all actions in cyberspace are constrained by thermodynamics via proof-of-work.
 
 A permissionless virtual action with a thermodynamic cost is effectively **as real as any action in the real world**, except the consequences of the action happen in cyberspace rather than physical space. All actions in cyberspace will have a thermodynamic cost, and therefore cyberspace will be an extension of reality itself.
 
 # Cyberspace Meta-Protocol
 
-<img width="2292" alt="Cyberspace Venn Diagram" src="https://github.com/arkin0x/cyberspace/assets/99223753/dfabe081-9e33-4d16-8158-728935cf39fa">
+<img width="2292" alt="Cyberspace Venn Diagram" src="https://github.com/arkin0x/cyberspace/assets/99223753/984d5cdd-242b-4187-8422-8bee50e2a474">
 
 The Cyberspace Meta-Protocol is a protocol built on top of nostr to enable interaction with cyberspace. It provides generalized tools to interact with other cyberspace users and provides a way to secure and modify the scarce space within cyberspace.
 
-Cyberspace is a digital space that has 2 planes which both have 3 axes each 2^85 long. Objects from the nostr protocol can be addressed in this space in several ways. The method usually depends on the event's kind. Generally, all coordinates are derived from a 256-bit number by decoding it into three 85-bit twos-compliment integers representing X, Y and Z coordinates and interpreting the least significant bit to determine which plane the coordinate falls within; this interpretation is referred to as embedding. This process is [discussed below](#claiming-space-and-building-structures).
+Cyberspace is a digital space which contains 2 planes. One plane exists in reality and the other plane is imaginary. Both planes have identical coordinate systems and an X, Y, and Z axis each 2^85 units long. All cyberspace objects exist as nostr events. All cyberspace coordinates are derived from a 256-bit number by decoding it into three 85-bit twos-compliment integers representing X, Y and Z coordinates and interpreting the least significant bit to determine which plane the coordinate falls within. The method used to obtain a 256-bit coordinate for an object depends on the object's event kind/purpose.
 
-- Kind 1 "notes" are addressed by simhashing the content of the event to obtain a 256-bit hash, which can be embedded into X, Y, and Z coordinates. This is referred to as a semantic coordinate because there is a relationship between the coordinate and the meaning of the event.
-- Constructs are kind 331 events. The construct event ID, a 256-bit hash, can be embedded into X, Y, and Z coordinates.
-- Avatar's home coordinate is derived from their 256-bit pubkey which can be embedded into X, Y, and Z coordinates.
-- Avatars that have a kind 0 with a valid NIP-05 will have their home coordinate addressed to the semantic coordinate of their NIP-05 identifier (e.x. the embedded simhash of arkinox@arkinox.tech)
+- Constructs are kind 331 events. The construct event `id`, a 256-bit hash, is used to derive the X, Y, and Z coordinates.
+- An avatar's home coordinate is derived from their 256-bit pubkey which can be decoded into X, Y, and Z coordinates.
+- A kind 1 "notes" layer addresses notes by simhashing the `content` of the note to obtain a 256-bit hash, which can be decoded into X, Y, and Z coordinates. This is referred to as a _semantic coordinate_ because there is a relationship between the coordinate and the meaning of the event.
 
 Below are the initial actions defined for cyberspace. The basis for these actions lies in the fundamental property of finite spatial dimension. Where there are spatial dimensions, movement is required. When space is finite, space will be contested. To contest space, there must be tools for applying thermodynamic energy to constrain or influence the movement of opposition. Likewise, there must be tools to resist the application of thermodynamic force. We also need tools to communicate and build. The inspiration for these actions comes from nature.
 
-All actions require the publishing of an event with at least 1 unit of NIP-13 proof-of-work (PoW) except for constructs which use a special kind of proof-of-work.
+All actions require the publishing of an event with at least 1 unit of NIP-13 proof-of-work (POW) except for constructs which use a special kind of proof-of-work.
 
 # Claiming Space and Building Structures
 
 ## Constructs
 
-A Construct is a cubic region of cyberspace that you own. You obtain a Construct by publishing a kind 331 "Construct" event. The 256-bit event ID is used to determine the coordinates of your Construct. The size of the bounding box of your construct is determined by proof-of-work.
+A Construct is a cubic region of cyberspace that you own. You obtain a Construct by publishing a kind `331` "Construct" event. The 256-bit event `id` is used to determine the coordinates of your construct. The size of the bounding box of your construct is determined by a construct-specific quantification of proof-of-work.
 
-### Decoding Coordinates from a 256-bit number
+### Decoding Coordinates from a 256-bit Number
 
-The nostr event ID is a hexadecimal string representing 256 bits. Coordinates are decoded from 256 bits in the following way:
+Any 256-bit number represents a coordinate in cyberspace. Therefore, a 256-bit number may be referred to as a _coordinate_ (singular) while _coordinates_ (plural) most often refers to the individual X, Y, and Z values derived _from_ a coordinate.
+
+For constructs, the nostr event `id` of the construct is used to determine the coordinates representing the center of a construct; for avatars, the raw public key is used to determine the spawn location for the avatar.
+
+All cyberspace coordinates are decoded from 256 bits in the following way:
+
+Create 3 zeroed buffers to contain the X, Y, and Z coordinates. Iterate over the bits starting at index 0. 
 
 - If the current bit index modulo 3 is 0, make that bit the least significant bit of the X coordinate and then shift left.
 - If the current bit index modulo 3 is 1, make that bit the least significant bit of the Y coordinate and then shift left.
@@ -67,31 +70,52 @@ The nostr event ID is a hexadecimal string representing 256 bits. Coordinates ar
 
 Repeat this for bits 0 thru 254. Once complete, the X, Y, and Z coordinates will each be an 85-bit number.
 
-The final (least significant) bit 255 determines which plane the coordinate belongs to: [c-space](#dictionary) or [d-space](#dictionary).
+The final (least significant) bit 255 determines which plane the coordinate belongs to: `0` for [d-space](#dictionary) or `1` for [i-space](#dictionary). 
 
-The X, Y, and Z coordinates are interleaved throughout the event ID to allow location-based equerying via the nostr protocol, because the most significant bits of the coordinate are also the most significant bits of the event ID.
+>[!tip]
+>A trick to remembering which plane corresponds to which binary value, simply remember that d-space (AKA reality) came first, and i-space (AKA virtual reality) came second. Then, if you're not a programmer, subtract 1.
 
-One can query relays for the most significant event ID bits of a kind 331 Construct event to find all Constructs in a given area of cyberspace; the search area size corresponds to the precision of the search.
+### Searching Partitions of Cyberspace for Constructs
 
-For example, a partial event ID search of hexadecimal "e" (binary 0x1110) will only return Constructs in the left half of the right, back, upper quadrant of cyberspace. The left half is because of the final 0 in the binary form; this is a second X coordinate filter that can't be avoided when querying in hexadecimal. This means the largest query-able area of cyberspace is 1/16 of it. To extend the example, searching for hexadecimal "f" (binary 0x1111) would yield all Constructs in the right half of the right, back, upper quadrant of cyberspace.
+The X, Y, and Z coordinates are interleaved throughout the 256-bit number to allow location-based search/querying via the nostr protocol for constructs, because the most significant bits of the coordinate are also the most significant bits of the 256-bit number. In the case of constructs, one can query nostr relays for the most significant event `id` bits of a kind 331 event to find all constructs in a given area of cyberspace; the search area size corresponds to the precision of the search, as partial searches for event `id`s are allowed by the nostr protocol.
+
+For example, a partial event `id` search of hexadecimal "e" (binary 0x1110) will only return Constructs in the left half of the right, front, upper quadrant of cyberspace. The left half is because of the final 0 in the binary form; this is a second X coordinate filter that can't be avoided when querying in hexadecimal. This means the largest query-able area of cyberspace is 1/16 of it. To extend the example, searching for hexadecimal "f" (binary 0x1111) would yield all Constructs in the right half of the right, front, upper quadrant of cyberspace.
+
+>[!info]
+>Cyberspace uses a right-handed coordinate system, just like Three.js: https://stackoverflow.com/questions/35495872/direction-of-rotation-or-handedness-in-three-js#comment124263015_35510906
+>
+>x+ is right
+>y+ is up
+>z - is forward
+>
+>It may seem strange that z- is forward, but it makes sense intuitively if you consider that, while facing forward, increasing the Z brings something closer to you and decreasing it makes it farther away.
 
 ### Mining Your Construct
 
-You can mine the Construct event ID to get the desired coordinates (target) with a nonce integer and a target coordinate in the form of a 256-bit hex string (even though the lsb is ignored). Unlike [NIP-13 PoW](https://github.com/nostr-protocol/nips/blob/master/13.md), there is no invalidation for this coordinate proof-of-work. You simply hash until you get "close enough" to your target coordinate for your own satisfaction; then the amount of proof-of-work is quantified to determine the bounding box size of your Construct.
+You can mine the construct event `id` to get the desired coordinates (target) with a nonce and a target coordinate in the form of a 256-bit hex string (even though the lsb is ignored). Unlike [NIP-13 POW](https://github.com/nostr-protocol/nips/blob/master/13.md), there is no invalidation for this coordinate proof-of-work. You simply hash until you get "close enough" to your target coordinate for your own satisfaction; then the amount of proof-of-work is quantified to determine the bounding box size of your Construct.
 
-Example Construct proof-of-work event tag:
+Example construct proof-of-work event tag:
 ```
 tags: [["nonce", "<nonce>", "<256-bit hexadecimal target>"]]
 ```
 
-The nonce is simply an incremented integer, expressed as a string as required of all tag values by the nostr spec, starting with 0.
+The nonce is simply any string value with enough entropy to yield a wide range of results. For the [ONOSENDAI Construct Miner](https://construct.onosendai.tech/) a 64-bit nonce comprised of a 16-character buffer using a limited set of 16 adjacent ASCII symbols is used so that the buffer can be incremented directly in binary between hashes without converting it to text; this increases hash output and, more importantly, sidesteps a memory leak manifested in the TextDecoder class when calling it repeatedly while hashing.
 
-The Construct's valid proof-of-work _P_ determines its bounding box size _B_. _P_ is calculated like this:
+#### Quantifying Construct Proof-of-Work
 
-- zero out the last bit in the event ID and the target (255th bit)
-- get the binary Hamming distance between the modified event ID and the modified target.
-- take 255 minus the Hamming distance output. This is the similarity.
+Construct proof-of-work is quantified differently than all other cyberspace objects who use NIP-13, which counts leading zeroes on the event `id`. 
+
+A construct's valid proof-of-work _P_ determines its bounding box size _B_. _P_ is calculated like this:
+
+- zero out the last bit (255th bit) in the event `id` and the nonce target
+- get the binary Hamming distance between the modified event `id` and the modified target.
+- take 255 minus the Hamming distance output. This is the Hamming similarity.
 - take the maximum of 0 or (similarity minus 128). This is the amount of valid proof-of-work, _P_.
+
+>[!tip]
+>Given two random 256-bit numbers, their Hamming distance will average 128, which means half of their bits are the same and half of the bits are different. Therefore, we treat 128 as zero, or the baseline above which we must increase the similarity in order to complete valid proof-of-work. This is why we subtract 128 from our similarity.
+>
+>Accordingly, the maximum proof-of-work a construct can have is 128.
 
 To calculate the side length of the construct's bounding box _B_:
 
@@ -114,13 +138,11 @@ def size(pow):
 
 Where `pow` is the valid proof-of-work.
 
+While mining you will calculate the valid proof-of-work for each iteration to determine if it is close enough to your desired target coordinate, or, if the construct is at least the size you want it to be.
 
+## Shards (coming soon)
 
-While mining you will calculate the valid proof-of-work for each iteration to determine if it is close enough to your desired target coordinate, or, if the Construct is at least the size you want it to be.
-
-## Shards
-
-Once you've published a Construct, you will be able to put 3D objects into it called Shards. In cyberspace terms, Shards are child objects of Constructs, but exist as a separate event in nostr. The spec for the 3D format is in development, but you will be able to publish a kind 33332 (replaceable parameterized) "Shard" event containing 3D data and set the e tag to reference your Construct. The coordinates of the Shard event will be relative to the Construct's origin; Shards outside of the bounding box will simply be invisible. In order to be valid, Shards will require proof-of-work relative to their complexity (TBD; may relate to vertex count or bytes). Shards will be zappable and may represent purchasable goods or services. Shards may also be marked as "traversable" allowing Avatars to attach to them temporarily; this is how you can implement ground/gravity or pathways within your Construct that Avatars may use as an anchor to interact in a more human way (as opposed to floating in 3D space).
+Once you've published a construct, you will be able to put 3D objects into it called Shards. In cyberspace terms, Shards are child objects of constructs, but exist as a separate event in nostr. The spec for the 3D format is in development, but you will be able to publish a kind 33331 (replaceable parameterized) "Shard" event containing 3D data and set the e tag to reference your Construct. The coordinates of the Shard event will be relative to the Construct's origin; Shards outside of the bounding box will simply be invisible. In order to be valid, Shards will require proof-of-work relative to their complexity (TBD; may relate to vertex count or bytes). Shards will be zappable and may represent purchasable goods or services. Shards may also be marked as "traversable" allowing Avatars to attach to them temporarily; this is how you can implement ground/gravity or pathways within your Construct that Avatars may use as an anchor to interact in a more human way (as opposed to floating in 3D space).
 
 ### Thermo
 
@@ -130,27 +152,136 @@ Shards may contain code that defines their behavior and interactions with other 
 
 ### Edge Case
 
-A Construct's coordinate may exist on an edge or vertex of cyberspace's valid coordinate bounds. In this case, even though the bounding box of the construct may extend beyond valid cyberspace coordinates, it is considered valid and may be fully utilized; Shards are addressed relative to the Construct, so a Construct that spills outside of valid cyberspace coordinates may be permitted with no problems.
+A construct's coordinate may exist on an edge or vertex of cyberspace's valid coordinate bounds. In this case, the bounding box of the construct may NOT extend beyond valid cyberspace coordinates, as these coordinates may not be represented in a 256-bit coordinate making travel outside of cyberspace impossible. Shards are addressed relative to the construct, but a shard that even partially falls outside of cyberspace will not be valid or visible.
 
 ### Overwriting
 
-If someone else publishes a Construct that overlaps with yours, only the Construct with the most proof-of-work will be visible. Therefore, it is in your best interest to continually hash higher proof-of-work versions of your Constructs and be ready to publish them should your space ever be overwritten. 
+If someone else publishes a Construct that overlaps with yours, only the Construct with the most proof-of-work will be visible. Therefore, it is in your best interest to continually hash higher proof-of-work versions of your constructs and be ready to publish them should your space ever be overwritten. 
 
 In this way, nobody can lay claim to a space forever, all space is scarce, and all space is tied to real-world costs.
 
 # Human and AI Avatars In Cyberspace
 
-## Avatars
+Avatars are a presence in cyberspace controlled by a human or AI operator in reality. The avatar's pubkey serves as a 256-bit home coordinate where the avatar first spawns. If an avatar is killed, it will respawn at the home coordinate.
 
-Avatars are a zappable presence in cyberspace controlled by a human or AI operator in reality.
+## Taking Action
 
-The home coordinate is the spawning location for an avatar. It is first derived from the simhash of the avatar's NIP-05 identity, such as arkinox@arkinox.tech. This means there will be clusters of avatars belonging to the same NIP-05 identity server such as nostrplebs.com, and in turn high-traffic/high-value space for Constructs near these clusters.
+Avatars rez into their cyberspace journey at their home coordinate and then utilize proof-of-work to move around and interact in cyberspace.
 
-If the avatar does not have a NIP-05 identity, their home coordinate will default to a coordinate derived from their pubkey (85 bits for x, y, then z, discarding the least significant bit).
+To act, an avatar must publish a _genesis_ action beginning their action chain or publish an action at the end of their action chain. All actions require proof-of-work, and the amount of proof-of-work determines the intensity of the action.
 
-### Movement
+The action chain may be conceptualized like the bitcoin blockchain: each subsequent action contains a reference to the prior action's hash (event `id`) _and_ the avatar's genesis action event `id`. 
 
-Avatars rez into their cyberspace journey at their home coordinate and then utilize proof-of-work to move around cyberspace. By publishing a kind 333 "Drift" event, the avatar can specify their current coordinate (which will be their home coordinate for their very first drift event) and the direction they wish to move. The amount of NIP-13 proof-of-work _P_ on the drift event, which is determined by the number of leading consecutive binary zeroes on the event ID, will determine the acceleration, equal to _2<sup>P</sup>_. Acceleration is added to their velocity, which begins at 0.
+>[!info]
+>A _hash chain_ is where each new element commits to the hash of a prior element. Technically, a blockchain is a type of hash chain, but a hash chain is not a blockchain. The action chain is not a blockchain either but only a kind of hash chain (or a [_noschain_](https://snort.social/search/%23noschain) in nostr parlance.) 
+
+An action chain is useful because every new action commits to the hash of the previous action, and these verifiable references stretch all the way back to the genesis action. In this way, only 1 history is possible for any given action.
+
+Additionally, every action must include proof-of-work, making the production of an action chain a non-trivial expense which incentivizes the production of valid action chains that won't be disregarded by the rest of the avatars who are following the protocol.
+
+Since the action chain is not a blockchain, there is no hard consensus preventing the creation of invalid action chains. However, the cyberspace meta-protocol contains validation rules for action chains that allow any avatar to verify the validity of anyone's action chain, especially their own. Cyberspace clients should not be capable of producing invalid action chains, but this does not mean that they do not need to be validated. Invalid chains may be disregarded and cause the immediate respawn of the offending avatar.
+
+>[!example] Cyberspace Theory
+>Your personal journey from your mother's womb to where you are now is a unique pattern of thermodynamic expenditures across time. Likewise, your action chain is a cryptographically provable, thermodynamically intensive journey across cyberspace and time. Even if the environmental factors outside of your control were in your favor, you _still_ needed to expend the right energy in the right ways to make use of those advantages. Therefore, wherever you are, you earned the right to be there via your thermodynamic expenditures.
+>
+>Therefore, every avatar has every incentive to invalidate and ignore any action chain that is not provably valid, because any invalid action chain represents a discrepancy between an outcome and the proper work required to achieve it.
+>
+>In reality, your existence in a particular place _is_ the proof-of-work because reality cannot be cheated. However, since cyberspace is an abstraction, it can be cheated unless the participants in the abstraction agree on rules that preclude cheating. Proof-of-work is a rule which utilizes thermodynamic reality as an engine for producing un-cheatable values, and the protocol through which participants interpret these values produces a robust abstract system based on reality.
+
+## Action Event Structure
+
+There are several different types of actions but one common format for all action chain nostr events. All actions are `kind 333` and have an empty `content`. The meat of what defines a valid action in the action chain is in its `tags`.
+### Required Tags
+
+#### `"ms"` - milliseconds
+The milliseconds of the `created_at` timestamp of the event. This is to support a higher time resolution. Valid values are `0` to `999` expressed as a string (as all nostr tags must be string values.)
+
+#### ``"C"`` - coordinate (capital C)
+This is the avatar's current 256-bit coordinate in the hexadecimal form `["C","8828040..."]`
+
+Reminder: this coordinate contains the X, Y, Z, and plane information which is the final bit (when interpreting the 64 hex digits into binary); Dataspace is `0` and Ideaspace is `1`.
+
+>[!tip]
+>For the genesis action, the `"C"` tag will always be equal to your raw hex pubkey.
+
+#### `"quaternion"` 
+The avatar's current quaternion rotation in the form `["quaternion","<x>","<y>","<z>","<w>"]` 
+
+This is the direction the avatar is moving, which may or may not also be the way the avatar is facing depending on the cyberspace client's control scheme. This rotation will determine how proof-of-work is applied to your velocity.
+
+#### `"velocity"`
+The avatar's current velocity (not including this event's POW) in the form `["velocity","<x>","<y>","<z>"]`.
+
+For the genesis action this will always be `["velocity","0","0","0"]`.
+
+>[!faq] Does POW affect velocity?
+>The current action's `"velocity"` is a checkpoint to verify that the velocity calculations since the previous action's timestamp were done correctly; therefore, the current action's POW won't affect it. Instead, POW is applied to the first step of the simulation after the validated action.
+>
+
+#### `"nonce"` - NIP-13
+The action's NIP-13 proof-of-work, in the form `["nonce","<current nonce>","<target difficulty>]"`. The number of leading binary zeroes of the event's resulting `id` must match `<target difficulty>` for the work to be valid.
+
+#### `"A"` - action type
+A tag to define what kind of action this event's proof-of-work should be applied to, which may be `drift, derezz, vortex, bubble, armor, stealth, or noop`
+
+Here is a quick summary of what each action does:
+
+- `drift` boosts the avatar in the direction they are facing by applying the action's POW to their velocity.
+- `derezz` applies the action's POW as an attack against a specified target avatar
+- `vortex` targets an avatar with a stationary gravitational force whose power is relative to the POW of the action
+- `bubble` target an avatar with a stationary anti-gravitational force whose power is relative to the POW of the action
+- `armor` adds armor points to your avatar as a buffer against `derezz` attacks; the amount of armor added is relative to the POW of the action
+- `stealth` buys time and entropy relative to the POW of the action. During the `time` you earn you can validly obscure your `quaternion`, `C` and `A` tags by `entropy` amount in order to obscure where your avatar is, which hinders other avatars from successfully targeting you with `derezz` attacks. When you publish your first action after the stealth time runs out, you must publish with it the unobscured `quaternion`, `C` and `A` tags to maintain a valid action chain; observers can verify that the unobscured values compute to the obscured values.
+- `noop` is used during stealth to add decoy actions to the action chain. The POW has no effect.
+
+>[!hint]
+>You can publish obscured stealth actions _during_ stealth to extend the duration of your stealth, making perpetual stealth possible. However, stealth adds an extra layer of proof-of-work cost to maintain it indefinitely. And most importantly, stealth is not bulletproof; luck, persistence, or high proof-of-work from a motivated enemy can undo it!
+
+>[!faq] Are there other actions not included here?
+>A shout is an action that requires NIP-13 proof-of-work but it represents the ephemeral transmission of a location-based message, and therefore isn't included in the action chain.
+>
+>There are other cyberspace objects that require proof-of-work but aren't part of an action chain, such as constructs, shards, and portals.
+
+#### `"version"`
+Used for cyberspace protocol versioning. Currently in the form `["version", "1"]`
+
+### Conditionally Required Tags
+
+#### `"e"` spawn
+An `"e"` tag in the form `["e", "<genesis action event id>", "<recommended relay>", "spawn"]` 
+> __Required on all actions except genesis action.__
+
+#### `"e"` previous
+An `"e"` tag in the form `["e", "<preceding action chain event id in chain>", "<recommended relay>", "previous"]`
+> __Required on all actions except genesis action.__
+
+#### `"p"` target
+A `"p"` tag specifying one pubkey target for an aggressive `derezz, vortex, or bubble` action. Only one `"p"` tag allowed per action (subsequent will invalidate action chain).
+> Required on `derezz`, `vortex`, and `bubble` action types.
+
+### Optional Tags
+
+#### `"echo"`
+Optional [[Echo Resistance]] proof-of-work in the form `["echo",<successful nonce>,<target difficulty>]`
+
+
+>[!warning]
+>Malformed, extra, or unknown tags will invalidate your entire action chain and force you to respawn!
+>
+>_Example: putting an `"e"` spawn tag on a genesis action is invalid!_
+
+> [!info]
+> Since the `id` of the event will contain the proof-of-work, it may be queried from relays as a "POW of minimum X leading zeroes" filter.
+
+## Action Types
+
+`drift` applies the action's POW to the action's velocity relative to the action's quaternion on the first step of the simulation after the action event's timestamp. 
+
+----
+
+## Publishing Actions
+
+By publishing a kind 333 "Drift" event, the avatar can specify their current coordinate (which will be their home coordinate for their very first drift event) and the direction they wish to move. The amount of NIP-13 proof-of-work _P_ on the drift event, which is determined by the number of leading consecutive binary zeroes on the event `id`, will determine the acceleration, equal to _2<sup>P</sup>_. Acceleration is added to their velocity, which begins at 0.
 
 Each subsequent drift event must reference the previous drift event in the e tag and supply the remaining amount of velocity from any previous drifts. Velocity is decayed by 0.99 at a rate of 60 times per second. This continuous chain of drift events referencing their previous drift events is called a __action chain__.
 
@@ -239,7 +370,7 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 
 **action** - a nostr event specified by the cyberspace meta-protocol that avatars may publish to interact with cyberspace
 
-**action chain** - (previously referred to as action chain) - a hash chain of all actions an avatar issues in cyberspace. Each subsequent event refers to the previous event by its event id. This chain can be verified by any other avatar. An action chain becomes invalid or "broken" if its drift events leave a certain range of tolerance, if an invalid action is published, if a fork in the chain is detected, or if a new chain is begun.
+**action chain** - (previously referred to as action chain) - a hash chain of all actions an avatar issues in cyberspace. Each subsequent event refers to the previous event by its event `id`. This chain can be verified by any other avatar. An action chain becomes invalid or "broken" if its drift events leave a certain range of tolerance, if an invalid action is published, if a fork in the chain is detected, or if a new chain is begun.
 
 **armor** - a kind 10087 event representing a reduction in magnitude of any incoming derezz attack. The reduction is equal to the amount of proof-of-work on the kind 10087 event.
 
@@ -247,17 +378,15 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 
 **bubble** - a kind 90 event representing a constant repulsive gravitational force emanating from a coordinate that affects a single target avatar. The proof-of-work on a kind 90 event determines the radius and constant force of the repulsion applied in units/second.
 
-**c-space** - colloquially referred to as "cyberspace", but specifically referring to the wholly virtual digital space enabled by the cyberspace meta-protocol. "Wholly virtual" means no point in c-space represents a point in reality.
-
 **caster** - referring to the creator of an action specified by the cyberspace meta-protocol.
 
 **construct** - a cubic portion of cyberspace that is claimed by an operator by publishing a kind 331 event with the highest proof-of-work of any kind 331 in that location. The amount of proof-of-work on the kind 331 also determines the size of the space claimed.
 
-**cyberspace** - a permissionless and thermodynamic digital extension of reality. Colloquially refers to c-space, but may be used to accurately refer to the composite of both c-space and d-space.
+**cyberspace** - a permissionless and thermodynamic digital extension of reality. Refers to both d-space and i-space.
 
 **cyberspace meta-protocol** - the rules and algorithms that enable cyberspace to exist on the nostr protocol
 
-**d-space** - another name for dataspace, which is the digital space enabled by the cyberspace meta-protocol where all points in d-space represent a point in reality. D-space is meant to be overlaid on reality to create a digital/physical composite space. This combination of digital and physical is commonly referred to as augmented reality.
+**d-space** - another name for dataspace, which is the digital space enabled by the cyberspace meta-protocol where all points represent a point in reality. D-space is meant to be overlaid on reality by a constant scaling factor and rotation relative to the planet to create a digital/physical composite space. This combination of digital and physical is commonly referred to as augmented reality.
 
 **dataspace** - the formal name of d-space
 
@@ -273,15 +402,19 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 
 **event** - a nostr event that is also an action
 
-**magnitude** - a value derived from an amount of proof-of-work. E.g., the armor's magnitude was 5 because the kind 10087 event had 5 units of proof-of-work.
+**i-space** - another name for ideaspace, which is the digital space enabled by the cyberspace meta-protocol where zero points represent a point in reality. I-space is meant to be entirely virtual, which is commonly referred to as virtual reality.
+
+**ideaspace** - the formal name of i-space
+
+**magnitude** - a value derived from an amount of proof-of-work
 
 **operator** - a human or ai that controls an avatar
 
 **permissionless** - relating to a mechanism whose use cannot be prevented
 
-**plane** - a coordinate subset of cyberspace; referring to either c-space or d-space
+**plane** - a coordinate subset of cyberspace; referring to either d-space or i-space
 
-**portal** - an object constructed via proof-of-work that allows avatars to travel between c-space and d-space.
+**portal** - an object constructed via proof-of-work that allows avatars to travel between d-space and i-space, or between points on the same plane
 
 **presence** - the visible representation of an avatar in cyberspace
 
@@ -290,6 +423,8 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 **shard** - a kind 33332 event that represents an object that belongs to a construct. Shards may represent 3D models, boundaries, rules, or interactive elements. Shards do not exist outside their construct. The proof-of-work on a kind 33332 must exceed the complexity of the data it stores.
 
 **shout** - a kind 20333 event that represents the broadcast of a message from the location of the caster. The proof-of-work on a kind 20333 determines the unit range at which other avatars will "hear" the message.
+
+**spawn** - see rez
 
 **stealth** - a kind 10085 event that represents a stealth boundary radius around caster where other avatars outside the radius cannot determine the caster's exact coordinates because they are encoded in a zk-snarks proof. A kind 10085 event must be published to the action chain before subsequent drift events are zk-snarks encoded.
 
