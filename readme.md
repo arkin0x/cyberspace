@@ -38,7 +38,7 @@ A permissionless virtual action with a thermodynamic cost is effectively **as re
 
 The Cyberspace Meta-Protocol is a protocol built on top of nostr to enable interaction with cyberspace. It provides generalized tools to interact with other cyberspace users and provides a way to secure and modify the scarce space within cyberspace.
 
-Cyberspace is a digital space which contains 2 planes. One plane exists in reality and the other plane is imaginary. Both planes have identical coordinate systems and an X, Y, and Z axis each 2^85 units long. All cyberspace objects exist as nostr events. All cyberspace coordinates are derived from a 256-bit number by decoding it into three 85-bit twos-compliment integers representing X, Y and Z coordinates and interpreting the least significant bit to determine which plane the coordinate falls within. The method used to obtain a 256-bit coordinate for an object depends on the object's event kind/purpose.
+Cyberspace is a digital space which contains 2 planes. One plane exists in reality and the other plane is imaginary. Both planes have identical coordinate systems and an X, Y, and Z axis each 2^85 units long. All cyberspace objects exist as nostr events. All cyberspace coordinates are derived from a 256-bit number by decoding it into three 85-bit unsigned integers representing X, Y and Z coordinates and interpreting the least significant bit to determine which plane the coordinate falls within. The method used to obtain a 256-bit coordinate for an object depends on the object's event kind/purpose.
 
 - Constructs are kind 331 events. The construct event `id`, a 256-bit hash, is used to derive the X, Y, and Z coordinates.
 - An avatar's home coordinate is derived from their 256-bit pubkey which can be decoded into X, Y, and Z coordinates.
@@ -57,8 +57,6 @@ A Construct is a cubic region of cyberspace that you own. You obtain a Construct
 ### Decoding Coordinates from a 256-bit Number
 
 Any 256-bit number represents a coordinate in cyberspace. Therefore, a 256-bit number may be referred to as a _coordinate_ (singular) while _coordinates_ (plural) most often refers to the individual X, Y, and Z values derived _from_ a coordinate.
-
-For constructs, the nostr event `id` of the construct is used to determine the coordinates representing the center of a construct; for avatars, the raw public key is used to determine the spawn location for the avatar.
 
 All cyberspace coordinates are decoded from 256 bits in the following way:
 
