@@ -268,7 +268,7 @@ Optional [[Echo Resistance]] proof-of-work in the form `["echo",<successful nonc
 >
 >_Example: putting an `"e"` spawn tag on a genesis action is invalid!_
 
-> [!info]
+> [!note]
 > Since the `id` of the event will contain the proof-of-work, it may be queried from relays as a "POW of minimum X leading zeroes" filter.
 
 ## Action Types
