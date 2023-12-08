@@ -434,13 +434,15 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 
 # Cyberspace Clients
 
-| Client |  Constructs | Shards | Avatars | Drift | Derezz | Armor | Vortex | Bubble | Stealth | Shout |
+| Client | d-space | i-space | Constructs | Shards | Avatars | Drift | Derezz | Armor | Vortex | Bubble | Stealth | Shout |
 |--------|-------------|--------|-----------|-------|--------|-------|--------|--------|---------|-------|
-| [ONOSENDAI オノセンダイ](https://github.com/arkin0x/ONOSENDAI) | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 |  
+| [ONOSENDAI オノセンダイ](https://github.com/arkin0x/ONOSENDAI) | ⛔ | ✅ | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 |  
+| [Yondar](https://github.com/innovatario/yondar-mono) | ✅ | ⛔ | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 
+| [ONOSENDAI Construct Miner](https://github.com/arkin0x/construct-miner) | ✅ | ✅ | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 | 🔲 |  
 
 # Keywords
 
-Metaverse, bitcoin, lightning
+Metaverse, bitcoin, lightning, cyberspace, mining, sha256, hash
 
 # License
 
