@@ -8,15 +8,15 @@ A coordinate system may be encoded into a 256 bit number in many ways, but for c
 
 Cyberspace is comprised of two separate spatial planes. Each plane is a space whose volume is (2^85)^3.
 
-A 256 bit number allows us to have 3 spatial axes each 85 bits long. 85 + 85 + 85 = 255 bits, which means we have 1 bit leftover. This final bit determines which plane the coordinate belongs to: 0 for d-space or 1 for c-space.
+A 256 bit number allows us to have 3 spatial axes each 85 bits long. 85 + 85 + 85 = 255 bits, which means we have 1 bit leftover. This final bit determines which plane the coordinate belongs to: 0 for d-space or 1 for i-space.
 
 ## Planes
 
-C-space is an entirely virtual space, meaning that zero points in c-space represent a point in reality. When people think of cyberspace, they are likely imagining this wholly virtual place.
+i-space (Ideaspace) is an entirely virtual space, meaning that zero points in i-space represent a point in reality. When people think of cyberspace, they are likely imagining this wholly virtual place.
 
-D-space, or "Dataspace" is a virtual space where all points represent a point in reality. It can be thought of as an augmented reality layer that can provide digital context to physical places in reality. D-space may be viewed in an augmented reality context where it is overlayed on the real world, or explored as a purely virtual space like c-space.
+D-space, or "Dataspace" is a virtual space where all points represent a point in reality. It can be thought of as an augmented reality layer that can provide digital context to physical places in reality. D-space may be viewed in an augmented reality context where it is overlayed on the real world, or explored as a purely virtual space like i-space.
 
-The size of c-space and d-space are the same, but since d-space is meant to be overlayed on reality, it must be scaled to reality appropriately. Therefore, we must choose a scale by which 1 unit of d-space may relate to 1 unit of measurement in reality.
+The size of i-space and d-space are the same, but since d-space is meant to be overlayed on reality, it must be scaled to reality appropriately. Therefore, we must choose a scale by which 1 unit of d-space may relate to 1 unit of measurement in reality.
 
 ## Scaling D-Space to Reality
 
