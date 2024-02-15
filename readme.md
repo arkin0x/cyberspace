@@ -384,7 +384,7 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 
 **cyberspace meta-protocol** - the rules and algorithms that enable cyberspace to exist on the nostr protocol
 
-**d-space** - another name for dataspace, which is the digital space enabled by the cyberspace meta-protocol where all points represent a point in reality. D-space is meant to be overlaid on reality by a constant scaling factor and rotation relative to the planet to create a digital/physical composite space. This combination of digital and physical is commonly referred to as augmented reality.
+**d-space** - another name for dataspace, which is the digital space enabled by the cyberspace meta-protocol where all points represent a point in reality. D-space is meant to be overlaid on reality by a constant scaling factor and rotation relative to the planet to create a digital/physical composite space. This combination of digital and physical is commonly referred to as augmented reality. D-space is a cube whose center is the WGS-84 center of Earth, and whose faces are tangent to geosynchronous orbit at a radius of 48028km. The +X axis extends from Earth's center through the Prime Meridian at the equator. The +Z axis is +90° Longitude East from +X. The +Y axis is +90° Latitude.
 
 **dataspace** - the formal name of d-space
 
@@ -399,6 +399,8 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 **echo resistance** - an additional proof-of-work that may be applied to one's drift event in order to cancel any potential echo actions that would affect it. A drift event with echo resistance may also ignore legitimate non-echo actions, but the cost to publish echo-resistant drifts doubles each time it is used consecutively.
 
 **event** - a nostr event that is also an action
+
+**Gibson** - the fundamental quanta of the cyberspace coordinate system. Each axis of cyberspace is 2^85 Gibsons long.
 
 **i-space** - another name for ideaspace, which is the digital space enabled by the cyberspace meta-protocol where zero points represent a point in reality. I-space is meant to be entirely virtual, which is commonly referred to as virtual reality.
 
@@ -428,7 +430,7 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 
 **thermodynamic** - relating to a mechanism that increases the entropy of the universe proportionally to an action's magnitude
 
-**unit** - the fundamental measurement quanta of cyberspace. Each axis of cyberspace is 2^85 units long. An avatar's default presence is an icosahedron with a 1 unit diameter.
+**unit** - a generic term for a Gibson
 
 **vortex** - a kind 88 event representing an attractive gravitational well pulling toward a coordinate that affects a single target avatar. The proof-of-work on a kind 88 event determines the radius of the well and the attraction force is the radius minus the target avatar's distance from the center applied in units/second.
 
