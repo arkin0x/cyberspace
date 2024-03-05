@@ -50,7 +50,16 @@ All actions require the publishing of an event with at least 1 unit of NIP-13 pr
 
 ## Constructs
 
-A Construct is a cubic region of cyberspace that you own. You obtain a Construct by publishing a kind `331` "Construct" event. The 256-bit event `id` is used to determine the coordinates of your construct. The size of the bounding box of your construct is determined by a construct-specific quantification of proof-of-work.
+A Construct is a cubic region of cyberspace that you own. You obtain a Construct by publishing a kind `331` "Construct" event. The 256-bit event `id` is used to determine the coordinates of your construct. The size of the bounding box of your construct is determined by a construct-specific quantification of proof-of-work. The amount of proof-of-work on your construct is also your claim to the space it inhabits; if another pubkey publishes higher proof-of-work for the same space, then they can take the space from you. Luckily, cyberspace is exceedingly large and there is plenty of room for everyone, but there may be some real estate in d-space that is more desirable and may be hotly contested.
+
+>[!info]
+> You can mine constructs and publish them right now at https://construct.onosendai.tech! Make sure you have a nostr signing extension like nos2x, Alby, or the Spring browser on Android.
+
+The reason why constructs utilize a different kind of proof-of-work is because the output of the proof-of-work is a 256-bit location coordinate for where the construct will reside rather than a number of leading 0 bits that typical NIP-13 proof-of-work produces.
+
+Other cyberspace objects utilize the "C" tag to store their cyberspace coordinate.
+
+All cyberspace objects including constructs utilize the "C" tag to store their current [sector](#sector); this makes it easy to query nearby objects when traversing cyberspace.
 
 ### Decoding Coordinates from a 256-bit Number
 
@@ -58,7 +67,7 @@ Any 256-bit number represents a coordinate in cyberspace. Therefore, a 256-bit n
 
 All cyberspace coordinates are decoded from 256 bits in the following way:
 
-Create 3 zeroed buffers to contain the X, Y, and Z coordinates. Iterate over the bits starting at index 0. 
+Create 3 zeroed buffers to contain the X, Y, and Z coordinates. Iterate over the 256 bits starting at index 0. 
 
 - If the current bit index modulo 3 is 0, make that bit the least significant bit of the X coordinate and then shift left.
 - If the current bit index modulo 3 is 1, make that bit the least significant bit of the Y coordinate and then shift left.
@@ -417,6 +426,8 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 **presence** - the visible representation of an avatar in cyberspace
 
 **rez** - when an avatar publishes their first action in history, or, after being derezzed
+
+**sector** - a cubic region of cyberspace that is 2^30 Gibsons along each axis. As each axis of cyberspace is 2^85, that means there are 2^55 sectors along each axis. All cyberspace objects have nostr event tags denoting the sector index along each axis so that one can easily query for all cyberspace objects in a given sector. A sector coordinate is the index of the sector on each axis.
 
 **shard** - a kind 33332 event that represents an object that belongs to a construct. Shards may represent 3D models, boundaries, rules, or interactive elements. Shards do not exist outside their construct. The proof-of-work on a kind 33332 must exceed the complexity of the data it stores.
 
