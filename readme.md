@@ -12,13 +12,13 @@
 
 # Purpose
 
-The purpose of the cyberspace meta-protocol is to create an extension of reality in digital space. This is accomplished by constructing a digital system that contains the same fundamental properties as reality: being permissionless (no actions can be prevented) and thermodynamic (every action has a cost paid to the universe in entropy).
+The purpose of the cyberspace meta-protocol is to create an extension of reality in digital space. This is accomplished by constructing a digital system that contains the same fundamental properties as reality: being permissionless (no actions can be prevented) and thermodynamic (every action has a cost paid to the universe in entropy). "Extension of reality" does not mean a simulation of reality but rather it refers to a wholly new and different piece of reality being unlocked and made accessible through this protocol. 
 
-Combining the properties of the permissionless [nostr protocol](https://github.com/nostr-protocol/nostr) and [proof-of-work](https://github.com/nostr-protocol/nips/blob/master/13.md) enables this, allowing for the construction of a consequential metaverse similar to those predicted in sci-fi. 
+Combining the properties of the permissionless [nostr protocol](https://github.com/nostr-protocol/nostr) and [SHA256-based proof-of-work](https://github.com/nostr-protocol/nips/blob/master/13.md) enables this, allowing for the construction of a consequential metaverse posessing [all of the properties predicted in sci-fi](https://habla.news/u/arkinox@arkinox.tech/LgILfOouzSU_hO3EnuUk4).
 
 # Abstract
 
-In reality we are able to do anything that we have the thermodynamic energy to do (this doesn't mean that all actions are acceptable or legal, but you can still _do_ them). You can expend energy to move, communicate, build, etc. without any permission and the only way someone can stop you is by spending energy to oppose you.
+In reality we are able to do anything that we have the thermodynamic energy to do. This doesn't mean that all actions are acceptable or legal, but you can still _do_ them. You can expend energy to move, communicate, build, etc. without any permission and the only way someone can stop you is by spending energy to oppose you.
 
 Likewise, all actions in reality have a thermodynamic cost that must be paid to the universe in the form of entropy.
 
@@ -28,9 +28,7 @@ This is what makes doing things in real life different from doing them in a vide
 
 A video game is not permissionless. You need permission from abstract rules (coded logic) to play and perform actions in a video game. Furthermore, the video game has no thermodynamic constraints on the virtual actions you can take. The actions you take are abstract, and governed by abstract rules enforced by a centralized controller, which is subject to bias and can be tricked with clever abstract logic (hacked). Abstract actions you take in a video game have little value or impact on reality (aside from how people feel about those actions.)
 
-Being permissioned and wholly abstract is why no virtual world or metaverse has ever nor could ever be meaningfully utilized by humanity as an extension of reality. However, cyberspace is different because it is built on top of a permissionless protocol (nostr) and all actions in cyberspace are constrained by thermodynamics via proof-of-work.
-
-A permissionless virtual action with a thermodynamic cost is effectively **as real as any action in the real world**, except the consequences of the action happen in cyberspace rather than physical space. All actions in cyberspace will have a thermodynamic cost, and therefore cyberspace will be an extension of reality itself.
+Being permissioned and wholly abstract is why no virtual world or metaverse has ever nor could ever be meaningfully utilized by humanity as an extension of reality. Cyberspace is different because it is built on top of a permissionless protocol (nostr) and all actions in cyberspace are governed by thermodynamics via proof-of-work. This makes cyberspace a permissionless and thermodynamic protocol, just like reality. **Nothing can happen in cyberspace without a provable and substantial expenditure of energy in the physical world.** A permissionless virtual action with a provable thermodynamic cost is effectively as real as any action in the real world, except the consequences of the action happen in cyberspace rather than physical space. 
 
 # Cyberspace Meta-Protocol
 
@@ -40,7 +38,7 @@ The Cyberspace Meta-Protocol is a protocol built on top of nostr to enable inter
 
 Cyberspace is a digital space which contains 2 planes. One plane exists in reality and the other plane is imaginary. Both planes have identical coordinate systems and an X, Y, and Z axis each 2^85 units long. All cyberspace objects exist as nostr events. All cyberspace coordinates are derived from a 256-bit number by decoding it into three 85-bit unsigned integers representing X, Y and Z coordinates and interpreting the least significant bit to determine which plane the coordinate falls within. The method used to obtain a 256-bit coordinate for an object depends on the object's event kind/purpose.
 
-- Constructs are kind 331 events. The construct event `id`, a 256-bit hash, is used to derive the X, Y, and Z coordinates.
+- Constructs are kind 331 events. The construct event `id`, a 256-bit hash, is used to decode the X, Y, and Z coordinates.
 - An avatar's home coordinate is derived from their 256-bit pubkey which can be decoded into X, Y, and Z coordinates.
 - A kind 1 "notes" layer addresses notes by simhashing the `content` of the note to obtain a 256-bit hash, which can be decoded into X, Y, and Z coordinates. This is referred to as a _semantic coordinate_ because there is a relationship between the coordinate and the meaning of the event.
 
