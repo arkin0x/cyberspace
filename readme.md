@@ -5,10 +5,11 @@
 1. [Purpose](#Purpose)
 2. [Abstract](#abstract)
 3. [Cyberspace Meta-Protocol](#cyberspace-meta-protocol)
-4. [Claiming Space and Building Structures](#claiming-space-and-building-structures)
-5. [Human and AI Avatars in Cyberspace](#human-and-ai-avatars-in-cyberspace)
-6. [Dictionary](#dictionary)
-7. [Cyberspace Clients](#cyberspace-clients)
+4. [Characteristics of Cyberspace](#characteristics-of-cyberspace)
+5. [Claiming Space and Building Structures](#claiming-space-and-building-structures)
+6. [Human and AI Avatars in Cyberspace](#human-and-ai-avatars-in-cyberspace)
+7. [Dictionary](#dictionary)
+8. [Cyberspace Clients](#cyberspace-clients)
 
 # Purpose
 
@@ -45,6 +46,38 @@ Cyberspace is a digital space which contains 2 planes. One plane exists in reali
 Below are the initial actions defined for cyberspace. The basis for these actions lies in the fundamental property of finite spatial dimension. Where there are spatial dimensions, movement is required. When space is finite, space will be contested. To contest space, there must be tools for applying thermodynamic energy to constrain or influence the movement of opposition. Likewise, there must be tools to resist the application of thermodynamic force. We also need tools to communicate and build. The inspiration for these actions comes from nature.
 
 All actions require the publishing of an event with at least 1 unit of NIP-13 proof-of-work (POW) except for constructs which use a special kind of proof-of-work.
+
+# Characteristics of Cyberspace
+
+## Coordinate System
+
+Cyberspace is a virtual coordinate system derived from a 256 bit number. 256 was chosen as a basis for a virtual coordinate system because it is highly common in decentralized technologies such as cryptography, bitcoin, and nostr, and would be compatible with the most ubiquitous mining hardware on the planet - bitcoin mining hardware - which processes SHA-256 hashes that output 256-bit numbers.
+
+A coordinate system may be encoded into a 256 bit number in many ways, but for cyberspace it is encoded to be maximally compatible with the fundamental mechanisms of nostr such as relay querying.
+
+Cyberspace is comprised of two separate spatial planes. Each plane is a space whose volume is (2^85)^3.
+
+A 256 bit number allows us to have 3 spatial axes each 85 bits long. 85 + 85 + 85 = 255 bits, which means we have 1 bit leftover. This final bit determines which plane the coordinate belongs to: 0 for d-space or 1 for i-space.
+
+## Planes
+
+i-space (Ideaspace) is an entirely virtual space, meaning that zero points in i-space represent a point in reality. When people think of cyberspace, they are likely imagining this wholly virtual place.
+
+D-space, or "Dataspace" is a virtual space where all points represent a point in reality. It can be thought of as an augmented reality layer that can provide digital context to physical places in reality. D-space may be viewed in an augmented reality context where it is overlayed on the real world, or explored as a purely virtual space like i-space.
+
+The size of i-space and d-space are the same, but since d-space is meant to be overlayed on reality, it must be scaled to reality appropriately. Therefore, we must choose a scale by which 1 unit of d-space may relate to 1 unit of measurement in reality.
+
+## Scaling D-Space to Reality
+
+<img width="1945" alt="d-space dimensions" src="https://github.com/arkin0x/cyberspace/assets/99223753/af2a3f40-4d0a-46ae-844d-220afca8d17b">
+
+One axis of d-space is 2^85 units, which equals 38,685,626,227,668,133,590,597,632 units. The real space that d-space occupies is a cube whose center is the core of the Earth and whose side length is 96,056 kilometers. This means the distance from the center of the earth to one of the closest edges of the cube is 48028 km, which is approximately geosynchronous orbit.
+
+This scale for d-space was chosen because coordinates outside of this cube would likely not be useful to the everyday person (and NASA probably has better systems for this purpose). A cyberspace coordinate system involving multiple celestial bodies, such as the moon or other planets, would be too complex and not useful for everyday augmented reality purposes. As presented, this scale for d-space is entirely Earth-centric; the imaginary cube of d-space rotates with the Earth. Geosynchronous satellites are the most distant objects from Earth that will remain roughly static in the d-space coordinate system.
+
+The precision of allocating 2^85 units to 96,056 km is absurd. One cyberspace unit equals 0.000000000000002482989403731051 millimeters, which is 1x10^-8 smaller than an atom. However, this absurd precision means there are more cyberspace coordinates nested around the earth's surface than if the scale of d-space were spread across, say, the whole galaxy. Having a higher percentage of d-space coordinates scaled across the surface of the earth (where humans spend their time) is a good thing.
+
+Space in cyberspace may be claimed and owned via proof-of-work mining (like bitcoin), and mining is a game of probability. Therefore, the more cyberspace coordinates that are near the surface of the earth, the easier it will be for people to claim useful space. Still, it will be exceedingly difficult to mine this limited slice of cyberspace representing the earth's surface.
 
 # Claiming Space and Building Structures
 
