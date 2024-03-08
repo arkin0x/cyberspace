@@ -20,7 +20,7 @@ The size of i-space and d-space are the same, but since d-space is meant to be o
 
 ## Scaling D-Space to Reality
 
-<img width="1945" alt="d-space dimensions" src="https://github.com/arkin0x/cyberspace/assets/99223753/af2a3f40-4d0a-46ae-844d-220afca8d17b">
+<img width="1945" alt="d-space dimensions" src="https://image.nostr.build/2ddaf94574984f0d902f8698b945867922716ae9b20e073a9328b39511998ebd.png">
 
 One axis of d-space is 2^85 units, which equals 38,685,626,227,668,133,590,597,632 units. The real space that d-space occupies is a cube whose center is the core of the Earth and whose side length is 96,056 kilometers. This means the distance from the center of the earth to one of the closest edges of the cube is 48028 km, which is approximately geosynchronous orbit.
 
