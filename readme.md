@@ -375,7 +375,7 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 
 **action** - a nostr event specified by the cyberspace meta-protocol that avatars may publish to interact with cyberspace
 
-**action chain** - (previously referred to as action chain) - a hash chain of all actions an avatar issues in cyberspace. Each subsequent event refers to the previous event by its event `id`. This chain can be verified by any other avatar. An action chain becomes invalid or "broken" if its drift events leave a certain range of tolerance, if an invalid action is published, if a fork in the chain is detected, or if a new chain is begun.
+**action chain** - (previously referred to as movement chain) - a hash chain of all actions an avatar issues in cyberspace. Each subsequent event refers to the previous event by its event `id`. This chain can be verified by any other avatar. An action chain becomes invalid or "broken" if its drift events leave a certain range of tolerance, if an invalid action is published, if a fork in the chain is detected, or if a new chain is begun.
 
 **armor** - a kind 10087 event representing a reduction in magnitude of any incoming derezz attack. The reduction is equal to the amount of proof-of-work on the kind 10087 event.
 
@@ -407,6 +407,8 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 
 **event** - a nostr event that is also an action
 
+**genesis event** - the first event that begins an action chain
+
 **Gibson** - the fundamental quanta of the cyberspace coordinate system. Each axis of cyberspace is 2^85 Gibsons long.
 
 **i-space** - another name for ideaspace, which is the digital space enabled by the cyberspace meta-protocol where zero points represent a point in reality. I-space is meant to be entirely virtual, which is commonly referred to as virtual reality.
@@ -423,7 +425,7 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 
 **portal** - an object constructed via proof-of-work that allows avatars to travel between d-space and i-space, or between points on the same plane
 
-**presence** - the visible representation of an avatar in cyberspace
+**presence** - the visible representation of an avatar in cyberspace which may be customized
 
 **rez** - when an avatar publishes their first action in history, or, after being derezzed
 
