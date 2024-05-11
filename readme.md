@@ -118,7 +118,7 @@ The final (least significant) bit 255 determines which plane the coordinate belo
 
 ### Searching Partitions of Cyberspace for Constructs
 
-The X, Y, and Z coordinates are interleaved throughout the 256-bit number to allow location-based search/querying via the nostr protocol for constructs, because the most significant bits of the coordinate are also the most significant bits of the 256-bit number. In the case of constructs, one can query nostr relays for the most significant event `id` bits of a kind 331 event to find all constructs in a given area of cyberspace; the search area size corresponds to the precision of the search, as partial searches for event `id`s are allowed by the nostr protocol.
+The X, Y, and Z coordinates are interleaved throughout the 256-bit number to allow location-based search/querying via the nostr protocol for constructs, because the most significant bits of the coordinate are also the most significant bits of the 256-bit number. In the case of constructs, one can query nostr relays for the most significant event `id` bits of a kind 331 event to find all constructs in a given area of cyberspace; the search area size corresponds to the precision of the search, as partial searches for event `id`s are allowed by the nostr protocol but only for full bytes.
 
 For example, a partial event `id` search of hexadecimal "e" (binary 0x1110) will only return Constructs in the left half of the right, front, upper quadrant of cyberspace. The left half is because of the final 0 in the binary form; this is a second X coordinate filter that can't be avoided when querying in hexadecimal. This means the largest query-able area of cyberspace is 1/16 of it. To extend the example, searching for hexadecimal "f" (binary 0x1111) would yield all Constructs in the right half of the right, front, upper quadrant of cyberspace.
 
@@ -140,7 +140,7 @@ Example construct proof-of-work event tag:
 tags: [["nonce", "<nonce>", "<256-bit hexadecimal target>"]]
 ```
 
-The nonce is simply any string value with enough entropy to yield a wide range of results. For the [ONOSENDAI Construct Miner](https://construct.onosendai.tech/) a 64-bit nonce comprised of a 16-character buffer using a limited set of 16 adjacent ASCII symbols is used so that the buffer can be incremented directly in binary between hashes without converting it to text; this increases hash output and, more importantly, sidesteps a memory leak manifested in the TextDecoder class when calling it repeatedly while hashing.
+The nonce is simply any string value with enough entropy to yield a wide range of results. For the [ONOSENDAI Construct Miner](https://construct.onosendai.tech/) a 64-bit nonce comprised of a 16-character fixed-length buffer using a limited set of 16 adjacent ASCII symbols is used so that the buffer can be incremented directly in binary between hashes without converting it to text; this increases hash output speed and, more importantly, sidesteps a memory leak manifested in the TextDecoder class when calling it repeatedly while hashing from a web worker.
 
 #### Quantifying Construct Proof-of-Work
 
@@ -209,14 +209,14 @@ Avatars are a presence in cyberspace controlled by a human or AI operator in rea
 
 Avatars rez into their cyberspace journey at their home coordinate and then utilize proof-of-work to move around and interact in cyberspace.
 
-To act, an avatar must publish a _genesis_ action beginning their action chain or publish an action at the end of their action chain. All actions require proof-of-work, and the amount of proof-of-work determines the intensity of the action.
+To act, an avatar must publish a _genesis_ action beginning their action chain or publish an action at the end of their existing action chain. All actions require proof-of-work, and the amount of proof-of-work determines the intensity of the action.
 
 The action chain may be conceptualized like the bitcoin blockchain: each subsequent action contains a reference to the prior action's hash (event `id`) _and_ the avatar's genesis action event `id`. 
 
 >[!info]
 >A _hash chain_ is where each new element commits to the hash of a prior element. Technically, a blockchain is a type of hash chain, but a hash chain is not a blockchain. The action chain is not a blockchain either but only a kind of hash chain (or a [_noschain_](https://snort.social/search/%23noschain) in nostr parlance.) 
 
-An action chain is useful because every new action commits to the hash of the previous action, and these verifiable references stretch all the way back to the genesis action. In this way, only 1 history is possible for any given action.
+An action chain is useful because every new action commits to the hash of the previous action, and these verifiable references stretch all the way back to the genesis action. In this way, only 1 history is possible for any given action. A forked action chain is entirely invalid.
 
 Additionally, every action must include proof-of-work, making the production of an action chain a non-trivial expense which incentivizes the production of valid action chains that won't be disregarded by the rest of the avatars who are following the protocol.
 
@@ -245,15 +245,32 @@ Reminder: this coordinate contains the X, Y, Z, and plane information which is t
 >[!tip]
 >For the genesis action, the `"C"` tag will always be equal to your raw hex pubkey.
 
+#### `"Cd"` - coordinate decimal part
+This is the fractional part of the cyberspace coordinate, which cannot be expressed in the 256-bit form so it must be stored separately. Avatars are one of few objects in cyberspace that can change position and so having fractional units is a convenience for smooth cyberspace travel. This tag is not used on non-moving cyberspace objects such as constructs.
+
+This tag is expressed in the form `["Cd", "<x>", "<y>", "<z>"]`.
+
+Example: `["Cd", "39562", "24990", "02610673"]`. Note that no decimal point is used because the number is to be parsed as an integer and then divided by 100_000_000 before adding it to the `"C"` tag's xyz values.
+
+The default `"Cd"` tag is `["Cd", "0", "0", "0"]`.
+
+Each value is an integer expressed as a string with a maximum of 8 places.
+
 #### `"quaternion"` 
 The avatar's current quaternion rotation in the form `["quaternion","<x>","<y>","<z>","<w>"]` 
+
+Each value is an integer expressed as a string with a maximum of 8 places.
+
+The default quaternion is `["quaternion", "0.0", "0.0", "0.0", "1.0"]`.
 
 This is the direction the avatar is moving, which may or may not also be the way the avatar is facing depending on the cyberspace client's control scheme. This rotation will determine how proof-of-work is applied to your velocity.
 
 #### `"velocity"`
 The avatar's current velocity (not including this event's POW) in the form `["velocity","<x>","<y>","<z>"]`.
 
-For the genesis action this will always be `["velocity","0","0","0"]`.
+Each value is a float expressed as a string with a maximum of 8 decimal places.
+
+For the genesis action this will always be `["velocity","0.0","0.0","0.0"]`.
 
 >[!faq] Does POW affect velocity?
 >The current action's `"velocity"` is a checkpoint to verify that the velocity calculations since the previous action's timestamp were done correctly; therefore, the current action's POW won't affect it. Instead, POW is applied to the first step of the simulation after the validated action.
@@ -288,8 +305,8 @@ Used for cyberspace protocol versioning. Currently in the form `["version", "1"]
 
 ### Conditionally Required Tags
 
-#### `"e"` spawn
-An `"e"` tag in the form `["e", "<genesis action event id>", "<recommended relay>", "spawn"]` 
+#### `"e"` genesis
+An `"e"` tag in the form `["e", "<genesis action event id>", "<recommended relay>", "genesis"]` 
 > __Required on all actions except genesis action.__
 
 #### `"e"` previous
@@ -309,7 +326,7 @@ Optional [[Echo Resistance]] proof-of-work in the form `["echo",<successful nonc
 >[!warning]
 >Malformed, extra, or unknown tags will invalidate your entire action chain and force you to respawn!
 >
->_Example: putting an `"e"` spawn tag on a genesis action is invalid!_
+>_Example: putting an `"e"` genesis tag on a genesis action is invalid!_
 
 > [!note]
 > Since the `id` of the event will contain the proof-of-work, it may be queried from relays as a "POW of minimum X leading zeroes" filter.
@@ -463,7 +480,7 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 
 **presence** - the visible representation of an avatar in cyberspace which may be customized
 
-**rez** - when an avatar publishes their first action in history, or, after being derezzed
+**rez** - slang for when an avatar publishes their first action in history, or, after being derezzed
 
 **sector** - a cubic region of cyberspace that is 2^30 Gibsons along each axis. As each axis of cyberspace is 2^85, that means there are 2^55 sectors along each axis. All cyberspace objects have nostr event tags denoting the sector index along each axis so that one can easily query for all cyberspace objects in a given sector. A sector coordinate is the index of the sector on each axis.
 
@@ -471,7 +488,7 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 
 **shout** - a kind 20333 event that represents the broadcast of a message from the location of the caster. The proof-of-work on a kind 20333 determines the unit range at which other avatars will "hear" the message.
 
-**spawn** - see rez
+**spawn** - see rez or genesis event
 
 **stealth** - a kind 10085 event that represents a stealth boundary radius around caster where other avatars outside the radius cannot determine the caster's exact coordinates because they are encoded in a zk-snarks proof. A kind 10085 event must be published to the action chain before subsequent drift events are zk-snarks encoded.
 
