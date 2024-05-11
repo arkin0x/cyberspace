@@ -307,11 +307,11 @@ Used for cyberspace protocol versioning. Currently in the form `["version", "1"]
 
 #### `"e"` genesis
 An `"e"` tag in the form `["e", "<genesis action event id>", "<recommended relay>", "genesis"]` 
-> __Required on all actions except genesis action.__
+> __Required on all actions except genesis action. The purpose of this tag is so all subsequent actions can be easily verified to belong to a single genesis action via this reference; this is why it is not included on the genesis action itself.__
 
 #### `"e"` previous
 An `"e"` tag in the form `["e", "<preceding action chain event id in chain>", "<recommended relay>", "previous"]`
-> __Required on all actions except genesis action.__
+> __Required on all actions except genesis action. The purpose of this tag is to establish the hash chain from each preceding event. Genesis actions have no precursor.__
 
 #### `"p"` target
 A `"p"` tag specifying one pubkey target for an aggressive `derezz, vortex, or bubble` action. Only one `"p"` tag allowed per action (subsequent will invalidate action chain).
