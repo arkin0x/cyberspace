@@ -84,6 +84,26 @@ Space in cyberspace may be claimed and owned via proof-of-work mining (like bitc
 
 # Claiming Space and Building Structures
 
+## Notes as Building Blocks for Signs
+
+Nostr kind 1 events are short notes (tweets). They are visualized in cyberspace as colored cubes. The cyberspace coordinate for a kind 1 note is determined by the sha256 simhash of the content of the note. This means that the position of the note can be mined by simhashing different content to find something that puts the note in the place you want it. However, the vast majority of notes are simply people communicating thoughts, and their position is an afterthought introduced by ONOSENDAI.
+
+It is interesting to view nostr notes in this way because the simhash creates a loose link between the meaning of the note and it's location in cyberpspace. The original ONOSENDAI proof-of-concept demonstrated this behavior and referred to it as the "vector of human discourse" due to the nebulas of similar notes that it would create.
+
+If you want to create something in cyberspace that others can see, you can build it out of notes. This is referred to as a Sign, as this is how it functions: you can see it, but that's about it. It isn't interactive. The content of the notes used to build a cyberspace sign will not matter; only the position and color of the note and the other notes it is connected to matter.
+
+To build a sign, one must decide on the topology of the sign and determine where in cyberspace notes must be published to serve as the vertices for the topology. Then one can publish kind 1 notes with content that will resolve to a particular coordinate when simhashed; this will most likely be accomplished by a mining program similar to the construct miner. The color of each note cube is derived from the last 6 digits of the created_at converted to hex. You can customize the timestamp to be whatever you need it to be so that the note is the color you want; created_at doesn't actually have to be the current timestamp.
+
+>[!info]
+> Using seconds as a hex color means that the full gamut of hex-based colors spans 16777215 seconds (0xffffff) or 194 days or roughly 6.3 months. 
+
+The cube itself can help serve as a visual building block for a sign, but in the vast scale of cyberspace it can be difficult or impossible to see a single cube at any significant distance. Therefore, even more important than the cube is the connections it has. Nostr events can have tags that reference other event ids via the `e` tag. When a note cube references another note cube in its `e` tag, this relationship is visualized as a line. The line should be drawn in any graphics engine in such that they can be seen clearly from any distance, making the scale of individual note cubes irrelevant. The color of the line will be the same as the cube color.
+
+>[!info]
+> Besides the content of a kind 1 event being totally random, there are no distinguishing features that would enable someone to detect that a particular event belongs to a sign. A note cube that references another note cube via `e` tag creates an anamorphic vector; the direction and magnitude of the line between the referencing cube and the referenced cube can only be measured in the context of cyberspace.
+
+Once you have built a sign, you will need to publish a signpost event (event list) that tells other avatars how to visualize your sign. This is because typically a sign that would be visible in dataspace would span millions of sectors and not all of them could be loaded simultaneously, so dataspace users must read signpost events that mark where its relevant note cubes are so that they may be loaded to visualize the sign. The nice thing about this approach is that signposts may be secret. Without the signpost it is unlikely that you would ever be able to distinguish a sign in the vast noise of random notes spread across millions of sectors of cyberspace. Avatars can only trust signposts published in their web of trust, or they can set a POW threshold for public signposts they are willing to see, or they could bravely visualize any signpost they find on their relays.
+
 ## Constructs
 
 A Construct is a cubic region of cyberspace that you own. You obtain a Construct by publishing a kind `331` "Construct" event. The 256-bit event `id` is used to determine the coordinates of your construct. The size of the bounding box of your construct is determined by a construct-specific quantification of proof-of-work. The amount of proof-of-work on your construct is also your claim to the space it inhabits; if another pubkey publishes higher proof-of-work for the same space, then they can take the space from you. Luckily, cyberspace is exceedingly large and there is plenty of room for everyone, but there may be some real estate in d-space that is more desirable and may be hotly contested.
