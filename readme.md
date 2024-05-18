@@ -305,6 +305,7 @@ A tag to define what kind of action this event's proof-of-work should be applied
 Here is a quick summary of what each action does:
 
 - `drift` boosts the avatar in the direction they are facing by applying the action's POW to their velocity.
+- `freeze` decays the avatar's velocity so that stopping is easier (otherwise you'd have to drift perfectly in the opposite direction and that would be very difficult to do especially when accounting for rotations)
 - `derezz` applies the action's POW as an attack against a specified target avatar
 - `vortex` targets an avatar with a stationary gravitational force whose power is relative to the POW of the action
 - `bubble` target an avatar with a stationary anti-gravitational force whose power is relative to the POW of the action
