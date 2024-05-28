@@ -82,6 +82,24 @@ The precision of allocating 2^85 units to 96,056 km is absurd. One cyberspace un
 
 Space in cyberspace may be claimed and owned via proof-of-work mining (like bitcoin), and mining is a game of probability. Therefore, the more cyberspace coordinates that are near the surface of the earth, the easier it will be for people to claim useful space. Still, it will be exceedingly difficult to mine this limited slice of cyberspace representing the earth's surface.
 
+## Sectors
+
+The scale of cyberspace is massive, and it may not be possible to load all of cyberspace at once in any modern programming language. The solution to this was to divide cyberspace into sectors such that sectors may be loaded into memory as chunks and displayed within most computer graphics systems.
+
+A sector is 2^30 gibsons along each axis. This number was chosen because almost all modern programming languages support int32 number types at a minimum. A sector's coordinate system of 2^30 fits within int32, allowing any programming language to load at least 1 sector at a time and display it in a graphics system. If a given system supports larger values, it could load and display multiple adjacent sectors at a time.
+
+Although 2^30 is a large number, cyberspace is 2^85 along each axis, meaning there are 2^55 sectors per axis.
+
+Each sector has a unique id. Every cyberspace object will have an "S" tag to identify which sector it is in. Simply, the sector id is a string of "xid-yid-zid" where each element is the 0-based index of the sector along the given axis. An example S tag with an example sector id would be:
+
+```json
+    ["S", "22493668282275767-30865482130737924-22684969844795780"]
+```
+
+Sectors aid in querying cyberspace via Nostr Protocol. While nostr supports partial queries for authors and event ids, nostr does not support partial queries on tags. Since the cyberspace coordinate of a given cyberspace object is stored in the "C" tag, the "S" Sector tag creates a way to query an area of cyberspace for objects by giving a unique identifier to a reasonably large area of space. You can easily query for adjacent sectors by incrementing or decrementing the individual parts of the sector id.
+
+Note that the cyberspace coordinate tag is still necessary to manifest the exact location of an object. When searching, the "C" tag can primarily be used to query the genesis of a given avatar's action chain by querying for a "C" tag matching the user's hexadecimal pubkey.
+
 # Claiming Space and Building Structures
 
 ## Notes as Building Blocks for Signs
@@ -115,7 +133,7 @@ The reason why constructs utilize a different kind of proof-of-work is because t
 
 Other cyberspace objects utilize the "C" tag to store their cyberspace coordinate.
 
-All cyberspace objects including constructs utilize the "C" tag to store their current [sector](#sector); this makes it easy to query nearby objects when traversing cyberspace.
+All cyberspace objects including constructs utilize the "S" tag to store their current [sector](#sector); this makes it easy to query nearby objects when traversing cyberspace.
 
 ### Decoding Coordinates from a 256-bit Number
 
@@ -411,11 +429,7 @@ Defenders against Derezz have an asymmetric advantage because they can generate 
 
 **Stealth**. The state of the nostr network does not reflect whether an avatar is actively controlling their Presence or not. Your latest Drift event determines where you are located. If you close your cyberspace client, other avatars will still see you in that location and you are still vulnerable to attack. Therefore, it is important to be able to conceal one's location so that when the human controller is not present the avatar is less vulnerable.
 
-Stealth is an event kind 10085 that simply publishes proof-of-work to define a stealth boundary. Each unit of proof-of-work results in a stealth radius = 4096 / (POW+1). A smaller stealth radius is better. 4096 is the length of 1 sector.
-
-When an avatar has published a valid Stealth event, they may publish their Drift events differently without breaking their action chain. Instead of publishing their coordinates directly in the Drift event, they may publish a zk-snark that will only reveal their coordinates if the input to the zk-snark is a coordinate within the boundary radius. This is called a Stealth Drift event.
-
-Someone hunting this stealth avatar may see their Stealth Drift events and input their own coordinates into the zk-snark. If they are not within the stealth boundary radius, they will simply receive a rejection. If they are within the stealth boundary radius, they will receive the actual coordinates of the avatar.
+Stealth is an event kind 10085 that simply publishes proof-of-work to define a stealth boundary. Updated details forthcoming.
 
 **Echo Resistance**. It is possible that an aggressor may be creating valid aggressive events against you but not publishing them intentionally. If you publish movement events that do not respect these aggressive events, you will break your action chain; however, if you were not aware of those events, you can be forced to unintentionally break your action chain if an aggressor witholds the events until you have moved enough to contradict their would-be effect.
 
@@ -503,7 +517,7 @@ Clients should have optional speech-to-text via the web browser too so that a hu
 
 **rez** - slang for when an avatar publishes their first action in history, or, after being derezzed
 
-**sector** - a cubic region of cyberspace that is 2^30 Gibsons along each axis. As each axis of cyberspace is 2^85, that means there are 2^55 sectors along each axis. All cyberspace objects have nostr event tags denoting the sector index along each axis so that one can easily query for all cyberspace objects in a given sector. A sector coordinate is the index of the sector on each axis.
+**sector** - a cubic region of cyberspace that is 2^30 gibsons along each axis. As each axis of cyberspace is 2^85, that means there are 2^55 sectors along each axis. All cyberspace objects have an "S" tag denoting the sector id, which is comprised of the 0-based sector index along each axis. The "S" tag makes it easy to query for all cyberspace objects in a given sector.
 
 **shard** - a kind 33332 event that represents an object that belongs to a construct. Shards may represent 3D models, boundaries, rules, or interactive elements. Shards do not exist outside their construct. The proof-of-work on a kind 33332 must exceed the complexity of the data it stores.
 
