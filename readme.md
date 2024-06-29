@@ -249,16 +249,16 @@ Avatars rez into their cyberspace journey at their home coordinate and then util
 
 To act, an avatar must publish a _genesis_ action beginning their action chain or publish an action at the end of their existing action chain. All actions require proof-of-work, and the amount of proof-of-work determines the intensity of the action.
 
-The action chain may be conceptualized like the bitcoin blockchain: each subsequent action contains a reference to the prior action's hash (event `id`) _and_ the avatar's genesis action event `id`. 
+The action chain may be conceptualized like the bitcoin blockchain: each subsequent action contains a reference to the prior action's hash (event `id`) _and_ the avatar's genesis action event `id`. The difference is that each avatar has its own chain that it adds to, and chains are only verified by those who wish to interact with you.
 
 >[!info]
 >A _hash chain_ is where each new element commits to the hash of a prior element. Technically, a blockchain is a type of hash chain, but a hash chain is not a blockchain. The action chain is not a blockchain either but only a kind of hash chain (or a [_noschain_](https://snort.social/search/%23noschain) in nostr parlance.) 
 
-An action chain is useful because every new action commits to the hash of the previous action, and these verifiable references stretch all the way back to the genesis action. In this way, only 1 history is possible for any given action. A forked action chain is entirely invalid.
+An action chain is useful because it proves the avatar's current location and actions are legitimate if its chain is valid.  Action chains are also useful because their creation is a non-trivial expense which incentivizes the production of valid action chains that won't be disregarded by the rest of the avatars who are following the protocol.
 
-Additionally, every action must include proof-of-work, making the production of an action chain a non-trivial expense which incentivizes the production of valid action chains that won't be disregarded by the rest of the avatars who are following the protocol.
+A forked action chain is wholly invalid and causes its owner to derezz, meaning they are "dead" until they publish a new genesis for a new action chain. Other conditions can cause similar chain invalidations, such as non-chronological created_at timestamps, impossible velocities, or impossible coordinate changes between actions.
 
-Since the action chain is not a blockchain, there is no hard consensus preventing the creation of invalid action chains. However, the cyberspace meta-protocol contains validation rules for action chains that allow any avatar to verify the validity of anyone's action chain, especially their own. Cyberspace clients should not be capable of producing invalid action chains, but this does not mean that they do not need to be validated. Invalid chains may be disregarded and cause the immediate respawn of the offending avatar.
+Since the action chain is not a blockchain, there is no hard consensus preventing the creation of invalid action chains. However, the cyberspace meta-protocol contains validation rules for action chains that allow any avatar to verify the validity of anyone's action chain, especially their own. Cyberspace clients should not be capable of producing invalid action chains, but this does not mean that they do not need to be validated. Invalid chains may be disregarded and cause the immediate derezz of the offending avatar.
 
 >[!example] Cyberspace Theory
 >Your personal journey from your mother's womb to where you are now is a unique pattern of thermodynamic expenditures across time. Likewise, your action chain is a cryptographically provable, thermodynamically intensive journey across cyberspace and time. Even if the environmental factors outside of your control were in your favor, you _still_ needed to expend the right energy in the right ways to make use of those advantages. Therefore, wherever you are, you earned the right to be there via your thermodynamic expenditures.
@@ -318,18 +318,19 @@ For the genesis action this will always be `["velocity","0.0","0.0","0.0"]`.
 The action's NIP-13 proof-of-work, in the form `["nonce","<current nonce>","<target difficulty>]"`. The number of leading binary zeroes of the event's resulting `id` must match `<target difficulty>` for the work to be valid.
 
 #### `"A"` - action type
-A tag to define what kind of action this event's proof-of-work should be applied to, which may be `drift, derezz, vortex, bubble, armor, stealth, or noop`
+A tag to define what kind of action this event's proof-of-work should be applied to, which may be `drift, hop, freeze, derezz, vortex, bubble, armor, stealth, or noop`
 
 Here is a quick summary of what each action does:
 
 - `drift` boosts the avatar in the direction they are facing by applying the action's POW to their velocity.
+- `hop` translates the avatar to a specific coordinate; the distance traveled must be paid for with POW. This is useful when surgical movements are needed and velocity is not helpful, like when updating a physical object's realtime position in cyberspace.
 - `freeze` decays the avatar's velocity so that stopping is easier (otherwise you'd have to drift perfectly in the opposite direction and that would be very difficult to do especially when accounting for rotations)
 - `derezz` applies the action's POW as an attack against a specified target avatar
 - `vortex` targets an avatar with a stationary gravitational force whose power is relative to the POW of the action
 - `bubble` target an avatar with a stationary anti-gravitational force whose power is relative to the POW of the action
 - `armor` adds armor points to your avatar as a buffer against `derezz` attacks; the amount of armor added is relative to the POW of the action
 - `stealth` buys time and entropy relative to the POW of the action. During the `time` you earn you can validly obscure your `quaternion`, `C` and `A` tags by `entropy` amount in order to obscure where your avatar is, which hinders other avatars from successfully targeting you with `derezz` attacks. When you publish your first action after the stealth time runs out, you must publish with it the unobscured `quaternion`, `C` and `A` tags to maintain a valid action chain; observers can verify that the unobscured values compute to the obscured values.
-- `noop` is used during stealth to add decoy actions to the action chain. The POW has no effect.
+- `noop` is used for the genesis action and during stealth to add decoy actions to the action chain. The POW has no effect.
 
 >[!hint]
 >You can publish obscured stealth actions _during_ stealth to extend the duration of your stealth, making perpetual stealth possible. However, stealth adds an extra layer of proof-of-work cost to maintain it indefinitely. And most importantly, stealth is not bulletproof; luck, persistence, or high proof-of-work from a motivated enemy can undo it!
@@ -350,7 +351,7 @@ An `"e"` tag in the form `["e", "<genesis action event id>", "<recommended relay
 
 #### `"e"` previous
 An `"e"` tag in the form `["e", "<preceding action chain event id in chain>", "<recommended relay>", "previous"]`
-> __Required on all actions except genesis action. The purpose of this tag is to establish the hash chain from each preceding event. Genesis actions have no precursor.__
+> __Required on all actions except genesis action. The purpose of this tag is to establish the hash chain from each preceding event. Genesis actions have no precursor and therefore do not have this tag either.__
 
 #### `"p"` target
 A `"p"` tag specifying one pubkey target for an aggressive `derezz, vortex, or bubble` action. Only one `"p"` tag allowed per action (subsequent will invalidate action chain).
@@ -370,13 +371,61 @@ Optional [[Echo Resistance]] proof-of-work in the form `["echo",<successful nonc
 > [!note]
 > Since the `id` of the event will contain the proof-of-work, it may be queried from relays as a "POW of minimum X leading zeroes" filter.
 
-## Action Types
+## Action Type Details
 
-`drift` applies the action's POW to the action's velocity relative to the action's quaternion on the first step of the simulation after the action event's timestamp. 
+### Drift
 
-----
+`drift` converts the action's Proof of Work (POW) into velocity in the direction the avatar is facing. There is no drag in cyberspace, so velocity induces a perpetual drift akin to outer space.
 
-## Publishing Actions
+This new velocity is applied on the first step of the simulation after the drift action's timestamp. 
+
+Where:
+<center>
+
+<i>V<sub>M</sub></i> is the vector3 representing the magnitude of the drift based on POW
+
+<i>Q</i> is the avatar's current unit quaternion rotation
+
+<i>V<sub>A</sub></i> is the new vector3 representing the action's contribution to velocity along each axis
+
+<i>V</i> is the avatar's existing total velocity along each axis
+
+</center>
+
+
+Then:
+
+<i><center>
+V<sub>M</sub> = [ 0, 0, floor( 2<sup> POW - 1</sup> ) ]
+
+V<sub>A</sub> = Q &middot; V<sub>M</sub> &middot; Q*
+
+V = V + V<sub>A</sub>
+</center></i>
+
+Note:
+- The resulting velocity V is applied on the next simulation step after the drift action's timestamp.
+- Velocity is always applied once per frame (60 times per second).
+- The velocity unit is Gibsons.
+- <i>V<sub>A</sub> = Q &middot; V<sub>M</sub> &middot; Q*</i> is the simplified form of the rotation of the vector by the quaternion via quaternion multiplication. Given a quaternion q = (qw, qx, qy, qz) and a vector v = (x, y, z), the operation <i>V<sub>A</sub> = Q &middot; V<sub>M</sub> &middot; Q*</i> expands to:
+    <i>V<sub>A</sub> = (
+        (1 - 2y² - 2z²)x + (2xy - 2wz)y + (2xz + 2wy)z,
+        (2xy + 2wz)x + (1 - 2x² - 2z²)y + (2yz - 2wx)z,
+        (2xz - 2wy)x + (2yz + 2wx)y + (1 - 2x² - 2y²)z
+    )</i>
+
+
+### Freeze 
+
+`freeze` allows a drifting avatar to come to a definitive halt or to reduce velocity without changing direction. Freeze reduces all axes velocity V relative to the action's POW:
+
+<i><center>V = V &middot; (256 - POW) / 256</center></i>
+Note:
+- The resulting velocity V is applied on the next simulation step after the freeze action's timestamp.
+- Once the velocity on a given axis is &lt; 0.00000001 it is equivalent to zero because the maximum precision of the velocity in cyberspace is 8 decimal places.
+
+
+## Publishing Actions (out of date, archive only)
 
 By publishing a kind 333 "Drift" event, the avatar can specify their current coordinate (which will be their home coordinate for their very first drift event) and the direction they wish to move. The amount of NIP-13 proof-of-work _P_ on the drift event, which is determined by the number of leading consecutive binary zeroes on the event `id`, will determine the acceleration, equal to _2<sup>P</sup>_. Acceleration is added to their velocity, which begins at 0.
 
