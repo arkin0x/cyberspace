@@ -422,6 +422,7 @@ Note:
 `freeze` allows a drifting avatar to come to a definitive halt or to reduce velocity without changing direction. Freeze reduces all axes velocity V relative to the action's POW:
 
 <i><center>V = V &middot; (256 - POW) / 256</center></i>
+
 Note:
 - The resulting velocity V is applied on the next simulation step after the freeze action's timestamp.
 - Once the velocity on a given axis is &lt; 0.00000001 it is equivalent to zero because the maximum precision of the velocity in cyberspace is 8 decimal places.
