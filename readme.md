@@ -288,25 +288,27 @@ This is the fractional part of the cyberspace coordinate, which cannot be expres
 
 This tag is expressed in the form `["Cd", "<x>", "<y>", "<z>"]`.
 
-Example: `["Cd", "39562", "24990", "02610673"]`. Note that no decimal point is used because the number is to be parsed as an integer and then divided by 100_000_000 before adding it to the `"C"` tag's xyz values.
+Each value is an integer expressed as a string with a maximum of 8 places.
+
+Example: `["Cd", "39562", "24990", "02610673"]`.
+
+Note that no decimal point is used because the number is to be parsed as an integer and then divided by 100_000_000 before adding it to the `"C"` tag's xyz values.
 
 The default `"Cd"` tag is `["Cd", "0", "0", "0"]`.
-
-Each value is an integer expressed as a string with a maximum of 8 places.
 
 #### `"quaternion"` 
 The avatar's current quaternion rotation in the form `["quaternion","<x>","<y>","<z>","<w>"]` 
 
-Each value is an integer expressed as a string with a maximum of 8 places.
+Each value is a decimal number expressed as a string with a maximum of 8 decimal places.
 
 The default quaternion is `["quaternion", "0.0", "0.0", "0.0", "1.0"]`.
 
-This is the direction the avatar is moving, which may or may not also be the way the avatar is facing depending on the cyberspace client's control scheme. This rotation will determine how proof-of-work is applied to your velocity.
+This is the direction that new velocity will be applied, which may or may not also be the way the avatar is facing depending on the cyberspace client's control scheme.
 
 #### `"velocity"`
 The avatar's current velocity (not including this event's POW) in the form `["velocity","<x>","<y>","<z>"]`.
 
-Each value is a float expressed as a string with a maximum of 8 decimal places.
+Each value is a decimal number expressed as a string with a maximum of 8 decimal places.
 
 For the genesis action this will always be `["velocity","0.0","0.0","0.0"]`.
 
