@@ -646,7 +646,7 @@ Total sectors: 6621691255318596090307666621481
 Size: 50.0646339592 meters per side
 Volume: 125485.3815960360 cubic meters
 
-POW: 109
+POW: 109 - ~half an acre of land
 Sectors per side: 23376675937
 Total sectors: 12774628205139012749225616881953
 Size: 62.3243119281 meters per side
