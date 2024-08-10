@@ -1,0 +1,769 @@
+POW: 1
+Sectors per side: 3
+Total sectors: 27
+Size: 0.0000000080 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 2
+Sectors per side: 3
+Total sectors: 27
+Size: 0.0000000080 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 3
+Sectors per side: 3
+Total sectors: 27
+Size: 0.0000000080 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 4
+Sectors per side: 3
+Total sectors: 27
+Size: 0.0000000080 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 5
+Sectors per side: 5
+Total sectors: 125
+Size: 0.0000000133 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 6
+Sectors per side: 5
+Total sectors: 125
+Size: 0.0000000133 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 7
+Sectors per side: 5
+Total sectors: 125
+Size: 0.0000000133 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 8
+Sectors per side: 7
+Total sectors: 343
+Size: 0.0000000187 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 9
+Sectors per side: 9
+Total sectors: 729
+Size: 0.0000000240 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 10
+Sectors per side: 11
+Total sectors: 1331
+Size: 0.0000000293 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 11
+Sectors per side: 13
+Total sectors: 2197
+Size: 0.0000000347 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 12
+Sectors per side: 17
+Total sectors: 4913
+Size: 0.0000000453 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 13
+Sectors per side: 19
+Total sectors: 6859
+Size: 0.0000000507 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 14
+Sectors per side: 25
+Total sectors: 15625
+Size: 0.0000000667 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 15
+Sectors per side: 31
+Total sectors: 29791
+Size: 0.0000000826 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 16
+Sectors per side: 39
+Total sectors: 59319
+Size: 0.0000001040 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 17
+Sectors per side: 47
+Total sectors: 103823
+Size: 0.0000001253 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 18
+Sectors per side: 59
+Total sectors: 205379
+Size: 0.0000001573 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 19
+Sectors per side: 75
+Total sectors: 421875
+Size: 0.0000002000 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 20
+Sectors per side: 93
+Total sectors: 804357
+Size: 0.0000002479 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 21
+Sectors per side: 117
+Total sectors: 1601613
+Size: 0.0000003119 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 22
+Sectors per side: 145
+Total sectors: 3048625
+Size: 0.0000003866 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 23
+Sectors per side: 183
+Total sectors: 6128487
+Size: 0.0000004879 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 24
+Sectors per side: 229
+Total sectors: 12008989
+Size: 0.0000006105 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 25
+Sectors per side: 287
+Total sectors: 23639903
+Size: 0.0000007652 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 26
+Sectors per side: 359
+Total sectors: 46268279
+Size: 0.0000009571 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 27
+Sectors per side: 451
+Total sectors: 91733851
+Size: 0.0000012024 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 28
+Sectors per side: 565
+Total sectors: 180362125
+Size: 0.0000015063 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 29
+Sectors per side: 707
+Total sectors: 353393243
+Size: 0.0000018849 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 30
+Sectors per side: 887
+Total sectors: 697864103
+Size: 0.0000023648 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 31
+Sectors per side: 1111
+Total sectors: 1371330631
+Size: 0.0000029620 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 32
+Sectors per side: 1393
+Total sectors: 2703045457
+Size: 0.0000037139 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 33
+Sectors per side: 1745
+Total sectors: 5313568625
+Size: 0.0000046523 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 34
+Sectors per side: 2189
+Total sectors: 10489077269
+Size: 0.0000058361 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 35
+Sectors per side: 2745
+Total sectors: 20683643625
+Size: 0.0000073184 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 36
+Sectors per side: 3441
+Total sectors: 40743095121
+Size: 0.0000091740 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 37
+Sectors per side: 4313
+Total sectors: 80230292297
+Size: 0.0000114988 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 38
+Sectors per side: 5407
+Total sectors: 158077154143
+Size: 0.0000144155 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 39
+Sectors per side: 6781
+Total sectors: 311803677541
+Size: 0.0000180788 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 40
+Sectors per side: 8501
+Total sectors: 614341775501
+Size: 0.0000226644 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 41
+Sectors per side: 10659
+Total sectors: 1211014621179
+Size: 0.0000284178 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 42
+Sectors per side: 13363
+Total sectors: 2386227823147
+Size: 0.0000356270 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 43
+Sectors per side: 16755
+Total sectors: 4703631568875
+Size: 0.0000446703 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 44
+Sectors per side: 21007
+Total sectors: 9270264087343
+Size: 0.0000560065 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 45
+Sectors per side: 26339
+Total sectors: 18272494796219
+Size: 0.0000702221 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 46
+Sectors per side: 33025
+Total sectors: 36018736890625
+Size: 0.0000880476 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 47
+Sectors per side: 41407
+Total sectors: 70993943246143
+Size: 0.0001103948 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 48
+Sectors per side: 51917
+Total sectors: 139935778112213
+Size: 0.0001384154 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 49
+Sectors per side: 65093
+Total sectors: 275805462359357
+Size: 0.0001735438 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 50
+Sectors per side: 81615
+Total sectors: 543638186283375
+Size: 0.0002175929 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 51
+Sectors per side: 102331
+Total sectors: 1071572733930691
+Size: 0.0002728236 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 52
+Sectors per side: 128305
+Total sectors: 2112179109972625
+Size: 0.0003420726 meters per side
+Volume: 0.0000000000 cubic meters
+
+POW: 53
+Sectors per side: 160871
+Total sectors: 4163257608456311
+Size: 0.0004288965 meters per side
+Volume: 0.0000000001 cubic meters
+
+POW: 54
+Sectors per side: 201703
+Total sectors: 8206105064455927
+Size: 0.0005377583 meters per side
+Volume: 0.0000000002 cubic meters
+
+POW: 55
+Sectors per side: 252899
+Total sectors: 16174890014528699
+Size: 0.0006742514 meters per side
+Volume: 0.0000000003 cubic meters
+
+POW: 56
+Sectors per side: 317089
+Total sectors: 31881851096575969
+Size: 0.0008453877 meters per side
+Volume: 0.0000000006 cubic meters
+
+POW: 57
+Sectors per side: 397573
+Total sectors: 62842094098971517
+Size: 0.0010599652 meters per side
+Volume: 0.0000000012 cubic meters
+
+POW: 58
+Sectors per side: 498485
+Total sectors: 123867189360234125
+Size: 0.0013290057 meters per side
+Volume: 0.0000000023 cubic meters
+
+POW: 59
+Sectors per side: 625009
+Total sectors: 244151172026875729
+Size: 0.0016663300 meters per side
+Volume: 0.0000000046 cubic meters
+
+POW: 60
+Sectors per side: 783649
+Total sectors: 481243360957508449
+Size: 0.0020892784 meters per side
+Volume: 0.0000000091 cubic meters
+
+POW: 61
+Sectors per side: 982555
+Total sectors: 948572675072603875
+Size: 0.0026195796 meters per side
+Volume: 0.0000000180 cubic meters
+
+POW: 62
+Sectors per side: 1231947
+Total sectors: 1869717844365915123
+Size: 0.0032844810 meters per side
+Volume: 0.0000000354 cubic meters
+
+POW: 63
+Sectors per side: 1544641
+Total sectors: 3685383396392166721
+Size: 0.0041181513 meters per side
+Volume: 0.0000000698 cubic meters
+
+POW: 64
+Sectors per side: 1936703
+Total sectors: 7264221461177300927
+Size: 0.0051634237 meters per side
+Volume: 0.0000001377 cubic meters
+
+POW: 65
+Sectors per side: 2428277
+Total sectors: 14318406208819289933
+Size: 0.0064740040 meters per side
+Volume: 0.0000002713 cubic meters
+
+POW: 66
+Sectors per side: 3044623
+Total sectors: 28222830763019832367
+Size: 0.0081172376 meters per side
+Volume: 0.0000005348 cubic meters
+
+POW: 67
+Sectors per side: 3817409
+Total sectors: 55629618191606148929
+Size: 0.0101775543 meters per side
+Volume: 0.0000010542 cubic meters
+
+POW: 68
+Sectors per side: 4786347
+Total sectors: 109650986318510203923
+Size: 0.0127608298 meters per side
+Volume: 0.0000020780 cubic meters
+
+POW: 69
+Sectors per side: 6001219
+Total sectors: 216131678749109386459
+Size: 0.0159997874 meters per side
+Volume: 0.0000040958 cubic meters
+
+POW: 70
+Sectors per side: 7524451
+Total sectors: 426014572524587105851
+Size: 0.0200608603 meters per side
+Volume: 0.0000080733 cubic meters
+
+POW: 71
+Sectors per side: 9434311
+Total sectors: 839712398573575822231
+Size: 0.0251527182 meters per side
+Volume: 0.0000159131 cubic meters
+
+POW: 72
+Sectors per side: 11828931
+Total sectors: 1655146711433066278491
+Size: 0.0315369896 meters per side
+Volume: 0.0000313661 cubic meters
+
+POW: 73
+Sectors per side: 14831355
+Total sectors: 3262439679665740063875
+Size: 0.0395417209 meters per side
+Volume: 0.0000618254 cubic meters
+
+POW: 74
+Sectors per side: 18595857
+Total sectors: 6430557020865141887793
+Size: 0.0495782204 meters per side
+Volume: 0.0001218633 cubic meters
+
+POW: 75
+Sectors per side: 23315865
+Total sectors: 12675193447249119839625
+Size: 0.0621621845 meters per side
+Volume: 0.0002402032 cubic meters
+
+POW: 76
+Sectors per side: 29233909
+Total sectors: 24983925272525871508429
+Size: 0.0779402199 meters per side
+Volume: 0.0004734617 cubic meters
+
+POW: 77
+Sectors per side: 36654073
+Total sectors: 49245519284791791887017
+Size: 0.0977230418 meters per side
+Volume: 0.0009332348 cubic meters
+
+POW: 78
+Sectors per side: 45957627
+Total sectors: 97067263894936303850883
+Size: 0.1225271501 meters per side
+Volume: 0.0018394882 cubic meters
+
+POW: 79
+Sectors per side: 57622613
+Total sectors: 191328137893097590300397
+Size: 0.1536270476 meters per side
+Volume: 0.0036257934 cubic meters
+
+POW: 80
+Sectors per side: 72248411
+Total sectors: 377124632134335114650531
+Size: 0.1926207351 meters per side
+Volume: 0.0071467585 cubic meters
+
+POW: 81
+Sectors per side: 90586535
+Total sectors: 743345888574390666680375
+Size: 0.2415118163 meters per side
+Volume: 0.0140868909 cubic meters
+
+POW: 82
+Sectors per side: 113579251
+Total sectors: 1465200307667504260550251
+Size: 0.3028124566 meters per side
+Volume: 0.0277665045 cubic meters
+
+POW: 83
+Sectors per side: 142407989
+Total sectors: 2888039048340094382102669
+Size: 0.3796724543 meters per side
+Volume: 0.0547302295 cubic meters
+
+POW: 84
+Sectors per side: 178554051
+Total sectors: 5692579749051087404994651
+Size: 0.4760410933 meters per side
+Volume: 0.1078781107 cubic meters
+
+POW: 85
+Sectors per side: 223874723
+Total sectors: 11220576848365423718371067
+Size: 0.5968700643 meters per side
+Volume: 0.2126372725 cubic meters
+
+POW: 86
+Sectors per side: 280698707
+Total sectors: 22116746308339151881199243
+Size: 0.7483678954 meters per side
+Volume: 0.4191268126 cubic meters
+
+POW: 87
+Sectors per side: 351945783
+Total sectors: 43594057994430772029363687
+Size: 0.9383189817 meters per side
+Volume: 0.8261359208 cubic meters
+
+POW: 88
+Sectors per side: 441276825
+Total sectors: 85927734013931342594015625
+Size: 1.1764835412 meters per side
+Volume: 1.6283867786 cubic meters
+
+POW: 89
+Sectors per side: 553281913
+Total sectors: 169371143469180763609715497
+Size: 1.4750991383 meters per side
+Volume: 3.2096939815 cubic meters
+
+POW: 90
+Sectors per side: 693716185
+Total sectors: 333845465120205127376631625
+Size: 1.8495094863 meters per side
+Volume: 6.3265899858 cubic meters
+
+POW: 91
+Sectors per side: 869795547
+Total sectors: 658038857665039889665132323
+Size: 2.3189528371 meters per side
+Volume: 12.4702668813 cubic meters
+
+POW: 92
+Sectors per side: 1090567457
+Total sectors: 1297052640132176575996592993
+Size: 2.9075505239 meters per side
+Volume: 24.5799961402 cubic meters
+
+POW: 93
+Sectors per side: 1367375793
+Total sectors: 2556605162933974289577802257
+Size: 3.6455463418 meters per side
+Volume: 48.4493405221 cubic meters
+
+POW: 94
+Sectors per side: 1714443751
+Total sectors: 5039294306362442111119893751
+Size: 4.5708606052 meters per side
+Volume: 95.4979241143 cubic meters
+
+POW: 95
+Sectors per side: 2149604657
+Total sectors: 9932893588995474771870581393
+Size: 5.7310385585 meters per side
+Volume: 188.2348322065 cubic meters
+
+POW: 96
+Sectors per side: 2695218309
+Total sectors: 19578609511506134853107077629
+Size: 7.1856934261 meters per side
+Volume: 371.0274597442 cubic meters
+
+POW: 97
+Sectors per side: 3379319869
+Total sectors: 38591166424438902654329311909
+Size: 9.0095694609 meters per side
+Volume: 731.3278523998 cubic meters
+
+POW: 98
+Sectors per side: 4237060403
+Total sectors: 76066593193968909722498070827
+Size: 11.2963825536 meters per side
+Volume: 1441.5117083553 cubic meters
+
+POW: 99
+Sectors per side: 5312513037
+Total sectors: 149933965147142387159249941653
+Size: 14.1636356055 meters per side
+Volume: 2841.3467353350 cubic meters
+
+POW: 100
+Sectors per side: 6660937559
+Total sectors: 295533071539522562235951767879
+Size: 17.7586561614 meters per side
+Volume: 5600.5450611426 cubic meters
+
+POW: 101
+Sectors per side: 8351619817
+Total sectors: 582521753802965780266600411513
+Size: 22.2661664979 meters per side
+Volume: 11039.1683552513 cubic meters
+
+POW: 102
+Sectors per side: 10471431829
+Total sectors: 1148201762548531641143312335789
+Size: 27.9177751962 meters per side
+Volume: 21759.1746227847 cubic meters
+
+POW: 103
+Sectors per side: 13129295507
+Total sectors: 2263206959321501398666606688843
+Size: 35.0038778302 meters per side
+Volume: 42889.2526049372 cubic meters
+
+POW: 104
+Sectors per side: 16461779377
+Total sectors: 4460980560724565683742787055633
+Size: 43.8885783226 meters per side
+Volume: 84538.5002668910 cubic meters
+
+POW: 105
+Sectors per side: 20640115849
+Total sectors: 8792986203189480505206283305049
+Size: 55.0283976162 meters per side
+Volume: 166632.8414496310 cubic meters
+
+POW: 106
+Sectors per side: 25878999619
+Total sectors: 17331751460946032606864501693659
+Size: 68.9957310008 meters per side
+Volume: 328448.0296567110 cubic meters
+
+POW: 107
+Sectors per side: 32447619295
+Total sectors: 34162411011792294759628641097375
+Size: 86.5082594170 meters per side
+Volume: 647400.0397726364 cubic meters
+
+POW: 108
+Sectors per side: 40683489061
+Total sectors: 67337125665282728043319930933981
+Size: 108.4658259110 meters per side
+Volume: 1276082.5873452288 cubic meters
+
+POW: 109
+Sectors per side: 51009791109
+Total sectors: 132727414691935396480236668908029
+Size: 135.9966721117 meters per side
+Volume: 2515271.3466510698 cubic meters
+
+POW: 110
+Sectors per side: 63957119927
+Total sectors: 261617442614659194636408877050983
+Size: 170.5154104500 meters per side
+Volume: 4957821.7033768985 cubic meters
+
+POW: 111
+Sectors per side: 80190745747
+Total sectors: 515671057428081474956008721947723
+Size: 213.7957109536 meters per side
+Volume: 9772303.9212103467 cubic meters
+
+POW: 112
+Sectors per side: 100544797995
+Total sectors: 1016433143005296910232220799849875
+Size: 268.0614373864 meters per side
+Volume: 19262073.0715027973 cubic meters
+
+POW: 113
+Sectors per side: 126065125219
+Total sectors: 2003479387415935833978269015878459
+Size: 336.1009156554 meters per side
+Volume: 37967245.1879644245 cubic meters
+
+POW: 114
+Sectors per side: 158063033725
+Total sectors: 3949034605303879794623601117953125
+Size: 421.4102058278 meters per side
+Volume: 74836789.4659060091 cubic meters
+
+POW: 115
+Sectors per side: 198182666199
+Total sectors: 7783895563054312870940922208678599
+Size: 528.3727395725 meters per side
+Volume: 147509913.6114230752 cubic meters
+
+POW: 116
+Sectors per side: 248485482379
+Total sectors: 15342744794835312184024409802325939
+Size: 662.4845531988 meters per side
+Volume: 290755052.0064032078 cubic meters
+
+POW: 117
+Sectors per side: 311556182673
+Total sectors: 30241903418436423549339231532055217
+Size: 830.6366895094 meters per side
+Volume: 573103855.8472280502 cubic meters
+
+POW: 118
+Sectors per side: 390635517347
+Total sectors: 59609459364399362104514946790140923
+Size: 1041.4692789918 meters per side
+Volume: 1129638255.0405027866 cubic meters
+
+POW: 119
+Sectors per side: 489786805395
+Total sectors: 117495502730679605316115093437004875
+Size: 1305.8154940410 meters per side
+Volume: 2226616649.3544893265 cubic meters
+
+POW: 120
+Sectors per side: 614104719327
+Total sectors: 231594000502978620520529420269818783
+Size: 1637.2581879052 meters per side
+Volume: 4388857832.2231893539 cubic meters
+
+POW: 121
+Sectors per side: 769977063787
+Total sectors: 456492204573146226214445010896184403
+Size: 2052.8278199296 meters per side
+Volume: 8650825941.2528076172 cubic meters
+
+POW: 122
+Sectors per side: 965412998955
+Total sectors: 899786403720810213278950392833833875
+Size: 2573.8775285450 meters per side
+Volume: 17051541044.7656364441 cubic meters
+
+POW: 123
+Sectors per side: 1210454573761
+Total sectors: 1773558374517786405085395452858710081
+Size: 3227.1803156788 meters per side
+Volume: 33610091565.4216270447 cubic meters
+
+POW: 124
+Sectors per side: 1517692714645
+Total sectors: 3495840006924073654817691693553886125
+Size: 4046.3047190059 meters per side
+Volume: 66248455319.5088348389 cubic meters
+
+POW: 125
+Sectors per side: 1902914182835
+Total sectors: 6890609031882731918634421045837032875
+Size: 5073.3396580016 meters per side
+Volume: 130581549404.0719604492 cubic meters
+
+POW: 126
+Sectors per side: 2385912742609
+Total sectors: 13581998242565489976894441895650972529
+Size: 6361.0570811848 meters per side
+Volume: 257387752854.8433837891 cubic meters
+
+POW: 127
+Sectors per side: 2991506220665
+Total sectors: 26771316643763867671686487872712579625
+Size: 7975.6235374983 meters per side
+Volume: 507333965801.0653076172 cubic meters
+
+POW: 128
+Sectors per side: 3750811715975
+Total sectors: 52768626680661909003707927618767484375
+Size: 10000.0000000015 meters per side
+Volume: 1000000000000.4572753906 cubic meters
+
+Smallest construct side length: 0.00 meters

@@ -377,7 +377,7 @@ Optional [[Echo Resistance]] proof-of-work in the form `["echo",<successful nonc
 
 ### Drift
 
-`drift` converts the action's Proof of Work (POW) into velocity in the direction the avatar is facing. There is no drag in cyberspace, so velocity induces a perpetual drift akin to outer space.
+`drift` converts the action's Proof of Work (POW) into velocity in the direction the avatar is facing (the quaternion). There is no drag in cyberspace, so velocity induces a perpetual drift akin to outer space.
 
 This new velocity is applied on the first step of the simulation after the drift action's timestamp. 
 
