@@ -1,7 +1,7 @@
 # The Cyberspace Meta-Protocol: An Extension of Reality
 
 >[!warning]
->This specificatin is a work in progress. When a final version is released, it will be tagged under Releases.
+>This specification is a work in progress. When a final version is released, it will be tagged under Releases.
 
 # Table of Contents
 
