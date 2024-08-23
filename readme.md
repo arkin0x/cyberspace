@@ -316,6 +316,13 @@ For the genesis action this will always be `["velocity","0.0","0.0","0.0"]`.
 >The current action's `"velocity"` is a checkpoint to verify that the velocity calculations since the previous action's timestamp were done correctly; therefore, the current action's POW won't affect it. Instead, POW is applied to the first step of the simulation after the validated action.
 >
 
+#### `"S"` - sector (capital S)
+The sector that the action's coordinate is in in the form `["S", "<x>", "<y>", "<z>"]`.
+
+Each value is an integer represeting the 0-based index of the sector along each axis.
+
+A sector is 2^30 Gibsons along each axis. If you derive the X, Y, Z coordinates from the `"C"` tag and divide each by 2^50 (then floor) you will have the sector for that coordinate.
+
 #### `"nonce"` - NIP-13
 The action's NIP-13 proof-of-work, in the form `["nonce","<current nonce>","<target difficulty>]"`. The number of leading binary zeroes of the event's resulting `id` must match `<target difficulty>` for the work to be valid.
 
@@ -384,7 +391,11 @@ This new velocity is applied on the first step of the simulation after the drift
 Where:
 <center>
 
-<i>V<sub>M</sub></i> is the vector3 representing the magnitude of the drift based on POW
+<i>P</i> is the value derived from POW
+
+<i>Z</i> is 2<sup>-10</sup> or 0.0009765625
+
+<i>V<sub>M</sub></i> is the vector3 representing the magnitude of the drift
 
 <i>Q</i> is the avatar's current unit quaternion rotation
 
@@ -398,7 +409,12 @@ Where:
 Then:
 
 <i><center>
-V<sub>M</sub> = [ 0, 0, floor( 2<sup> POW - 1</sup> ) ]
+
+P = 2<sup> POW - 10</sup>
+
+if ( P <= Z ) P = 0
+
+V<sub>M</sub> = [ 0, 0, P ]
 
 V<sub>A</sub> = Q &middot; V<sub>M</sub> &middot; Q*
 
@@ -409,6 +425,8 @@ Note:
 - The resulting velocity V is applied on the next simulation step after the drift action's timestamp.
 - Velocity is always applied once per frame (60 times per second).
 - The velocity unit is Gibsons.
+- 10 is subtracted from POW to allow for small precise movement values at low POW. If POW was not reduced, then the smallest amount of POW would move an avatar 60 G/s.
+- The if statement forces POW of 0 to yield no velocity.
 - <i>V<sub>A</sub> = Q &middot; V<sub>M</sub> &middot; Q*</i> is the simplified form of the rotation of the vector by the quaternion via quaternion multiplication. Given a quaternion q = (qw, qx, qy, qz) and a vector v = (x, y, z), the operation <i>V<sub>A</sub> = Q &middot; V<sub>M</sub> &middot; Q*</i> expands to:
     <i>V<sub>A</sub> = (
         (1 - 2y² - 2z²)x + (2xy - 2wz)y + (2xz + 2wy)z,
