@@ -301,7 +301,7 @@ The avatar's current quaternion rotation in the form `["quaternion","<x>","<y>",
 
 Each value is a decimal number expressed as a string with a maximum of 8 decimal places.
 
-The default quaternion is `["quaternion", "0.0", "0.0", "0.0", "1.0"]`.
+The default quaternion is `["quaternion", "0", "0", "0", "1"]`.
 
 This is the direction that new velocity will be applied, which may or may not also be the way the avatar is facing depending on the cyberspace client's control scheme.
 
@@ -310,7 +310,7 @@ The avatar's current velocity (not including this event's POW) in the form `["ve
 
 Each value is a decimal number expressed as a string with a maximum of 8 decimal places.
 
-For the genesis action this will always be `["velocity","0.0","0.0","0.0"]`.
+For the genesis action this will always be `["velocity","0","0","0"]`.
 
 >[!faq] Does POW affect velocity?
 >The current action's `"velocity"` is a checkpoint to verify that the velocity calculations since the previous action's timestamp were done correctly; therefore, the current action's POW won't affect it. Instead, POW is applied to the first step of the simulation after the validated action.
@@ -322,9 +322,6 @@ The sector that the action's coordinate is in in the form `["S", "<x>", "<y>", "
 Each value is an integer represeting the 0-based index of the sector along each axis.
 
 A sector is 2^30 Gibsons along each axis. If you derive the X, Y, Z coordinates from the `"C"` tag and divide each by 2^50 (then floor) you will have the sector for that coordinate.
-
-#### `"nonce"` - NIP-13
-The action's NIP-13 proof-of-work, in the form `["nonce","<current nonce>","<target difficulty>]"`. The number of leading binary zeroes of the event's resulting `id` must match `<target difficulty>` for the work to be valid.
 
 #### `"A"` - action type
 A tag to define what kind of action this event's proof-of-work should be applied to, which may be `drift, hop, freeze, derezz, vortex, bubble, armor, stealth, or noop`
@@ -353,6 +350,9 @@ Here is a quick summary of what each action does:
 Used for cyberspace protocol versioning. Currently in the form `["version", "1"]`
 
 ### Conditionally Required Tags
+
+#### `"nonce"` - NIP-13
+All actions require NIP-13 POW except genesis actions and noop actions. The action's NIP-13 proof-of-work, in the form `["nonce","<current nonce>","<target difficulty>]"`. The number of leading binary zeroes of the event's resulting `id` must match `<target difficulty>` for the work to be valid.
 
 #### `"e"` genesis
 An `"e"` tag in the form `["e", "<genesis action event id>", "<recommended relay>", "genesis"]` 
