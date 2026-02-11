@@ -430,7 +430,7 @@ Following NIP-01, movement events use this structure:
 
 ### Modeling Spatial Dimension Thermodynamically
 
-The original concept of cyberspace rests on the theory that the spatial dimension can be thermodynamically modeled in a digital system. The purpose of location-based encryption is not primarily to encrypt data—there are much better and more secure encryption systems available for communication. The purpose is to **model traversable reality and impose locality on a spaceless, mathematical system**.
+The original concept of cyberspace rests on the theory that the spatial dimensions can be thermodynamically modeled in a digital system. The purpose of location-based encryption is not primarily to encrypt data—there are much better and more secure encryption systems available for communication. The purpose is to **model traversable reality and impose locality on a spaceless, mathematical system**.
 
 Creating location-based encryption or location verification without trusted hardware or oracles is a significant accomplishment. This section discusses both the capabilities and limitations of this approach.
 
@@ -448,7 +448,7 @@ Creating location-based encryption or location verification without trusted hard
 
 ### The Chalk on the Sidewalk Metaphor
 
-> "The sha256 of a Cantor number can be used to encrypt data. The number can't be known without doing the work. This is a close metaphor for traveling along a path in reality and finding a message written on the sidewalk in chalk; you couldn't know about the message unless you did the work of traveling, or somebody told you about the message—but even then, they would have had to travel to find it themselves."
+> "The sha256 of a Cantor number can be used to encrypt data. The number can't be known without doing the work. This is a close metaphor for traveling along a path in reality and finding a message written on the sidewalk in chalk; you couldn't know about the message unless you did the work of traveling, or somebody told you about the message—but even then, they would have had to travel to find it themselves. The message was not encrypted in the classical sense, because you did not need a key to decrypt it -- you only needed to arrive, and your proximity revealed the message."
 
 This system makes that metaphor mathematically real.
 
@@ -487,6 +487,7 @@ This system makes that metaphor mathematically real.
 **Chain abandonment:** An entity could abandon a keypair and start fresh with a new one at any spawn location.
 
 *Mitigation:* This is acceptable because:
+- Keypairs can start new chains at will by publishing a new spawn event; the movement chain with the highest created_at timestamp and no forks is the valid chain. Old chains are invalid and may as well not exist.
 - The new keypair has no history or reputation
 - Applications can require chain continuity for trust
 - The work to build a new chain must be done again
