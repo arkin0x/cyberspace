@@ -8,12 +8,18 @@
 
 ## 1. Overview
 
-Cyberspace is a 256-bit coordinate system that can be navigated using proof-of-work. It functions as an extension of reality—nothing can move or change in cyberspace without real thermodynamic work being expended.
+Cyberspace is a 256-bit coordinate system that can be navigated by Schnorr keypairs using proof-of-work. Keypairs traverse cyberspace by publishing signed nostr events that prove they have done the computational work required to move from one location to another. This allows for a "shared consensual hallucination" where keypairs and other observers can see each other moving through a shared cryptographic space.
 
-This document describes a new movement system based on **Cantor pairing tree traversal**, replacing the previous quaternion/velocity-based proof-of-work approach.
+The coordinate system is 256-bit because this enables common cryptographic primitives to map directly into it—a Schnorr public key is itself a 256-bit number, which serves as the keypair's spawn location. This design enables novel proof-of-work applications beyond what is described in this document.
+
+Cyberspace functions as an extension of reality—nothing can move or change in cyberspace without real thermodynamic work being expended.
+
+This document describes a movement system based on **Cantor pairing tree traversal**, replacing the previous quaternion/velocity-based proof-of-work approach.
 
 ### Key Properties
 
+- Schnorr keypairs navigate by publishing signed movement events
+- Public key serves as spawn coordinate (256-bit → 256-bit mapping)
 - Movement requires computing mathematical structures, not arbitrary hash grinding
 - Equal effort in all directions (axis-symmetric)
 - Natural support for location-based encryption
@@ -23,6 +29,10 @@ This document describes a new movement system based on **Cantor pairing tree tra
 ---
 
 ## 2. Coordinate System
+
+### Units
+
+The fundamental unit of cyberspace is the **Gibson (G)**. Cyberspace is divided into cubic regions called **Sectors**, each containing 2^30 Gibsons (approximately 1 billion) per axis.
 
 ### Structure
 
@@ -415,11 +425,15 @@ Following NIP-01, movement events use this structure:
 
 ---
 
-## 9. Philosophical Notes
+## 10. Philosophical Foundation
 
-### Why This Matters
+### Modeling Spatial Dimension Thermodynamically
 
-The system creates a mathematical substrate where:
+The original concept of cyberspace rests on the theory that the spatial dimension can be thermodynamically modeled in a digital system. The purpose of location-based encryption is not primarily to encrypt data—there are much better and more secure encryption systems available for communication. The purpose is to **model traversable reality and impose locality on a spaceless, mathematical system**.
+
+Creating location-based encryption or location verification without trusted hardware or oracles is a significant accomplishment. This section discusses both the capabilities and limitations of this approach.
+
+### What This System Achieves
 
 1. **Movement is work:** You cannot claim to be somewhere without having done the computation to get there.
 
@@ -429,15 +443,66 @@ The system creates a mathematical substrate where:
 
 4. **Reality extension:** Dataspace maps directly to physical reality. The coordinate system extends from Earth's surface to geosynchronous orbit, making cyberspace a true superset of geospatial systems.
 
+5. **Simulation equals observation:** In most digital systems, observers have massive advantages over participants—they can skip to any state, replay events, or examine without cost. In cyberspace, computing the Cantor number *is* the work, whether you are "traveling" or "peeking." An observer scanning coordinates for secrets has no computational advantage over a traveler computing Cantor numbers along their route. This is a rare and valuable property for a digital system.
+
 ### The Chalk on the Sidewalk Metaphor
 
-> "The sha256(sha256()) of a Cantor number can be used to encrypt data. The number can't be known without doing the work. This is a close metaphor for traveling along a path in reality and finding a message written on the sidewalk in chalk; you couldn't know about the message unless you did the work of traveling, or somebody told you about the message—but even then, they would have had to travel to find it themselves."
+> "The sha256 of a Cantor number can be used to encrypt data. The number can't be known without doing the work. This is a close metaphor for traveling along a path in reality and finding a message written on the sidewalk in chalk; you couldn't know about the message unless you did the work of traveling, or somebody told you about the message—but even then, they would have had to travel to find it themselves."
 
 This system makes that metaphor mathematically real.
 
 ---
 
-## 11. Implementation Files
+## 11. Threat Model and Limitations
+
+### In-Scope: What the System Provides
+
+1. **Single-location constraint:** A keypair cannot claim to be in more than one location at a time. The verifiable hash chain prevents forking without detection. If cryptographic operations are restricted to a keypair's verified location, that keypair demonstrably is not operating anywhere else.
+
+2. **Work equivalence:** Any entity—traveler or observer—must compute the Cantor numbers to access location-encrypted content. There is no shortcut.
+
+3. **Verifiable movement history:** The hash chain provides an auditable trail of a keypair's movements through cyberspace.
+
+4. **Locality imposition:** The system creates meaningful distance and locality in a mathematical space where neither would otherwise exist.
+
+### Out-of-Scope: What the System Does Not Provide
+
+1. **Physical location proof:** Although cyberspace maps to physical reality, you cannot truly prove you are in a physical location unless there is a time-based physical secret in that location that you can demonstrate knowledge of. Cyberspace proves cryptographic presence, not physical presence. A keypair may move through cyberspace to places where its operator's body does not go.
+
+2. **Trusted identity:** The system does not prevent someone from controlling multiple keypairs, each with its own movement chain. Single-location constraint applies per-keypair, not per-person.
+
+3. **Privacy of location:** Movement events are published to nostr relays. A keypair's location history is public unless additional privacy measures are taken.
+
+### Acknowledged Attack Vectors
+
+**Coordinate scanning:** An attacker could pick arbitrary coordinates, calculate the Cantor numbers, query for secrets, and decrypt them—without maintaining a movement chain.
+
+*Mitigation:* This is considered acceptable because:
+- The attacker gains no computational advantage over a legitimate traveler
+- The work is performed regardless of whether a hash chain is maintained
+- The only difference is commitment to a movement history
+- It is difficult to design digital systems where simulation is equal or less work than observation of the underlying protocol—cyberspace achieves this
+
+**Chain abandonment:** An entity could abandon a keypair and start fresh with a new one at any spawn location.
+
+*Mitigation:* This is acceptable because:
+- The new keypair has no history or reputation
+- Applications can require chain continuity for trust
+- The work to build a new chain must be done again
+
+### Use Case: AI Embodiment Constraints
+
+A particularly interesting application is constraining AI systems that desire physical-world presence. If an AI's participation in physical-world systems requires a keypair with validated hash chain:
+- The AI is cryptographically constrained to one location at a time
+- Its movement history is auditable
+- It cannot teleport or be in multiple places simultaneously (if it desires to perform cryptographic operations gated by an audit of its movement history)
+- Physical-world systems can verify the AI's cyberspace presence before granting access
+
+This creates a form of digital embodiment—the AI must "be somewhere" in a verifiable way.
+
+---
+
+## 12. Implementation Files
 
 ```
 new-movement-algo-2026-feb/
@@ -452,7 +517,7 @@ new-movement-algo-2026-feb/
 
 ---
 
-## 11. Future Considerations
+## 13. Future Considerations
 
 - **Parallelization:** The three axis computations are independent and could be parallelized
 - **Hardware acceleration:** Cantor pairing is simple arithmetic; could be optimized
