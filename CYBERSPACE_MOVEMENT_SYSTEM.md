@@ -71,7 +71,7 @@ def xyz_to_coord(x: int, y: int, z: int, plane: int = 0) -> int:
 The initial approach used the interleaved 256-bit coordinate directly in a single Cantor pairing tree. This was rejected because:
 
 - **Axis asymmetry:** Due to bit interleaving, X movements cost ~4× more than Z movements for the same distance
-- **Impractical scaling:** Moving 64 units took ~115 seconds; sector traversal would take months
+- **Impractical scaling:** Moving 64 Gibsons took ~115 seconds; sector traversal would take months
 - **Memory explosion:** Large movements produced multi-gigabyte Cantor numbers
 
 ### Adopted Approach: Per-Axis Cantor Trees
@@ -80,7 +80,7 @@ Each axis (X, Y, Z) has its own independent 85-bit Cantor tree. Movement proofs 
 
 **Benefits:**
 - **Axis symmetry:** Equal distances cost equal work regardless of direction
-- **Practical performance:** 1024 units in ~1ms instead of ~33 seconds
+- **Practical performance:** 1024 Gibsons in ~1ms instead of ~33 seconds
 - **Bounded computation:** 85-bit trees are much more manageable than 256-bit
 - **Parallelizable:** Three independent computations
 - **Preserves semantics:** Still requires "traversing mathematical fabric"
@@ -208,9 +208,9 @@ Proof hash: 9306cfcf163adfa9a1f34933091a445bbbc77de02a1e504eba9d6bcd5950b414
 
 ### Practical Limits
 
-- **Comfortable range:** Up to ~65,536 units per hop (~1 second)
-- **Maximum practical:** ~262,144 units per hop (~12 seconds)
-- **Sector traversal (2^30 units):** ~16,000 hops at 65K units/hop ≈ 90 minutes
+- **Comfortable range:** Up to ~65,536 Gibsons per hop (~1 second)
+- **Maximum practical:** ~262,144 Gibsons per hop (~12 seconds)
+- **Sector traversal (2^30 Gibsons):** ~16,000 hops at 65K Gibsons/hop ≈ 90 minutes
 
 ---
 
@@ -267,7 +267,7 @@ decryption_key = sha256(sha256(cantor_number))   // For decrypting
 
 When moving through cyberspace, the movement proof only computes the Cantor number for the **LCA subtree** of that specific movement. But encrypted content could be hidden at **any depth** within the subtrees containing your position.
 
-Example: If someone encrypted content at height 8 (covering 256 coordinates), but you only move 1 unit at a time (height 1-4 depending on boundaries), you might never compute the height-8 Cantor number.
+Example: If someone encrypted content at height 8 (covering 256 coordinates), but you only move 1 Gibson at a time (height 1-4 depending on boundaries), you might never compute the height-8 Cantor number.
 
 ### The Solution: Scan All Containing Subtrees
 
