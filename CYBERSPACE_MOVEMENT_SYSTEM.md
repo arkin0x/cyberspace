@@ -399,7 +399,7 @@ Following NIP-01, movement events use this structure:
   "created_at": 1707600000,
   "kind": 33334,
   "tags": [
-    ["d", "<lookup_id aka sha256_of_cantor_number>"],
+    ["d", "<lookup_id aka sha256_of_sha256_of_cantor_number>"],
     ["h", "<depth/height hint>"]
   ],
   "content": "<encrypted_payload_base64_or_hex>",
