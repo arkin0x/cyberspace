@@ -231,13 +231,15 @@ Anyone who traverses through a region necessarily computes the Cantor numbers fo
 
 ### Publication Scheme: Hash as Lookup
 
-**Key insight:** Use single SHA256 as lookup ID, double SHA256 as decryption key.
+**Key insight:** Use double SHA256 as lookup ID, single SHA256 as decryption key.
 
 ```
 cantor_number  = <computed at specific position + depth>
-lookup_id      = sha256(cantor_number)           // For finding ciphertext
-decryption_key = sha256(sha256(cantor_number))   // For decrypting
+decryption_key = sha256(cantor_number)           // For decrypting (single hash)
+lookup_id      = sha256(sha256(cantor_number))   // For finding ciphertext (double hash)
 ```
+
+**Why this order matters:** If lookup_id were the single hash, anyone who sees a published event could simply hash the lookup_id once to derive the decryption key—without ever computing the Cantor number. By making the lookup_id the *double* hash, an attacker who sees it cannot reverse it to find the decryption key (single hash) without knowing the original Cantor number.
 
 **Publisher creates:**
 ```json
@@ -249,14 +251,15 @@ decryption_key = sha256(sha256(cantor_number))   // For decrypting
 
 **Traveler process:**
 1. Move through cyberspace, computing Cantor numbers at various depths
-2. For each Cantor number, compute `sha256(cantor_number)`
+2. For each Cantor number, compute `lookup_id = sha256(sha256(cantor_number))`
 3. Query: "Does any ciphertext exist with this lookup_id?"
-4. If found: compute `sha256(sha256(cantor_number))` → decrypt
+4. If found: use `sha256(cantor_number)` as decryption key → decrypt
 
 **Security properties:**
 - The lookup_id reveals nothing about the location (hash is one-way)
-- The lookup_id reveals nothing about the decryption key (different hash)
+- The lookup_id reveals nothing about the decryption key (can't reverse double-hash to single-hash)
 - Only someone who has "been there" (computed the Cantor number) can decrypt
+- Even seeing the published event doesn't help—you need the Cantor number preimage
 - The depth chosen determines how precisely someone must travel to discover it
 
 ---
@@ -279,9 +282,10 @@ def scan_containing_subtrees(position: int, max_height: int = 16):
     for h in range(1, max_height + 1):
         base = (position >> h) << h  # Aligned subtree base
         cantor = compute_subtree_cantor(base, h)
-        lookup_id = sha256(cantor)
+        decryption_key = sha256(cantor)          # Single hash
+        lookup_id = sha256(decryption_key)       # Double hash
         # Query for any ciphertext with this lookup_id
-        check_for_encrypted_content(lookup_id)
+        check_for_encrypted_content(lookup_id, decryption_key)
 ```
 
 ### Performance Impact
@@ -405,10 +409,9 @@ Following NIP-01, movement events use this structure:
 
 **Discovery process:**
 1. Traveler computes Cantor numbers for containing subtrees
-2. For each, compute `lookup_id = sha256(cantor_number)`
+2. For each, compute `decryption_key = sha256(cantor_number)` then `lookup_id = sha256(decryption_key)`
 3. Query relays: `{"kinds": [33334], "#d": ["<lookup_id>"]}`
-4. If found, derive key: `sha256(sha256(cantor_number))`
-5. Decrypt `content` with derived key
+4. If found, use `decryption_key` (the single hash) to decrypt `content`
 
 ---
 
