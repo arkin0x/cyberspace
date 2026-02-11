@@ -105,6 +105,20 @@ To combine three axis results:
 combined = π(π(cantor_x, cantor_y), cantor_z)
 ```
 
+### Uniqueness Properties
+
+**Each subtree has a unique Cantor number.** The Cantor pairing function is a bijection, so no two different subtrees will ever produce the same Cantor number.
+
+**But multiple coordinate pairs can share the same Cantor number.** Any two coordinates within the same subtree that require climbing to that subtree's root will produce the same result:
+
+```
+LCA(0, 3) = subtree [0..3] → Cantor = 228
+LCA(1, 2) = subtree [0..3] → Cantor = 228  ← SAME
+LCA(0, 2) = subtree [0..3] → Cantor = 228  ← SAME
+```
+
+This is intentional: the Cantor number represents a **region**, not a coordinate pair. Anyone entering that region computes the same number, which is why it works as a discovery radius for location-based encryption.
+
 ---
 
 ## 5. Computing Movement Proofs
@@ -247,46 +261,154 @@ decryption_key = sha256(sha256(cantor_number))   // For decrypting
 
 ---
 
-## 8. Protocol Integration
+## 8. Discovery Scanning
+
+### The Problem
+
+When moving through cyberspace, the movement proof only computes the Cantor number for the **LCA subtree** of that specific movement. But encrypted content could be hidden at **any depth** within the subtrees containing your position.
+
+Example: If someone encrypted content at height 8 (covering 256 coordinates), but you only move 1 unit at a time (height 1-4 depending on boundaries), you might never compute the height-8 Cantor number.
+
+### The Solution: Scan All Containing Subtrees
+
+When arriving at a position, compute Cantor numbers for **all subtrees containing that position**:
+
+```python
+def scan_containing_subtrees(position: int, max_height: int = 16):
+    """Compute Cantor numbers for all subtrees containing this position."""
+    for h in range(1, max_height + 1):
+        base = (position >> h) << h  # Aligned subtree base
+        cantor = compute_subtree_cantor(base, h)
+        lookup_id = sha256(cantor)
+        # Query for any ciphertext with this lookup_id
+        check_for_encrypted_content(lookup_id)
+```
+
+### Performance Impact
+
+Benchmarks show discovery scanning is practical with height caps:
+
+| Scan Depth | Subtrees | Time per Axis | Coverage per Subtree |
+|------------|----------|---------------|----------------------|
+| Heights 1-12 | 12 | ~2 ms | Up to 4,096 coordinates |
+| Heights 1-14 | 14 | ~11 ms | Up to 16,384 coordinates |
+| Heights 1-16 | 16 | ~93 ms | Up to 65,536 coordinates |
+| Heights 1-20 | 20 | ~6 sec | Up to 1 million coordinates |
+
+**Recommended approach:**
+- Immediate scan: Heights 1-14 (~11ms) — covers neighborhood-scale secrets
+- Background scan: Heights 15-18 — covers regional secrets
+- On-demand: Heights 19+ — rare, only for very broad "broadcasts"
+
+### Caching Optimization
+
+When moving, many higher subtrees don't change:
+
+```
+Position 7 is in subtrees: [6..7], [4..7], [0..7], [0..15], [0..31]...
+Position 8 is in subtrees: [8..9], [8..11], [8..15], [0..15], [0..31]...
+                                                    ↑
+                                            [0..15] and above are SAME
+```
+
+Only recompute subtrees where you crossed a boundary. Higher subtrees (which are most expensive) change least often. This can reduce repeated computation by 50-80%.
+
+---
+
+## 9. Protocol Integration
 
 ### Movement Event Structure (for nostr)
 
-```json
+Following NIP-01, movement events use this structure:
+
+```typescript
+// for the first event in the chain, use this form:
 {
-  "kind": <movement_event_kind>,
-  "pubkey": "<user_public_key>",
-  "content": {
-    "origin": [x1, y1, z1, plane],
-    "destination": [x2, y2, z2, plane],
-    "proof_hash": "<sha256_of_combined_cantor>",
-    "prev_event": "<sha256_of_previous_movement_event>"
-  },
+  "id": "<32-bytes lowercase hex of sha256 of serialized event>",
+  "pubkey": "<32-bytes lowercase hex of user's public key>",
+  "created_at": <seconds timestamp>,
+  "kind": 3333,
   "tags": [
-    ["prev", "<previous_event_id>"]
-  ]
+    ["A", "spawn"], // action type
+    ["C", "<current cyberspace coordinate hex>"],
+    ["X", "<X axis sector id integer>"],
+    ["Y", "<Y axis sector id integer>"],
+    ["Z", "<Z axis sector id integer>"],
+    ["S", "<full sector coordinate X-Y-Z>"],
+  ],
+  "content": "",
+  "sig": "<64-bytes lowercase hex of schnorr signature>"
+}
+
+// for all subsequent events, use this form:
+{
+  "id": "<32-bytes lowercase hex of sha256 of serialized event>",
+  "pubkey": "<32-bytes lowercase hex of user's public key>",
+  "created_at": <seconds timestamp>,
+  "kind": 3333,
+  "tags": [
+    ["A", "hop"], // action type
+    ["e", "<first movement event id>", "<relay hint>", "genesis"],
+    ["e", "<previous movement event id>", "<relay hint>", "previous"],
+    ["c", "<previous cyberspace coordinate hex>"],
+    ["C", "<current cyberspace coordinate hex>"],
+    ["X", "<X axis sector id integer>"],
+    ["Y", "<Y axis sector id integer>"],
+    ["Z", "<Z axis sector id integer>"],
+    ["S", "<full sector coordinate X-Y-Z>"],
+    ["proof", "<sha256 of combined cantor hex>"],
+  ],
+  "content": "",
+  "sig": "<64-bytes lowercase hex of schnorr signature>"
 }
 ```
 
 ### Verification Process
 
-1. Extract origin and destination coordinates
-2. Recompute Cantor numbers for each axis
-3. Combine via 3D Cantor pairing
-4. Verify `sha256(combined) == proof_hash`
-5. Verify hash chain integrity with previous event
+**For spawn events (`["A", "spawn"]`):**
+1. Verify event signature using pubkey
+2. Extract and validate `C` tag (current coordinate)
+3. Store as genesis event for this pubkey's movement chain
 
-### Encrypted Content Event
+**For hop events (`["A", "hop"]`):**
+1. Verify event signature using pubkey
+2. Extract previous coordinate from `c` tag (lowercase)
+3. Extract current coordinate from `C` tag (uppercase)
+4. Extract proof hash from `proof` tag
+5. Verify `e` tag with marker `genesis` points to valid spawn event
+6. Verify `e` tag with marker `previous` points to the last hop (or genesis)
+7. Decode coordinates to (x1, y1, z1) and (x2, y2, z2)
+8. Compute Cantor number for each axis:
+   - `cantor_x = compute_axis_cantor(x1, x2)`
+   - `cantor_y = compute_axis_cantor(y1, y2)`
+   - `cantor_z = compute_axis_cantor(z1, z2)`
+9. Combine: `combined = π(π(cantor_x, cantor_y), cantor_z)`
+10. Verify `sha256(combined) == proof` from tag
+11. Optionally verify sector tags (`X`, `Y`, `Z`, `S`) match computed sectors
+
+### Encrypted Location Content Event
 
 ```json
 {
-  "kind": <encrypted_location_content_kind>,
-  "content": {
-    "lookup_id": "<sha256_of_cantor_number>",
-    "ciphertext": "<encrypted_payload>",
-    "depth_hint": 8
-  }
+  "id": "<32-bytes lowercase hex>",
+  "pubkey": "<32-bytes lowercase hex>",
+  "created_at": 1707600000,
+  "kind": 33334,
+  "tags": [
+    ["d", "<lookup_id aka sha256_of_cantor_number>"],
+    ["h", "<depth/height hint>"]
+  ],
+  "content": "<encrypted_payload_base64_or_hex>",
+  "sig": "<64-bytes lowercase hex>"
 }
 ```
+
+**Discovery process:**
+1. Traveler computes Cantor numbers for containing subtrees
+2. For each, compute `lookup_id = sha256(cantor_number)`
+3. Query relays: `{"kinds": [33334], "#d": ["<lookup_id>"]}`
+4. If found, derive key: `sha256(sha256(cantor_number))`
+5. Decrypt `content` with derived key
 
 ---
 
@@ -312,16 +434,17 @@ This system makes that metaphor mathematically real.
 
 ---
 
-## 10. Implementation Files
+## 11. Implementation Files
 
 ```
 new-movement-algo-2026-feb/
-├── cantor_movement_demo.py      # Original interleaved approach (reference)
-├── szudzik_movement_demo.py     # Alternative pairing function (reference)
-├── axis_symmetric_demo.py       # Simple arithmetic approaches (reference)
-├── per_axis_tree_demo.py        # ADOPTED: Per-axis tree implementation
-├── walkthrough_demo.py          # Detailed step-by-step examples
-└── CYBERSPACE_MOVEMENT_SYSTEM.md # This document
+├── cantor_movement_demo.py        # Original interleaved approach (reference)
+├── szudzik_movement_demo.py       # Alternative pairing function (reference)
+├── axis_symmetric_demo.py         # Simple arithmetic approaches (reference)
+├── per_axis_tree_demo.py          # ADOPTED: Per-axis tree implementation
+├── walkthrough_demo.py            # Detailed step-by-step examples
+├── discovery_scan_benchmark.py    # Discovery scanning performance tests
+└── CYBERSPACE_MOVEMENT_SYSTEM.md  # This document
 ```
 
 ---
