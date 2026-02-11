@@ -1,5 +1,8 @@
 # The Cyberspace Meta-Protocol: An Extension of Reality
 
+>[!note]
+>Trustless location-based encryption has been achieved in a new version of the protocol proposed here: [Cyberspace v2](https://github.com/arkin0x/cyberspace/blob/master/CYBERSPACE_MOVEMENT_SYSTEM.md). This deprecates much of what you'll find below, and large changes are coming.
+
 >[!warning]
 >This specificatin is a work in progress. When a final version is released, it will be tagged under Releases.
 
