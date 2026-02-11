@@ -344,7 +344,7 @@ Following NIP-01, movement events use this structure:
   "kind": 3333,
   "tags": [
     ["A", "spawn"], // action type
-    ["C", "<current cyberspace coordinate hex>"],
+    ["C", "<hex pubkey, aka current cyberspace coordinate hex at spawn>"],
     ["X", "<X axis sector id integer>"],
     ["Y", "<Y axis sector id integer>"],
     ["Z", "<Z axis sector id integer>"],
@@ -382,7 +382,8 @@ Following NIP-01, movement events use this structure:
 **For spawn events (`["A", "spawn"]`):**
 1. Verify event signature using pubkey
 2. Extract and validate `C` tag (current coordinate)
-3. Store as genesis event for this pubkey's movement chain
+3. Verify the spawn C coordinate matches the event pubkey
+4. Store as genesis event for this pubkey's movement chain
 
 **For hop events (`["A", "hop"]`):**
 1. Verify event signature using pubkey
