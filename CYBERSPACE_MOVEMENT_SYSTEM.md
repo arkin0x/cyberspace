@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-Cyberspace is a 256-bit coordinate system that can be navigated using proof-of-work. It functions as an extension of reality—nothing can move or change in cyberspace without real computational work being expended.
+Cyberspace is a 256-bit coordinate system that can be navigated using proof-of-work. It functions as an extension of reality—nothing can move or change in cyberspace without real thermodynamic work being expended.
 
 This document describes a new movement system based on **Cantor pairing tree traversal**, replacing the previous quaternion/velocity-based proof-of-work approach.
 
