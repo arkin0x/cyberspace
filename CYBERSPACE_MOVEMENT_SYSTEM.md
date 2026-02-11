@@ -1,4 +1,4 @@
-# Cyberspace Movement System
+# Cyberspace v2 - A Mathematical Fabric Enabling Distance Traversal and Location-Based Encryption Using Proof-of-Work
 ## Per-Axis Cantor Tree Traversal with Location-Based Encryption
 
 **Date:** February 10, 2026  
