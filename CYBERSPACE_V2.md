@@ -1,15 +1,38 @@
-# Cyberspace v2 Specification
-**Title:** Cyberspace v2 — Per-Axis Cantor Tree Movement + Canonical Dataspace Mapping
+# Cyberspace v2 — Per-Axis Cantor Tree Traversal with Location-Based Encryption
 
-**Status:** Draft (design complete; implementation ongoing)
+**Date:** February 10, 2026  
+**Status:** Design complete (spec); reference implementation in progress
 
-This document is the canonical specification for Cyberspace v2. It defines:
+This document is the canonical specification for Cyberspace v2.
+
+Normative sections are written using RFC-style language (MUST/SHOULD/MAY). Explanatory material is explicitly labeled **non-normative**.
+
+This spec defines:
 - The 256-bit coordinate system (X/Y/Z u85 + plane bit)
-- A deterministic, consensus-oriented GPS→dataspace mapping (for plane=0)
-- A proof-of-work-like movement proof system based on **per-axis Cantor pairing trees**
-- A location-based encryption/discovery scheme derived from Cantor region numbers
+- A deterministic, consensus-oriented GPS→dataspace mapping (plane=0)
+- A movement proof system based on **per-axis Cantor pairing trees**
+- Location-based encryption and discovery primitives derived from **region** Cantor numbers
 
-Reference implementation: `arkin0x/cyberspace-cli`.
+Reference implementation: https://github.com/arkin0x/cyberspace-cli
+
+For design rationale and extended discussion, see `RATIONALE.md` (non-normative).
+
+---
+
+## Overview
+Cyberspace is a 256-bit coordinate system navigated by Schnorr keypairs using proof-of-work-like computation.
+
+Keypairs traverse Cyberspace by publishing signed Nostr events that commit to their movement history. Movement costs are derived from computing Cantor tree roots that represent the aligned regions implied by a hop, which is a movement from one coordinate to another.
+
+Key properties:
+- **Schnorr keypairs prove traversal** by publishing signed movement events.
+- **Public key = spawn coordinate:** identity maps directly into the coordinate fabric.
+- **Movement requires work:** computing mathematical structure (Cantor roots of coordinate pairs), not arbitrary nonce grinding.
+- **Axis symmetry:** equal distances cost equal work regardless of direction.
+- **Location-based encryption:** keys derive from region preimages.
+- **Compact and deterministic:** proofs fit in Nostr events and verify efficiently.
+
+This v2 design replaces earlier drift/quaternion/velocity approaches (deprecated).
 
 ---
 
@@ -31,6 +54,8 @@ A 256-bit integer stores interleaved axis bits plus a plane bit:
 - Bits `3, 6, 9, ...` (every 3rd bit starting at 3): X bits (85 bits)
 - Bits `2, 5, 8, ...` (every 3rd bit starting at 2): Y bits (85 bits)
 - Bits `1, 4, 7, ...` (every 3rd bit starting at 1): Z bits (85 bits)
+
+0x`XYZXYZXYZ...P`
 
 ### 2.2 Reference pseudocode
 ```python
@@ -57,7 +82,7 @@ def coord_to_xyz(coord: int) -> tuple[int,int,int,int]:
 ---
 
 ## 3. Sectors and Required Sector Tags
-A **sector** is `2^30` Gibsons per axis.
+A **sector** is `2^30` Gibsons per axis. Sectors exist to divide cyberspace into manageable pieces that fit into u32 systems. It also allows for proximal querying of public cyberspace objects.
 
 Given `x_u85, y_u85, z_u85`:
 - `sx = x_u85 >> 30`
@@ -69,6 +94,10 @@ All events that claim a coordinate **MUST** include:
 - `Y` tag: `["Y", "<sy>"]`
 - `Z` tag: `["Z", "<sz>"]`
 - `S` tag: `["S", "<sx>-<sy>-<sz>"]`
+
+Tag formatting rules (normative):
+- `sx`, `sy`, `sz` MUST be encoded as base-10 integers (strings), with no leading `+` and no leading zeros (except `"0"`).
+- `S` MUST be exactly `"<sx>-<sy>-<sz>"`.
 
 Rationale:
 - Nostr cannot query “prefix ranges” on tag values; having per-axis sector tags makes it possible to query slices along a single axis.
@@ -82,7 +111,7 @@ Dataspace (`plane=0`) maps WGS84 GPS coordinates (lat/lon[/alt]) into the u85 ax
 This mapping is **consensus-critical** if multiple clients are expected to agree on the same coord256 for a given GPS point.
 
 ### 4.1 Dataspace cube size
-- Full axis length: **96,056 km**
+- Full axis length: **96,056 km** (diameter of geosynchronous orbit)
 - Half axis length: **48,028 km** (Earth center → cube face)
 
 ### 4.2 Axis naming convention (ECEF→Cyberspace)
@@ -111,13 +140,20 @@ Canonical requirements:
   - Termination epsilon: `TRIG_EPS = 1e-88`
   - Max iterations: `TRIG_MAX_ITER = 256`
 
+### 4.3.1 Altitude handling (normative)
+The canonical mapping is defined for latitude/longitude plus an optional altitude in meters.
+
+- If altitude is omitted, implementations MUST treat `altitude_m = 0`.
+- Implementations MUST support “clamp to surface” behavior that forces `altitude_m = 0` (this is what the golden vectors cover).
+- If non-zero altitude is supported, `altitude_m` MUST be interpreted as meters above the WGS84 ellipsoid and processed using the same canonical decimal parsing rules.
+
 ### 4.4 Canonical mapping algorithm (normative)
 1. Parse inputs as decimals.
 2. Clamp latitude to `[-90, 90]`.
 3. Wrap longitude to `[-180, 180)`.
 4. Convert degrees→radians using `PI_STR`.
 5. Compute deterministic `sin/cos` using range reduction + Taylor series, terminating when `abs(term) < TRIG_EPS`.
-6. Convert WGS84 geodetic to ECEF (meters) using decimals.
+6. Convert WGS84 geodetic to ECEF (meters) using decimals (using `altitude_m` after clamping, if applicable).
 7. Convert meters→kilometers.
 8. Permute ECEF axes into Cyberspace axes per §4.2.
 9. Convert kilometers-from-center into u85 axis values:
@@ -130,7 +166,9 @@ Canonical requirements:
 ### 4.5 Golden vectors (consensus locks)
 Implementations SHOULD include golden-vector tests to detect accidental mapping drift.
 
-These are required vectors for spec version `2026-02-13-decimal-v1` (hex is 32 bytes, no `0x` prefix):
+These are required vectors for spec version `2026-02-13-decimal-v1` (hex is 32 bytes, no `0x` prefix).
+
+Golden vectors assume `altitude_m = 0` with clamp-to-surface behavior enabled:
 - `origin_equator_prime` lat=0 lon=0
   - `e040009249248048201201000049208000201009201200000040049201048240`
 - `equator_east_90` lat=0 lon=90
@@ -204,6 +242,19 @@ Compute axis roots independently:
 Then combine:
 - `combined = π(π(cantor_x, cantor_y), cantor_z)`
 
+### 5.4.1 Region uniqueness (non-normative)
+- Each aligned subtree root corresponds to a unique region (Cantor pairing is a bijection).
+- Many coordinate pairs inside the same aligned subtree share the same root.
+
+Example (1D):
+```
+LCA(0, 3) => subtree [0..3] => root = 228
+LCA(1, 2) => subtree [0..3] => root = 228
+LCA(0, 2) => subtree [0..3] => root = 228
+```
+
+This is intentional: the Cantor root is a **region identifier**, not a unique coordinate-pair identifier.
+
 ### 5.5 Integer→bytes encoding (normative)
 Many operations hash large integers. This spec defines the canonical encoding used for hashing integers.
 
@@ -221,6 +272,36 @@ def int_to_bytes_be_min(n: int) -> bytes:
 The movement proof hash is:
 - `proof_hash = sha256(int_to_bytes_be_min(combined))` (32 bytes)
 - encoded as lowercase hex in the `proof` tag.
+
+### 5.6.1 Worked example (non-normative)
+Movement: `(0, 0, 0) → (3, 2, 1)`
+
+Per-axis roots:
+- X: `0 → 3` => height 2 => root `228`
+- Y: `0 → 2` => height 2 => root `228`
+- Z: `0 → 1` => height 1 => root `2`
+
+3D combine:
+- `combined = π(π(228, 228), 2) = 5,452,446,953`
+
+Canonical proof hash (using `int_to_bytes_be_min`):
+- `9306cfcf163adfa9a1f34933091a445bbbc77de02a1e504eba9d6bcd5950b414`
+
+### 5.7 Performance expectations (non-normative)
+Reference implementations typically observe that cost grows with the per-axis LCA height (because the aligned subtree contains `2^h` leaves).
+
+Approximate per-axis expectations from early benchmarks (illustrative only):
+
+| Distance | Height | Cantor size | Time (approx) |
+|---|---:|---:|---:|
+| 1 G | 1 | 1 B | < 0.01 ms |
+| 16 G | 5 | 90 B | < 0.01 ms |
+| 256 G | 9 | 2.5 KB | ~ 0.1 ms |
+| 1,024 G | 11 | 12 KB | ~ 1 ms |
+| 4,096 G | 13 | 57 KB | ~ 10 ms |
+| 65,536 G | 17 | 1.2 MB | ~ 1 sec |
+
+Implementations should cap per-hop distance for UX and may rely on multiple hops for long travel.
 
 ---
 
@@ -245,7 +326,9 @@ Note: some prototypes may leave `sig` blank for local-only chains and sign at pu
 ### 6.3 Spawn event (first event)
 Required:
 - `A` tag: `["A", "spawn"]`
-- `C` tag: `["C", "<coord_hex>"]` where `coord_hex == pubkey` (32-byte x-only pubkey hex)
+- `C` tag: `["C", "<coord_hex>"]`
+  - `coord_hex` MUST be a 32-byte lowercase hex string (64 hex chars, no `0x` prefix)
+  - for spawn events, `coord_hex` MUST equal the event `pubkey` (spawn coordinate)
 - sector tags: `X`, `Y`, `Z`, `S` (per §3)
 
 ### 6.4 Hop event (subsequent events)
@@ -253,9 +336,9 @@ Required:
 - `A` tag: `["A", "hop"]`
 - `e` genesis: `["e", "<spawn_event_id>", "", "genesis"]`
 - `e` previous: `["e", "<previous_event_id>", "", "previous"]`
-- `c` tag: `["c", "<prev_coord_hex>"]`
-- `C` tag: `["C", "<coord_hex>"]`
-- `proof` tag: `["proof", "<proof_hash_hex>"]`
+- `c` tag: `["c", "<prev_coord_hex>"]` (32-byte lowercase hex string)
+- `C` tag: `["C", "<coord_hex>"]` (32-byte lowercase hex string)
+- `proof` tag: `["proof", "<proof_hash_hex>"]` (32-byte lowercase hex string)
 - sector tags: `X`, `Y`, `Z`, `S` (per §3)
 
 ### 6.5 Verification summary
@@ -279,11 +362,30 @@ Given a region integer `region_n` (typically the `combined` Cantor integer for s
 
 Outputs are 32-byte digests. When used in Nostr tags, they MUST be lowercase hex.
 
+### 7.1.1 Discovery radius property (non-normative)
+Cantor subtree roots represent **aligned regions**. Choosing a subtree height implicitly chooses a discovery radius.
+
+Illustrative metaphor:
+
+| Height | Coverage (per axis) | Metaphor |
+|---:|---:|---|
+| 0 | 1 coordinate | Message scratched on one cobblestone |
+| 4 | 16 coordinates | Message on a street corner |
+| 10 | 1,024 coordinates | Billboard in a neighborhood |
+| 20 | ~1,000,000 coordinates | Broadcast across a district |
+
+### 7.1.2 Lookup vs decryption key
+To prevent a published lookup identifier from trivially implying the decryption key, this spec uses:
+- `decryption_key = sha256(int_to_bytes_be_min(region_n))`
+- `lookup_id = sha256(decryption_key)`
+
+Seeing `lookup_id` does not allow deriving `decryption_key` without the region preimage.
+
 ### 7.2 Encrypted content event (Nostr)
 - Encrypted content events: `kind = 33334`
 
 Required tags:
-- `d` tag: `["d", "<lookup_id_hex>"]`
+- `d` tag: `["d", "<lookup_id_hex>"]` (32-byte lowercase hex string)
 
 Optional tags:
 - `h` tag: `["h", "<height_hint>"]` (string integer)
@@ -308,6 +410,19 @@ Then derive `lookup_id` per §7.1.
 
 Implementations SHOULD cap `H` for interactive use and may cache values; higher subtrees change less frequently.
 
+### 7.3.1 Caching optimization (non-normative)
+When moving, many higher subtrees do not change.
+
+Example (1D):
+```
+position 7 is in:  [6..7], [4..7], [0..7], [0..15], [0..31], ...
+position 8 is in:  [8..9], [8..11], [8..15], [0..15], [0..31], ...
+                           ^
+                     [0..15] and above are unchanged
+```
+
+Only recompute subtrees when you cross a boundary for that height.
+
 ---
 
 ## 8. Reference Implementation
@@ -321,14 +436,49 @@ Implementers should treat that repo as the reference for:
 
 ---
 
+## 9. Limitations and threat model (non-normative)
+
+### 9.1 What the protocol provides
+- **Single-location constraint (per keypair):** a valid, linear movement chain makes forking detectable.
+- **Work equivalence (for discovery):** an entity must compute region preimages to derive discovery keys; there is no shortcut.
+- **Auditable movement history:** the chain provides an ordered trail of hops.
+- **Locality imposition:** distance and regions become meaningful in a 256-bit address space.
+
+### 9.2 What the protocol does not provide
+- **Physical location proof:** dataspace mapping is deterministic, but it does not prove a body is physically at that GPS point.
+- **Trusted identity / sybil resistance:** one operator can control many keypairs.
+- **Privacy by default:** movement events are public if published.
+- **Traversal necessity for decryption:** region preimages can be computed directly without maintaining a movement chain.
+
+### 9.3 Acknowledged attack vectors
+- **Coordinate scanning:** an observer can compute region preimages for arbitrary coordinates and query for content. This is considered acceptable because the work required is the same as for a traveler.
+- **Chain abandonment:** an entity may abandon a keypair and start fresh, or they may pubish a new spawn event to start their chain over. This is acceptable. Applications can require continuity/reputation at higher layers.
+
+---
+
 ## Appendix A. Philosophical foundation (non-normative)
 Cyberspace v2 is designed around a simple constraint: if a protocol wants “space”, then **distance must have a cost**.
 
-This spec’s mechanisms are motivated by the following ideas:
-- **Thermodynamic realism (via computation):** you can do things if you can pay the cost. In Cyberspace, movement and certain forms of discovery are gated by computation that can be verified by others.
-- **Locality in a spaceless medium:** a 256-bit address space becomes spatial when transitions between points require verifiable work and when nearby regions share derived values.
-- **Region-derived keys:** Cantor subtree roots are intentionally shared by many points inside the same aligned region. Hashing those region integers yields stable keys that multiple travelers can independently derive when they enter the same region.
-- **Chalk-on-the-sidewalk metaphor:** location-based content is like a message written in chalk at a place. The message can be published publicly, but you only get the ability to read it when you arrive close enough (computationally) to derive the region key.
-- **Simulation ≈ observation:** an adversary who wants to “peek” still needs to compute the same region preimages a traveler would compute.
+### A.1 Modeling spatial dimension thermodynamically
+The purpose of location-based encryption in this system is not primarily secrecy (there are better tools for that). The goal is to **model traversable reality** and impose locality on a spaceless mathematical substrate.
+
+### A.2 What this system achieves
+1. **Movement is work:** you cannot claim to be somewhere else without performing verifiable computation.
+2. **Space has texture:** Cantor trees provide a mathematical “fabric” that must be traversed.
+3. **Discovery requires presence:** content can be addressed so that only those who compute region preimages can derive discovery/decryption keys.
+4. **Reality extension:** dataspace provides a deterministic mapping from WGS84 GPS points into the coordinate fabric.
+5. **Simulation ≈ observation:** learning what is “nearby” requires essentially the same region-preimage work whether you arrived via a chain or computed it directly.
+
+### A.3 The chalk on the sidewalk metaphor
+A message written in chalk on a sidewalk is not “encrypted”, but it is still locality-gated: you can only read it by being there.
+
+Cyberspace uses region-derived keys to implement an analogue: ciphertext may be globally publishable, but deriving the key requires computing the region preimage.
+
+### A.4 Work equivalence between travelers and observers
+A key property of this design is that **observation does not provide a computational shortcut**.
+
+In many digital systems, observers can cheaply inspect state. In Cyberspace, to discover location-gated content you must compute region preimages (Cantor roots and hashes) whether you:
+- traveled along a published movement chain, or
+- computed the region directly for an arbitrary coordinate.
 
 This appendix is explanatory only; it does not add or modify any normative requirements.

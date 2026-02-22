@@ -1,41 +1,85 @@
-# Cyberspace Specification
-
-This repository contains the canonical Cyberspace protocol specifications intended to be implemented by independent clients.
-
-## Philosophy (non-normative)
-Cyberspace is an attempt to impose **locality** and **distance** on a shared cryptographic space by making movement require meaningful computation.
-
-Key ideas:
-- **Movement is work:** you shouldn’t be able to cheaply claim you are “somewhere else”.
-- **Regions are first-class:** Cantor-tree roots intentionally represent *regions* (discovery radii), not unique coordinate pairs.
-- **Discovery requires presence:** location-based content can be addressed so that only entities who compute the region preimage (i.e., who have “been there” computationally) can derive the decryption key.
-- **Simulation ≈ observation:** scanning for nearby content should cost comparable work to traveling through those regions.
-
-A useful metaphor is “chalk on the sidewalk”: you can only read a message by arriving close enough to it; the "key" is derived from the region you occupy.
-
-For a longer discussion, see the appendix in `CYBERSPACE_V2.md`.
+# Cyberspace Protocol
+A 256-bit coordinate system enabling distance traversal and trustless location-based encryption through proof-of-work.
 
 ## Protocol Versions
-
 ### Cyberspace v2 (current)
-- Canonical spec: `CYBERSPACE_V2.md`
+- Spec: `CYBERSPACE_V2.md`
+- Design rationale (non-normative): `RATIONALE.md`
 - Reference implementation: https://github.com/arkin0x/cyberspace-cli
-
-Cyberspace v2 specifies:
-- The 256-bit coordinate system (X/Y/Z u85 + plane bit)
-- Canonical (deterministic) GPS→dataspace mapping (plane=0)
-- Per-axis Cantor-tree movement proofs and movement-chain events
-- Location-based encryption/discovery primitives derived from Cantor region numbers
 
 ### Cyberspace v1 (DEPRECATED)
 Cyberspace v1 drafts are deprecated and archived. They are not a valid basis for new implementations.
-
 - Archived snapshot: `archive/v1/readme.md`
 
-## Scope
-Only v2 is in scope for the active spec.
+## What Is Cyberspace?
+Cyberspace is a **thermodynamic spatial protocol** that imposes locality on a digital system. The coordinate system maps to reality providing a substrate for single-presence AI embodiment and location-based access controls.
 
-Older v1-era material (including constructs/shards notes and drift/combat mechanics) has been moved to `archive/v1/` and should be treated as historical context only.
+Unlike proof-of-location systems that rely on trusted witnesses, hardware attestation, or centralized infrastructure, Cyberspace derives spatial presence from pure computational work via Cantor pairing tree traversal.
+
+Key properties:
+- **Schnorr keypairs navigate** by publishing signed movement events (Nostr events).
+- **Public key = spawn coordinate:** your identity is where you begin in cyberspace.
+- **Verifiable presence:** hash chains of movement events prove where you’ve been in the coordinate system and force a single keypair to commit to a single location.
+- **Movement requires work:** computing Cantor numbers that represent the mathematical structure between coordinates is the fundamental movement operation.
+- **Location-based encryption:** keys derive from publicly computable Cantor region numbers, not trust.
+
+## What Can You Build?
+Examples (non-normative):
+- **Location-gated content:** "chalk on the sidewalk" secrets discoverable only by entities who compute a region preimage.
+- **Verifiable presence:** require a valid movement chain before granting capabilities.
+- **Territory claims:** demonstrate sustained engagement with a region over time (auditable history).
+- **AI embodiment constraints:** constrain an agent to one verifiable location at a time (per keypair).
+- **Ephemeral regional communication:** messages that are local in scope and time.
+
+## What Cyberspace Does NOT Provide
+Non-normative limitations:
+- **Physical location proof:** cryptographic presence is not proof that a body is at a GPS coordinate.
+- **Privacy by default:** movement events are public unless you layer privacy mechanisms.
+- **Sybil resistance:** one person can control multiple keypairs. However, nostr-based web-of-trust mechanisms can make a keypair's reputation a factor.
+- **Traversal necessity for decryption:** region preimages can be computed directly without maintaining a movement chain; traversal is required for **verifiable** movement history, not for decryption.
+
+See `CYBERSPACE_V2.md` (Threat model section) and `RATIONALE.md`.
+
+## Documentation
+- `CYBERSPACE_V2.md` — protocol specification (normative).
+- `RATIONALE.md` — design decisions, limitations, and philosophical foundation (non-normative).
+- https://github.com/arkin0x/cyberspace-cli — reference implementation and CLI docs.
+
+## Protocol Integration (Nostr)
+Cyberspace uses **Nostr** as its transmission layer:
+- Movement events are standard Nostr events (`kind: 3333`).
+- Location-encrypted content uses `kind: 33334`.
+- Events are NIP-01 serialized and Schnorr-signed.
+
+This means Cyberspace does not require new network infrastructure; it composes on top of existing relays.
+
+## Getting Started (reference implementation)
+The reference CLI is still evolving; follow its repo for installation and usage:
+- https://github.com/arkin0x/cyberspace-cli
+
+A minimal local-only flow (example):
+```bash
+cyberspace spawn
+cyberspace whereami
+cyberspace move --by 100,0,0
+cyberspace history
+cyberspace chain status
+```
+
+Other useful utilities in the reference CLI:
+```bash
+cyberspace sector
+cyberspace gps 37.7749,-122.4194
+cyberspace cantor --from-xyz 0,0,0 --to-xyz 3,2,1
+```
+
+Note: additional commands sometimes discussed in design notes (e.g., scanning for encrypted content, publishing helpers, encrypt/decrypt helpers) are **not** part of this spec and may or may not exist in a given implementation.
+
+## Status
+The v2 spec is intended to be implementable. Implementations are in progress.
+
+## Contributing
+Contributions are welcome: protocol critique, alternative implementations, test vectors, and clarity improvements.
 
 ## License
-See `LICENSE`.
+See `LICENSE` (CC BY-SA 4.0).
