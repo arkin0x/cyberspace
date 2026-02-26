@@ -3,8 +3,8 @@ A 256-bit coordinate system enabling distance traversal and trustless location-b
 
 ## Protocol Versions
 ### Cyberspace v2 (current)
-- Spec: `CYBERSPACE_V2.md`
-- Design rationale (non-normative): `RATIONALE.md`
+- Spec: `CYBERSPACE_V2.md` https://github.com/arkin0x/cyberspace/blob/master/CYBERSPACE_V2.md
+- Design rationale (non-normative): `RATIONALE.md` https://github.com/arkin0x/cyberspace/blob/master/RATIONALE.md
 - Reference implementation: https://github.com/arkin0x/cyberspace-cli
 
 ### Cyberspace v1 (DEPRECATED)
