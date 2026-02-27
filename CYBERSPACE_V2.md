@@ -15,7 +15,7 @@ This spec defines:
 
 Reference implementation: https://github.com/arkin0x/cyberspace-cli
 
-For design rationale and extended discussion, see `RATIONALE.md` (non-normative).
+For design rationale and extended discussion, see `RATIONALE.md` https://github.com/arkin0x/cyberspace/blob/master/RATIONALE.md (non-normative).
 
 ---
 
