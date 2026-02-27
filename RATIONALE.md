@@ -75,7 +75,7 @@ The per-axis Cantor roots are **region identifiers**. This makes spatial work ca
 
 This is desirable for discovery (higher subtrees change rarely), but it creates a movement loophole: a mover could generate arbitrarily long hop sequences at near-zero marginal cost by reusing cached spatial results. They would only be able to travel places they had already been to once before, but instantly teleporting over previously trod terrain breaks the proof-of-work requirement continuity of cyberspace as a thermodynamic system.
 
-Cyberspace v2 addresses this by extending movement proofs into a fourth dimension: a **temporal work axis** derived from the Nostr movement chain. Each hop includes an additional fixed-height Cantor-tree computation (`TEMPORAL_HEIGHT = 13`) seeded by the previous movement event id. Because each Nostr event id commits to the previous event (including its proof), the temporal seed for hop *N* is not known until hop *N-1* is complete; the work cannot be precomputed or amortized.
+Cyberspace v2 addresses this by extending movement proofs into a fourth dimension: a **temporal work axis** derived from the Nostr movement chain. Each hop includes an additional Cantor-tree computation whose height `K` is derived from the hop destination coordinate (a deterministic “terrain” function) and whose seed is derived from the previous movement event id. Because each Nostr event id commits to the previous event (including its proof), the temporal seed for hop *N* is not known until hop *N-1* is complete; the work cannot be precomputed or amortized.
 
 Importantly, this does not change what *place* means. Stable spatial region identifiers (used for location-based encryption and discovery) remain a pure function of coordinates, independent of time or identity. The temporal axis exists only to make advancing the movement chain cost work.
 
@@ -230,7 +230,7 @@ Cyberspace adds:
 ## 9. Open Questions and Future Work
 - Making traversal mathematically necessary for computing region numbers (not just verifiable).
 - Relay specialization / indexing by region.
-- Terrain-based hop cost: derive `TEMPORAL_HEIGHT` from a deterministic “terrain” function (e.g., based on the destination coordinate).
+- Terrain tuning: alternative deterministic “terrain” functions for deriving the temporal height `K` (and different cell scales / distributions).
 - Privacy enhancements (e.g., ZK proofs, obfuscated paths).
 
 ---

@@ -266,20 +266,50 @@ This is intentional: the Cantor root `region_n` is a **region identifier**, not 
 ### 5.4.2 Temporal axis root (hop freshness)
 To prevent proof reuse and guarantee fresh work per hop, hop proofs include an additional Cantor-tree root derived from Nostr chain context.
 
-**Temporal height constant (normative):**
-- `TEMPORAL_HEIGHT = 13`
+This temporal axis has two inputs:
+- a hop-specific **height** `K` derived from the destination coordinate (a deterministic “terrain” function), and
+- a hop-specific **seed** `t` derived from the `previous_event_id`.
 
+#### 5.4.2.1 Terrain-derived temporal height K (normative)
+Define constants:
+- `TERRAIN_DOMAIN_V1 = b"CYBERSPACE_TERRAIN_K_V1"` (ASCII bytes)
+- `TERRAIN_CELL_BITS = [3, 7, 9, 11]` (exactly four integers)
+
+If any part of this terrain function changes (constants, hashing preimage format, byte selection, etc.), the domain string MUST be bumped to a new value (e.g., `..._V2`) to avoid ambiguity.
+
+Given the hop destination coordinate `(x2, y2, z2, plane)`:
+
+1. For each `bits` in `TERRAIN_CELL_BITS` (in order):
+   1. Align the destination to the cell of width `2^bits` along each axis:
+      - `bx = (x2 >> bits) << bits`
+      - `by = (y2 >> bits) << bits`
+      - `bz = (z2 >> bits) << bits`
+   2. Compute `cell_coord = xyz_to_coord(bx, by, bz, plane)`.
+   3. Encode `cell_coord` as exactly 32 big-endian bytes: `cell_coord_bytes`.
+   4. Compute `digest = sha256(TERRAIN_DOMAIN_V1 || byte(bits) || cell_coord_bytes)`.
+      - `byte(bits)` is a single unsigned byte with value `bits`.
+   5. Record `b_i = digest[0]` (the first byte of the digest).
+
+2. Concatenate the four bytes into a 32-bit word (big-endian):
+   - `word32 = (b0 << 24) | (b1 << 16) | (b2 << 8) | b3`
+
+3. Define `K` as the popcount of `word32` (the number of 1 bits in its 32-bit binary representation).
+   - Therefore `K` MUST be an integer in `[0, 32]`.
+
+Note (non-normative): Because `K` is the popcount of 32 pseudorandom bits, it is distributed approximately as a binomial distribution with mean 16. The aligned cells introduce spatial correlation (“hills”).
+
+#### 5.4.2.2 Temporal axis seed and root (normative)
 For hop events, let `previous_event_id` be the 32-byte NIP-01 event id referenced by the `e` tag with marker `previous` (§6.4).
 
 1. Parse `previous_event_id` from lowercase hex into 32 bytes.
 2. Interpret it as a big-endian integer and reduce it into the u85 axis (the least-significant 85 bits):
    - `prev_id_int = int.from_bytes(previous_event_id_bytes, "big")`
    - `t = prev_id_int % (1 << 85)`
-3. Compute an aligned temporal subtree and its Cantor root:
-   - `t_base = (t >> TEMPORAL_HEIGHT) << TEMPORAL_HEIGHT`
-   - `cantor_t = compute_subtree_cantor(t_base, TEMPORAL_HEIGHT)`
+3. Compute an aligned temporal subtree and its Cantor root (at the terrain-derived height `K`):
+   - `t_base = (t >> K) << K`
+   - `cantor_t = compute_subtree_cantor(t_base, K)`
 
-Note (non-normative): the temporal axis is derived from chain context, not wall-clock time. There is no continuous “alive” cost; you pay this work only when you publish a hop.
+Note (non-normative): the temporal axis is derived from chain context and destination coordinates, not wall-clock time. There is no continuous “alive” cost; you pay this work only when you publish a hop.
 
 ### 5.4.3 4D hop preimage (space + time)
 Define the hop preimage integer:
@@ -308,36 +338,40 @@ The movement proof hash is derived from the 4D hop preimage `hop_n` (space + tim
 When used in Nostr tags, `proof_hash` MUST be encoded as lowercase hex in the `proof` tag.
 
 ### 5.6.1 Worked example (non-normative)
-Movement: `(0, 0, 0) → (3, 2, 1)`
+Movement: `(0, 0, 0) → (4104, 0, 0)`
 
 Per-axis roots:
-- X: `0 → 3` => height 2 => root `228`
-- Y: `0 → 2` => height 2 => root `228`
-- Z: `0 → 1` => height 1 => root `2`
+- X: `0 → 4104` => height 13 => root = `compute_subtree_cantor(0, 13)`
+- Y: `0 → 0` => height 0 => root `0`
+- Z: `0 → 0` => height 0 => root `0`
 
 3D combine (stable spatial region integer):
-- `region_n = π(π(228, 228), 2) = 5,452,446,953`
+- `region_n = π(π(cantor_x, 0), 0)`
 
 Stable lookup id (used for location-based encryption/discovery, §7.1):
 - `lookup_id = sha256(sha256(int_to_bytes_be_min(region_n)))`
-- `1247b1caeb69145100d6adbb52943c36d72023b10a0f5f434d41311d0b0b339c`
+- `8d2463eb22301d97a1f7e33b90e473ba2eec69079f418a72609c3e4d2981669b`
 
-Temporal axis example (`TEMPORAL_HEIGHT = 13`) using `previous_event_id` = 64 hex zeros:
+Terrain-derived temporal height at destination `(x2=4104, y2=0, z2=0, plane=0)` using `TERRAIN_CELL_BITS = [3, 7, 9, 11]`:
+- `K = 13`
+
+Temporal axis example using `previous_event_id` = 64 hex zeros:
 - `previous_event_id = "0000000000000000000000000000000000000000000000000000000000000000"`
 - `t = 0`
 - `t_base = 0`
+- `cantor_t = compute_subtree_cantor(0, 13)`
 
 4D hop preimage and movement proof hash (what is placed in the hop event’s `proof` tag):
-- `hop_n = π(region_n, compute_subtree_cantor(t_base, 13))`
+- `hop_n = π(region_n, cantor_t)`
 - `proof_hash = sha256(sha256(int_to_bytes_be_min(hop_n)))`
-- `5bfccb2499857cb8e9287cf2a18af6ca25f7b42636cda5da2c881e41b28d5be2`
+- `29a927e6b637b12c22473556daa0077a09e6c20cf5367b12fccfd9643f110a4c`
 
 Different `previous_event_id` values produce different `proof_hash` values, even for identical spatial moves.
 
 ### 5.7 Performance expectations (non-normative)
 Reference implementations typically observe that cost grows with the per-axis LCA height (because the aligned subtree contains `2^h` leaves).
 
-In addition, hop proofs include a temporal axis traversal at fixed height `TEMPORAL_HEIGHT = 13`, imposing a non-cacheable work floor per hop even when the spatial `region_n` is reused.
+In addition, hop proofs include a temporal axis traversal at a terrain-derived height `K` (§5.4.2.1), imposing a non-cacheable work component per hop even when the spatial `region_n` is reused. Because `K` depends on the destination coordinate, some regions of cyberspace are intrinsically easier or harder to traverse.
 
 Approximate per-axis expectations from early benchmarks (illustrative only):
 
@@ -395,10 +429,11 @@ To verify a hop:
 1. Parse previous and current coords; decode to `(x1,y1,z1,plane)` and `(x2,y2,z2,plane)`.
 2. Reject if planes differ (plane changes are out of scope for v2).
 3. Compute the stable spatial region integer `region_n` per §5.4.
-4. Compute the temporal axis root `cantor_t` per §5.4.2 using the hop event’s `previous_event_id` (`e` tag with marker `previous`).
-5. Compute `hop_n = π(region_n, cantor_t)` per §5.4.3.
-6. Compute `proof_hash` per §5.6.
-7. Accept iff it matches the event’s `proof` tag.
+4. Derive the terrain-based temporal height `K` from the destination coordinate `(x2,y2,z2,plane)` per §5.4.2.1.
+5. Compute the temporal axis root `cantor_t` from the hop event’s `previous_event_id` (`e` tag with marker `previous`) and `K` per §5.4.2.2.
+6. Compute `hop_n = π(region_n, cantor_t)` per §5.4.3.
+7. Compute `proof_hash` per §5.6.
+8. Accept iff it matches the event’s `proof` tag.
 
 ---
 
