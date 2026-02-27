@@ -269,9 +269,12 @@ def int_to_bytes_be_min(n: int) -> bytes:
 ```
 
 ### 5.6 Movement proof hash
-The movement proof hash is:
-- `proof_hash = sha256(int_to_bytes_be_min(combined))` (32 bytes)
-- encoded as lowercase hex in the `proof` tag.
+The movement proof hash is derived from the same single-hash key used for location-based encryption (§7.1):
+- `region_bytes = int_to_bytes_be_min(combined)`
+- `location_decryption_key = sha256(region_bytes)` (32 bytes)
+- `proof_hash = sha256(location_decryption_key)` (32 bytes)
+
+When used in Nostr tags, `proof_hash` MUST be encoded as lowercase hex in the `proof` tag.
 
 ### 5.6.1 Worked example (non-normative)
 Movement: `(0, 0, 0) → (3, 2, 1)`
@@ -284,8 +287,8 @@ Per-axis roots:
 3D combine:
 - `combined = π(π(228, 228), 2) = 5,452,446,953`
 
-Canonical proof hash (using `int_to_bytes_be_min`):
-- `9306cfcf163adfa9a1f34933091a445bbbc77de02a1e504eba9d6bcd5950b414`
+Canonical proof hash (using double-SHA256 as in §5.6):
+- `1247b1caeb69145100d6adbb52943c36d72023b10a0f5f434d41311d0b0b339c`
 
 ### 5.7 Performance expectations (non-normative)
 Reference implementations typically observe that cost grows with the per-axis LCA height (because the aligned subtree contains `2^h` leaves).
@@ -357,8 +360,8 @@ This section defines key derivation from region Cantor numbers.
 ### 7.1 Key derivation
 Given a region integer `region_n` (typically the `combined` Cantor integer for some aligned region):
 - `region_bytes = int_to_bytes_be_min(region_n)`
-- `decryption_key = sha256(region_bytes)`
-- `lookup_id = sha256(decryption_key)`
+- `location_decryption_key = sha256(region_bytes)`
+- `lookup_id = sha256(location_decryption_key)`
 
 Outputs are 32-byte digests. When used in Nostr tags, they MUST be lowercase hex.
 
@@ -376,10 +379,10 @@ Illustrative metaphor:
 
 ### 7.1.2 Lookup vs decryption key
 To prevent a published lookup identifier from trivially implying the decryption key, this spec uses:
-- `decryption_key = sha256(int_to_bytes_be_min(region_n))`
-- `lookup_id = sha256(decryption_key)`
+- `location_decryption_key = sha256(int_to_bytes_be_min(region_n))`
+- `lookup_id = sha256(location_decryption_key)`
 
-Seeing `lookup_id` does not allow deriving `decryption_key` without the region preimage.
+Seeing `lookup_id` does not allow deriving `location_decryption_key` without the region preimage.
 
 ### 7.2 Encrypted content event (Nostr)
 - Encrypted content events: `kind = 33334`
