@@ -1,6 +1,7 @@
 # Cyberspace v2 — Per-Axis Cantor Tree Traversal with Location-Based Encryption
 
 **Date:** February 10, 2026  
+**Last updated:** February 27, 2026  
 **Status:** Design complete (spec); reference implementation in progress
 
 This document is the canonical specification for Cyberspace v2.
@@ -11,6 +12,7 @@ This spec defines:
 - The 256-bit coordinate system (X/Y/Z u85 + plane bit)
 - A deterministic, consensus-oriented GPS→dataspace mapping (plane=0)
 - A movement proof system based on **per-axis Cantor pairing trees**
+- A per-hop **temporal work axis** derived from the Nostr movement chain (prevents cached/replayed hop proofs)
 - Location-based encryption and discovery primitives derived from **region** Cantor numbers
 
 Reference implementation: https://github.com/arkin0x/cyberspace-cli
@@ -22,14 +24,15 @@ For design rationale and extended discussion, see `RATIONALE.md` https://github.
 ## Overview
 Cyberspace is a 256-bit coordinate system navigated by Schnorr keypairs using proof-of-work-like computation.
 
-Keypairs traverse Cyberspace by publishing signed Nostr events that commit to their movement history. Movement costs are derived from computing Cantor tree roots that represent the aligned regions implied by a hop, which is a movement from one coordinate to another.
+Keypairs traverse Cyberspace by publishing signed Nostr events that commit to their movement history. Movement costs are derived from computing Cantor tree roots that represent the aligned spatial regions implied by a hop, plus a temporal work component derived from chain context so that every hop costs work.
 
 Key properties:
 - **Schnorr keypairs prove traversal** by publishing signed movement events.
 - **Public key = spawn coordinate:** identity maps directly into the coordinate fabric.
+- **Every hop costs work:** movement proofs include a temporal Cantor traversal derived from the previous event id.
 - **Movement requires work:** computing mathematical structure (Cantor roots of coordinate pairs), not arbitrary nonce grinding.
 - **Axis symmetry:** equal distances cost equal work regardless of direction.
-- **Location-based encryption:** keys derive from region preimages.
+- **Location-based encryption:** keys derive from stable spatial region preimages.
 - **Compact and deterministic:** proofs fit in Nostr events and verify efficiently.
 
 This v2 design replaces earlier drift/quaternion/velocity approaches (deprecated).
@@ -42,6 +45,7 @@ This v2 design replaces earlier drift/quaternion/velocity approaches (deprecated
 - **Plane:** 1 bit. `0 = dataspace` (physical mapping), `1 = ideaspace` (non-physical).
 - **Gibson (G):** The fundamental unit (one axis step in u85 space).
 - **Sector:** A cube of `2^30` Gibsons per axis.
+- **Temporal axis (u85):** A per-hop work axis derived from chain context (the previous movement event id) used only for hop proof freshness; it does not affect stable spatial region identifiers.
 
 ---
 
@@ -184,7 +188,11 @@ Golden vectors assume `altitude_m = 0` with clamp-to-surface behavior enabled:
 
 ---
 
-## 5. Movement Proofs (Per-Axis Cantor Pairing Trees)
+## 5. Movement Proofs (Per-Axis Cantor Pairing Trees + Temporal Axis)
+
+Movement proofs are computed per hop. They include:
+- a **stable 3D spatial region integer** (`region_n`) derived only from coordinates (used for location-based encryption/discovery in §7), and
+- a **temporal work component** (`cantor_t`) derived from the previous movement event id (forces fresh work per hop).
 
 ### 5.1 Cantor pairing function
 The Cantor pairing function maps two natural numbers to one:
@@ -240,7 +248,7 @@ Compute axis roots independently:
 - `cantor_z = axis_root(z1, z2)`
 
 Then combine:
-- `combined = π(π(cantor_x, cantor_y), cantor_z)`
+- `region_n = π(π(cantor_x, cantor_y), cantor_z)`
 
 ### 5.4.1 Region uniqueness (non-normative)
 - Each aligned subtree root corresponds to a unique region (Cantor pairing is a bijection).
@@ -253,7 +261,29 @@ LCA(1, 2) => subtree [0..3] => root = 228
 LCA(0, 2) => subtree [0..3] => root = 228
 ```
 
-This is intentional: the Cantor root is a **region identifier**, not a unique coordinate-pair identifier.
+This is intentional: the Cantor root `region_n` is a **region identifier**, not a unique coordinate-pair identifier.
+
+### 5.4.2 Temporal axis root (hop freshness)
+To prevent proof reuse and guarantee fresh work per hop, hop proofs include an additional Cantor-tree root derived from Nostr chain context.
+
+**Temporal height constant (normative):**
+- `TEMPORAL_HEIGHT = 13`
+
+For hop events, let `previous_event_id` be the 32-byte NIP-01 event id referenced by the `e` tag with marker `previous` (§6.4).
+
+1. Parse `previous_event_id` from lowercase hex into 32 bytes.
+2. Interpret it as a big-endian integer and reduce it into the u85 axis (the least-significant 85 bits):
+   - `prev_id_int = int.from_bytes(previous_event_id_bytes, "big")`
+   - `t = prev_id_int % (1 << 85)`
+3. Compute an aligned temporal subtree and its Cantor root:
+   - `t_base = (t >> TEMPORAL_HEIGHT) << TEMPORAL_HEIGHT`
+   - `cantor_t = compute_subtree_cantor(t_base, TEMPORAL_HEIGHT)`
+
+Note (non-normative): the temporal axis is derived from chain context, not wall-clock time. There is no continuous “alive” cost; you pay this work only when you publish a hop.
+
+### 5.4.3 4D hop preimage (space + time)
+Define the hop preimage integer:
+- `hop_n = π(region_n, cantor_t)`
 
 ### 5.5 Integer→bytes encoding (normative)
 Many operations hash large integers. This spec defines the canonical encoding used for hashing integers.
@@ -269,10 +299,11 @@ def int_to_bytes_be_min(n: int) -> bytes:
 ```
 
 ### 5.6 Movement proof hash
-The movement proof hash is derived from the same single-hash key used for location-based encryption (§7.1):
-- `region_bytes = int_to_bytes_be_min(combined)`
-- `location_decryption_key = sha256(region_bytes)` (32 bytes)
-- `proof_hash = sha256(location_decryption_key)` (32 bytes)
+The movement proof hash is derived from the 4D hop preimage `hop_n` (space + time). This intentionally differs from the stable spatial region identifiers used for location-based encryption and discovery (§7).
+
+- `hop_bytes = int_to_bytes_be_min(hop_n)`
+- `movement_proof_key = sha256(hop_bytes)` (32 bytes)
+- `proof_hash = sha256(movement_proof_key)` (32 bytes)
 
 When used in Nostr tags, `proof_hash` MUST be encoded as lowercase hex in the `proof` tag.
 
@@ -284,14 +315,29 @@ Per-axis roots:
 - Y: `0 → 2` => height 2 => root `228`
 - Z: `0 → 1` => height 1 => root `2`
 
-3D combine:
-- `combined = π(π(228, 228), 2) = 5,452,446,953`
+3D combine (stable spatial region integer):
+- `region_n = π(π(228, 228), 2) = 5,452,446,953`
 
-Canonical proof hash (using double-SHA256 as in §5.6):
+Stable lookup id (used for location-based encryption/discovery, §7.1):
+- `lookup_id = sha256(sha256(int_to_bytes_be_min(region_n)))`
 - `1247b1caeb69145100d6adbb52943c36d72023b10a0f5f434d41311d0b0b339c`
+
+Temporal axis example (`TEMPORAL_HEIGHT = 13`) using `previous_event_id` = 64 hex zeros:
+- `previous_event_id = "0000000000000000000000000000000000000000000000000000000000000000"`
+- `t = 0`
+- `t_base = 0`
+
+4D hop preimage and movement proof hash (what is placed in the hop event’s `proof` tag):
+- `hop_n = π(region_n, compute_subtree_cantor(t_base, 13))`
+- `proof_hash = sha256(sha256(int_to_bytes_be_min(hop_n)))`
+- `5bfccb2499857cb8e9287cf2a18af6ca25f7b42636cda5da2c881e41b28d5be2`
+
+Different `previous_event_id` values produce different `proof_hash` values, even for identical spatial moves.
 
 ### 5.7 Performance expectations (non-normative)
 Reference implementations typically observe that cost grows with the per-axis LCA height (because the aligned subtree contains `2^h` leaves).
+
+In addition, hop proofs include a temporal axis traversal at fixed height `TEMPORAL_HEIGHT = 13`, imposing a non-cacheable work floor per hop even when the spatial `region_n` is reused.
 
 Approximate per-axis expectations from early benchmarks (illustrative only):
 
@@ -348,9 +394,11 @@ Required:
 To verify a hop:
 1. Parse previous and current coords; decode to `(x1,y1,z1,plane)` and `(x2,y2,z2,plane)`.
 2. Reject if planes differ (plane changes are out of scope for v2).
-3. Compute `combined` per §5.
-4. Compute `proof_hash` per §5.6.
-5. Accept iff it matches the event’s `proof` tag.
+3. Compute the stable spatial region integer `region_n` per §5.4.
+4. Compute the temporal axis root `cantor_t` per §5.4.2 using the hop event’s `previous_event_id` (`e` tag with marker `previous`).
+5. Compute `hop_n = π(region_n, cantor_t)` per §5.4.3.
+6. Compute `proof_hash` per §5.6.
+7. Accept iff it matches the event’s `proof` tag.
 
 ---
 
@@ -358,10 +406,12 @@ To verify a hop:
 This section defines key derivation from region Cantor numbers.
 
 ### 7.1 Key derivation
-Given a region integer `region_n` (typically the `combined` Cantor integer for some aligned region):
+Given a spatial region integer `region_n` (the 3D region identifier from §5.4 for some aligned region):
 - `region_bytes = int_to_bytes_be_min(region_n)`
 - `location_decryption_key = sha256(region_bytes)`
 - `lookup_id = sha256(location_decryption_key)`
+
+Note (non-normative): the temporal axis used for hop proofs (§5.4.2) is intentionally not included here. Location-based identifiers and keys remain a stable function of spatial regions.
 
 Outputs are 32-byte digests. When used in Nostr tags, they MUST be lowercase hex.
 
@@ -426,6 +476,8 @@ position 8 is in:  [8..9], [8..11], [8..15], [0..15], [0..31], ...
 
 Only recompute subtrees when you cross a boundary for that height.
 
+Note: this caching optimization applies to spatial region computations. Hop proofs still require computing the temporal axis root per §5.4.2 on every hop.
+
 ---
 
 ## 8. Reference Implementation
@@ -443,6 +495,7 @@ Implementers should treat that repo as the reference for:
 
 ### 9.1 What the protocol provides
 - **Single-location constraint (per keypair):** a valid, linear movement chain makes forking detectable.
+- **Hop freshness:** every hop includes non-cacheable temporal work derived from chain context.
 - **Work equivalence (for discovery):** an entity must compute region preimages to derive discovery keys; there is no shortcut.
 - **Auditable movement history:** the chain provides an ordered trail of hops.
 - **Locality imposition:** distance and regions become meaningful in a 256-bit address space.

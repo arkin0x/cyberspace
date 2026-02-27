@@ -31,6 +31,8 @@ Cyberspace attempts to model these properties thermodynamically:
 
 Just as Bitcoin captures time through proof-of-work (you cannot spend without having mined or received), Cyberspace captures space through Cantor traversal (you cannot be somewhere without having computed the path).
 
+Cyberspace v2 also enforces that **every hop costs work**, by adding a temporal work component derived from the Nostr movement chain.
+
 This is not about creating a virtual world. It is about **extending reality**—making a digital substrate where spatial properties hold thermodynamically.
 
 ---
@@ -67,6 +69,17 @@ Why it works:
 - **Bounded computation:** 85-bit trees are manageable. Memory stays in kilobytes, not gigabytes.
 - **Parallelizable:** Three independent computations can run in parallel.
 - **Preserves semantics:** Still requires "traversing mathematical fabric"—just structured more practically.
+
+### Ensuring Every Hop Costs Work (Temporal Axis)
+The per-axis Cantor roots are **region identifiers**. This makes spatial work cacheable: once a client has computed the Cantor root for an aligned region, it can reuse that result in later hops that traverse the same region.
+
+This is desirable for discovery (higher subtrees change rarely), but it creates a movement loophole: a mover could generate arbitrarily long hop sequences at near-zero marginal cost by reusing cached spatial results. They would only be able to travel places they had already been to once before, but instantly teleporting over previously trod terrain breaks the proof-of-work requirement continuity of cyberspace as a thermodynamic system.
+
+Cyberspace v2 addresses this by extending movement proofs into a fourth dimension: a **temporal work axis** derived from the Nostr movement chain. Each hop includes an additional fixed-height Cantor-tree computation (`TEMPORAL_HEIGHT = 13`) seeded by the previous movement event id. Because each Nostr event id commits to the previous event (including its proof), the temporal seed for hop *N* is not known until hop *N-1* is complete; the work cannot be precomputed or amortized.
+
+Importantly, this does not change what *place* means. Stable spatial region identifiers (used for location-based encryption and discovery) remain a pure function of coordinates, independent of time or identity. The temporal axis exists only to make advancing the movement chain cost work.
+
+This is not a continuous “heartbeat” cost: an avatar’s last hop event remains its state indefinitely. The temporal axis work is paid only when moving.
 
 ### Why Not Just Hash Grinding?
 
@@ -217,6 +230,7 @@ Cyberspace adds:
 ## 9. Open Questions and Future Work
 - Making traversal mathematically necessary for computing region numbers (not just verifiable).
 - Relay specialization / indexing by region.
+- Terrain-based hop cost: derive `TEMPORAL_HEIGHT` from a deterministic “terrain” function (e.g., based on the destination coordinate).
 - Privacy enhancements (e.g., ZK proofs, obfuscated paths).
 
 ---

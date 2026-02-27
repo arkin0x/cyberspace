@@ -20,8 +20,9 @@ Key properties:
 - **Schnorr keypairs navigate** by publishing signed movement events (Nostr events).
 - **Public key = spawn coordinate:** your identity is where you begin in cyberspace.
 - **Verifiable presence:** hash chains of movement events prove where you’ve been in the coordinate system and force a single keypair to commit to a single location.
+- **Every hop costs work:** hop proofs include a temporal Cantor traversal derived from the previous movement event id (`TEMPORAL_HEIGHT = 13`), preventing cached/replayed hop proofs.
 - **Movement requires work:** computing Cantor numbers that represent the mathematical structure between coordinates is the fundamental movement operation.
-- **Location-based encryption:** keys derive from publicly computable Cantor region numbers, not trust.
+- **Location-based encryption:** keys derive from stable spatial Cantor region numbers, not trust.
 
 ## What Can You Build?
 Examples (non-normative):
