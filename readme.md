@@ -3,9 +3,9 @@ A 256-bit coordinate system enabling distance traversal and trustless location-b
 
 ## Protocol Versions
 ### Cyberspace v2 (current)
-- Spec: `CYBERSPACE_V2.md` https://github.com/arkin0x/cyberspace/blob/master/CYBERSPACE_V2.md
-- Design rationale (non-normative): `RATIONALE.md` https://github.com/arkin0x/cyberspace/blob/master/RATIONALE.md
-- Reference implementation: https://github.com/arkin0x/cyberspace-cli
+- Spec: (https://github.com/arkin0x/cyberspace/blob/master/CYBERSPACE_V2.md)[CYBERSPACE_V2.md]
+- Design rationale (non-normative): `RATIONALE.md` (https://github.com/arkin0x/cyberspace/blob/master/RATIONALE.md)[RATIONALE.md]
+- Reference implementation: (https://github.com/arkin0x/cyberspace-cli)[https://github.com/arkin0x/cyberspace-cli]
 
 ### Cyberspace v1 (DEPRECATED)
 Cyberspace v1 drafts are deprecated and archived. They are not a valid basis for new implementations.
@@ -17,18 +17,15 @@ Cyberspace is a **thermodynamic spatial protocol** that imposes locality on a di
 Unlike proof-of-location systems that rely on trusted witnesses, hardware attestation, or centralized infrastructure, Cyberspace derives spatial presence from pure computational work via Cantor pairing tree traversal.
 
 Key properties:
-- **Schnorr keypairs navigate** by publishing signed movement events (Nostr events).
+- **Space as a mathematical fabric, movement as computation:** computing Cantor numbers that represent the mathematical structure between coordinates is the fundamental movement operation.
+- **Schnorr keypairs prove navigation through space** by publishing signed movement events (Nostr events) containing computation proofs.
 - **Public key = spawn coordinate:** your identity is where you begin in cyberspace.
-- **Verifiable presence:** hash chains of movement events prove where you’ve been in the coordinate system and force a single keypair to commit to a single location.
-- **Every hop costs work:** hop proofs include a temporal Cantor traversal derived from the previous movement event id (`TEMPORAL_HEIGHT = 13`), preventing cached/replayed hop proofs.
-- **Movement requires work:** computing Cantor numbers that represent the mathematical structure between coordinates is the fundamental movement operation.
+- **Verifiable traversal:** hash chains of movement events prove where you’ve been in the coordinate system and force a single keypair to commit to a single location.
 - **Location-based encryption:** keys derive from stable spatial Cantor region numbers, not trust.
 
 ## What Can You Build?
 Examples (non-normative):
 - **Location-gated content:** "chalk on the sidewalk" secrets discoverable only by entities who compute a region preimage.
-- **Verifiable presence:** require a valid movement chain before granting capabilities.
-- **Territory claims:** demonstrate sustained engagement with a region over time (auditable history).
 - **AI embodiment constraints:** constrain an agent to one verifiable location at a time (per keypair).
 - **Ephemeral regional communication:** messages that are local in scope and time.
 
@@ -43,14 +40,15 @@ See `CYBERSPACE_V2.md` (Threat model section) and `RATIONALE.md`.
 
 ## Documentation
 - `CYBERSPACE_V2.md` — protocol specification (normative).
+- `decks/` — protocol extensions - Design Extension and Compatibility Kits (DECKs).
 - `RATIONALE.md` — design decisions, limitations, and philosophical foundation (non-normative).
 - https://github.com/arkin0x/cyberspace-cli — reference implementation and CLI docs.
 
 ## Protocol Integration (Nostr)
-Cyberspace uses **Nostr** as its transmission layer:
-- Movement events are standard Nostr events (`kind: 3333`).
-- Location-encrypted content uses `kind: 33334`.
-- Events are NIP-01 serialized and Schnorr-signed.
+Cyberspace uses **Nostr** as its transmission layer. The state of cyberspace is the sum of cyberspace-related nostr events. Being based on a decentralized permissionless system, knowledge of global state is not possible (just as in reality). Cyberspace events conform to NIP-01.
+- Action events (spawn and movement) are `kind: 3333`
+- Location-encrypted content events are `kind: 33334`
+- DECKs define other event kinds and structures.
 
 This means Cyberspace does not require new network infrastructure; it composes on top of existing relays.
 
@@ -80,7 +78,7 @@ Note: additional commands sometimes discussed in design notes (e.g., scanning fo
 The v2 spec is intended to be implementable. Implementations are in progress.
 
 ## Contributing
-Contributions are welcome: protocol critique, alternative implementations, test vectors, and clarity improvements.
+Contributions are welcome: protocol critique, alternative implementations, test vectors, DECKs, and clarity improvements.
 
 ## License
 See `LICENSE` (CC BY-SA 4.0).

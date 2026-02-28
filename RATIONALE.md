@@ -8,45 +8,35 @@ This document is **non-normative**. The canonical protocol specification is `CYB
 
 ## 1. Why Build a Thermodynamic Spatial Protocol?
 
-### The Problem: Distance Died with the Internet
+### The Precedent: Bitcoin Captured Time
 
-Before the internet, distance was inescapable. You could not know what was happening somewhere else without traveling there, or relying on someone who had. Information traveled at the speed of its carriers—foot, horse, ship, wire.
+Bitcoin proved that thermodynamic work could anchor a digital system to physical reality. By making the creation of new coins require real energy expenditure, Bitcoin solved a problem previously thought impossible: transferring value through time without trusted intermediaries. Before Bitcoin, digital scarcity required institutions to enforce it. After Bitcoin, scarcity could be enforced by mathematics alone.
 
-The internet replaced geography with hyperlinks. Everything became one click away. Distance died. This was liberation—but also loss:
-- Communities lost local character
-- Spam and noise reached everyone equally
-- Discovery became algorithmic rather than exploratory
-- Presence became meaningless—you are "everywhere" when you are online
+This opened a question: if proof-of-work can capture the time dimension in a digital system, could the same principle capture the spatial dimensions? Not to create another currency, but to impose locality itself—the fundamental property of space—on a mathematical substrate.
 
-### The Goal: Make Distance Meaningful Again
+#### The Problems Locality Would Solve
 
-Not by restricting access (walls) or creating privilege (VIP sections), but by making presence require **work**. In physical reality, being somewhere costs energy. You cannot be in two places at once. Your path matters.
+Locality is not just a constraint. It is a capability. Physical space enables things that digital systems cannot replicate:
 
-Cyberspace attempts to model these properties thermodynamically:
-- You cannot claim to be somewhere without doing the computation to get there
-- Being in one place means you are demonstrably not somewhere else
-- Discovery requires presence, not permission
+**Embodiment for digital entities.** AI systems currently have no spatial constraints. An AI can "be everywhere" simultaneously, accessing systems across the globe at the same instant. This matters because many security and social assumptions depend on spatial constraints: a person can only sign one document at a time, a witness can only be in one place. Locality would enable verifiable embodiment for digital entities, constraining them to "be somewhere" and not anywhere else in a provable way.
 
-### The Philosophical Claim
+**An Augmented Reality-native Geospatial Overlay**. The Dataspace plane maps directly to physical reality: 96,056 km per axis extending to geosynchronous orbit. This creates a cryptographic overlay on the physical world, where cyberspace coordinates correspond to actual locations on Earth. By trustlessly placing cyberspace objects at physical locations, a decentralized and permissionless overlay of infinite layers can be projected over reality with no central servers. Who owns the AR cloud? Nobody.
 
-Just as Bitcoin captures time through proof-of-work (you cannot spend without having mined or received), Cyberspace captures space through Cantor traversal (you cannot be somewhere without having computed the path).
+**Hiding without trust.** In physical reality, you can hide something by controlling where it is. A message in a bottle, a buried treasure, a note in a hollow tree. These require no keys, no permissions, and no trusted authorities. Only those who travel there can find them. The fundamental mechanism for hiding things is proof-of-work, whether it is physical travel or digital. Digital systems are spaceless and have no equivalent. All current approaches to hiding information require trusting someone: key holders, access control administrators, or hardware manufacturers. Locality would enable hiding through presence alone.
 
-Cyberspace v2 also enforces that **every hop costs work**, by adding a temporal work component derived from the Nostr movement chain.
-
-This is not about creating a virtual world. It is about **extending reality**—making a digital substrate where spatial properties hold thermodynamically.
-
----
+**Communities with boundaries.** Physical communities have natural membership constraints: you must be there. This creates shared context, accumulated trust, and local reputation. Online communities lack these constraints. Anyone can join from anywhere, instantly, at zero cost. This enables sybil attacks, context collapse, and governance capture. Locality would reintroduce the constraint of presence, making membership require traversal rather than just a click.
 
 ## 2. Why Cantor Pairing Trees?
 
 ### The Design Requirements
 
-The movement system needed to satisfy:
-1. **Work requirement:** Movement should require real computation
-2. **Meaningful computation:** Not arbitrary hash grinding—traversing actual mathematical structure
-3. **Axis symmetry:** Moving 100 units in +X should cost the same as -X, +Y, -Y, +Z, or -Z
-4. **Distance scaling:** Larger movements should cost more
-5. **Compact proofs:** Verifiable without gigabytes of data
+The system needed to satisfy:
+1. **Work requirement:** Movement should require mathematical computation, not arbitrary hash grinding
+2. **Distance scaling:** Larger movements should cost more
+3. **Compact proofs:** Verifiable without gigabytes of data
+4. **Location encryption:** A stable secret should be computable for a given coordinate such that it requires real work but can be computed at will.
+5. **No observer advantage:** The work required to observe the cyberspace protocol is equal to the work of utilizing the protocol. Observers have no inherent advantage, and perform the same work.
+
 
 ### The Rejected Approach: Interleaved 256-bit Cantor Tree
 

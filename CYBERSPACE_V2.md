@@ -1,7 +1,7 @@
 # Cyberspace v2 — Per-Axis Cantor Tree Traversal with Location-Based Encryption
 
 **Date:** February 10, 2026  
-**Last updated:** February 27, 2026  
+**Last updated:** February 28, 2026  
 **Status:** Design complete (spec); reference implementation in progress
 
 This document is the canonical specification for Cyberspace v2.
@@ -434,6 +434,15 @@ To verify a hop:
 6. Compute `hop_n = π(region_n, cantor_t)` per §5.4.3.
 7. Compute `proof_hash` per §5.6.
 8. Accept iff it matches the event’s `proof` tag.
+
+### 6.6 Protocol extensions
+This specification defines the base Cyberspace v2 protocol.
+
+Optional extensions MAY introduce new event kinds, new movement action types (`A` tag values), and/or additional validation rules that are only applied when an extension is in use.
+
+Extensions are specified as **Cyberspace Extension Proposals (CSEPs)** in the `extensions/` directory.
+
+- Hyperjumps extension: `extensions/CSEP-0001-hyperjumps.md`
 
 ---
 
