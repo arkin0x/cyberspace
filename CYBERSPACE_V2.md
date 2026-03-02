@@ -45,7 +45,7 @@ This v2 design replaces earlier drift/quaternion/velocity approaches (deprecated
 - **Plane:** 1 bit. `0 = dataspace` (physical mapping), `1 = ideaspace` (non-physical).
 - **Gibson (G):** The fundamental unit (one axis step in u85 space).
 - **Sector:** A cube of `2^30` Gibsons per axis.
-- **Temporal axis (u85):** A per-hop work axis derived from chain context (the previous movement event id) used only for hop proof freshness; it does not affect stable spatial region identifiers.
+- **Temporal axis (u85):** A per-hop work axis derived from chain context (the previous movement event id) used only for hop proof freshness; it does not affect stable spatial region identifiers. The temporal height `K` is in `[0, 16]`.
 
 ---
 
@@ -272,10 +272,10 @@ This temporal axis has two inputs:
 
 #### 5.4.2.1 Terrain-derived temporal height K (normative)
 Define constants:
-- `TERRAIN_DOMAIN_V1 = b"CYBERSPACE_TERRAIN_K_V1"` (ASCII bytes)
+- `TERRAIN_DOMAIN_V2 = b"CYBERSPACE_TERRAIN_K_V2"` (ASCII bytes)
 - `TERRAIN_CELL_BITS = [3, 7, 9, 11]` (exactly four integers)
 
-If any part of this terrain function changes (constants, hashing preimage format, byte selection, etc.), the domain string MUST be bumped to a new value (e.g., `..._V2`) to avoid ambiguity.
+If any part of this terrain function changes (constants, hashing preimage format, byte selection, etc.), the domain string MUST be bumped to a new value to avoid ambiguity.
 
 Given the hop destination coordinate `(x2, y2, z2, plane)`:
 
@@ -286,17 +286,17 @@ Given the hop destination coordinate `(x2, y2, z2, plane)`:
       - `bz = (z2 >> bits) << bits`
    2. Compute `cell_coord = xyz_to_coord(bx, by, bz, plane)`.
    3. Encode `cell_coord` as exactly 32 big-endian bytes: `cell_coord_bytes`.
-   4. Compute `digest = sha256(TERRAIN_DOMAIN_V1 || byte(bits) || cell_coord_bytes)`.
+   4. Compute `digest = sha256(TERRAIN_DOMAIN_V2 || byte(bits) || cell_coord_bytes)`.
       - `byte(bits)` is a single unsigned byte with value `bits`.
-   5. Record `b_i = digest[0]` (the first byte of the digest).
+   5. Record `nibble_i = digest[0] & 0x0F` (the low 4 bits of the first byte of the digest).
 
-2. Concatenate the four bytes into a 32-bit word (big-endian):
-   - `word32 = (b0 << 24) | (b1 << 16) | (b2 << 8) | b3`
+2. Concatenate the four nibbles into a 16-bit word:
+   - `word16 = (nibble_0 << 12) | (nibble_1 << 8) | (nibble_2 << 4) | nibble_3`
 
-3. Define `K` as the popcount of `word32` (the number of 1 bits in its 32-bit binary representation).
-   - Therefore `K` MUST be an integer in `[0, 32]`.
+3. Define `K` as the popcount of `word16` (the number of 1 bits in its 16-bit binary representation).
+   - Therefore `K` MUST be an integer in `[0, 16]`.
 
-Note (non-normative): Because `K` is the popcount of 32 pseudorandom bits, it is distributed approximately as a binomial distribution with mean 16. The aligned cells introduce spatial correlation (“hills”).
+Note (non-normative): Because `K` is the popcount of 16 pseudorandom bits, it is distributed approximately as a binomial distribution with mean 8. The worst-case temporal computation is `2^16 = 65,536` Cantor pairs (~100 ms). The aligned cells introduce spatial correlation ("hills").
 
 #### 5.4.2.2 Temporal axis seed and root (normative)
 For hop events, let `previous_event_id` be the 32-byte NIP-01 event id referenced by the `e` tag with marker `previous` (§6.4).
@@ -353,18 +353,18 @@ Stable lookup id (used for location-based encryption/discovery, §7.1):
 - `8d2463eb22301d97a1f7e33b90e473ba2eec69079f418a72609c3e4d2981669b`
 
 Terrain-derived temporal height at destination `(x2=4104, y2=0, z2=0, plane=0)` using `TERRAIN_CELL_BITS = [3, 7, 9, 11]`:
-- `K = 13`
+- `K = 11`
 
 Temporal axis example using `previous_event_id` = 64 hex zeros:
 - `previous_event_id = "0000000000000000000000000000000000000000000000000000000000000000"`
 - `t = 0`
 - `t_base = 0`
-- `cantor_t = compute_subtree_cantor(0, 13)`
+- `cantor_t = compute_subtree_cantor(0, 11)`
 
-4D hop preimage and movement proof hash (what is placed in the hop event’s `proof` tag):
+4D hop preimage and movement proof hash (what is placed in the hop event's `proof` tag):
 - `hop_n = π(region_n, cantor_t)`
 - `proof_hash = sha256(sha256(int_to_bytes_be_min(hop_n)))`
-- `29a927e6b637b12c22473556daa0077a09e6c20cf5367b12fccfd9643f110a4c`
+- `ed9d09ca697b2da29c9d042207ac8ef7aab40f6dde550e6467452aa0e2e8cac6`
 
 Different `previous_event_id` values produce different `proof_hash` values, even for identical spatial moves.
 
@@ -440,9 +440,9 @@ This specification defines the base Cyberspace v2 protocol.
 
 Optional extensions MAY introduce new event kinds, new movement action types (`A` tag values), and/or additional validation rules that are only applied when an extension is in use.
 
-Extensions are specified as **Cyberspace Extension Proposals (CSEPs)** in the `extensions/` directory.
+Extensions are specified as **Design Extension and Compatibility Kits (DECKs)** in the `decks/` directory.
 
-- Hyperjumps extension: `extensions/CSEP-0001-hyperjumps.md`
+- Hyperjumps extension: `extensions/DECK-0001-hyperjumps.md`
 
 ---
 
@@ -553,6 +553,45 @@ Implementers should treat that repo as the reference for:
 ### 9.3 Acknowledged attack vectors
 - **Coordinate scanning:** an observer can compute region preimages for arbitrary coordinates and query for content. This is considered acceptable because the work required is the same as for a traveler.
 - **Chain abandonment:** an entity may abandon a keypair and start fresh, or they may pubish a new spawn event to start their chain over. This is acceptable. Applications can require continuity/reputation at higher layers.
+
+---
+
+## 10. Visualization conventions (normative)
+This section defines canonical conventions for rendering Cyberspace coordinates in 3D visualizers.
+These conventions are intended to ensure different viewers agree on orientation (left/right, up/down, ahead/behind).
+
+Note: these conventions are about visualization only. They do not change coordinate encoding (§2) or movement proof verification (§5-§6).
+
+### 10.1 Handedness and axis semantics
+Implementations that render Cyberspace in 3D MUST treat the Cyberspace axes as a right-handed coordinate system.
+
+When the viewer is oriented per §10.3:
+- `+X_cs` is screen-right.
+- `+Y_cs` is up.
+- `-Z_cs` is forward (toward the black sun reference marker).
+
+### 10.2 Black sun reference marker
+If a visualizer renders the “black sun” guidepost, it MUST place it on the `-Z_cs` boundary of the Cyberspace cube.
+
+In dataspace-kilometers-from-center units (as used by §4.4 step 9), this is:
+- `black_sun = (x_km=0, y_km=0, z_km=-DATASPACE_HALF_AXIS_KM)`
+
+The black sun marker MUST be visible in both planes. (The plane bit does not affect XYZ decoding; it only labels the plane.)
+
+### 10.3 “Facing the black sun” (camera convention)
+A visualizer MUST provide (either as its default view or as an explicit preset) a camera/view mode equivalent to:
+- View direction: looking toward `-Z_cs`.
+- Up direction: `+Y_cs`.
+- Screen-right direction: `+X_cs`.
+
+This is the canonical interpretation used when describing a coordinate as “left/right”, “above/below”, or “ahead/behind” relative to the origin.
+
+### 10.4 Engine adaptation requirements
+Different graphics engines have different defaults for camera forward direction and orbit-control behavior.
+Implementations MUST use camera placement/orientation and/or a render-space transform so that the semantic rules in §10.1-§10.3 remain true.
+
+### 10.5 Visualization sanity vectors (non-normative)
+For quick regression tests and cross-implementation debugging, see `visualization_vectors.json` in this spec repository.
 
 ---
 
