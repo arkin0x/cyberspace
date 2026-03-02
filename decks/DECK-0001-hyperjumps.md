@@ -10,12 +10,12 @@ Requires: `CYBERSPACE_V2.md`
 ## Abstract
 This DECK defines **hyperjumps**: a zero-movement-proof teleport mechanism between special coordinates derived from Bitcoin blocks.
 
-A Bitcoin block’s Merkle root is treated as a thermodynamically “paid for” random coordinate in Cyberspace. By publishing these blocks as Nostr events (block anchor events), clients can discover a growing network of unpredictable transit points.
+A Bitcoin block’s Merkle root is treated as a thermodynamically "paid for" random coordinate in Cyberspace. By publishing these blocks as Nostr events (block anchor events), avatars can visit a growing network of unpredictable but far-reaching transit points.
 
 ## Terms
-- Hyperjump: a protocol-defined teleport between two hyperjump coordinates that reuses Bitcoin proof-of-work rather than requiring a Cyberspace v2 movement proof.
+- Hyperjump: a protocol-defined teleport action between two hyperjump coordinates that reuses Bitcoin proof-of-work rather than requiring a Cyberspace v2 movement proof.
 - Hyperjump coordinate: a coord256 derived deterministically from a Bitcoin block’s Merkle root.
-- Block anchor event: a Nostr event that binds Bitcoin block identifiers to the corresponding hyperjump coordinate so clients can discover hyperjumps via Nostr queries.
+- Block anchor event: a Nostr event that binds Bitcoin block identifiers to the corresponding hyperjump coordinate so clients can discover nearby hyperjumps via Nostr queries.
 
 ## Specification
 
@@ -30,7 +30,7 @@ Notes:
 - The plane bit is the least significant bit of `coord256` (per `CYBERSPACE_V2.md` §2.1). Therefore hyperjumps may exist in either plane.
 
 ### Block anchor events (hyperjump publishing)
-Hyperjump coordinates are discoverable via Nostr by publishing **block anchor events** that bind Bitcoin block identifiers to their Merkle-root-derived coordinate.
+Hyperjump coordinates are discoverable conveniently via Nostr by querying **block anchor events** (kind 321) that bind Bitcoin block identifiers to their Merkle-root-derived coordinate. The accuracy of block anchor events on nostr is not guaranteed, so you may want to publish your own or derive block anchors from your own bitcoin node.
 
 #### Event kind
 - Block anchor events: `kind = 321`
@@ -49,7 +49,7 @@ Block anchor events SHOULD include:
 - `N` tag: `["N", "<next_block_hash_hex>"]` once the next block is known
 
 #### Validation of anchor events (normative)
-To accept a block anchor event as valid for hyperjumping, an implementation MUST verify that:
+To verify a block anchor event as valid for hyperjumping, an implementation MUST verify that:
 1. Its `C` tag matches the Merkle root of the block at height `B` on the Bitcoin network the client is using (or the network specified by the anchor event’s `net` tag, if present).
 2. Its `H` tag is the corresponding block hash.
 3. Its `P` tag is the corresponding previous block hash.
@@ -57,7 +57,7 @@ To accept a block anchor event as valid for hyperjumping, an implementation MUST
 How an implementation performs this validation is out of scope (full node, headers-only/SPV, trusted checkpoints, etc.), but the resulting `(height, block_hash, merkle_root)` bindings MUST match Bitcoin consensus for the selected network.
 
 ### Hyperjump movement events
-A hyperjump is represented as a movement event (`kind=3333`) in the avatar’s movement chain (`CYBERSPACE_V2.md` §6) with action tag `A=hyperjump`.
+A hyperjump action is represented as a movement event (`kind=3333`) in the avatar’s movement chain (`CYBERSPACE_V2.md` §6) with action tag `["A", "hyperjump"]`.
 
 #### Hyperjump movement event (normative)
 Required tags:
