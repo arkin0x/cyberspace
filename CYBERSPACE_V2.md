@@ -104,8 +104,8 @@ Tag formatting rules (normative):
 - `S` MUST be exactly `"<sx>-<sy>-<sz>"`.
 
 Rationale:
-- Nostr cannot query “prefix ranges” on tag values; having per-axis sector tags makes it possible to query slices along a single axis.
-- `S` is the canonical “full sector id”.
+- Nostr cannot query "prefix ranges" on tag values; having per-axis sector tags makes it possible to query slices along a single axis.
+- `S` is the canonical "full sector id".
 
 ---
 
@@ -148,7 +148,7 @@ Canonical requirements:
 The canonical mapping is defined for latitude/longitude plus an optional altitude in meters.
 
 - If altitude is omitted, implementations MUST treat `altitude_m = 0`.
-- Implementations MUST support “clamp to surface” behavior that forces `altitude_m = 0` (this is what the golden vectors cover).
+- Implementations MUST support "clamp to surface" behavior that forces `altitude_m = 0` (this is what the golden vectors cover).
 - If non-zero altitude is supported, `altitude_m` MUST be interpreted as meters above the WGS84 ellipsoid and processed using the same canonical decimal parsing rules.
 
 ### 4.4 Canonical mapping algorithm (normative)
@@ -212,7 +212,7 @@ def find_lca_height(v1: int, v2: int) -> int:
 ### 5.3 Axis subtree root (definition)
 Let `h = find_lca_height(v1, v2)` and `base = (v1 >> h) << h`.
 
-The axis movement “region” is the aligned subtree covering the leaf range:
+The axis movement "region" is the aligned subtree covering the leaf range:
 - `leaves = [base, base+1, ..., base + 2^h - 1]`
 
 Define `compute_subtree_cantor(base, h)` as the value obtained by repeatedly pairing adjacent nodes bottom-up (left-to-right) until one value remains:
@@ -267,7 +267,7 @@ This is intentional: the Cantor root `region_n` is a **region identifier**, not 
 To prevent proof reuse and guarantee fresh work per hop, hop proofs include an additional Cantor-tree root derived from Nostr chain context.
 
 This temporal axis has two inputs:
-- a hop-specific **height** `K` derived from the destination coordinate (a deterministic “terrain” function), and
+- a hop-specific **height** `K` derived from the destination coordinate (a deterministic "terrain" function), and
 - a hop-specific **seed** `t` derived from the `previous_event_id`.
 
 #### 5.4.2.1 Terrain-derived temporal height K (normative)
@@ -309,7 +309,7 @@ For hop events, let `previous_event_id` be the 32-byte NIP-01 event id reference
    - `t_base = (t >> K) << K`
    - `cantor_t = compute_subtree_cantor(t_base, K)`
 
-Note (non-normative): the temporal axis is derived from chain context and destination coordinates, not wall-clock time. There is no continuous “alive” cost; you pay this work only when you publish a hop.
+Note (non-normative): the temporal axis is derived from chain context and destination coordinates, not wall-clock time. There is no continuous "alive" cost; you pay this work only when you publish a hop.
 
 ### 5.4.3 4D hop preimage (space + time)
 Define the hop preimage integer:
@@ -571,20 +571,20 @@ When the viewer is oriented per §10.3:
 - `-Z_cs` is forward (toward the black sun reference marker).
 
 ### 10.2 Black sun reference marker
-If a visualizer renders the “black sun” guidepost, it MUST place it on the `-Z_cs` boundary of the Cyberspace cube.
+If a visualizer renders the "black sun" guidepost, it MUST place it on the `-Z_cs` boundary of the Cyberspace cube.
 
 In dataspace-kilometers-from-center units (as used by §4.4 step 9), this is:
 - `black_sun = (x_km=0, y_km=0, z_km=-DATASPACE_HALF_AXIS_KM)`
 
 The black sun marker MUST be visible in both planes. (The plane bit does not affect XYZ decoding; it only labels the plane.)
 
-### 10.3 “Facing the black sun” (camera convention)
+### 10.3 "Facing the black sun" (camera convention)
 A visualizer MUST provide (either as its default view or as an explicit preset) a camera/view mode equivalent to:
 - View direction: looking toward `-Z_cs`.
 - Up direction: `+Y_cs`.
 - Screen-right direction: `+X_cs`.
 
-This is the canonical interpretation used when describing a coordinate as “left/right”, “above/below”, or “ahead/behind” relative to the origin.
+This is the canonical interpretation used when describing a coordinate as "left/right", "above/below", or "ahead/behind" relative to the origin.
 
 ### 10.4 Engine adaptation requirements
 Different graphics engines have different defaults for camera forward direction and orbit-control behavior.
@@ -596,20 +596,20 @@ For quick regression tests and cross-implementation debugging, see `visualizatio
 ---
 
 ## Appendix A. Philosophical foundation (non-normative)
-Cyberspace v2 is designed around a simple constraint: if a protocol wants “space”, then **distance must have a cost**.
+Cyberspace v2 is designed around a simple constraint: if a protocol wants "space", then **distance must have a cost**.
 
 ### A.1 Modeling spatial dimension thermodynamically
 The purpose of location-based encryption in this system is not primarily secrecy (there are better tools for that). The goal is to **model traversable reality** and impose locality on a spaceless mathematical substrate.
 
 ### A.2 What this system achieves
 1. **Movement is work:** you cannot claim to be somewhere else without performing verifiable computation.
-2. **Space has texture:** Cantor trees provide a mathematical “fabric” that must be traversed.
+2. **Space has texture:** Cantor trees provide a mathematical "fabric" that must be traversed.
 3. **Discovery requires presence:** content can be addressed so that only those who compute region preimages can derive discovery/decryption keys.
 4. **Reality extension:** dataspace provides a deterministic mapping from WGS84 GPS points into the coordinate fabric.
-5. **Simulation ≈ observation:** learning what is “nearby” requires essentially the same region-preimage work whether you arrived via a chain or computed it directly.
+5. **Simulation ≈ observation:** learning what is "nearby" requires essentially the same region-preimage work whether you arrived via a chain or computed it directly.
 
 ### A.3 The chalk on the sidewalk metaphor
-A message written in chalk on a sidewalk is not “encrypted”, but it is still locality-gated: you can only read it by being there.
+A message written in chalk on a sidewalk is not "encrypted", but it is still locality-gated: you can only read it by being there.
 
 Cyberspace uses region-derived keys to implement an analogue: ciphertext may be globally publishable, but deriving the key requires computing the region preimage.
 
