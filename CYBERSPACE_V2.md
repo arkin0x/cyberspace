@@ -1,7 +1,7 @@
 # Cyberspace v2 — Per-Axis Cantor Tree Traversal with Location-Based Encryption
 
 **Date:** February 10, 2026  
-**Last updated:** February 27, 2026  
+**Last updated:** February 28, 2026  
 **Status:** Design complete (spec); reference implementation in progress
 
 This document is the canonical specification for Cyberspace v2.
@@ -45,7 +45,7 @@ This v2 design replaces earlier drift/quaternion/velocity approaches (deprecated
 - **Plane:** 1 bit. `0 = dataspace` (physical mapping), `1 = ideaspace` (non-physical).
 - **Gibson (G):** The fundamental unit (one axis step in u85 space).
 - **Sector:** A cube of `2^30` Gibsons per axis.
-- **Temporal axis (u85):** A per-hop work axis derived from chain context (the previous movement event id) used only for hop proof freshness; it does not affect stable spatial region identifiers.
+- **Temporal axis (u85):** A per-hop work axis derived from chain context (the previous movement event id) used only for hop proof freshness; it does not affect stable spatial region identifiers. The temporal height `K` is in `[0, 16]`.
 
 ---
 
@@ -60,6 +60,8 @@ A 256-bit integer stores interleaved axis bits plus a plane bit:
 - Bits `1, 4, 7, ...` (every 3rd bit starting at 1): Z bits (85 bits)
 
 0x`XYZXYZXYZ...P`
+
+0x prefix is optional and typically not used.
 
 ### 2.2 Reference pseudocode
 ```python
@@ -104,8 +106,8 @@ Tag formatting rules (normative):
 - `S` MUST be exactly `"<sx>-<sy>-<sz>"`.
 
 Rationale:
-- Nostr cannot query “prefix ranges” on tag values; having per-axis sector tags makes it possible to query slices along a single axis.
-- `S` is the canonical “full sector id”.
+- Nostr cannot query "prefix ranges" on tag values; having per-axis sector tags makes it possible to query slices along a single axis.
+- `S` is the canonical "full sector id".
 
 ---
 
@@ -148,7 +150,7 @@ Canonical requirements:
 The canonical mapping is defined for latitude/longitude plus an optional altitude in meters.
 
 - If altitude is omitted, implementations MUST treat `altitude_m = 0`.
-- Implementations MUST support “clamp to surface” behavior that forces `altitude_m = 0` (this is what the golden vectors cover).
+- Implementations MUST support "clamp to surface" behavior that forces `altitude_m = 0` (this is what the golden vectors cover).
 - If non-zero altitude is supported, `altitude_m` MUST be interpreted as meters above the WGS84 ellipsoid and processed using the same canonical decimal parsing rules.
 
 ### 4.4 Canonical mapping algorithm (normative)
@@ -212,7 +214,7 @@ def find_lca_height(v1: int, v2: int) -> int:
 ### 5.3 Axis subtree root (definition)
 Let `h = find_lca_height(v1, v2)` and `base = (v1 >> h) << h`.
 
-The axis movement “region” is the aligned subtree covering the leaf range:
+The axis movement "region" is the aligned subtree covering the leaf range:
 - `leaves = [base, base+1, ..., base + 2^h - 1]`
 
 Define `compute_subtree_cantor(base, h)` as the value obtained by repeatedly pairing adjacent nodes bottom-up (left-to-right) until one value remains:
@@ -266,20 +268,50 @@ This is intentional: the Cantor root `region_n` is a **region identifier**, not 
 ### 5.4.2 Temporal axis root (hop freshness)
 To prevent proof reuse and guarantee fresh work per hop, hop proofs include an additional Cantor-tree root derived from Nostr chain context.
 
-**Temporal height constant (normative):**
-- `TEMPORAL_HEIGHT = 13`
+This temporal axis has two inputs:
+- a hop-specific **height** `K` derived from the destination coordinate (a deterministic "terrain" function), and
+- a hop-specific **seed** `t` derived from the `previous_event_id`.
 
+#### 5.4.2.1 Terrain-derived temporal height K (normative)
+Define constants:
+- `TERRAIN_DOMAIN_V2 = b"CYBERSPACE_TERRAIN_K_V2"` (ASCII bytes)
+- `TERRAIN_CELL_BITS = [3, 7, 9, 11]` (exactly four integers)
+
+If any part of this terrain function changes (constants, hashing preimage format, byte selection, etc.), the domain string MUST be bumped to a new value to avoid ambiguity.
+
+Given the hop destination coordinate `(x2, y2, z2, plane)`:
+
+1. For each `bits` in `TERRAIN_CELL_BITS` (in order):
+   1. Align the destination to the cell of width `2^bits` along each axis:
+      - `bx = (x2 >> bits) << bits`
+      - `by = (y2 >> bits) << bits`
+      - `bz = (z2 >> bits) << bits`
+   2. Compute `cell_coord = xyz_to_coord(bx, by, bz, plane)`.
+   3. Encode `cell_coord` as exactly 32 big-endian bytes: `cell_coord_bytes`.
+   4. Compute `digest = sha256(TERRAIN_DOMAIN_V2 || byte(bits) || cell_coord_bytes)`.
+      - `byte(bits)` is a single unsigned byte with value `bits`.
+   5. Record `nibble_i = digest[0] & 0x0F` (the low 4 bits of the first byte of the digest).
+
+2. Concatenate the four nibbles into a 16-bit word:
+   - `word16 = (nibble_0 << 12) | (nibble_1 << 8) | (nibble_2 << 4) | nibble_3`
+
+3. Define `K` as the popcount of `word16` (the number of 1 bits in its 16-bit binary representation).
+   - Therefore `K` MUST be an integer in `[0, 16]`.
+
+Note (non-normative): Because `K` is the popcount of 16 pseudorandom bits, it is distributed approximately as a binomial distribution with mean 8. The worst-case temporal computation is `2^16 = 65,536` Cantor pairs (~100 ms). The aligned cells introduce spatial correlation ("hills").
+
+#### 5.4.2.2 Temporal axis seed and root (normative)
 For hop events, let `previous_event_id` be the 32-byte NIP-01 event id referenced by the `e` tag with marker `previous` (§6.4).
 
 1. Parse `previous_event_id` from lowercase hex into 32 bytes.
 2. Interpret it as a big-endian integer and reduce it into the u85 axis (the least-significant 85 bits):
    - `prev_id_int = int.from_bytes(previous_event_id_bytes, "big")`
    - `t = prev_id_int % (1 << 85)`
-3. Compute an aligned temporal subtree and its Cantor root:
-   - `t_base = (t >> TEMPORAL_HEIGHT) << TEMPORAL_HEIGHT`
-   - `cantor_t = compute_subtree_cantor(t_base, TEMPORAL_HEIGHT)`
+3. Compute an aligned temporal subtree and its Cantor root (at the terrain-derived height `K`):
+   - `t_base = (t >> K) << K`
+   - `cantor_t = compute_subtree_cantor(t_base, K)`
 
-Note (non-normative): the temporal axis is derived from chain context, not wall-clock time. There is no continuous “alive” cost; you pay this work only when you publish a hop.
+Note (non-normative): the temporal axis is derived from chain context and destination coordinates, not wall-clock time. There is no continuous "alive" cost; you pay this work only when you publish a hop.
 
 ### 5.4.3 4D hop preimage (space + time)
 Define the hop preimage integer:
@@ -308,36 +340,40 @@ The movement proof hash is derived from the 4D hop preimage `hop_n` (space + tim
 When used in Nostr tags, `proof_hash` MUST be encoded as lowercase hex in the `proof` tag.
 
 ### 5.6.1 Worked example (non-normative)
-Movement: `(0, 0, 0) → (3, 2, 1)`
+Movement: `(0, 0, 0) → (4104, 0, 0)`
 
 Per-axis roots:
-- X: `0 → 3` => height 2 => root `228`
-- Y: `0 → 2` => height 2 => root `228`
-- Z: `0 → 1` => height 1 => root `2`
+- X: `0 → 4104` => height 13 => root = `compute_subtree_cantor(0, 13)`
+- Y: `0 → 0` => height 0 => root `0`
+- Z: `0 → 0` => height 0 => root `0`
 
 3D combine (stable spatial region integer):
-- `region_n = π(π(228, 228), 2) = 5,452,446,953`
+- `region_n = π(π(cantor_x, 0), 0)`
 
 Stable lookup id (used for location-based encryption/discovery, §7.1):
 - `lookup_id = sha256(sha256(int_to_bytes_be_min(region_n)))`
-- `1247b1caeb69145100d6adbb52943c36d72023b10a0f5f434d41311d0b0b339c`
+- `8d2463eb22301d97a1f7e33b90e473ba2eec69079f418a72609c3e4d2981669b`
 
-Temporal axis example (`TEMPORAL_HEIGHT = 13`) using `previous_event_id` = 64 hex zeros:
+Terrain-derived temporal height at destination `(x2=4104, y2=0, z2=0, plane=0)` using `TERRAIN_CELL_BITS = [3, 7, 9, 11]`:
+- `K = 11`
+
+Temporal axis example using `previous_event_id` = 64 hex zeros:
 - `previous_event_id = "0000000000000000000000000000000000000000000000000000000000000000"`
 - `t = 0`
 - `t_base = 0`
+- `cantor_t = compute_subtree_cantor(0, 11)`
 
-4D hop preimage and movement proof hash (what is placed in the hop event’s `proof` tag):
-- `hop_n = π(region_n, compute_subtree_cantor(t_base, 13))`
+4D hop preimage and movement proof hash (what is placed in the hop event's `proof` tag):
+- `hop_n = π(region_n, cantor_t)`
 - `proof_hash = sha256(sha256(int_to_bytes_be_min(hop_n)))`
-- `5bfccb2499857cb8e9287cf2a18af6ca25f7b42636cda5da2c881e41b28d5be2`
+- `ed9d09ca697b2da29c9d042207ac8ef7aab40f6dde550e6467452aa0e2e8cac6`
 
 Different `previous_event_id` values produce different `proof_hash` values, even for identical spatial moves.
 
 ### 5.7 Performance expectations (non-normative)
 Reference implementations typically observe that cost grows with the per-axis LCA height (because the aligned subtree contains `2^h` leaves).
 
-In addition, hop proofs include a temporal axis traversal at fixed height `TEMPORAL_HEIGHT = 13`, imposing a non-cacheable work floor per hop even when the spatial `region_n` is reused.
+In addition, hop proofs include a temporal axis traversal at a terrain-derived height `K` (§5.4.2.1), imposing a non-cacheable work component per hop even when the spatial `region_n` is reused. Because `K` depends on the destination coordinate, some regions of cyberspace are intrinsically easier or harder to traverse.
 
 Approximate per-axis expectations from early benchmarks (illustrative only):
 
@@ -395,10 +431,20 @@ To verify a hop:
 1. Parse previous and current coords; decode to `(x1,y1,z1,plane)` and `(x2,y2,z2,plane)`.
 2. Reject if planes differ (plane changes are out of scope for v2).
 3. Compute the stable spatial region integer `region_n` per §5.4.
-4. Compute the temporal axis root `cantor_t` per §5.4.2 using the hop event’s `previous_event_id` (`e` tag with marker `previous`).
-5. Compute `hop_n = π(region_n, cantor_t)` per §5.4.3.
-6. Compute `proof_hash` per §5.6.
-7. Accept iff it matches the event’s `proof` tag.
+4. Derive the terrain-based temporal height `K` from the destination coordinate `(x2,y2,z2,plane)` per §5.4.2.1.
+5. Compute the temporal axis root `cantor_t` from the hop event’s `previous_event_id` (`e` tag with marker `previous`) and `K` per §5.4.2.2.
+6. Compute `hop_n = π(region_n, cantor_t)` per §5.4.3.
+7. Compute `proof_hash` per §5.6.
+8. Accept iff it matches the event’s `proof` tag.
+
+### 6.6 Protocol extensions
+This specification defines the base Cyberspace v2 protocol.
+
+Optional extensions MAY introduce new event kinds, new movement action types (`A` tag values), and/or additional validation rules that are only applied when an extension is in use.
+
+Extensions are specified as **Design Extension and Compatibility Kits (DECKs)** in the `decks/` directory.
+
+- Hyperjumps extension: `extensions/DECK-0001-hyperjumps.md`
 
 ---
 
@@ -512,21 +558,64 @@ Implementers should treat that repo as the reference for:
 
 ---
 
+## 10. Visualization conventions (normative)
+This section defines canonical conventions for rendering Cyberspace coordinates in 3D visualizers.
+These conventions are intended to ensure different viewers agree on orientation (left/right, up/down, ahead/behind).
+
+Note: these conventions are about visualization only. They do not change coordinate encoding (§2) or movement proof verification (§5-§6).
+
+### 10.1 Handedness and axis semantics
+Implementations that render Cyberspace in 3D MUST preserve the Cyberspace axis semantics defined in §4.2 exactly.
+
+Graphics-engine handedness and camera defaults are implementation details and MUST NOT change Cyberspace semantics.
+
+When the viewer is oriented per §10.3:
+- `+X_cs` is screen-right.
+- `+Y_cs` is up.
+- `+Z_cs` is forward (toward the black sun / east reference marker).
+
+### 10.2 Black sun reference marker
+If a visualizer renders the "black sun" guidepost, it MUST place it on the `+Z_cs` boundary of the Cyberspace cube.
+
+In dataspace-kilometers-from-center units (as used by §4.4 step 9), this is:
+- `black_sun = (x_km=0, y_km=0, z_km=+DATASPACE_HALF_AXIS_KM)`
+
+The black sun is a directional guidepost for east (`+Z_cs`). Marker shape (point/sphere/circle/disk) is implementation-defined.
+
+The black sun marker MUST be visible in both planes. (The plane bit does not affect XYZ decoding; it only labels the plane.)
+
+### 10.3 "Facing the black sun" (camera convention)
+A visualizer MUST provide (either as its default view or as an explicit preset) a camera/view mode equivalent to:
+- View direction: looking toward `+Z_cs`.
+- Up direction: `+Y_cs`.
+- Screen-right direction: `+X_cs`.
+
+This is the canonical interpretation used when describing a coordinate as "left/right", "above/below", or "ahead/behind" relative to the origin.
+
+### 10.4 Engine adaptation requirements
+Different graphics engines have different defaults for camera forward direction and orbit-control behavior.
+Implementations MUST use camera placement/orientation and/or a render-space transform so that the semantic rules in §10.1-§10.3 remain true, without mirroring or re-labeling Cyberspace axes.
+
+### 10.5 Visualization sanity vectors (non-normative)
+For quick regression tests and cross-implementation debugging, see `visualization_vectors.json` in this spec repository.
+
+---
+
 ## Appendix A. Philosophical foundation (non-normative)
-Cyberspace v2 is designed around a simple constraint: if a protocol wants “space”, then **distance must have a cost**.
+Cyberspace v2 is designed around a simple constraint: if a protocol wants "space", then **distance must have a cost**.
 
 ### A.1 Modeling spatial dimension thermodynamically
 The purpose of location-based encryption in this system is not primarily secrecy (there are better tools for that). The goal is to **model traversable reality** and impose locality on a spaceless mathematical substrate.
 
 ### A.2 What this system achieves
 1. **Movement is work:** you cannot claim to be somewhere else without performing verifiable computation.
-2. **Space has texture:** Cantor trees provide a mathematical “fabric” that must be traversed.
+2. **Space has texture:** Cantor trees provide a mathematical "fabric" that must be traversed.
 3. **Discovery requires presence:** content can be addressed so that only those who compute region preimages can derive discovery/decryption keys.
 4. **Reality extension:** dataspace provides a deterministic mapping from WGS84 GPS points into the coordinate fabric.
-5. **Simulation ≈ observation:** learning what is “nearby” requires essentially the same region-preimage work whether you arrived via a chain or computed it directly.
+5. **Simulation ≈ observation:** learning what is "nearby" requires essentially the same region-preimage work whether you arrived via a chain or computed it directly.
 
 ### A.3 The chalk on the sidewalk metaphor
-A message written in chalk on a sidewalk is not “encrypted”, but it is still locality-gated: you can only read it by being there.
+A message written in chalk on a sidewalk is not "encrypted", but it is still locality-gated: you can only read it by being there.
 
 Cyberspace uses region-derived keys to implement an analogue: ciphertext may be globally publishable, but deriving the key requires computing the region preimage.
 
