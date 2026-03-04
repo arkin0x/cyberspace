@@ -61,6 +61,8 @@ A 256-bit integer stores interleaved axis bits plus a plane bit:
 
 0x`XYZXYZXYZ...P`
 
+0x prefix is optional and typically not used.
+
 ### 2.2 Reference pseudocode
 ```python
 AXIS_BITS = 85
@@ -563,24 +565,28 @@ These conventions are intended to ensure different viewers agree on orientation 
 Note: these conventions are about visualization only. They do not change coordinate encoding (§2) or movement proof verification (§5-§6).
 
 ### 10.1 Handedness and axis semantics
-Implementations that render Cyberspace in 3D MUST treat the Cyberspace axes as a right-handed coordinate system.
+Implementations that render Cyberspace in 3D MUST preserve the Cyberspace axis semantics defined in §4.2 exactly.
+
+Graphics-engine handedness and camera defaults are implementation details and MUST NOT change Cyberspace semantics.
 
 When the viewer is oriented per §10.3:
 - `+X_cs` is screen-right.
 - `+Y_cs` is up.
-- `-Z_cs` is forward (toward the black sun reference marker).
+- `+Z_cs` is forward (toward the black sun / east reference marker).
 
 ### 10.2 Black sun reference marker
-If a visualizer renders the "black sun" guidepost, it MUST place it on the `-Z_cs` boundary of the Cyberspace cube.
+If a visualizer renders the "black sun" guidepost, it MUST place it on the `+Z_cs` boundary of the Cyberspace cube.
 
 In dataspace-kilometers-from-center units (as used by §4.4 step 9), this is:
-- `black_sun = (x_km=0, y_km=0, z_km=-DATASPACE_HALF_AXIS_KM)`
+- `black_sun = (x_km=0, y_km=0, z_km=+DATASPACE_HALF_AXIS_KM)`
+
+The black sun is a directional guidepost for east (`+Z_cs`). Marker shape (point/sphere/circle/disk) is implementation-defined.
 
 The black sun marker MUST be visible in both planes. (The plane bit does not affect XYZ decoding; it only labels the plane.)
 
 ### 10.3 "Facing the black sun" (camera convention)
 A visualizer MUST provide (either as its default view or as an explicit preset) a camera/view mode equivalent to:
-- View direction: looking toward `-Z_cs`.
+- View direction: looking toward `+Z_cs`.
 - Up direction: `+Y_cs`.
 - Screen-right direction: `+X_cs`.
 
@@ -588,7 +594,7 @@ This is the canonical interpretation used when describing a coordinate as "left/
 
 ### 10.4 Engine adaptation requirements
 Different graphics engines have different defaults for camera forward direction and orbit-control behavior.
-Implementations MUST use camera placement/orientation and/or a render-space transform so that the semantic rules in §10.1-§10.3 remain true.
+Implementations MUST use camera placement/orientation and/or a render-space transform so that the semantic rules in §10.1-§10.3 remain true, without mirroring or re-labeling Cyberspace axes.
 
 ### 10.5 Visualization sanity vectors (non-normative)
 For quick regression tests and cross-implementation debugging, see `visualization_vectors.json` in this spec repository.
