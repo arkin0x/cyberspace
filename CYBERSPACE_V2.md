@@ -429,9 +429,9 @@ Required:
 ### 6.5 Verification summary
 To verify a hop:
 1. Parse previous and current coords; decode to `(x1,y1,z1,plane)` and `(x2,y2,z2,plane)`.
-2. Reject if planes differ (plane changes are out of scope for v2).
+2. Plane changes are valid in v2; verifiers MUST support hops where `plane1 != plane2`.
 3. Compute the stable spatial region integer `region_n` per §5.4.
-4. Derive the terrain-based temporal height `K` from the destination coordinate `(x2,y2,z2,plane)` per §5.4.2.1.
+4. Derive the terrain-based temporal height `K` from the destination coordinate `(x2,y2,z2,plane2)` per §5.4.2.1 (including the destination plane bit).
 5. Compute the temporal axis root `cantor_t` from the hop event’s `previous_event_id` (`e` tag with marker `previous`) and `K` per §5.4.2.2.
 6. Compute `hop_n = π(region_n, cantor_t)` per §5.4.3.
 7. Compute `proof_hash` per §5.6.
@@ -443,7 +443,7 @@ This specification defines the base Cyberspace v2 protocol.
 Optional extensions MAY introduce new event kinds, new movement action types (`A` tag values), and/or additional validation rules that are only applied when an extension is in use.
 
 Extensions are specified as **Design Extension and Compatibility Kits (DECKs)** in the `decks/` directory.
-
+- Hyperjumps extension: `decks/DECK-0001-hyperjumps.md`
 - Hyperjumps extension: `extensions/DECK-0001-hyperjumps.md`
 
 ---
