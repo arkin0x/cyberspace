@@ -32,6 +32,7 @@ Key properties:
 Examples (non-normative):
 - **Location-gated content:** "chalk on the sidewalk" secrets discoverable only by entities who compute a region preimage.
 - **AI embodiment constraints:** constrain an agent to one verifiable location at a time (per keypair).
+- **Open Augmented Reality layers:** pull and publish location-based 3D content in realtime for permissionless public consumption, optionally encrypted for a specific audience
 - **Ephemeral regional communication:** messages that are local in scope and time.
 
 ## What Cyberspace Does NOT Provide
