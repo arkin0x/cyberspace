@@ -1,5 +1,10 @@
 # Cyberspace Protocol
-A 256-bit coordinate system enabling distance traversal and trustless location-based encryption through proof-of-work.
+Cyberspace is a permissionless, thermodynamic spatial protocol that uses math to impose locality on a spaceless digital system. It can be used for:
+
+- AI embodiment and single-presence restriction
+- trustlessly restricting data access by location
+- open and interoperable augmented reality layers
+- and whatever else you imagine!
 
 ## Protocol Versions
 ### Cyberspace v2 (current)
