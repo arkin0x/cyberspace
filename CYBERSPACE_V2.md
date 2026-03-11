@@ -481,7 +481,7 @@ To prevent a published lookup identifier from trivially implying the decryption 
 Seeing `lookup_id` does not allow deriving `location_decryption_key` without the region preimage.
 
 ### 7.2 Encrypted content event (Nostr)
-- Encrypted content events: `kind = 33334`
+- Encrypted content events: `kind = 33330`
 
 Required tags:
 - `d` tag: `["d", "<lookup_id_hex>"]` (32-byte lowercase hex string)
