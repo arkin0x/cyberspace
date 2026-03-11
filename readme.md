@@ -47,7 +47,7 @@ See `CYBERSPACE_V2.md` (Threat model section) and `RATIONALE.md`.
 ## Protocol Integration (Nostr)
 Cyberspace uses **Nostr** as its transmission layer. The state of cyberspace is the sum of cyberspace-related nostr events. Being based on a decentralized permissionless system, knowledge of global state is not possible (just as in reality). Cyberspace events conform to NIP-01.
 - Action events (spawn and movement) are `kind: 3333`
-- Location-encrypted content events are `kind: 33334`
+- Location-encrypted content events are `kind: 33330`
 - DECKs define other event kinds and structures.
 
 This means Cyberspace does not require new network infrastructure; it composes on top of existing relays.
