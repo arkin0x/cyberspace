@@ -73,15 +73,15 @@ p = 2^64 - 2^32 + 1 = 0xFFFFFFFF00000001
 H(x, y, z) = Poseidon2(x || y || z)
 ```
 
-**Commitment hash:** BLAKE3 (fast, cryptographic)
+**Integrity hash:** SHA256 (consistent with cyberspace protocol)
 
 ```
-commitment = BLAKE3(R)
+proof_hash = SHA256(proof)
 ```
 
 **Rationale:**
 - Poseidon2: ~100x faster in STARK circuits than SHA256
-- BLAKE3: Fast native hashing for commitments
+- SHA256: Consistent with cyberspace protocol (Cantor pairing, coordinates)
 - Security: 128-bit collision resistance
 
 ### 2.3 Cantor Pairing (Field Arithmetic)
@@ -229,7 +229,7 @@ With DEEP-FRI optimization: ~40-60 KB fits in Nostr event with room for metadata
     ["block_height", "<Bitcoin block at claim time>"],
     ["expires_at", "<expiration block height>"],
     ["proof_url", "<HTTPS URL of STARK proof file>"],
-    ["proof_hash", "<BLAKE3 of proof file>"]
+    ["proof_hash", "<SHA256 of proof file>"]
   ],
   "pubkey": "<claimant's Nostr pubkey>",
   "created_at": <Unix timestamp>,
@@ -248,7 +248,7 @@ With DEEP-FRI optimization: ~40-60 KB fits in Nostr event with room for metadata
 | `block_height` | Yes | Bitcoin block when claim was made |
 | `expires_at` | Yes | Block height when claim expires |
 | `proof_url` | Yes | HTTPS URL of the STARK proof file |
-| `proof_hash` | Yes | BLAKE3 hash of proof file for integrity |
+| `proof_hash` | Yes | SHA256 hash of proof file for integrity |
 
 **Note:** The `h` tag enables efficient prefix-based queries. It is derived from the STARK proof's output commitment (which is derived from R, but R remains hidden).
 
@@ -269,7 +269,7 @@ With DEEP-FRI optimization: ~40-60 KB fits in Nostr event with room for metadata
    proof = https_get(proof_url)
    
 4. Verify proof integrity:
-   ASSERT BLAKE3(proof) == proof_hash
+   ASSERT SHA256(proof) == proof_hash
 
 5. Verify STARK proof:
    public_inputs = {base_x, base_y, base_z, height}
@@ -342,7 +342,7 @@ proof_url = "https://{host}/proofs/{proof_hash}.bin"
 
 ### 7.2 Integrity Verification
 
-Always verify `BLAKE3(proof) == proof_hash` before accepting any proof.
+Always verify `SHA256(proof) == proof_hash` before accepting any proof.
 
 The proof_hash in the Nostr event ensures:
 - Proof cannot be tampered with
@@ -375,7 +375,7 @@ The proof_hash in the Nostr event ensures:
 
 ### 8.3 Trust Assumptions
 
-- **Hash functions:** Poseidon2, BLAKE3 are collision-resistant
+- **Hash functions:** Poseidon2, SHA256 are collision-resistant
 - **STARK soundness:** FRI protocol has proven security
 - **Random oracle model:** Used for Fiat-Shamir transformation
 
@@ -410,7 +410,7 @@ The proof_hash in the Nostr event ensures:
 ```
 Field Arithmetic:    goldilocks (Rust crate)
 STARK Prover:        winterfell (STARKWare) or custom
-Hash Functions:      poseidon2 (leaves), blake3 (commitments)
+Hash Functions:      poseidon2 (leaves), sha2 (integrity)
 HTTPS Client:         https-api or rust-https
 Nostr Client:        nostr-sdk
 ```
@@ -606,7 +606,7 @@ fn cantor_pair(a: u64, b: u64) -> u64 {
 
 - [STARKWare Winterfell](https://github.com/facebook/winterfell) - STARK prover/verifier library
 - [Poseidon2 Hash](https://eprint.iacr.org/2023/323) - STARK-friendly hash function
-- [BLAKE3](https://github.com/BLAKE3-team/BLAKE3) - Fast cryptographic hash
+- [SHA256](https://en.wikipedia.org/wiki/SHA-2) - Cryptographic hash function
 - [FRI Protocol](https://eprints.iacr.org/2018/046) - Fast Reed-Solomon IOP
 - [Goldilocks Field](https://polygon.technology/blog/polygon-miden-v0-4) - STARK-friendly field
 
