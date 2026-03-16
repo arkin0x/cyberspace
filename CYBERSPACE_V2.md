@@ -32,7 +32,7 @@ Key properties:
 - **Every hop costs work:** movement proofs include a temporal Cantor traversal derived from the previous event id.
 - **Movement requires work:** computing mathematical structure (Cantor roots of coordinate pairs), not arbitrary nonce grinding.
 - **Axis symmetry:** equal distances cost equal work regardless of direction.
-- **Cantor Height 34 scale:** the canonical scale parameter defines 1 Gibson ≈ 1.16×10⁻¹⁰ meters, providing an "atomic" granularity for cyberspace.
+- **Cantor Height 34 scale:** the canonical scale for dataspace (plane=0) mapping to physical reality, defining 1 Gibson ≈ 1.16×10⁻¹⁰ meters. This scale applies only to the GPS→dataspace mapping.
 - **Location-based encryption:** keys derive from stable spatial region preimages.
 - **Compact and deterministic:** proofs fit in Nostr events and verify efficiently.
 
@@ -46,7 +46,7 @@ This v2 design replaces earlier drift/quaternion/velocity approaches (deprecated
 - **Plane:** 1 bit. `0 = dataspace` (physical mapping), `1 = ideaspace` (non-physical).
 - **Gibson (G):** The fundamental unit (one axis step in u85 space).
 - **Sector:** A cube of `2^30` Gibsons per axis.
-- **Cantor Height 34 scale:** The canonical scale where Cantor Height 34 = 2 meters. At this scale, one Gibson ≈ 1.16×10⁻¹⁰ meters (approximately the diameter of a hydrogen atom), and the full axis extent is ~4.5 trillion kilometers (~0.48 light-years).
+- **Cantor Height 34 scale:** The canonical scale for dataspace (plane=0) mapping to physical reality, where Cantor Height 34 = 2 meters. At this scale, one Gibson ≈ 1.16×10⁻¹⁰ meters (approximately the diameter of a hydrogen atom), and the full axis extent is ~4.5 trillion kilometers (~0.48 light-years). This scale applies only to the GPS→dataspace mapping; ideaspace (plane=1) has no physical mapping.
 - **Temporal axis (u85):** A per-hop work axis derived from chain context (the previous movement event id) used only for hop proof freshness; it does not affect stable spatial region identifiers. The temporal height `K` is in `[0, 16]`.
 
 ---
@@ -119,12 +119,15 @@ Dataspace (`plane=0`) maps WGS84 GPS coordinates (lat/lon[/alt]) into the u85 ax
 This mapping is **consensus-critical** if multiple clients are expected to agree on the same coord256 for a given GPS point.
 
 ### 4.1 Dataspace cube size (Cantor Height 34 scale)
+
+The Cantor Height 34 scale defines the mapping between dataspace (plane=0) and physical reality. It does not apply to ideaspace (plane=1), which has no GPS mapping.
+
 - Full axis length: **~4.5 trillion kilometers** (~0.48 light-years)
 - Half axis length: **~2.25 trillion kilometers**
 - Gibson size: **~1.16×10⁻¹⁰ meters** (approximately 1 hydrogen atom diameter)
 - Cantor Height 34 = 2 meters (the canonical scale parameter)
 
-This scale provides "atomic" granularity in cyberspace while maintaining axis extents that vastly exceed the geosynchronous orbit requirement.
+This scale provides "atomic" granularity in dataspace while maintaining axis extents that vastly exceed the geosynchronous orbit requirement.
 
 ### 4.2 Axis naming convention (ECEF→Cyberspace)
 Starting from standard Earth-Centered Earth-Fixed (ECEF):
