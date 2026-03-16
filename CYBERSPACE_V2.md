@@ -1,7 +1,7 @@
-# Cyberspace v2 — Per-Axis Cantor Tree Traversal with Location-Based Encryption
+# Cyberspace v2 - Per-Axis Cantor Tree Traversal with Location-Based Encryption
 
-**Date:** February 10, 2026  
-**Last updated:** March 14, 2026  
+**Date:** February 10, 2026
+**Last updated:** March 14, 2026
 **Status:** Design complete (spec); reference implementation in progress
 
 This document is the canonical specification for Cyberspace v2.
@@ -18,6 +18,48 @@ This spec defines:
 Reference implementation: https://github.com/arkin0x/cyberspace-cli
 
 For design rationale and extended discussion, see `RATIONALE.md` https://github.com/arkin0x/cyberspace/blob/master/RATIONALE.md (non-normative).
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [1. Terms](#1-terms)
+- [2. 256-bit Coordinate Encoding](#2-256-bit-coordinate-encoding)
+  - [2.1 Bit layout](#21-bit-layout)
+  - [2.2 Reference pseudocode](#22-reference-pseudocode)
+- [3. Sectors and Required Sector Tags](#3-sectors-and-required-sector-tags)
+- [4. Canonical GPS→Dataspace Mapping (Plane=0)](#4-canonical-gpsdataspace-mapping-plane0)
+  - [4.1 Dataspace cube size (Cantor Height 34 scale)](#41-dataspace-cube-size-cantor-height-34-scale)
+  - [4.2 Axis naming convention (ECEF→Cyberspace)](#42-axis-naming-convention-ecefcyberspace)
+  - [4.3 Canonical spec version and deterministic arithmetic](#43-canonical-spec-version-and-deterministic-arithmetic)
+  - [4.4 Canonical mapping algorithm (normative)](#44-canonical-mapping-algorithm-normative)
+  - [4.5 Golden vectors (consensus locks)](#45-golden-vectors-consensus-locks)
+- [5. Movement Proofs (Per-Axis Cantor Pairing Trees + Temporal Axis)](#5-movement-proofs-per-axis-cantor-pairing-trees--temporal-axis)
+  - [5.1 Cantor pairing function](#51-cantor-pairing-function)
+  - [5.2 Lowest common ancestor (LCA) height](#52-lowest-common-ancestor-lca-height)
+  - [5.3 Aligned subtree (definition)](#53-aligned-subtree-definition)
+  - [5.4 Axis subtree root (definition)](#54-axis-subtree-root-definition)
+  - [5.5 3D combination](#55-3d-combination)
+  - [5.6 Integer→bytes encoding (normative)](#56-integerbytes-encoding-normative)
+  - [5.7 Movement proof hash](#57-movement-proof-hash)
+  - [5.8 Performance expectations (non-normative)](#58-performance-expectations-non-normative)
+- [6. Nostr Protocol Integration (Movement Chain)](#6-nostr-protocol-integration-movement-chain)
+  - [6.1 Event kind](#61-event-kind)
+  - [6.2 Canonical event id (NIP-01)](#62-canonical-event-id-nip-01)
+  - [6.3 Spawn event (first event)](#63-spawn-event-first-event)
+  - [6.4 Hop event (subsequent events)](#64-hop-event-subsequent-events)
+  - [6.5 Verification summary](#65-verification-summary)
+  - [6.6 Protocol extensions](#66-protocol-extensions)
+- [7. Location-Based Encryption and Discovery](#7-location-based-encryption-and-discovery)
+  - [7.1 Key derivation](#71-key-derivation)
+  - [7.2 Encrypted content event (Nostr)](#72-encrypted-content-event-nostr)
+  - [7.3 Discovery scanning (recommended)](#73-discovery-scanning-recommended)
+- [8. Reference Implementation](#8-reference-implementation)
+- [9. Limitations and threat model (non-normative)](#9-limitations-and-threat-model-non-normative)
+- [10. Visualization conventions (normative)](#10-visualization-conventions-normative)
+- [Appendix A. Philosophical foundation (non-normative)](#appendix-a-philosophical-foundation-non-normative)
+- [Appendix B. Scale Parameter Rationale (non-normative)](#appendix-b-scale-parameter-rationale-non-normative)
 
 ---
 
@@ -176,7 +218,7 @@ The canonical mapping is defined for latitude/longitude plus an optional altitud
    - `u = km * units_per_km + 2^84`
    - round using `ROUND_HALF_EVEN`
    - clamp to `[0, 2^85 - 1]`
-   
+
    Note: This formula maps GPS coordinates into a GEO-centered region of dataspace. At Cantor Height 34 scale, this region is a tiny fraction (~0.000000002%) of the full axis extent (~4.5 trillion km).
 10. Produce coord256 with `plane=0` using the interleaving in §2.
 
@@ -184,6 +226,8 @@ The canonical mapping is defined for latitude/longitude plus an optional altitud
 Implementations SHOULD include golden-vector tests to detect accidental mapping drift.
 
 These are required vectors for spec version `2026-03-14-decimal-v2-h34` (hex is 32 bytes, no `0x` prefix).
+
+**Note on scale compatibility:** The Cantor Height 34 scale changes the axis extent (~4.5 trillion km) and Gibson size (~1.16×10⁻¹⁰ m), but the GPS→dataspace mapping formula (`units_per_km = 2^84 / 48028`) is unchanged from the previous spec. GPS coordinates map to the same centered u85 region. These golden vectors remain valid because the mapping algorithm produces identical results.
 
 Golden vectors assume `altitude_m = 0` with clamp-to-surface behavior enabled:
 - `origin_equator_prime` lat=0 lon=0
@@ -222,7 +266,30 @@ def find_lca_height(v1: int, v2: int) -> int:
     return (v1 ^ v2).bit_length()
 ```
 
-### 5.3 Axis subtree root (definition)
+### 5.3 Aligned subtree (definition)
+An **aligned subtree** of height `h` is a binary subtree whose base is a multiple of `2^h`:
+
+- `base = (v >> h) << h` (the aligned base for any value `v`)
+- The subtree spans `2^h` consecutive leaves: `[base, base+1, ..., base + 2^h - 1]`
+- The base is always a multiple of `2^h` (aligned to a power-of-2 boundary)
+
+For movement between `v1` and `v2`, the **covering aligned subtree** is the minimal aligned subtree that contains both endpoints:
+- `h = find_lca_height(v1, v2)` (the LCA height)
+- `base = (v1 >> h) << h` (equivalently `(v2 >> h) << h`)
+
+**Example:** For movement `0 → 5`:
+- `h = find_lca_height(0, 5) = 3` (because `0 ^ 5 = 5`, bit_length = 3)
+- `base = (0 >> 3) << 3 = 0`
+- Aligned subtree covers leaves `[0, 1, 2, 3, 4, 5, 6, 7]` (8 leaves = `2^3`)
+
+**Example:** For movement `4 → 7`:
+- `h = find_lca_height(4, 7) = 2` (because `4 ^ 7 = 3`, bit_length = 2)
+- `base = (4 >> 2) << 2 = 4`
+- Aligned subtree covers leaves `[4, 5, 6, 7]` (4 leaves = `2^2`)
+
+The alignment property ensures that coordinates within the same subtree share the same root, enabling region-based discovery and location-based encryption.
+
+### 5.4 Axis subtree root (definition)
 Let `h = find_lca_height(v1, v2)` and `base = (v1 >> h) << h`.
 
 The axis movement "region" is the aligned subtree covering the leaf range:
@@ -254,7 +321,7 @@ The **axis Cantor root** for movement `(v1 → v2)` is:
 
 (Implementations MAY compute this with any equivalent algorithm; the result MUST match this definition.)
 
-### 5.4 3D combination
+### 5.5 3D combination
 Compute axis roots independently:
 - `cantor_x = axis_root(x1, x2)`
 - `cantor_y = axis_root(y1, y2)`
@@ -263,7 +330,7 @@ Compute axis roots independently:
 Then combine:
 - `region_n = π(π(cantor_x, cantor_y), cantor_z)`
 
-### 5.4.1 Region uniqueness (non-normative)
+### 5.5.1 Region uniqueness (non-normative)
 - Each aligned subtree root corresponds to a unique region (Cantor pairing is a bijection).
 - Many coordinate pairs inside the same aligned subtree share the same root.
 
@@ -276,14 +343,14 @@ LCA(0, 2) => subtree [0..3] => root = 228
 
 This is intentional: the Cantor root `region_n` is a **region identifier**, not a unique coordinate-pair identifier.
 
-### 5.4.2 Temporal axis root (hop freshness)
+### 5.5.2 Temporal axis root (hop freshness)
 To prevent proof reuse and guarantee fresh work per hop, hop proofs include an additional Cantor-tree root derived from Nostr chain context.
 
 This temporal axis has two inputs:
 - a hop-specific **height** `K` derived from the destination coordinate (a deterministic "terrain" function), and
 - a hop-specific **seed** `t` derived from the `previous_event_id`.
 
-#### 5.4.2.1 Terrain-derived temporal height K (normative)
+#### 5.5.2.1 Terrain-derived temporal height K (normative)
 Define constants:
 - `TERRAIN_DOMAIN_V2 = b"CYBERSPACE_TERRAIN_K_V2"` (ASCII bytes)
 - `TERRAIN_CELL_BITS = [3, 7, 9, 11]` (exactly four integers)
@@ -311,7 +378,7 @@ Given the hop destination coordinate `(x2, y2, z2, plane)`:
 
 Note (non-normative): Because `K` is the popcount of 16 pseudorandom bits, it is distributed approximately as a binomial distribution with mean 8. The worst-case temporal computation is `2^16 = 65,536` Cantor pairs (~100 ms). The aligned cells introduce spatial correlation ("hills").
 
-#### 5.4.2.2 Temporal axis seed and root (normative)
+#### 5.5.2.2 Temporal axis seed and root (normative)
 For hop events, let `previous_event_id` be the 32-byte NIP-01 event id referenced by the `e` tag with marker `previous` (§6.4).
 
 1. Parse `previous_event_id` from lowercase hex into 32 bytes.
@@ -324,11 +391,11 @@ For hop events, let `previous_event_id` be the 32-byte NIP-01 event id reference
 
 Note (non-normative): the temporal axis is derived from chain context and destination coordinates, not wall-clock time. There is no continuous "alive" cost; you pay this work only when you publish a hop.
 
-### 5.4.3 4D hop preimage (space + time)
+### 5.5.3 4D hop preimage (space + time)
 Define the hop preimage integer:
 - `hop_n = π(region_n, cantor_t)`
 
-### 5.5 Integer→bytes encoding (normative)
+### 5.6 Integer→bytes encoding (normative)
 Many operations hash large integers. This spec defines the canonical encoding used for hashing integers.
 
 ```python
@@ -341,7 +408,7 @@ def int_to_bytes_be_min(n: int) -> bytes:
     return n.to_bytes((n.bit_length() + 7) // 8, "big")
 ```
 
-### 5.6 Movement proof hash
+### 5.7 Movement proof hash
 The movement proof hash is derived from the 4D hop preimage `hop_n` (space + time). This intentionally differs from the stable spatial region identifiers used for location-based encryption and discovery (§7).
 
 - `hop_bytes = int_to_bytes_be_min(hop_n)`
@@ -350,7 +417,7 @@ The movement proof hash is derived from the 4D hop preimage `hop_n` (space + tim
 
 When used in Nostr tags, `proof_hash` MUST be encoded as lowercase hex in the `proof` tag.
 
-### 5.6.1 Worked example (non-normative)
+### 5.7.1 Worked example (non-normative)
 Movement: `(0, 0, 0) → (4104, 0, 0)`
 
 Per-axis roots:
@@ -366,7 +433,16 @@ Stable lookup id (used for location-based encryption/discovery, §7.1):
 - `8d2463eb22301d97a1f7e33b90e473ba2eec69079f418a72609c3e4d2981669b`
 
 Terrain-derived temporal height at destination `(x2=4104, y2=0, z2=0, plane=0)` using `TERRAIN_CELL_BITS = [3, 7, 9, 11]`:
-- `K = 11`
+
+For each cell size, align the destination coordinate and extract a nibble from the terrain hash:
+- `bits=3`: cell = `(4104, 0, 0)` → nibble = `0b0000` (0 ones)
+- `bits=7`: cell = `(4096, 0, 0)` → nibble = `0b1111` (4 ones)
+- `bits=9`: cell = `(4096, 0, 0)` → nibble = `0b1111` (4 ones)
+- `bits=11`: cell = `(4096, 0, 0)` → nibble = `0b1101` (3 ones)
+
+Combine into 16-bit word and compute popcount:
+- `word16 = (0 << 12) | (15 << 8) | (15 << 4) | 13 = 0b0000111111111101`
+- `K = popcount(word16) = 0 + 4 + 4 + 3 = 11`
 
 Temporal axis example using `previous_event_id` = 64 hex zeros:
 - `previous_event_id = "0000000000000000000000000000000000000000000000000000000000000000"`
@@ -381,10 +457,10 @@ Temporal axis example using `previous_event_id` = 64 hex zeros:
 
 Different `previous_event_id` values produce different `proof_hash` values, even for identical spatial moves.
 
-### 5.7 Performance expectations (non-normative)
+### 5.8 Performance expectations (non-normative)
 Reference implementations typically observe that cost grows with the per-axis LCA height (because the aligned subtree contains `2^h` leaves).
 
-In addition, hop proofs include a temporal axis traversal at a terrain-derived height `K` (§5.4.2.1), imposing a non-cacheable work component per hop even when the spatial `region_n` is reused. Because `K` depends on the destination coordinate, some regions of cyberspace are intrinsically easier or harder to traverse.
+In addition, hop proofs include a temporal axis traversal at a terrain-derived height `K` (§5.5.2.1), imposing a non-cacheable work component per hop even when the spatial `region_n` is reused. Because `K` depends on the destination coordinate, some regions of cyberspace are intrinsically easier or harder to traverse.
 
 Approximate per-axis expectations from early benchmarks (illustrative only):
 
@@ -441,12 +517,12 @@ Required:
 To verify a hop:
 1. Parse previous and current coords; decode to `(x1,y1,z1,plane)` and `(x2,y2,z2,plane)`.
 2. Plane changes are valid in v2; verifiers MUST support hops where `plane1 != plane2`.
-3. Compute the stable spatial region integer `region_n` per §5.4.
-4. Derive the terrain-based temporal height `K` from the destination coordinate `(x2,y2,z2,plane2)` per §5.4.2.1 (including the destination plane bit).
-5. Compute the temporal axis root `cantor_t` from the hop event’s `previous_event_id` (`e` tag with marker `previous`) and `K` per §5.4.2.2.
-6. Compute `hop_n = π(region_n, cantor_t)` per §5.4.3.
-7. Compute `proof_hash` per §5.6.
-8. Accept iff it matches the event’s `proof` tag.
+3. Compute the stable spatial region integer `region_n` per §5.5.
+4. Derive the terrain-based temporal height `K` from the destination coordinate `(x2,y2,z2,plane2)` per §5.5.2.1 (including the destination plane bit).
+5. Compute the temporal axis root `cantor_t` from the hop event's `previous_event_id` (`e` tag with marker `previous`) and `K` per §5.5.2.2.
+6. Compute `hop_n = π(region_n, cantor_t)` per §5.5.3.
+7. Compute `proof_hash` per §5.7.
+8. Accept iff it matches the event's `proof` tag.
 
 ### 6.6 Protocol extensions
 This specification defines the base Cyberspace v2 protocol.
@@ -455,7 +531,6 @@ Optional extensions MAY introduce new event kinds, new movement action types (`A
 
 Extensions are specified as **Design Extension and Compatibility Kits (DECKs)** in the `decks/` directory.
 - Hyperjumps extension: `decks/DECK-0001-hyperjumps.md`
-- Hyperjumps extension: `extensions/DECK-0001-hyperjumps.md`
 
 ---
 
@@ -463,26 +538,33 @@ Extensions are specified as **Design Extension and Compatibility Kits (DECKs)** 
 This section defines key derivation from region Cantor numbers.
 
 ### 7.1 Key derivation
-Given a spatial region integer `region_n` (the 3D region identifier from §5.4 for some aligned region):
+Given a spatial region integer `region_n` (the 3D region identifier from §5.5 for some aligned region):
 - `region_bytes = int_to_bytes_be_min(region_n)`
 - `location_decryption_key = sha256(region_bytes)`
 - `lookup_id = sha256(location_decryption_key)`
 
-Note (non-normative): the temporal axis used for hop proofs (§5.4.2) is intentionally not included here. Location-based identifiers and keys remain a stable function of spatial regions.
+Note (non-normative): the temporal axis used for hop proofs (§5.5.2) is intentionally not included here. Location-based identifiers and keys remain a stable function of spatial regions.
 
 Outputs are 32-byte digests. When used in Nostr tags, they MUST be lowercase hex.
 
 ### 7.1.1 Discovery radius property (non-normative)
 Cantor subtree roots represent **aligned regions**. Choosing a subtree height implicitly chooses a discovery radius.
 
-Illustrative metaphor:
+At the Cantor Height 34 scale (2 meters per height-34 subtree), approximate physical scales are:
 
-| Height | Coverage (per axis) | Metaphor |
-|---:|---:|---|
-| 0 | 1 coordinate | Message scratched on one cobblestone |
-| 4 | 16 coordinates | Message on a street corner |
-| 10 | 1,024 coordinates | Billboard in a neighborhood |
-| 20 | ~1,000,000 coordinates | Broadcast across a district |
+| Height | Leaves (per axis) | Physical scale | Metaphor |
+|---:|---:|---|---|
+| 0 | 1 | ~10⁻¹⁰ m | Atomic precision |
+| 10 | 1,024 | ~0.1 μm | Microscopic |
+| 20 | ~10⁶ | ~0.1 mm | Grain of sand |
+| 30 | ~10⁹ | ~0.1 m | Hand-span |
+| 34 | ~1.7×10¹⁰ | 2 m | Human height (canonical) |
+| 40 | ~10¹² | 128 m | City block |
+| 50 | ~10¹⁵ | 131 km | City region |
+
+A message placed at height 34 is discoverable within ~2 meters — you must be standing next to it. A message at height 50 is discoverable from anywhere in a city.
+
+The discovery radius grows exponentially with height, enabling a natural hierarchy of public, neighborhood, and intimate spatial messages.
 
 ### 7.1.2 Lookup vs decryption key
 To prevent a published lookup identifier from trivially implying the decryption key, this spec uses:
@@ -521,19 +603,62 @@ Then derive `lookup_id` per §7.1.
 Implementations SHOULD cap `H` for interactive use and may cache values; higher subtrees change less frequently.
 
 ### 7.3.1 Caching optimization (non-normative)
-When moving, many higher subtrees do not change.
+When moving, many higher subtrees do not change. This provides a significant optimization for applications that scan multiple discovery radii.
 
-Example (1D):
+#### Boundary crossing principle
+An aligned subtree of height `h` has a base that's a multiple of `2^h`. When you move from one coordinate to another, the subtree changes only if you cross a boundary at that height.
+
+**Example (1D):** Moving from position 7 to position 8:
 ```
-position 7 is in:  [6..7], [4..7], [0..7], [0..15], [0..31], ...
-position 8 is in:  [8..9], [8..11], [8..15], [0..15], [0..31], ...
-                           ^
-                     [0..15] and above are unchanged
+Height  Base (at pos 7)  Base (at pos 8)  Changed?
+-------  ----------------  ----------------  --------
+   0           7                 8           YES (boundary at 8)
+   1           6                 8           YES (boundary at 8)
+   2           4                 8           YES (boundary at 8)
+   3           0                 8           YES (boundary at 8)
+   4           0                 0           NO  (same [0..15])
+   5           0                 0           NO  (same [0..31])
+   ...         ...               ...         NO
 ```
 
-Only recompute subtrees when you cross a boundary for that height.
+**Observation:** Heights 4 and above are unchanged. Position 7 and 8 share the same `base` for h≥4.
 
-Note: this caching optimization applies to spatial region computations. Hop proofs still require computing the temporal axis root per §5.4.2 on every hop.
+#### Boundary detection
+For a movement from `v1` to `v2`, the subtree at height `h` changes if and only if:
+```python
+def subtree_changes(v1: int, v2: int, h: int) -> bool:
+    return (v1 >> h) != (v2 >> h)
+```
+
+When `(v1 >> h) == (v2 >> h)`, both positions lie in the same aligned subtree — the cached region key remains valid.
+
+#### Implementation strategy
+```python
+# Pre-compute region keys at startup for all heights up to H
+region_cache = {}  # height -> (base, region_key)
+
+def get_region_key(x, y, z, h):
+    bx = (x >> h) << h
+    by = (y >> h) << h
+    bz = (z >> h) << h
+
+    if h in region_cache:
+        cached_base, cached_key = region_cache[h]
+        if (bx, by, bz) == cached_base:
+            return cached_key  # Cache hit
+
+    # Cache miss: compute and store
+    region_key = compute_region_key(bx, by, bz, h)
+    region_cache[h] = ((bx, by, bz), region_key)
+    return region_key
+```
+
+#### Performance implications
+- **Small moves:** Most heights remain cached; only recompute low heights
+- **Large moves:** More heights change, but high heights often remain the same
+- **Continuous scanning:** Avoid recomputing all 50+ region keys on every position update
+
+Note: this caching optimization applies to spatial region computations for discovery. Hop proofs still require computing the temporal axis root per §5.5.2 on every hop.
 
 ---
 
@@ -655,11 +780,13 @@ The Cantor Height 34 scale is tuned to create a fundamental asymmetry between in
 
 This balance is the primary focus of the scale parameter. The goal is not to make territory claims impossible for powerful actors, but to ensure that meaningful territorial presence requires proportional investment, and that no single actor can monopolize cyberspace.
 
+**Forward reference:** The territorial claim mechanism itself is specified in DECK-0002 (in development). The scale parameter in this base protocol ensures computational fairness independent of the claim mechanism — no single entity can efficiently compute the Cantor roots for planetary-scale regions, regardless of how claims are ultimately structured. The storage-bound nature of Cantor tree traversal guarantees this property.
+
 ### B.2 No Difficulty Adjustment
 
 Unlike Bitcoin, Cyberspace has no difficulty adjustment mechanism. The Cantor Height 34 scale is fixed by mathematical definition.
 
-**Rationale:** Difficulty adjustment would overcomplicate the protocol. Coordinates are mathematical objects, not competitive resources. A coordinate's Cantor tree is deterministic — it cannot be made "harder" without changing the coordinate itself.
+**Rationale:** Difficulty adjustment would overcomplicate the protocol. Coordinates are mathematical objects, not competitive resources. A coordinate's Cantor tree is deterministic - it cannot be made "harder" without changing the coordinate itself.
 
 **Implication:** As technology advances (Moore's Law, storage density improvements, specialized hardware), all parties will gain access to greater computation and data storage. This will gradually increase the size and intensity of territorial claims over time.
 
@@ -720,7 +847,7 @@ The Netherlands covers approximately 41,000 km². At Cantor Height 34/2m:
 - I/O bandwidth to process this data would require months or years even with nation-state infrastructure
 - The storage requirement exceeds what even well-funded national data centers typically maintain for single workloads
 
-The limiting factor is **data storage and I/O bandwidth**, not raw compute. A Cantor Height 34 Cantor tree traversal produces massive intermediate data. There is no shortcut — the protocol's work equivalence property ensures that storing and processing this data cannot be optimized away.
+The limiting factor is **data storage and I/O bandwidth**, not raw compute. A Cantor Height 34 Cantor tree traversal produces massive intermediate data. There is no shortcut - the protocol's work equivalence property ensures that storing and processing this data cannot be optimized away.
 
 ### B.6 Storage as the Primary Constraint
 
@@ -729,7 +856,7 @@ Cantor tree computation is memory-bound. At Cantor Height 34, a single subtree c
 **This is intentional.** Storage is the equalizer:
 - Consumer SSDs provide enough I/O for small claims
 - Nation-states have faster storage, but the exponential growth of tree size limits scaling
-- There is no "ASIC advantage" — the bottleneck is data movement, not hash rate
+- There is no "ASIC advantage" - the bottleneck is data movement, not hash rate
 
 The storage constraint ensures that territorial claims remain bounded by physical infrastructure, not just financial resources.
 
@@ -744,6 +871,6 @@ For Cantor Height 34 claims, contiguous computation is approximately **22,500× 
 - Meaningful presence (contiguous activity) is rewarded
 - Governance structures emerge naturally from mathematical efficiency
 
-This property was not explicitly designed — it emerges from the structure of Cantor pairing and subtree sharing.
+This property was not explicitly designed - it emerges from the structure of Cantor pairing and subtree sharing.
 
 This appendix is explanatory only; it does not add or modify any normative requirements.
