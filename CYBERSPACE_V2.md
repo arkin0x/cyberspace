@@ -690,16 +690,32 @@ The following benchmarks assume disk-based computation (streaming intermediate v
 
 At Height 34, even a nation-state-level actor with substantial computational resources faces hard limits:
 
-| Claim Type | Approximate Feasibility |
-|------------|------------------------|
-| Single city (~50 km²) | Feasible with significant investment |
-| ~28 cities | Upper bound for sustained effort |
-| Country-scale | Not feasible |
-| Continental-scale | Not feasible |
-| Earth surface | Not feasible |
-| GEO sphere | Not feasible |
+| Claim Type | Approximate Feasibility | Storage Required |
+|------------|------------------------|------------------|
+| Single city (~50 km²) | Feasible with significant investment | ~25 TB |
+| ~28 cities (~1,400 km² total) | Upper bound for sustained effort | ~700 TB |
+| Country-scale (e.g., Netherlands, ~41,000 km²) | Not feasible | ~20 PB |
+| Continental-scale | Not feasible | Exabyte-scale |
+| Earth surface | Not feasible | Zettabyte-scale |
+| GEO sphere | Not feasible | Beyond current technology |
 
-The limiting factor is data storage and I/O bandwidth, not raw compute. A Height 34 Cantor tree traversal for a 1 m³ claim produces ~0.5 TB of intermediate data. Scaling to planetary claims would require exabyte-scale storage and data movement that exceeds current technological capability.
+**Derivation of the ~28 cities limit:**
+
+A "city" is approximated as a 50 km² area (roughly a 7×7 km square). At Height 34/2m scale:
+- 1 m³ claim requires ~0.5 TB storage
+- 50 km² claim (at ~10m height) requires ~25 TB storage
+- A nation-state with 1 PB storage capacity can claim approximately 40 such regions
+
+However, practical constraints (I/O bandwidth, computation time, infrastructure costs) reduce this to approximately 28-35 cities as a realistic upper bound for sustained effort.
+
+**Why countries are infeasible:**
+
+The Netherlands covers approximately 41,000 km². At Height 34/2m:
+- Surface area alone (ignoring height) would require ~20 PB storage
+- I/O bandwidth to process this data would require months or years even with nation-state infrastructure
+- The storage requirement exceeds what even well-funded national data centers typically maintain for single workloads
+
+The limiting factor is **data storage and I/O bandwidth**, not raw compute. A Height 34 Cantor tree traversal produces massive intermediate data. There is no shortcut — the protocol's work equivalence property ensures that storing and processing this data cannot be optimized away.
 
 ### B.6 Storage as the Primary Constraint
 
