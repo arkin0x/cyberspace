@@ -194,6 +194,90 @@ Golden vectors assume `altitude_m = 0` with clamp-to-surface behavior enabled:
 - `nyc` lat=40.7128 lon=-74.0060
   - `c4943fa01bb22b95946ec1605717047a3b79bd717d5d84e35a12cb56df76134a`
 
+### 4.6 Height 34 scale design rationale (non-normative)
+
+This section explains the design considerations that led to selecting Height 34 as the canonical scale parameter.
+
+#### 4.6.1 Scale tuning objectives
+The scale parameter is tuned to achieve a specific balance between consumer accessibility and nation-state power concentration:
+
+- **Consumer feasibility:** Individuals with commodity hardware (1-2 TB storage) can mine small territorial claims (1-5 m³) within days.
+- **Nation-state limitation:** Even well-resourced adversaries cannot claim planet-scale territory. At Height 34, a nation-state can claim approximately 28-35 city-sized regions—not the entire Earth or geosynchronous sphere.
+
+This balance ensures cyberspace remains accessible to individuals while preventing monopolistic territorial capture.
+
+#### 4.6.2 Mathematical elegance
+The Height 34 scale yields a simple, memorable ratio:
+- **Height / Axis bits = 34 / 85 = 0.4** (exactly 2:5)
+
+This ratio produces a Gibson size of approximately 1.16 × 10⁻¹⁰ meters—coincidentally close to the diameter of a hydrogen atom. This gives cyberspace a natural "atomic" granularity.
+
+#### 4.6.3 Consumer benchmarks (disk-based computation)
+The primary constraint for Cantor tree traversal is **data storage**, not compute time. Modern algorithms stream intermediate results to disk rather than holding entire trees in RAM, making Height 34 feasible for consumer hardware.
+
+**Consumer benchmarks at Height 34 / 2m scale:**
+
+| Claim Size | Time (Consumer, disk) | Storage Required |
+|------------|----------------------|------------------|
+| 1 m³ | 1.2 days | 0.5 TB |
+| 5 m³ | 6.2 days | 2.5 TB |
+| 50 m³ | 62 days | 25 TB |
+| 150 m³ | 186 days | 75 TB |
+
+**Cloud compute costs (for reference):**
+
+| Claim Size | Spot Instances | Regular Pricing |
+|------------|---------------|-----------------|
+| 150 m³ | ~$45 | ~$450 |
+
+These benchmarks assume contemporary hardware (2026). Actual performance will vary based on implementation efficiency and hardware capabilities.
+
+#### 4.6.4 Nation-state limits
+At Height 34, a nation-state-level adversary with massive computational resources is limited to approximately 28-35 city-sized territorial claims. Claims at the scale of entire countries, continents, or the planet itself are computationally infeasible.
+
+This limitation emerges naturally from the O(2^h) relationship between claim size and computation—it is not an artificial rule imposed by the protocol.
+
+#### 4.6.5 Storage as the primary constraint
+Cantor tree traversal requires storing intermediate node values. The storage requirement scales as O(2^h):
+
+| Height | Nodes | Storage |
+|--------|-------|---------|
+| 25 | 2²⁵ | 2 GB |
+| 30 | 2³⁰ | 64 GB |
+| 34 | 2³⁴ | 1 TB |
+| 35 | 2³⁵ | 2 TB |
+| 40 | 2⁴⁰ | 64 TB |
+
+RAM is the traditional constraint, but disk-based streaming algorithms extend feasibility to heights that would otherwise require impractical memory. Storage capacity (SSDs, HDDs) becomes the limiting factor rather than RAM.
+
+#### 4.6.6 No difficulty adjustment mechanism
+Unlike Bitcoin, Cyberspace has no difficulty adjustment mechanism. Coordinates are mathematical—the work required to traverse or claim territory is fixed by the geometry of Cantor trees.
+
+**Implications:**
+- As hardware improves over time, all parties will have access to greater computation and storage capacity.
+- Territorial claims may grow in size and intensity over decades.
+- The protocol remains stable; difficulty does not dynamically adjust to maintain constant claim costs.
+
+**Mitigation:** Future DECKs may define alternative scales or layers with higher height parameters, allowing the ecosystem to migrate to stronger computational requirements without modifying the base protocol.
+
+#### 4.6.7 Territorial cohesion incentive
+An emergent property of Cantor tree structure: **claiming a contiguous region is orders of magnitude cheaper than claiming equivalent volume as discrete parcels.**
+
+| Approach | Volume | Operations | Relative Cost |
+|----------|--------|------------|---------------|
+| Single contiguous 150 m³ region | 150 m³ | 1.29 × 10¹² | 1× (baseline) |
+| 3,375,000 discrete 1 m³ parcels | 150 m³ total | 2.90 × 10¹⁶ | ~22,500× higher |
+
+This emerges naturally from tree structure sharing—contiguous claims compute shared intermediate nodes once, while discrete claims recompute from scratch for each parcel.
+
+**Game-theoretic implications:**
+- Land speculation (claiming scattered parcels) is prohibitively expensive
+- Territorial consolidation is strategically advantageous
+- Meaningful presence is rewarded over speculative holding
+- Natural governance structures emerge from mathematical incentives
+
+This is not a designed feature—it is a mathematical property of the Cantor tree structure.
+
 ---
 
 ## 5. Movement Proofs (Per-Axis Cantor Pairing Trees + Temporal Axis)
@@ -631,5 +715,98 @@ A key property of this design is that **observation does not provide a computati
 In many digital systems, observers can cheaply inspect state. In Cyberspace, to discover location-gated content you must compute region preimages (Cantor roots and hashes) whether you:
 - traveled along a published movement chain, or
 - computed the region directly for an arbitrary coordinate.
+
+This appendix is explanatory only; it does not add or modify any normative requirements.
+
+---
+
+## Appendix B. Scale Parameter Rationale (non-normative)
+
+This appendix explains the design rationale for the Height 34 scale parameter.
+
+### B.1 Primary Design Constraint: Territorial Balance
+
+The Height 34 scale is tuned to create a fundamental asymmetry between individual consumers and nation-state actors:
+
+**Consumers** can mine small territorial claims (a room, a building, a small property) with consumer-grade hardware and reasonable time investment.
+
+**Nation-states** cannot claim regions larger than a modest number of cities, and are computationally prevented from claiming the entire Earth or geosynchronous orbit sphere.
+
+This balance is the primary focus of the scale parameter. The goal is not to make territory claims impossible for powerful actors, but to ensure that meaningful territorial presence requires proportional investment, and that no single actor can monopolize cyberspace.
+
+### B.2 No Difficulty Adjustment
+
+Unlike Bitcoin, Cyberspace has no difficulty adjustment mechanism. The Height 34 scale is fixed by mathematical definition.
+
+**Rationale:** Difficulty adjustment would overcomplicate the protocol. Coordinates are mathematical objects, not competitive resources. A coordinate's Cantor tree is deterministic — it cannot be made "harder" without changing the coordinate itself.
+
+**Implication:** As technology advances (Moore's Law, storage density improvements, specialized hardware), all parties will gain access to greater computation and data storage. This will gradually increase the size and intensity of territorial claims over time.
+
+**Mitigation:** Future DECKs may define new "layers" with higher heights for applications requiring stronger territorial guarantees. The base protocol remains stable; difficulty migrates upward through extension mechanisms over decades.
+
+### B.3 The Height 34 / Axis Ratio
+
+Height 34 was chosen in part for its mathematical elegance:
+
+```
+Height 34 / Axis 85 = 0.4 = 2/5
+```
+
+This simple 2:5 ratio between the territorial height and the full axis width is easy to remember and communicate. Combined with the atomic-scale Gibson (≈ hydrogen atom diameter), Height 34 gives cyberspace a coherent physical metaphor.
+
+### B.4 Consumer Benchmarks (Height 34, 2-meter scale)
+
+The following benchmarks assume disk-based computation (streaming intermediate values to storage rather than holding in RAM). Storage is the primary limiting factor in Cantor tree traversal at these heights.
+
+| Claim Volume | Time (Consumer) | Disk Space Required |
+|--------------|-----------------|---------------------|
+| 1 m³ | ~1.2 days | 0.5 TB |
+| 5 m³ | ~6.2 days | 2.5 TB |
+| 50 m³ | ~62 days | 25 TB |
+| 150 m³ | ~186 days | 75 TB |
+
+**Notes:**
+- "Consumer" assumes a modern desktop or small server with 1-2 TB available storage for smaller claims, or external storage arrays for larger claims.
+- Computation is parallelizable; cloud spot instances can reduce wall-clock time at additional cost economics.
+- Contiguous claims are significantly more efficient than discrete parcels due to Cantor subtree structure sharing (see §B.6).
+
+### B.5 Nation-State Limits (Height 34, 2-meter scale)
+
+At Height 34, even a nation-state-level actor with substantial computational resources faces hard limits:
+
+| Claim Type | Approximate Feasibility |
+|------------|------------------------|
+| Single city (~50 km²) | Feasible with significant investment |
+| ~28 cities | Upper bound for sustained effort |
+| Country-scale | Not feasible |
+| Continental-scale | Not feasible |
+| Earth surface | Not feasible |
+| GEO sphere | Not feasible |
+
+The limiting factor is data storage and I/O bandwidth, not raw compute. A Height 34 Cantor tree traversal for a 1 m³ claim produces ~0.5 TB of intermediate data. Scaling to planetary claims would require exabyte-scale storage and data movement that exceeds current technological capability.
+
+### B.6 Storage as the Primary Constraint
+
+Cantor tree computation is memory-bound. At Height 34, a single subtree contains 2³⁴ ≈ 17 billion leaf nodes. The intermediate values cannot fit in RAM and must be streamed to disk.
+
+**This is intentional.** Storage is the equalizer:
+- Consumer SSDs provide enough I/O for small claims
+- Nation-states have faster storage, but the exponential growth of tree size limits scaling
+- There is no "ASIC advantage" — the bottleneck is data movement, not hash rate
+
+The storage constraint ensures that territorial claims remain bounded by physical infrastructure, not just financial resources.
+
+### B.7 Territorial Cohesion (Emergent Property)
+
+An emergent property of the Cantor tree structure: **computing a contiguous region is dramatically cheaper than computing equivalent volume as discrete parcels.**
+
+For Height 34 claims, contiguous computation is approximately **22,500× more efficient** than discrete parcel computation for the same total volume.
+
+**Implications:**
+- Land speculation (claiming many small parcels) is computationally expensive
+- Meaningful presence (contiguous activity) is rewarded
+- Governance structures emerge naturally from mathematical efficiency
+
+This property was not explicitly designed — it emerges from the structure of Cantor pairing and subtree sharing.
 
 This appendix is explanatory only; it does not add or modify any normative requirements.
