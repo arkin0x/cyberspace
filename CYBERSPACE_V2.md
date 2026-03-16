@@ -172,10 +172,12 @@ The canonical mapping is defined for latitude/longitude plus an optional altitud
 7. Convert meters→kilometers.
 8. Permute ECEF axes into Cyberspace axes per §4.2.
 9. Convert kilometers-from-center into u85 axis values:
-   - `units_per_km = 2^85 / 96056`
+   - `units_per_km = 2^84 / 48028` (maps GEO diameter to centered region)
    - `u = km * units_per_km + 2^84`
    - round using `ROUND_HALF_EVEN`
    - clamp to `[0, 2^85 - 1]`
+   
+   Note: This formula maps GPS coordinates into a GEO-centered region of dataspace. At Cantor Height 34 scale, this region is a tiny fraction (~0.000000002%) of the full axis extent (~4.5 trillion km).
 10. Produce coord256 with `plane=0` using the interleaving in §2.
 
 ### 4.5 Golden vectors (consensus locks)
