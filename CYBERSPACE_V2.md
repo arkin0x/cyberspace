@@ -713,8 +713,11 @@ When the viewer is oriented per §10.3:
 ### 10.2 Black sun reference marker
 If a visualizer renders the "black sun" guidepost, it MUST place it on the `+Z_cs` boundary of the Cyberspace cube.
 
-In dataspace-kilometers-from-center units (as used by §4.4 step 9), this is:
-- `black_sun = (x_km=0, y_km=0, z_km=+DATASPACE_HALF_AXIS_KM)`
+At u85 position `2^84` (the maximum u85 value, representing the half-axis extent):
+- `black_sun_u85 = (x=0, y=0, z=2^84)` in u85 coordinates
+- In physical units: `black_sun = (x_km=0, y_km=0, z_km=+2.25×10^12 km)` (approximately 0.24 light-years from origin)
+
+**Note on coordinate interpretation:** The GPS→dataspace mapping in §4.4 maps GPS coordinates into a GEO-centered region spanning ~48,000 km. The black sun is at the full half-axis extent (~2.25 trillion km), far beyond this region. Do not use the §4.4 `units_per_km` formula for black sun positioning; use the u85 coordinate directly.
 
 The black sun is a directional guidepost for east (`+Z_cs`). Marker shape (point/sphere/circle/disk) is implementation-defined.
 
