@@ -32,7 +32,7 @@ Key properties:
 - **Every hop costs work:** movement proofs include a temporal Cantor traversal derived from the previous event id.
 - **Movement requires work:** computing mathematical structure (Cantor roots of coordinate pairs), not arbitrary nonce grinding.
 - **Axis symmetry:** equal distances cost equal work regardless of direction.
-- **Height 34 scale:** the canonical scale parameter defines 1 Gibson ≈ 1.16×10⁻¹⁰ meters, providing an "atomic" granularity for cyberspace.
+- **Cantor Height 34 scale:** the canonical scale parameter defines 1 Gibson ≈ 1.16×10⁻¹⁰ meters, providing an "atomic" granularity for cyberspace.
 - **Location-based encryption:** keys derive from stable spatial region preimages.
 - **Compact and deterministic:** proofs fit in Nostr events and verify efficiently.
 
@@ -46,7 +46,7 @@ This v2 design replaces earlier drift/quaternion/velocity approaches (deprecated
 - **Plane:** 1 bit. `0 = dataspace` (physical mapping), `1 = ideaspace` (non-physical).
 - **Gibson (G):** The fundamental unit (one axis step in u85 space).
 - **Sector:** A cube of `2^30` Gibsons per axis.
-- **Height 34 scale:** The canonical scale where Height 34 = 2 meters. At this scale, one Gibson ≈ 1.16×10⁻¹⁰ meters (approximately the diameter of a hydrogen atom), and the full axis extent is ~4.5 trillion kilometers (~0.48 light-years).
+- **Cantor Height 34 scale:** The canonical scale where Cantor Height 34 = 2 meters. At this scale, one Gibson ≈ 1.16×10⁻¹⁰ meters (approximately the diameter of a hydrogen atom), and the full axis extent is ~4.5 trillion kilometers (~0.48 light-years).
 - **Temporal axis (u85):** A per-hop work axis derived from chain context (the previous movement event id) used only for hop proof freshness; it does not affect stable spatial region identifiers. The temporal height `K` is in `[0, 16]`.
 
 ---
@@ -118,11 +118,11 @@ Dataspace (`plane=0`) maps WGS84 GPS coordinates (lat/lon[/alt]) into the u85 ax
 
 This mapping is **consensus-critical** if multiple clients are expected to agree on the same coord256 for a given GPS point.
 
-### 4.1 Dataspace cube size (Height 34 scale)
+### 4.1 Dataspace cube size (Cantor Height 34 scale)
 - Full axis length: **~4.5 trillion kilometers** (~0.48 light-years)
 - Half axis length: **~2.25 trillion kilometers**
 - Gibson size: **~1.16×10⁻¹⁰ meters** (approximately 1 hydrogen atom diameter)
-- Height 34 = 2 meters (the canonical scale parameter)
+- Cantor Height 34 = 2 meters (the canonical scale parameter)
 
 This scale provides "atomic" granularity in cyberspace while maintaining axis extents that vastly exceed the geosynchronous orbit requirement.
 
@@ -638,11 +638,11 @@ This appendix is explanatory only; it does not add or modify any normative requi
 
 ## Appendix B. Scale Parameter Rationale (non-normative)
 
-This appendix explains the design rationale for the Height 34 scale parameter.
+This appendix explains the design rationale for the Cantor Height 34 scale parameter.
 
 ### B.1 Primary Design Constraint: Territorial Balance
 
-The Height 34 scale is tuned to create a fundamental asymmetry between individual consumers and nation-state actors:
+The Cantor Height 34 scale is tuned to create a fundamental asymmetry between individual consumers and nation-state actors:
 
 **Consumers** can mine small territorial claims (a room, a building, a small property) with consumer-grade hardware and reasonable time investment.
 
@@ -652,7 +652,7 @@ This balance is the primary focus of the scale parameter. The goal is not to mak
 
 ### B.2 No Difficulty Adjustment
 
-Unlike Bitcoin, Cyberspace has no difficulty adjustment mechanism. The Height 34 scale is fixed by mathematical definition.
+Unlike Bitcoin, Cyberspace has no difficulty adjustment mechanism. The Cantor Height 34 scale is fixed by mathematical definition.
 
 **Rationale:** Difficulty adjustment would overcomplicate the protocol. Coordinates are mathematical objects, not competitive resources. A coordinate's Cantor tree is deterministic — it cannot be made "harder" without changing the coordinate itself.
 
@@ -660,17 +660,17 @@ Unlike Bitcoin, Cyberspace has no difficulty adjustment mechanism. The Height 34
 
 **Mitigation:** Future DECKs may define new "layers" with higher heights for applications requiring stronger territorial guarantees. The base protocol remains stable; difficulty migrates upward through extension mechanisms over decades.
 
-### B.3 The Height 34 / Axis Ratio
+### B.3 The Cantor Height 34 / Axis Ratio
 
-Height 34 was chosen in part for its mathematical elegance:
+Cantor Height 34 was chosen in part for its mathematical elegance:
 
 ```
-Height 34 / Axis 85 = 0.4 = 2/5
+Cantor Height 34 / Axis 85 = 0.4 = 2/5
 ```
 
-This simple 2:5 ratio between the territorial height and the full axis width is easy to remember and communicate. Combined with the atomic-scale Gibson (≈ hydrogen atom diameter), Height 34 gives cyberspace a coherent physical metaphor.
+This simple 2:5 ratio between the territorial height and the full axis width is easy to remember and communicate. Combined with the atomic-scale Gibson (≈ hydrogen atom diameter), Cantor Height 34 gives cyberspace a coherent physical metaphor.
 
-### B.4 Consumer Benchmarks (Height 34, 2-meter scale)
+### B.4 Consumer Benchmarks (Cantor Height 34, 2-meter scale)
 
 The following benchmarks assume disk-based computation (streaming intermediate values to storage rather than holding in RAM). Storage is the primary limiting factor in Cantor tree traversal at these heights.
 
@@ -686,9 +686,9 @@ The following benchmarks assume disk-based computation (streaming intermediate v
 - Computation is parallelizable; cloud spot instances can reduce wall-clock time at additional cost economics.
 - Contiguous claims are significantly more efficient than discrete parcels due to Cantor subtree structure sharing (see §B.6).
 
-### B.5 Nation-State Limits (Height 34, 2-meter scale)
+### B.5 Nation-State Limits (Cantor Height 34, 2-meter scale)
 
-At Height 34, even a nation-state-level actor with substantial computational resources faces hard limits:
+At Cantor Height 34, even a nation-state-level actor with substantial computational resources faces hard limits:
 
 | Claim Type | Approximate Feasibility | Storage Required |
 |------------|------------------------|------------------|
@@ -701,7 +701,7 @@ At Height 34, even a nation-state-level actor with substantial computational res
 
 **Derivation of the ~28 cities limit:**
 
-A "city" is approximated as a 50 km² area (roughly a 7×7 km square). At Height 34/2m scale:
+A "city" is approximated as a 50 km² area (roughly a 7×7 km square). At Cantor Height 34/2m scale:
 - 1 m³ claim requires ~0.5 TB storage
 - 50 km² claim (at ~10m height) requires ~25 TB storage
 - A nation-state with 1 PB storage capacity can claim approximately 40 such regions
@@ -710,16 +710,16 @@ However, practical constraints (I/O bandwidth, computation time, infrastructure 
 
 **Why countries are infeasible:**
 
-The Netherlands covers approximately 41,000 km². At Height 34/2m:
+The Netherlands covers approximately 41,000 km². At Cantor Height 34/2m:
 - Surface area alone (ignoring height) would require ~20 PB storage
 - I/O bandwidth to process this data would require months or years even with nation-state infrastructure
 - The storage requirement exceeds what even well-funded national data centers typically maintain for single workloads
 
-The limiting factor is **data storage and I/O bandwidth**, not raw compute. A Height 34 Cantor tree traversal produces massive intermediate data. There is no shortcut — the protocol's work equivalence property ensures that storing and processing this data cannot be optimized away.
+The limiting factor is **data storage and I/O bandwidth**, not raw compute. A Cantor Height 34 Cantor tree traversal produces massive intermediate data. There is no shortcut — the protocol's work equivalence property ensures that storing and processing this data cannot be optimized away.
 
 ### B.6 Storage as the Primary Constraint
 
-Cantor tree computation is memory-bound. At Height 34, a single subtree contains 2³⁴ ≈ 17 billion leaf nodes. The intermediate values cannot fit in RAM and must be streamed to disk.
+Cantor tree computation is memory-bound. At Cantor Height 34, a single subtree contains 2³⁴ ≈ 17 billion leaf nodes. The intermediate values cannot fit in RAM and must be streamed to disk.
 
 **This is intentional.** Storage is the equalizer:
 - Consumer SSDs provide enough I/O for small claims
@@ -732,7 +732,7 @@ The storage constraint ensures that territorial claims remain bounded by physica
 
 An emergent property of the Cantor tree structure: **computing a contiguous region is dramatically cheaper than computing equivalent volume as discrete parcels.**
 
-For Height 34 claims, contiguous computation is approximately **22,500× more efficient** than discrete parcel computation for the same total volume.
+For Cantor Height 34 claims, contiguous computation is approximately **22,500× more efficient** than discrete parcel computation for the same total volume.
 
 **Implications:**
 - Land speculation (claiming many small parcels) is computationally expensive
