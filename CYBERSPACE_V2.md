@@ -1,7 +1,7 @@
 # Cyberspace v2 — Per-Axis Cantor Tree Traversal with Location-Based Encryption
 
 **Date:** February 10, 2026  
-**Last updated:** February 28, 2026  
+**Last updated:** March 14, 2026  
 **Status:** Design complete (spec); reference implementation in progress
 
 This document is the canonical specification for Cyberspace v2.
@@ -32,6 +32,7 @@ Key properties:
 - **Every hop costs work:** movement proofs include a temporal Cantor traversal derived from the previous event id.
 - **Movement requires work:** computing mathematical structure (Cantor roots of coordinate pairs), not arbitrary nonce grinding.
 - **Axis symmetry:** equal distances cost equal work regardless of direction.
+- **Height 34 scale:** the canonical scale parameter defines 1 Gibson ≈ 1.16×10⁻¹⁰ meters, providing an "atomic" granularity for cyberspace.
 - **Location-based encryption:** keys derive from stable spatial region preimages.
 - **Compact and deterministic:** proofs fit in Nostr events and verify efficiently.
 
@@ -45,6 +46,7 @@ This v2 design replaces earlier drift/quaternion/velocity approaches (deprecated
 - **Plane:** 1 bit. `0 = dataspace` (physical mapping), `1 = ideaspace` (non-physical).
 - **Gibson (G):** The fundamental unit (one axis step in u85 space).
 - **Sector:** A cube of `2^30` Gibsons per axis.
+- **Height 34 scale:** The canonical scale where Height 34 = 2 meters. At this scale, one Gibson ≈ 1.16×10⁻¹⁰ meters (approximately the diameter of a hydrogen atom), and the full axis extent is ~4.5 trillion kilometers (~0.48 light-years).
 - **Temporal axis (u85):** A per-hop work axis derived from chain context (the previous movement event id) used only for hop proof freshness; it does not affect stable spatial region identifiers. The temporal height `K` is in `[0, 16]`.
 
 ---
@@ -116,9 +118,13 @@ Dataspace (`plane=0`) maps WGS84 GPS coordinates (lat/lon[/alt]) into the u85 ax
 
 This mapping is **consensus-critical** if multiple clients are expected to agree on the same coord256 for a given GPS point.
 
-### 4.1 Dataspace cube size
-- Full axis length: **96,056 km** (diameter of geosynchronous orbit)
-- Half axis length: **48,028 km** (Earth center → cube face)
+### 4.1 Dataspace cube size (Height 34 scale)
+- Full axis length: **~4.5 trillion kilometers** (~0.48 light-years)
+- Half axis length: **~2.25 trillion kilometers**
+- Gibson size: **~1.16×10⁻¹⁰ meters** (approximately 1 hydrogen atom diameter)
+- Height 34 = 2 meters (the canonical scale parameter)
+
+This scale provides "atomic" granularity in cyberspace while maintaining axis extents that vastly exceed the geosynchronous orbit requirement.
 
 ### 4.2 Axis naming convention (ECEF→Cyberspace)
 Starting from standard Earth-Centered Earth-Fixed (ECEF):
@@ -133,7 +139,7 @@ Cyberspace dataspace axis naming is:
 
 ### 4.3 Canonical spec version and deterministic arithmetic
 **Spec version string (required):**
-- `CANONICAL_GPS_TO_DATASPACE_SPEC_VERSION = "2026-02-13-decimal-v1"`
+- `CANONICAL_GPS_TO_DATASPACE_SPEC_VERSION = "2026-03-14-decimal-v2-h34"`
 
 Canonical requirements:
 - Use decimal arithmetic end-to-end (no platform `libm` for trig).
@@ -172,7 +178,7 @@ The canonical mapping is defined for latitude/longitude plus an optional altitud
 ### 4.5 Golden vectors (consensus locks)
 Implementations SHOULD include golden-vector tests to detect accidental mapping drift.
 
-These are required vectors for spec version `2026-02-13-decimal-v1` (hex is 32 bytes, no `0x` prefix).
+These are required vectors for spec version `2026-03-14-decimal-v2-h34` (hex is 32 bytes, no `0x` prefix).
 
 Golden vectors assume `altitude_m = 0` with clamp-to-surface behavior enabled:
 - `origin_equator_prime` lat=0 lon=0
