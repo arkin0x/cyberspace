@@ -13,8 +13,8 @@ This DECK specifies a **STARK-based proof system** for territorial claims (domai
 
 - **Asymmetric verification:** Prover does O(N) work; verifier does O(log² N) work
 - **Zero-knowledge:** The Cantor root R is never revealed
-- **Succinct proofs:** ~40-60 KB regardless of claim size
-- **Permissionless verification:** Any consumer device can verify any claim
+- **Succinct proofs:** ~40-60 KB regardless of domain size
+- **Permissionless verification:** Any consumer device can verify any domain
 
 ---
 
@@ -22,17 +22,20 @@ This DECK specifies a **STARK-based proof system** for territorial claims (domai
 
 ### 1.1 Problem Statement
 
-A territorial claim requires proving computation of a Cantor subtree root **R** for a region [base, base + 2^height). The challenge:
+A territorial domain requires proving computation of Cantor subtree roots for:
+1. A spatial region [base, base + 2^height) — the territory
+2. A temporal range [block_height, expires_at) — the duration
 
-1. **Prover** must do substantial work (O(2^height) operations)
+The challenge:
+1. **Prover** must do substantial work (O(2^height + duration) operations)
 2. **Verifier** cannot feasibly recompute (same work required)
-3. **Root R** must never be revealed (prevents counter-claims)
+3. **Roots** must never be revealed (prevents counter-claims)
 
 ### 1.2 Solution
 
 A **zk-STARK** (Zero-Knowledge Scalable Transparent ARgument of Knowledge) that proves:
 
-> "I correctly computed the Cantor subtree for region [base, base + 2^height) and obtained root R, without revealing R."
+> "I correctly computed both the spatial Cantor subtree for region [base, base + 2^height) and the temporal Cantor tree for range [block_height, expires_at), obtaining roots region_root and time_root, without revealing either."
 
 The STARK proof itself serves as the commitment. No separate commitment field is needed.
 
@@ -102,51 +105,257 @@ Where `inv(2) = (p + 1) / 2 = 0x7FFFFFFF80000001`
 
 ---
 
-## 3. STARK Proof Structure
+## 3. How STARK Proofs Work
 
-### 3.1 Public Inputs
+This section explains STARK proofs for readers new to zero-knowledge proof systems.
+
+### 3.1 What is a STARK?
+
+A **STARK** (Scalable Transparent ARgument of Knowledge) is a cryptographic proof that allows someone to prove they executed a computation correctly, without revealing the internal values used in that computation.
+
+**Key insight:** The prover does the full computation, but the verifier only checks a small sample of the work.
+
+### 3.2 The STARK Circuit
+
+The "circuit" is a description of the computation we want to prove. Think of it like a program that the prover runs, and the STARK proof is a certificate that the program was executed correctly.
+
+**In our case, the circuit computes:**
+
+1. **Spatial Cantor tree:** Hash all coordinates in the claimed territory, pair them up the tree
+2. **Temporal Cantor tree:** Hash all block numbers in the duration, pair them up the tree
+3. **Output:** Combine both roots into a domain identifier
+
+### 3.3 Why Poseidon2 Inside the Circuit?
+
+**The problem:** Hash functions like SHA256 are designed to be fast on CPUs, but they're slow inside STARK circuits.
+
+**Why?** STARK circuits express computations as polynomial equations over a finite field. SHA256 involves bitwise operations (XOR, rotate, etc.) that require hundreds of constraints per round.
+
+**The solution:** Poseidon2 is designed specifically for STARK circuits. It uses only field arithmetic (addition, multiplication) which maps directly to polynomial constraints.
+
+| Hash Function | CPU Performance | STARK Circuit Constraints |
+|---------------|-----------------|---------------------------|
+| SHA256 | Very fast | ~25,000 constraints per hash |
+| Poseidon2 | Slower on CPU | ~300 constraints per hash |
+
+**That's ~80x fewer constraints** inside the circuit.
+
+### 3.4 Inside vs Outside the Circuit
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        THE STARK PROOF                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   PUBLIC INPUTS (known to everyone):                            │
+│   • base_x, base_y, base_z                                      │
+│   • height                                                      │
+│   • block_height, expires_at                                    │
+│                                                                 │
+│   ─────────────────────────────────────────────────────────     │
+│                                                                 │
+│   INSIDE THE CIRCUIT (proven but not revealed):                 │
+│                                                                 │
+│   Step 1: Compute leaf values                                   │
+│   ┌─────────────────────────────────────────────────────────┐   │
+│   │ FOR i in 0..2^height:                                   │   │
+│   │     x = base_x + i                                       │   │
+│   │     y = base_y + i                                       │   │
+│   │     z = base_z + i                                       │   │
+│   │     leaf[i] = Poseidon2(x, y, z)  ← STARK-FRIENDLY HASH  │   │
+│   └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│   Step 2: Build Cantor tree (pair leaves up to root)            │
+│   ┌─────────────────────────────────────────────────────────┐   │
+│   │ FOR level in height..1:                                  │   │
+│   │     FOR i in 0..2^(level-1):                             │   │
+│   │         parent[i] = cantor_pair(left, right)              │   │
+│   └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│   Step 3: Output region_root (HIDDEN!)                          │
+│                                                                 │
+│   Step 4: Repeat for temporal tree → time_root (HIDDEN!)        │
+│                                                                 │
+│   Step 5: domain_identifier = Poseidon2(region_root, time_root) │
+│                                                                 │
+│   ─────────────────────────────────────────────────────────     │
+│                                                                 │
+│   OUTPUT (revealed):                                            │
+│   • domain_identifier                                           │
+│   • The STARK proof itself                                      │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+OUTSIDE THE CIRCUIT (after proof is generated):
+
+   • Prover uploads STARK proof to HTTPS
+   • SHA256(proof) → proof_hash for integrity check
+   • proof_hash goes in the Nostr event
+```
+
+### 3.5 What the Verifier Sees
+
+The verifier receives:
+
+1. **Public inputs:** base_x, base_y, base_z, height, block_height, expires_at
+2. **domain_identifier:** The output of the circuit
+3. **The STARK proof:** A ~50 KB bundle of cryptographic commitments
+
+The verifier **never sees:**
+- region_root (the spatial Cantor root)
+- time_root (the temporal Cantor root)
+- Any intermediate values in the trees
+
+### 3.6 Concrete Example: Height 4 Domain
+
+Let's trace through a small domain claim:
+
+**Inputs:**
+```
+base_x = 1000
+base_y = 2000
+base_z = 3000
+height = 4 (16 leaves)
+block_height = 800000
+expires_at = 800016 (duration = 16 blocks)
+```
+
+**Step 1: Compute spatial leaves (inside circuit)**
+```
+leaf[0]  = Poseidon2(1000, 2000, 3000)
+leaf[1]  = Poseidon2(1001, 2001, 3001)
+leaf[2]  = Poseidon2(1002, 2002, 3002)
+...
+leaf[15] = Poseidon2(1015, 2015, 3015)
+```
+
+**Step 2: Build spatial Cantor tree**
+```
+Level 4 (leaves):     [leaf[0], leaf[1], ..., leaf[15]]  (16 values)
+Level 3:              [cantor(0,1), cantor(2,3), ..., cantor(14,15)]  (8 values)
+Level 2:              [cantor(0,1), cantor(2,3), cantor(4,5), cantor(6,7)]  (4 values)
+Level 1:              [cantor(0,1), cantor(2,3)]  (2 values)
+Level 0 (root):       region_root = cantor(0,1)  (1 value)
+```
+
+**Step 3: Compute temporal leaves (inside circuit)**
+```
+time_leaf[0]  = Poseidon2(800000)
+time_leaf[1]  = Poseidon2(800001)
+...
+time_leaf[15] = Poseidon2(800015)
+```
+
+**Step 4: Build temporal Cantor tree** (same pairing process)
+```
+time_root = cantor_pair up the tree
+```
+
+**Step 5: Output domain identifier**
+```
+domain_identifier = Poseidon2(region_root, time_root)
+```
+
+**Step 6: Generate STARK proof**
+- The prover has computed all these values
+- The STARK proof attests that this computation was done correctly
+- The proof is ~40-60 KB (regardless of tree size!)
+
+**What gets published:**
+```
+Nostr Event:
+  tags: [
+    ["h", "a1b2c3d4"],
+    ["base_x", "1000"],
+    ["base_y", "2000"],
+    ["base_z", "3000"],
+    ["height", "4"],
+    ["block_height", "800000"],
+    ["expires_at", "800016"],
+    ["proof_url", "https://proofs.example.com/abc123.bin"],
+    ["proof_hash", "def456..."]
+  ]
+```
+
+**What the verifier does:**
+1. Fetches the proof from proof_url
+2. Checks SHA256(proof) == proof_hash
+3. Runs STARK verification (~10ms for Height 4)
+4. If verification passes, the domain is valid
+
+### 3.7 Why Two Hash Functions?
+
+| Hash | Where Used | Why |
+|------|------------|-----|
+| **Poseidon2** | Inside STARK circuit | Designed for ZK proofs. Uses field arithmetic that's efficient in circuits. |
+| **SHA256** | Outside circuit (proof_hash) | Standard, widely available, consistent with cyberspace protocol. |
+
+**Key insight:** We're not replacing SHA256 in the cyberspace protocol. Poseidon2 is only used inside the STARK circuit because it's 100x more efficient there. The output (domain_identifier) and integrity check (proof_hash) still use standard hashes.
+
+---
+
+## 4. STARK Proof Structure
+
+### 4.1 Public Inputs
 
 ```
 public_inputs = {
     base_x:  u64,    // Base X coordinate
     base_y:  u64,    // Base Y coordinate  
     base_z:  u64,    // Base Z coordinate
-    height:  u32,    // Cantor tree height
+    height:  u32,    // Cantor tree height (territory size)
+    block_height: u64,  // Current Bitcoin block
+    expires_at: u64,    // Expiration block height
 }
 ```
 
-### 3.2 Private Witness
+### 4.2 Private Witness
 
 ```
 witness = {
-    root: [u8; 32],  // Cantor subtree root R (NEVER revealed)
+    region_root: [u8; 32],  // Spatial Cantor subtree root (NEVER revealed)
+    time_root: [u8; 32],    // Temporal Cantor tree root (NEVER revealed)
 }
 ```
 
-### 3.3 STARK Circuit
+### 4.3 STARK Circuit
 
 The circuit proves:
 
 ```
-1. Compute all leaf values:
+1. Compute spatial Cantor tree (territory proof):
    FOR i in 0..2^height:
        x = base_x + i
        y = base_y + i
        z = base_z + i
        leaf[i] = Poseidon2(x, y, z)
-
-2. Build Cantor tree:
+   
    FOR level in height..1:
        FOR i in 0..2^(level-1):
            tree[level-1][i] = cantor_pair(tree[level][2*i], tree[level][2*i+1])
+   
+   region_root = tree[0]
 
-3. Output root commitment:
-   OUTPUT Poseidon2(tree[0][0]) as claim_identifier
+2. Compute temporal Cantor tree (time proof):
+   duration = expires_at - block_height
+   tree_height = ceil(log2(duration))
+   
+   FOR i in 0..2^tree_height:
+       leaf[i] = Poseidon2(block_height + i)
+   
+   FOR level in tree_height..1:
+       FOR i in 0..2^(level-1):
+           tree[level-1][i] = cantor_pair(tree[level][2*i], tree[level][2*i+1])
+   
+   time_root = tree[0]
+
+3. Output domain identifier:
+   OUTPUT Poseidon2(region_root || time_root) as domain_identifier
 ```
 
-The STARK proof attests that this circuit was executed correctly with the given public inputs, without revealing `tree[0][0]` (the root R). The output commitment serves as the claim identifier (derived from R, but R remains hidden).
+The STARK proof attests that both trees were computed correctly, without revealing either `region_root` or `time_root`.
 
-### 3.4 Proof Output
+### 4.4 Proof Output
 
 ```
 STARKProof = {
@@ -169,7 +378,7 @@ STARKProof = {
 }
 ```
 
-### 3.5 Proof Size Estimation
+### 4.5 Proof Size Estimation
 
 | Component | Size Estimate |
 |-----------|---------------|
@@ -185,43 +394,55 @@ With DEEP-FRI optimization: ~40-60 KB fits in Nostr event with room for metadata
 
 ---
 
-## 4. Claim Protocol
+## 5. Domain Protocol
 
-### 4.1 Claim Creation
+### 5.1 Domain Creation
 
 **Input:**
 - `base_x, base_y, base_z`: Base coordinates
-- `height`: Cantor tree height
+- `height`: Cantor tree height (territory size)
 - `block_height`: Current Bitcoin block
 - `expires_at`: Expiration block
 
 **Process:**
 
 ```
-1. Compute Cantor subtree:
+1. Compute spatial Cantor subtree (territory proof):
    - Initialize tree with 2^height leaves
    - For each leaf: leaf[i] = Poseidon2(base_x + i, base_y + i, base_z + i)
    - Build Cantor tree bottom-up
-   - Root R = tree[0]
+   - region_root = tree[0]
 
-2. Generate STARK proof:
-   - public_inputs = {base_x, base_y, base_z, height}
-   - witness = {root: R}
+2. Compute temporal Cantor tree (time proof):
+   - duration = expires_at - block_height
+   - Initialize tree with 2^ceil(log2(duration)) leaves
+   - For each leaf: leaf[i] = Poseidon2(block_height + i)
+   - Build Cantor tree bottom-up
+   - time_root = tree[0]
+
+3. Generate STARK proof:
+   - public_inputs = {base_x, base_y, base_z, height, block_height, expires_at}
+   - witness = {region_root, time_root}
    - proof = generate_stark(circuit, public_inputs, witness)
 
-3. Publish claim:
-   - Upload proof to HTTPS
+4. Publish domain:
+   - Upload proof to HTTPS host
    - Publish Nostr event (kind 33333)
 ```
 
-### 4.2 Claim Event Structure
+**Work Scaling:**
+- Territory size scales with `2^height` (spatial leaves)
+- Duration scales with `expires_at - block_height` (temporal leaves)
+- Total work = O(2^height + duration)
+
+### 5.2 Domain Event Structure
 
 ```json
 {
   "kind": 33333,
   "content": "",
   "tags": [
-    ["h", "<hex prefix of claim identifier>"],
+    ["h", "<hex prefix of domain identifier>"],
     ["base_x", "<base X coordinate>"],
     ["base_y", "<base Y coordinate>"],
     ["base_z", "<base Z coordinate>"],
@@ -238,11 +459,11 @@ With DEEP-FRI optimization: ~40-60 KB fits in Nostr event with room for metadata
 }
 ```
 
-### 4.3 Tag Definitions
+### 5.3 Tag Definitions
 
 | Tag | Required | Description |
 |-----|----------|-------------|
-| `h` | Yes | Hex prefix of claim identifier (for prefix queries) |
+| `h` | Yes | Hex prefix of domain identifier (for prefix queries) |
 | `base_x/y/z` | Yes | Base coordinates of claimed region |
 | `height` | Yes | Cantor tree height (determines claim size) |
 | `block_height` | Yes | Bitcoin block when claim was made |
@@ -250,13 +471,13 @@ With DEEP-FRI optimization: ~40-60 KB fits in Nostr event with room for metadata
 | `proof_url` | Yes | HTTPS URL of the STARK proof file |
 | `proof_hash` | Yes | SHA256 hash of proof file for integrity |
 
-**Note:** The `h` tag enables efficient prefix-based queries. It is derived from the STARK proof's output commitment (which is derived from R, but R remains hidden).
+**Note:** The `h` tag enables efficient prefix-based queries. It is derived from the STARK proof's output (domain_identifier, derived from region_root || time_root).
 
 ---
 
-## 5. Verification Protocol
+## 6. Verification Protocol
 
-### 5.1 Fetch and Validate
+### 6.1 Fetch and Validate
 
 ```
 1. Fetch domain event from Nostr relay
@@ -272,7 +493,7 @@ With DEEP-FRI optimization: ~40-60 KB fits in Nostr event with room for metadata
    ASSERT SHA256(proof) == proof_hash
 
 5. Verify STARK proof:
-   public_inputs = {base_x, base_y, base_z, height}
+   public_inputs = {base_x, base_y, base_z, height, block_height, expires_at}
    result = verify_stark(proof, public_inputs)
    ASSERT result == true
 
@@ -281,7 +502,7 @@ With DEEP-FRI optimization: ~40-60 KB fits in Nostr event with room for metadata
    ASSERT current_block < expires_at
 ```
 
-### 5.2 Verification Complexity
+### 6.2 Verification Complexity
 
 | Claim Height | Tree Size | Verifier Operations | Verifier Time |
 |--------------|-----------|---------------------|---------------|
@@ -291,29 +512,29 @@ With DEEP-FRI optimization: ~40-60 KB fits in Nostr event with room for metadata
 | Height 50 | 2^50 | ~2,500 ops | ~25 ms |
 | Height 55 | 2^55 | ~3,025 ops | ~30 ms |
 
-**Any claim can be verified on a phone in under 50 milliseconds.**
+**Any domain can be verified on a phone in under 50 milliseconds.**
 
 ---
 
-## 6. Ownership Verification
+## 7. Ownership Verification
 
-### 6.1 Implicit Ownership
+### 7.1 Implicit Ownership
 
-The STARK proof itself establishes ownership. Only the prover who computed the Cantor tree knows R, and generating a valid proof requires R. The proof cryptographically binds the claimant to the claim.
+The STARK proof itself establishes ownership. Only the prover who computed the Cantor trees knows `region_root` and `time_root`, and generating a valid proof requires both. The proof cryptographically binds the claimant to the domain.
 
-### 6.2 Ownership Proofs (Optional)
+### 7.2 Ownership Proofs (Optional)
 
 For scenarios requiring explicit proof of ongoing ownership (transfers, disputes), the claimant generates a new STARK proof:
 
 ```
-1. Claimant recomputes Cantor tree (or loads cached R)
+1. Claimant recomputes Cantor trees (or loads cached roots)
 2. Generates fresh STARK proof with same public inputs
 3. Publishes new proof, establishing continued ownership
 ```
 
-This proves the claimant still has access to R without ever revealing it.
+This proves the claimant still has access to both roots without ever revealing them.
 
-### 6.3 Key Insight
+### 7.3 Key Insight
 
 The STARK proof replaces traditional commitment schemes:
 
@@ -327,9 +548,9 @@ The STARK proof replaces traditional commitment schemes:
 
 ---
 
-## 7. Proof Hosting
+## 8. Proof Hosting
 
-### 7.1 Standard HTTPS Hosting
+### 8.1 Standard HTTPS Hosting
 
 ```
 proof_url = "https://{host}/proofs/{proof_hash}.bin"
@@ -340,7 +561,7 @@ proof_url = "https://{host}/proofs/{proof_hash}.bin"
 - proof_hash in URL provides integrity verification
 - CDN recommended for availability
 
-### 7.2 Integrity Verification
+### 8.2 Integrity Verification
 
 Always verify `SHA256(proof) == proof_hash` before accepting any proof.
 
@@ -351,29 +572,29 @@ The proof_hash in the Nostr event ensures:
 
 ---
 
-## 8. Security Analysis
+## 9. Security Analysis
 
-### 8.1 Security Properties
+### 9.1 Security Properties
 
 | Property | Mechanism | Security Level |
 |----------|-----------|-----------------|
-| Correctness | STARK proof of computation | 128-bit |
-| Binding | STARK binds public inputs to hidden R | 128-bit |
-| Hiding | Root R never leaves prover | Information-theoretic |
+| Correctness | STARK proof of both Cantor trees | 128-bit |
+| Binding | STARK binds public inputs to hidden roots | 128-bit |
+| Hiding | region_root and time_root never leave prover | Information-theoretic |
 | Succinctness | FRI polynomial commitments | O(log N) proof size |
 | Transparency | No trusted setup | Trustless |
 
-### 8.2 Attack Resistance
+### 9.2 Attack Resistance
 
 | Attack | Mitigation |
 |--------|------------|
-| Fake claim | STARK verification fails |
-| Root theft | R never revealed (ZK property) |
+| Fake domain | STARK verification fails |
+| Root theft | Both roots never revealed (ZK property) |
 | Proof forgery | STARK soundness (128-bit) |
-| Precomputation | Temporal axis binding |
-| Overlapping claims | Social resolution (layer 2) |
+| Precomputation | Temporal proof binds to block_height |
+| Overlapping domains | Social resolution (layer 2) |
 
-### 8.3 Trust Assumptions
+### 9.3 Trust Assumptions
 
 - **Hash functions:** Poseidon2, SHA256 are collision-resistant
 - **STARK soundness:** FRI protocol has proven security
@@ -381,20 +602,20 @@ The proof_hash in the Nostr event ensures:
 
 ---
 
-## 9. Implementation Requirements
+## 10. Implementation Requirements
 
-### 9.1 Prover Requirements
+### 10.1 Prover Requirements
 
-| Claim Height | Tree Size | Time | Storage |
-|--------------|-----------|------|---------|
-| Height 35 | 2^35 | 2-5 days | 1-2 TB |
-| Height 40 | 2^40 | ~month | Petabyte-scale |
-| Height 45 | 2^45 | Years | Infeasible |
-| Height 50+ | 2^50+ | Decades | Infeasible |
+| Domain Height | Territory Size | Duration (blocks) | Time | Storage |
+|---------------|----------------|-------------------|------|---------|
+| Height 35 | 4m | 1,000 | 2-5 days | 1-2 TB |
+| Height 35 | 4m | 100,000 | Weeks | TB |
+| Height 40 | 128m | 10,000 | ~month | Petabyte-scale |
+| Height 50 | City | 1,000 | Years | Infeasible |
 
-**Note:** Higher claims require nation-state scale resources.
+**Note:** Work scales with BOTH territory size (2^height) AND duration (expires_at - block_height).
 
-### 9.2 Verifier Requirements
+### 10.2 Verifier Requirements
 
 | Requirement | Value |
 |-------------|-------|
@@ -403,9 +624,9 @@ The proof_hash in the Nostr event ensures:
 | Storage | None (stateless) |
 | Time | < 50 ms |
 
-**Any smartphone can verify any claim.**
+**Any smartphone can verify any domain.**
 
-### 9.3 Recommended Stack
+### 10.3 Recommended Stack
 
 ```
 Field Arithmetic:    goldilocks (Rust crate)
@@ -417,9 +638,9 @@ Nostr Client:        nostr-sdk
 
 ---
 
-## 10. Protocol Versioning
+## 11. Protocol Versioning
 
-### 10.1 Version Field
+### 11.1 Version Field
 
 ```
 proof.version = 1  // Initial STARK protocol
@@ -428,10 +649,10 @@ proof.version = 1  // Initial STARK protocol
 Future versions may include:
 - Optimized polynomial commitments
 - Different hash functions
-- Batch proofs for multiple claims
+- Batch proofs for multiple domains
 - Recursive proofs
 
-### 10.2 Backward Compatibility
+### 11.2 Backward Compatibility
 
 Verifiers MUST:
 - Check proof version
@@ -440,9 +661,9 @@ Verifiers MUST:
 
 ---
 
-## 11. Test Vectors
+## 12. Test Vectors
 
-### 11.1 Minimal Example (Height 4)
+### 12.1 Minimal Example (Height 4)
 
 ```
 base_x = 0
@@ -454,7 +675,7 @@ height = 4
 // Root R is hidden in the proof
 ```
 
-### 11.2 Golden Vectors
+### 12.2 Golden Vectors
 
 Production implementations should include golden vectors for:
 - Height 8 (small, fast test)
@@ -463,20 +684,20 @@ Production implementations should include golden vectors for:
 
 ---
 
-## 12. Future Extensions
+## 13. Future Extensions
 
-### 12.1 Batch Proofs
+### 13.1 Batch Proofs
 
-Prove multiple non-overlapping claims in one proof:
+Prove multiple non-overlapping domains in one proof:
 
 ```
 BatchProof {
-    claims: [(base, height, commitment), ...],
+    domains: [(base, height, block_height, expires_at), ...],
     proof: STARKProof
 }
 ```
 
-### 12.2 Recursive Proofs
+### 13.2 Recursive Proofs
 
 Wrap STARK proof in a SNARK for constant-size verification:
 
@@ -486,9 +707,9 @@ RecursiveProof = SNARK(STARKVerify(proof))
 
 Size: ~200-500 bytes (fits easily in Nostr event)
 
-### 12.3 Challenge Protocol
+### 13.3 Challenge Protocol
 
-For disputed claims, implement a challenge-response protocol where the claimant must prove ongoing ownership without revealing R.
+For disputed domains, implement a challenge-response protocol where the claimant must prove ongoing ownership without revealing roots.
 
 ---
 
@@ -558,7 +779,7 @@ fn cantor_pair(a: u64, b: u64) -> u64 {
 
 ## Appendix C: Nostr Event Examples
 
-### C.1 Personal Claim (Height 35)
+### C.1 Personal Domain (Height 35)
 
 ```json
 {
@@ -579,7 +800,7 @@ fn cantor_pair(a: u64, b: u64) -> u64 {
 }
 ```
 
-### C.2 City Claim (Height 50)
+### C.2 City Domain (Height 50)
 
 ```json
 {
