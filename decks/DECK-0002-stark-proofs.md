@@ -1,4 +1,4 @@
-# DECK-0002: STARK Proofs for Construct Claims
+# DECK-0002: STARK Proofs for Domain Claims
 
 **Status:** Draft
 **Version:** 1.0
@@ -9,7 +9,7 @@
 
 ## Abstract
 
-This DECK specifies a **STARK-based proof system** for territorial claims (constructs) in Cyberspace. The protocol enables:
+This DECK specifies a **STARK-based proof system** for territorial claims (domains) in Cyberspace. The protocol enables:
 
 - **Asymmetric verification:** Prover does O(N) work; verifier does O(log² N) work
 - **Zero-knowledge:** The Cantor root R is never revealed
@@ -259,7 +259,7 @@ With DEEP-FRI optimization: ~40-60 KB fits in Nostr event with room for metadata
 ### 5.1 Fetch and Validate
 
 ```
-1. Fetch construct event from Nostr relay
+1. Fetch domain event from Nostr relay
 
 2. Extract tags:
    - base_x, base_y, base_z, height
