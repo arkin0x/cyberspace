@@ -184,7 +184,7 @@ Cyberspace dataspace axis naming is:
 
 ### 4.3 Canonical spec version and deterministic arithmetic
 **Spec version string (required):**
-- `CANONICAL_GPS_TO_DATASPACE_SPEC_VERSION = "2026-03-14-decimal-v2-h34"`
+- `CANONICAL_GPS_TO_DATASPACE_SPEC_VERSION = "2026-03-16-h34-corrected"`
 
 Canonical requirements:
 - Use decimal arithmetic end-to-end (no platform `libm` for trig).
@@ -214,34 +214,32 @@ The canonical mapping is defined for latitude/longitude plus an optional altitud
 7. Convert meters→kilometers.
 8. Permute ECEF axes into Cyberspace axes per §4.2.
 9. Convert kilometers-from-center into u85 axis values:
-   - `units_per_km = 2^84 / 48028` (maps GEO diameter to centered region)
+   - `units_per_km = 1000 * 2^33` (derived from Cantor Height 34 = 2 meters)
    - `u = km * units_per_km + 2^84`
    - round using `ROUND_HALF_EVEN`
    - clamp to `[0, 2^85 - 1]`
 
-   Note: This formula maps GPS coordinates into a GEO-centered region of dataspace. At Cantor Height 34 scale, this region is a tiny fraction (~0.000000002%) of the full axis extent (~4.5 trillion km).
+   Derivation: At Cantor Height 34 scale, `2^34` Gibsons = 2 meters. Therefore 1 Gibson = `2^-33` meters, and 1 km = `1000 * 2^33` Gibsons. This formula maps GPS coordinates into a region centered at u85 value `2^84` (the half-axis point).
 10. Produce coord256 with `plane=0` using the interleaving in §2.
 
 ### 4.5 Golden vectors (consensus locks)
 Implementations SHOULD include golden-vector tests to detect accidental mapping drift.
 
-These are required vectors for spec version `2026-03-14-decimal-v2-h34` (hex is 32 bytes, no `0x` prefix).
-
-**Note on scale compatibility:** The Cantor Height 34 scale changes the axis extent (~4.5 trillion km) and Gibson size (~1.16×10⁻¹⁰ m), but the GPS→dataspace mapping formula (`units_per_km = 2^84 / 48028`) is unchanged from the previous spec. GPS coordinates map to the same centered u85 region. These golden vectors remain valid because the mapping algorithm produces identical results.
+These are required vectors for spec version `2026-03-16-h34-corrected` (hex is 32 bytes, no `0x` prefix).
 
 Golden vectors assume `altitude_m = 0` with clamp-to-surface behavior enabled:
 - `origin_equator_prime` lat=0 lon=0
-  - `e040009249248048201201000049208000201009201200000040049201048240`
+  - `e000000000000000000001200041040208048040000000000000000000000000`
 - `equator_east_90` lat=0 lon=90
-  - `e010002492492012080480400012482000080402480480000010012480412090`
+  - `e000000000000000000000480010410082012010000000000000000000000000`
 - `equator_west_90` lat=0 lon=-90
-  - `c482490000000480412012092480010492412090012012492482480012080410`
+  - `c492492492492492492492012482082410480490000000000000000000000000`
 - `north_pole` lat=90 lon=0
-  - `e020004920020000120820120124900900100024124904920904124120100124`
+  - `e000000000000000000000900004924920020000820000920100824920800020`
 - `london` lat=51.5074 lon=-0.1278
-  - `c49eeba5feb124bd3ec0f3a132977c8c33edbb111fdfd02cb35cea53075b9846`
+  - `c492492492492492492492edf5bee7267451c787d95ba4d7840c76d1e33c9940`
 - `nyc` lat=40.7128 lon=-74.0060
-  - `c4943fa01bb22b95946ec1605717047a3b79bd717d5d84e35a12cb56df76134a`
+  - `c4924924924924924924921f79235dae293ada913e78294253a235239a332854`
 
 ---
 
