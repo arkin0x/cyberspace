@@ -72,10 +72,6 @@ p = 2^64 - 2^32 + 1 = 0xFFFFFFFF00000001
 
 **Leaf hash:** Poseidon2 (STARK-optimized)
 
-```
-H(x, y, z) = Poseidon2(x || y || z)
-```
-
 **Integrity hash:** SHA256 (consistent with cyberspace protocol)
 
 ```
@@ -86,6 +82,32 @@ proof_hash = SHA256(proof)
 - Poseidon2: ~100x faster in STARK circuits than SHA256
 - SHA256: Consistent with cyberspace protocol (Cantor pairing, coordinates)
 - Security: 128-bit collision resistance
+
+#### 2.2.1 Poseidon2 Parameters
+
+The Poseidon2 hash function is parameterized as follows:
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| **Field** | Goldilocks (p = 2^64 - 2^32 + 1) | Same as STARK field |
+| **State width (t)** | 4 | 4 field elements in state |
+| **Capacity (c)** | 1 | 1 capacity element |
+| **Rate (r)** | 3 | 3 rate elements (absorbs 3 inputs per round) |
+| **S-box exponent** | 7 | x^7 in partial rounds |
+| **Full rounds (R_F)** | 8 | 4 before, 4 after partial rounds |
+| **Partial rounds (R_P)** | 22 | Middle rounds with single S-box |
+| **Total rounds** | 30 | R_F + R_P |
+
+**Input absorption:**
+- 3-element inputs: `Poseidon2(a, b, c)` absorbs in one permutation
+- 4-element inputs: `Poseidon2(a, b, c, d)` requires two permutations
+
+**Domain separation:**
+- Spatial leaves: Use domain separator `0x01`
+- Temporal leaves: Use domain separator `0x02`
+- Domain identifier: Use domain separator `0x03`
+
+**Implementation reference:** [poseidon2-reference](https://github.com/nilfoundation/crypto3-hash) or [Neptune](https://github.com/lurk-lab/neptune)
 
 ### 2.3 Cantor Pairing (Field Arithmetic)
 
@@ -206,82 +228,114 @@ The verifier **never sees:**
 - time_root (the temporal Cantor root)
 - Any intermediate values in the trees
 
-### 3.6 Concrete Example: Height 4 Domain
+### 3.6 Concrete Example: Height 2 Domain
 
 Let's trace through a small domain claim:
 
 **Inputs:**
 ```
+pubkey = "abcdef123456..." (32 bytes)
 base_x = 1000
 base_y = 2000
 base_z = 3000
-height = 4 (16 leaves)
+height = 2 (cube with side 4, volume 64)
 block_height = 800000
-expires_at = 800016 (duration = 16 blocks)
+expires_at = 800032 (duration = 32 blocks)
 ```
 
 **Step 1: Compute spatial leaves (inside circuit)**
+
+A height=2 domain claims a cube with side length 2^2 = 4. Total volume: 4×4×4 = 64 coordinates.
+
 ```
-leaf[0]  = Poseidon2(1000, 2000, 3000)
-leaf[1]  = Poseidon2(1001, 2001, 3001)
-leaf[2]  = Poseidon2(1002, 2002, 3002)
+FOR i in 0..64:
+    // Decode 1D index to 3D coordinates
+    x = 1000 + (i >> 0) & 3   // bits 0-1
+    y = 2000 + (i >> 2) & 3   // bits 2-3
+    z = 3000 + (i >> 4) & 3   // bits 4-5
+    leaf[i] = Poseidon2(pubkey, x, y, z)
+```
+
+Example leaves:
+```
+i=0:  x=1000, y=2000, z=3000 → leaf[0]  = Poseidon2(pubkey, 1000, 2000, 3000)
+i=1:  x=1001, y=2000, z=3000 → leaf[1]  = Poseidon2(pubkey, 1001, 2000, 3000)
+i=2:  x=1002, y=2000, z=3000 → leaf[2]  = Poseidon2(pubkey, 1002, 2000, 3000)
 ...
-leaf[15] = Poseidon2(1015, 2015, 3015)
+i=63: x=1003, y=2003, z=3003 → leaf[63] = Poseidon2(pubkey, 1003, 2003, 3003)
 ```
 
 **Step 2: Build spatial Cantor tree**
+
 ```
-Level 4 (leaves):     [leaf[0], leaf[1], ..., leaf[15]]  (16 values)
-Level 3:              [cantor(0,1), cantor(2,3), ..., cantor(14,15)]  (8 values)
-Level 2:              [cantor(0,1), cantor(2,3), cantor(4,5), cantor(6,7)]  (4 values)
-Level 1:              [cantor(0,1), cantor(2,3)]  (2 values)
-Level 0 (root):       region_root = cantor(0,1)  (1 value)
+Level 6 (leaves):     64 values
+Level 5:              32 values (pairings)
+Level 4:              16 values
+Level 3:              8 values
+Level 2:              4 values
+Level 1:              2 values
+Level 0 (root):       region_root = cantor_pair(level1[0], level1[1])
 ```
 
 **Step 3: Compute temporal leaves (inside circuit)**
+
+Duration = 32 blocks. Tree height = ceil(log2(32)) = 5, so 2^5 = 32 leaves.
+
 ```
-time_leaf[0]  = Poseidon2(800000)
-time_leaf[1]  = Poseidon2(800001)
-...
-time_leaf[15] = Poseidon2(800015)
+FOR i in 0..32:
+    leaf[i] = Poseidon2(pubkey, 800000 + i)
 ```
 
-**Step 4: Build temporal Cantor tree** (same pairing process)
+**Step 4: Build temporal Cantor tree**
+
 ```
-time_root = cantor_pair up the tree
+Level 5 (leaves):     32 values
+Level 4:              16 values
+Level 3:              8 values
+Level 2:              4 values
+Level 1:              2 values
+Level 0 (root):       time_root
 ```
 
 **Step 5: Output domain identifier**
 ```
-domain_identifier = Poseidon2(region_root, time_root)
+domain_identifier = Poseidon2(pubkey, region_root, time_root)
 ```
 
 **Step 6: Generate STARK proof**
 - The prover has computed all these values
 - The STARK proof attests that this computation was done correctly
-- The proof is ~40-60 KB (regardless of tree size!)
+- The proof is ~40-60 KB
 
 **What gets published:**
 ```
 Nostr Event:
+  kind: 33333
+  pubkey: "abcdef123456..."
   tags: [
-    ["h", "a1b2c3d4"],
+    ["d", "a1b2c3d4e5f67890"],    // full domain_identifier (16 hex chars)
+    ["h", "a1b2c3d4"],            // prefix for queries
     ["base_x", "1000"],
     ["base_y", "2000"],
     ["base_z", "3000"],
-    ["height", "4"],
+    ["height", "2"],
     ["block_height", "800000"],
-    ["expires_at", "800016"],
+    ["expires_at", "800032"],
     ["proof_url", "https://proofs.example.com/abc123.bin"],
     ["proof_hash", "def456..."]
   ]
 ```
 
 **What the verifier does:**
-1. Fetches the proof from proof_url
-2. Checks SHA256(proof) == proof_hash
-3. Runs STARK verification (~10ms for Height 4)
-4. If verification passes, the domain is valid
+1. Extracts pubkey from event
+2. Fetches the proof from proof_url
+3. Checks SHA256(proof) == proof_hash
+4. Verifies STARK proof with public_inputs = {pubkey, base_x, base_y, base_z, height, block_height, expires_at}
+5. Confirms output domain_identifier matches `d` tag
+6. Checks current_block < expires_at
+7. If all pass, the domain is valid
+
+**Key insight:** The pubkey is a public input to the STARK circuit. This means Bob cannot copy Alice's proof and claim the same domain — the proof would fail verification with Bob's pubkey.
 
 ### 3.7 Why Two Hash Functions?
 
@@ -300,14 +354,17 @@ Nostr Event:
 
 ```
 public_inputs = {
-    base_x:  u64,    // Base X coordinate
-    base_y:  u64,    // Base Y coordinate  
-    base_z:  u64,    // Base Z coordinate
-    height:  u32,    // Cantor tree height (territory size)
-    block_height: u64,  // Current Bitcoin block
-    expires_at: u64,    // Expiration block height
+    pubkey:  [u8; 32],   // Claimant's Nostr pubkey (binds proof to identity)
+    base_x:  u64,        // Base X coordinate
+    base_y:  u64,        // Base Y coordinate  
+    base_z:  u64,        // Base Z coordinate
+    height:  u32,        // Cantor tree height (territory size)
+    block_height: u64,   // Current Bitcoin block
+    expires_at: u64,     // Expiration block height
 }
 ```
+
+**Critical:** The `pubkey` is a public input to ensure the STARK proof is cryptographically bound to the claimant. Without this, anyone could copy a valid proof and claim the same domain with a different Nostr identity.
 
 ### 4.2 Private Witness
 
@@ -324,13 +381,17 @@ The circuit proves:
 
 ```
 1. Compute spatial Cantor tree (territory proof):
-   FOR i in 0..2^height:
-       x = base_x + i
-       y = base_y + i
-       z = base_z + i
-       leaf[i] = Poseidon2(x, y, z)
+   // For a cubic region of side 2^height, enumerate all coordinates
+   // using interleaved indexing (converts 1D index to 3D coords)
+   FOR i in 0..2^(height*3):
+       // Decode 1D index to 3D coordinates
+       x = base_x + (i >> 0) & ((1 << height) - 1)
+       y = base_y + (i >> height) & ((1 << height) - 1)
+       z = base_z + (i >> (height*2)) & ((1 << height) - 1)
+       leaf[i] = Poseidon2(pubkey, x, y, z)
    
-   FOR level in height..1:
+   // Build Cantor tree by pairing
+   FOR level in (height*3)..1:
        FOR i in 0..2^(level-1):
            tree[level-1][i] = cantor_pair(tree[level][2*i], tree[level][2*i+1])
    
@@ -341,7 +402,11 @@ The circuit proves:
    tree_height = ceil(log2(duration))
    
    FOR i in 0..2^tree_height:
-       leaf[i] = Poseidon2(block_height + i)
+       IF i < duration:
+           leaf[i] = Poseidon2(pubkey, block_height + i)
+       ELSE:
+           // Padding: repeat last valid value
+           leaf[i] = leaf[duration - 1]
    
    FOR level in tree_height..1:
        FOR i in 0..2^(level-1):
@@ -350,10 +415,10 @@ The circuit proves:
    time_root = tree[0]
 
 3. Output domain identifier:
-   OUTPUT Poseidon2(region_root || time_root) as domain_identifier
+   OUTPUT Poseidon2(pubkey, region_root, time_root) as domain_identifier
 ```
 
-The STARK proof attests that both trees were computed correctly, without revealing either `region_root` or `time_root`.
+**Spatial Enumeration Note:** A domain claims a **cubic region** of side length `2^height`. The total volume is `2^(height*3)` coordinates. The 1D index `i` is decoded to 3D coordinates using bit-interleaving, ensuring every coordinate in the cube is visited exactly once.
 
 ### 4.4 Proof Output
 
@@ -378,19 +443,32 @@ STARKProof = {
 }
 ```
 
-### 4.5 Proof Size Estimation
+### 4.5 Proof Binary Format
 
-| Component | Size Estimate |
-|-----------|---------------|
-| FRI commitments | 32 × L bytes (L = log₂(N)) |
-| FRI queries | 80 × L × 64 bytes |
-| Trace commitments | 32 × T bytes (T ≈ 10) |
-| Constraint commitment | 32 bytes |
-| OOD frame | ~256 bytes |
-| **Total (Height 35)** | ~45 KB |
-| **Total (Height 50)** | ~55 KB |
+The proof is serialized as a binary file with the following structure:
 
-With DEEP-FRI optimization: ~40-60 KB fits in Nostr event with room for metadata.
+```
+[4 bytes]  version (little-endian u32)
+[4 bytes]  security_level (little-endian u32)
+[4 bytes]  num_fri_layers (little-endian u32)
+[32 * num_fri_layers bytes] fri_commitments
+[4 bytes]  num_trace_commitments (little-endian u32)
+[32 * num_trace_commitments bytes] trace_commitments
+[32 bytes] constraint_commitment
+[256 bytes] ood_frame
+[4 bytes]  num_fri_queries (little-endian u32)
+[... fri_query entries]
+```
+
+Each `fri_query` entry:
+```
+[4 bytes]  layer_index (little-endian u32)
+[8 bytes]  position (little-endian u64)
+[8 bytes]  value (field element, little-endian u64)
+[32 bytes] merkle_proof
+```
+
+All field elements are serialized as 8-byte little-endian u64 values in the Goldilocks field.
 
 ---
 
@@ -431,9 +509,9 @@ With DEEP-FRI optimization: ~40-60 KB fits in Nostr event with room for metadata
 ```
 
 **Work Scaling:**
-- Territory size scales with `2^height` (spatial leaves)
+- Territory size: cubic region with side `2^height`, volume `2^(height*3)` leaves
 - Duration scales with `expires_at - block_height` (temporal leaves)
-- Total work = O(2^height + duration)
+- Total work = O(2^(height*3) + duration)
 
 ### 5.2 Domain Event Structure
 
@@ -442,7 +520,8 @@ With DEEP-FRI optimization: ~40-60 KB fits in Nostr event with room for metadata
   "kind": 33333,
   "content": "",
   "tags": [
-    ["h", "<hex prefix of domain identifier>"],
+    ["d", "<full domain identifier as 16 hex chars>"],
+    ["h", "<hex prefix of domain identifier (first 8 chars)>"],
     ["base_x", "<base X coordinate>"],
     ["base_y", "<base Y coordinate>"],
     ["base_z", "<base Z coordinate>"],
@@ -463,15 +542,18 @@ With DEEP-FRI optimization: ~40-60 KB fits in Nostr event with room for metadata
 
 | Tag | Required | Description |
 |-----|----------|-------------|
-| `h` | Yes | Hex prefix of domain identifier (for prefix queries) |
+| `d` | Yes | Full domain identifier (16 hex chars) — required for NIP-33 replaceable events |
+| `h` | Yes | Hex prefix of domain identifier (first 8 chars, for prefix queries) |
 | `base_x/y/z` | Yes | Base coordinates of claimed region |
-| `height` | Yes | Cantor tree height (determines claim size) |
+| `height` | Yes | Cantor tree height (determines claim size: `2^height` per side) |
 | `block_height` | Yes | Bitcoin block when claim was made |
 | `expires_at` | Yes | Block height when claim expires |
 | `proof_url` | Yes | HTTPS URL of the STARK proof file |
 | `proof_hash` | Yes | SHA256 hash of proof file for integrity |
 
-**Note:** The `h` tag enables efficient prefix-based queries. It is derived from the STARK proof's output (domain_identifier, derived from region_root || time_root).
+**NIP-33 Compliance:** Kind 33333 is in the parameterized replaceable event range (30000-39999). The `d` tag is required and must be unique per domain. To update a domain (renewal, new proof), publish a new event with the same `d` tag — relays will replace the old event.
+
+**Domain Identifier Serialization:** The `domain_identifier` output from the STARK circuit is a 64-bit field element. It is serialized as 16 lowercase hexadecimal characters (little-endian byte order).
 
 ---
 
@@ -483,31 +565,45 @@ With DEEP-FRI optimization: ~40-60 KB fits in Nostr event with room for metadata
 1. Fetch domain event from Nostr relay
 
 2. Extract tags:
+   - d (full domain identifier)
+   - h (prefix, must match first 8 chars of d)
    - base_x, base_y, base_z, height
+   - block_height, expires_at
    - proof_url, proof_hash
 
-3. Fetch proof from HTTPS:
+3. Validate prefix consistency:
+   ASSERT d[0:8] == h
+
+4. Fetch proof from HTTPS:
    proof = https_get(proof_url)
    
-4. Verify proof integrity:
+5. Verify proof integrity:
    ASSERT SHA256(proof) == proof_hash
 
-5. Verify STARK proof:
-   public_inputs = {base_x, base_y, base_z, height, block_height, expires_at}
-   result = verify_stark(proof, public_inputs)
+6. Parse and verify STARK proof:
+   public_inputs = {
+       pubkey: event.pubkey,
+       base_x, base_y, base_z, height,
+       block_height, expires_at
+   }
+   result, output_id = verify_stark(proof, public_inputs)
    ASSERT result == true
+   ASSERT output_id == d
 
-6. Verify temporal validity:
+7. Verify temporal validity:
    current_block = get_bitcoin_block_height()
    ASSERT current_block < expires_at
 ```
 
+**Critical:** Step 6 verifies that the STARK proof was generated with the claimant's pubkey as a public input. This prevents proof theft — a proof generated by Alice cannot be reused by Bob.
+
 ### 6.2 Verification Complexity
 
-| Claim Height | Tree Size | Verifier Operations | Verifier Time |
-|--------------|-----------|---------------------|---------------|
-| Height 35 | 2^35 | ~1,225 ops | ~10 ms |
-| Height 40 | 2^40 | ~1,600 ops | ~15 ms |
+| Height | Territory Volume | Verifier Operations | Verifier Time |
+|--------|------------------|---------------------|---------------|
+| Height 10 | 2^30 ≈ 1B coords | ~900 ops | ~8 ms |
+| Height 15 | 2^45 ≈ 35T coords | ~2,025 ops | ~20 ms |
+| Height 20 | 2^60 ≈ 1e18 coords | ~3,600 ops | ~35 ms |
 | Height 45 | 2^45 | ~2,025 ops | ~20 ms |
 | Height 50 | 2^50 | ~2,500 ops | ~25 ms |
 | Height 55 | 2^55 | ~3,025 ops | ~30 ms |
@@ -548,7 +644,79 @@ The STARK proof replaces traditional commitment schemes:
 
 ---
 
-## 8. Proof Hosting
+## 8. Domain Lifecycle
+
+### 8.1 Creation
+
+As specified in Section 5.1: compute both Cantor trees, generate STARK proof, publish Nostr event.
+
+### 8.2 Renewal
+
+To extend a domain before expiration:
+
+1. **Generate new proof** with updated `expires_at`:
+   - Same `base_x, base_y, base_z, height`
+   - New `block_height` (current block)
+   - New `expires_at` (extended expiration)
+   - Recompute temporal tree (spatial tree can be cached)
+
+2. **Publish replacement event** with same `d` tag:
+   - Same pubkey (required — proof is bound to identity)
+   - Same `d` tag → relays replace old event
+   - New `block_height`, `expires_at`, `proof_url`, `proof_hash`
+
+**Note:** Renewal requires fresh work proportional to the new duration. The spatial proof can be reused (cached region_root), but the temporal proof must be recomputed.
+
+### 8.3 Expiration
+
+When `current_block >= expires_at`:
+- The domain is considered **expired**
+- No longer valid for verification
+- Cannot be renewed (must create new domain claim)
+
+### 8.4 Revocation (Optional)
+
+To explicitly revoke a domain before expiration:
+
+1. Publish a **deletion event** (kind 5 per NIP-09):
+   ```json
+   {
+     "kind": 5,
+     "tags": [["e", "<domain_event_id>"]],
+     "content": "Domain revoked"
+   }
+   ```
+
+2. Relays that support NIP-09 will delete the domain event
+
+**Note:** Revocation is optional and relay-dependent. An expired domain is implicitly invalid regardless of revocation.
+
+### 8.5 Transfer
+
+To transfer a domain to a new owner:
+
+1. **Current owner** publishes a transfer event (kind 33333 with special marker):
+   ```json
+   {
+     "kind": 33333,
+     "tags": [
+       ["d", "<domain_identifier>"],
+       ["transfer_to", "<new_owner_pubkey>"],
+       ...
+     ]
+   }
+   ```
+
+2. **New owner** must generate a fresh STARK proof with their pubkey:
+   - The proof is bound to the claimant's pubkey
+   - Transferring requires the new owner to recompute proofs
+   - This is intentional — prevents passive domain hoarding
+
+**Key insight:** Domain ownership is defined by the STARK proof's pubkey binding. A "transfer" is really a new claim by the new owner on the same territory.
+
+---
+
+## 9. Proof Hosting
 
 ### 8.1 Standard HTTPS Hosting
 
@@ -572,9 +740,9 @@ The proof_hash in the Nostr event ensures:
 
 ---
 
-## 9. Security Analysis
+## 10. Security Analysis
 
-### 9.1 Security Properties
+### 10.1 Security Properties
 
 | Property | Mechanism | Security Level |
 |----------|-----------|-----------------|
@@ -584,7 +752,7 @@ The proof_hash in the Nostr event ensures:
 | Succinctness | FRI polynomial commitments | O(log N) proof size |
 | Transparency | No trusted setup | Trustless |
 
-### 9.2 Attack Resistance
+### 10.2 Attack Resistance
 
 | Attack | Mitigation |
 |--------|------------|
@@ -594,7 +762,7 @@ The proof_hash in the Nostr event ensures:
 | Precomputation | Temporal proof binds to block_height |
 | Overlapping domains | Social resolution (layer 2) |
 
-### 9.3 Trust Assumptions
+### 10.3 Trust Assumptions
 
 - **Hash functions:** Poseidon2, SHA256 are collision-resistant
 - **STARK soundness:** FRI protocol has proven security
@@ -602,9 +770,9 @@ The proof_hash in the Nostr event ensures:
 
 ---
 
-## 10. Implementation Requirements
+## 11. Implementation Requirements
 
-### 10.1 Prover Requirements
+### 11.1 Prover Requirements
 
 | Domain Height | Territory Size | Duration (blocks) | Time | Storage |
 |---------------|----------------|-------------------|------|---------|
@@ -615,7 +783,7 @@ The proof_hash in the Nostr event ensures:
 
 **Note:** Work scales with BOTH territory size (2^height) AND duration (expires_at - block_height).
 
-### 10.2 Verifier Requirements
+### 11.2 Verifier Requirements
 
 | Requirement | Value |
 |-------------|-------|
@@ -626,7 +794,7 @@ The proof_hash in the Nostr event ensures:
 
 **Any smartphone can verify any domain.**
 
-### 10.3 Recommended Stack
+### 11.3 Recommended Stack
 
 ```
 Field Arithmetic:    goldilocks (Rust crate)
@@ -638,9 +806,9 @@ Nostr Client:        nostr-sdk
 
 ---
 
-## 11. Protocol Versioning
+## 12. Protocol Versioning
 
-### 11.1 Version Field
+### 12.1 Version Field
 
 ```
 proof.version = 1  // Initial STARK protocol
@@ -652,7 +820,7 @@ Future versions may include:
 - Batch proofs for multiple domains
 - Recursive proofs
 
-### 11.2 Backward Compatibility
+### 12.2 Backward Compatibility
 
 Verifiers MUST:
 - Check proof version
@@ -661,9 +829,9 @@ Verifiers MUST:
 
 ---
 
-## 12. Test Vectors
+## 13. Test Vectors
 
-### 12.1 Minimal Example (Height 4)
+### 13.1 Minimal Example (Height 4)
 
 ```
 base_x = 0
@@ -675,7 +843,7 @@ height = 4
 // Root R is hidden in the proof
 ```
 
-### 12.2 Golden Vectors
+### 13.2 Golden Vectors
 
 Production implementations should include golden vectors for:
 - Height 8 (small, fast test)
@@ -684,9 +852,9 @@ Production implementations should include golden vectors for:
 
 ---
 
-## 13. Future Extensions
+## 14. Future Extensions
 
-### 13.1 Batch Proofs
+### 14.1 Batch Proofs
 
 Prove multiple non-overlapping domains in one proof:
 
@@ -697,7 +865,7 @@ BatchProof {
 }
 ```
 
-### 13.2 Recursive Proofs
+### 14.2 Recursive Proofs
 
 Wrap STARK proof in a SNARK for constant-size verification:
 
@@ -707,7 +875,7 @@ RecursiveProof = SNARK(STARKVerify(proof))
 
 Size: ~200-500 bytes (fits easily in Nostr event)
 
-### 13.3 Challenge Protocol
+### 14.3 Challenge Protocol
 
 For disputed domains, implement a challenge-response protocol where the claimant must prove ongoing ownership without revealing roots.
 
