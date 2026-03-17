@@ -127,17 +127,18 @@ This allows the verifier to confirm that the prover knows the correct spatial an
 
 ## 4. Summary of Key Changes
 
-| Change | Why |
-|--------|-----|
-| **3-axis structure** | Aligns with CYBERSPACE v2 spec's 3-axis Cantor pairing |
-| **Axis roots first** | Prevents volumetric tree computation (confidentiality) |
-| **Commitment output** | Ensures R is never revealed |
-| **Temporal optional** | Supports both fresh hop movement and claim-based domains |
+| # | Change | Why |
+|---|--------|-----|
+| 1 | **Structure: 3-Axis** | Reverted from "Volumetric Tree" (pairing 3D point hashes) to "3-Axis Structure" (pairing 1D coordinate ranges) as strictly required by the protocol |
+| 2 | **Mathematics: Integer Cantor** | Uses standard integer-based Cantor pairing function `cantor_pair(a, b)` on raw coordinate integers, matching the spec's `compute_subtree_cantor` definition |
+| 3 | **Privacy: R as Private Witness** | The final Cantor number R is used as a private witness to generate a public hash commitment, satisfying the requirement that "R must never be revealed" |
+| 4 | **Inputs: Geometric Only** | Simplified to raw geometric inputs (base/height) rather than point-enumeration, as this is sufficient to define the aligned subtrees in the spec |
 
 **Security implications:**
-- The circuit still proves correct computation without revealing R
-- The commitment binds the claim to a specific R value
+- The circuit proves correct computation without revealing R
+- The commitment (`Poseidon2(region_n, time_root, claimant_pubkey)`) binds the claim to a specific R value
 - Verification remains O(log² N) with 128-bit security
+- No point-level enumeration required — axis subtrees are computed independently
 
 ---
 
