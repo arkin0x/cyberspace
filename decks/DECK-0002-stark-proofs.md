@@ -163,7 +163,7 @@ Public_Commitment = Poseidon2(R, claimant_pubkey)
   "content": "<optional: domain description or metadata>",
   "tags": [
     ["d", "<domain_identifier: 64 hex chars (Public_Commitment)>"],
-    ["h", "<prefix: first 8 chars of d, for indexing>"],
+    ["h", "<optional: first 8 chars of d, for indexing>"],
     ["subject", "<optional: human-readable domain name>"],
     ["base_x", "<base X coordinate>"],
     ["base_y", "<base Y coordinate>"],
@@ -182,8 +182,8 @@ Public_Commitment = Poseidon2(R, claimant_pubkey)
 ```
 
 **Tag details:**
-- `d` — The full domain identifier, derived from `Public_Commitment = Poseidon2(R, claimant_pubkey)`. This is a 32-byte value (64 hex chars) that uniquely identifies the domain and binds it to the claimant.
-- `h` — Prefix of `d` (first 8 chars) for efficient Nostr filtering/indexing. Must match `d[0:8]`.
+- `d` — The full domain identifier, derived from `Public_Commitment = Poseidon2(R, claimant_pubkey)`. This is a 32-byte value (64 hex chars) that uniquely identifies the domain and binds it to the claimant. **Required.**
+- `h` — Prefix of `d` (first 8 chars) for efficient Nostr filtering/indexing. **Optional**, but if present must match `d[0:8]`.
 - `subject` — Optional human-readable name for the domain (e.g., "North Sector 7").
 
 **NIP-33 Compliance:** Kind 33333 is parameterized replaceable. The `d` tag must be unique per domain.
@@ -227,16 +227,15 @@ Domain policy is a separate JSON document defining protocol-level controls:
 
 2. Extract and validate tags:
    - d (full domain identifier: 64 hex chars)
-   - h (prefix: first 8 chars of d, for indexing)
+   - h (optional: prefix for indexing)
    - base_x, base_y, base_z, height
    - proof_url, proof_hash
 
-3. Validate prefix consistency (indexing check):
+3. If h tag present, validate prefix consistency:
    ASSERT d[0:8] == h
    
-   This ensures the h tag matches the d tag prefix.
    The h tag enables efficient Nostr filtering but is
-   validated for consistency.
+   optional. If present, it must match the d tag prefix.
 
 4. Fetch proof from HTTPS:
    proof = https_get(proof_url)
