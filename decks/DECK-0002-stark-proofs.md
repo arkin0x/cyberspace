@@ -1,164 +1,177 @@
-# DECK-0002: STARK Proofs for Domain Claims (Revised)
+# DECK-0002: Domains — Cryptographic Territory in Cyberspace
 
 **Status:** Draft
-**Version:** 2.0
-**Created:** 2026-03-17
-**Author:** XOR
+**Version:** 3.0
+**Created:** 2026-03-18
+**Authors:** XOR, Arkinox
 
 ---
 
 ## Abstract
 
-This DECK specifies a **STARK-based proof system** for territorial claims (domains) in Cyberspace v2. The protocol enables:
+Domains are claimed territories in cyberspace, established through computational work and secured by cryptographic proofs. This DECK specifies:
 
-- **Asymmetric verification:** Prover does O(N) work; verifier does O(log² N) work
-- **Zero-knowledge:** The Cantor region number R is never revealed
-- **Succinct proofs:** ~40-60 KB regardless of domain size
-- **Permissionless verification:** Any consumer device can verify any domain
+- **STARK-based proof system** for asymmetric verification
+- **Layered capability model** (Mathematical, Protocol, Social)
+- **Domain policy** for protocol-level feature control
+- **Content sovereignty** through signature filtering
+- **CP-ABE integration** for role-based access control
 
 ---
 
 ## 1. Overview
 
-### 1.1 Problem Statement
+### 1.1 What Is a Domain?
 
-A territorial domain requires proving computation of Cantor subtree roots for:
-1. A spatial region [base, base + 2^height) — the territory
-2. A temporal range [block_height, expires_at) — the duration
+A domain is a spatial region in cyberspace that has been claimed through computational work. The claimant proves they computed the Cantor subtree root for that region, establishing:
+
+1. **Mathematical authority** — Knowledge of the region's Cantor root R
+2. **Protocol authority** — Right to set policy and control content
+3. **Social authority** — Ability to issue credentials and gate access
+
+### 1.2 The Three Layers of Domain Capability
+
+Domains operate across three distinct enforcement layers:
+
+| Layer | Enforcement | Trust Model | Capabilities |
+|-------|-------------|-------------|--------------|
+| **Mathematical** | Cryptography | Trustless | STARK proof, subtree knowledge, CP-ABE |
+| **Protocol** | Consensus rules | Trust protocol | Action control, content sovereignty |
+| **Social** | Human coordination | Trust relationships | Interactive access, arbitrary gating |
+
+**Key principle:** Lower layers are more rigid but trustless. Higher layers are more flexible but require trust.
+
+### 1.3 Knowledge Irrevocability
+
+**Critical insight:** Knowledge of the Cantor root R cannot be revoked.
+
+```
+Compute R (years of work)
+    ↓
+Claim "expires"
+    ↓
+You STILL KNOW R
+    ↓
+Nothing can erase that knowledge
+```
+
+This means:
+- Expiration is social recognition, not cryptographic erasure
+- Transfer requires re-computation by new owner
+- Discovery is permanent; ownership is mutable
+
+**Architecture implication:** The protocol separates **discovery** (permanent, mathematical) from **recognition** (mutable, social). See Section 11.
+
+---
+
+## 2. STARK Proof System
+
+### 2.1 Problem Statement
+
+A domain requires proving computation of Cantor subtree roots for:
+1. A spatial region [base_x, base_y, base_z, height] — the territory
+2. The claimant's pubkey — identity binding
 
 The challenge:
-1. **Prover** must do substantial work (O(2^height + duration) operations)
-2. **Verifier** cannot feasibly recompute (same work required)
-3. **Roots** must never be revealed (prevents counter-claims)
+- **Prover** must do substantial work (O(2^height) operations)
+- **Verifier** cannot feasibly recompute (same work required)
+- **Root R** must never be revealed (prevents counter-claims)
 
-### 1.2 Solution
+### 2.2 Solution
 
 A **zk-STARK** (Zero-Knowledge Scalable Transparent ARgument of Knowledge) that proves:
 
-> "I correctly computed both the spatial Cantor subtree for region [base, base + 2^height) and the temporal Cantor tree for range [block_height, expires_at), obtaining roots region_root and time_root, without revealing either."
+> "I correctly computed the Cantor subtree roots for the spatial region defined by [base_x, base_y, base_z, height], obtaining root R, and I bind this claim to my pubkey."
 
 The STARK proof itself serves as the commitment. No separate commitment field is needed.
 
-### 1.3 Key Properties
+### 2.3 Circuit Computation
 
-| Property | Description |
-|----------|-------------|
-| **Correctness** | Proof attests to correct Cantor tree computation |
-| **Binding** | STARK binds public inputs to hidden root R |
-| **Hiding** | R is never revealed under any circumstance |
-| **Succinctness** | Proof size O(log N) regardless of tree size |
-| **Asymmetry** | Prover O(N), verifier O(log² N) |
-
----
-
-## 2. Circuit Computation
-
-The STARK circuit performs the following computation steps:
-
-### 2.1 Compute Spatial Axis Roots (The 3-Axis Structure)
-
-To comply with the CYBERSPACE v2 specification, the spatial component is no longer calculated as a volumetric tree. Instead, the circuit computes three independent Cantor subtree roots—one for each axis (X, Y, Z)—and then combines them.
+The STARK circuit computes:
 
 **Inputs:**
-- base_x, base_y, base_z (The starting coordinate for each axis)
-- height (The power-of-two size of the cubic region, i.e., side length = $2^{height}$)
+- base_x, base_y, base_z (starting coordinates for each axis)
+- height (power-of-two side length)
+- claimant_pubkey (identity)
 
 **Steps:**
 
-1. **Compute X-Axis Root (root_x):**
-   - Generate leaf range: values_x = [base_x + i for i in 0..2^height]
-   - Compute binary Cantor tree bottom-up:
-   ```python
+1. **Compute X-Axis Root:**
+```python
 def axis_subtree_root(base, height):
     values = list(range(base, base + (1 << height)))
     for _ in range(height):
-        values = [cantor_pair(values[i], values[i + 1]) for i in range(0, len(values), 2)]
+        values = [cantor_pair(values[i], values[i + 1]) 
+                  for i in range(0, len(values), 2)]
     return values[0]
+
 root_x = axis_subtree_root(base_x, height)
 ```
 
-2. **Compute Y-Axis Root (root_y):**
-   - root_y = axis_subtree_root(base_y, height)
-
-3. **Compute Z-Axis Root (root_z):**
-   - root_z = axis_subtree_root(base_z, height)
-
-### 2.2 Compute Combined Domain Identifier (R)
-
-Once the independent axis roots are established, they are combined using the nested pairing function defined in the protocol.
-
-- region_n = cantor_pair(cantor_pair(root_x, root_y), root_z)
-- This value is the secret Cantor number R.
-
-### 2.3 Compute Temporal Root (optional but recommended for claims)
-
-The temporal axis (block height range) is computed as a separate tree to satisfy the validity window of the claim. This is distinct from the hop movement freshness logic.
-
-**Inputs:**
-- block_height (Start block)
-- expires_at (End block)
-
-**Steps:**
-- duration = expires_at - block_height
-- time_height = ceil(log2(duration))
-- Leaves: list(range(block_height, block_height + duration))
-- Tree: Compute binary Cantor tree bottom-up:
+2. **Compute Y-Axis Root:**
 ```python
-time_root = axis_subtree_root(block_height, time_height)
+root_y = axis_subtree_root(base_y, height)
 ```
 
-### 2.4 Final Domain Claim & Commitment
+3. **Compute Z-Axis Root:**
+```python
+root_z = axis_subtree_root(base_z, height)
+```
 
-Since the Cantor number R (region_n) must never be revealed, the circuit does not output it directly. Instead, it outputs a cryptographic commitment that binds the claimant to the computed R.
+4. **Compute Combined Region Root (R):**
+```python
+R = cantor_pair(cantor_pair(root_x, root_y), root_z)
+```
 
-**Constraint:**
-The circuit enforces the following equality as its final public output check:
-$$ \text{Poseidon2}(\text{region_n}, \text{time_root}, \text{claimant_pubkey}) \stackrel{?}{=} \text{Public_Commitment} $$
+5. **Public Commitment:**
+```python
+Public_Commitment = Poseidon2(R, claimant_pubkey)
+```
 
-This allows the verifier to confirm that the prover knows the correct spatial and temporal parameters resulting in a specific R, without ever learning R itself.
+**The root R is a private witness — never revealed.**
 
-## 3. Public Inputs
+### 2.4 Public Inputs
 
-- base_x, base_y, base_z (Public territory coordinates)
-- height (Public territory size)
-- block_height, expires_at (Public time window)
-- claimant_pubkey (Identity of the claimant)
-- Public_Commitment (The hash of the secret domain ID on-chain)
+| Input | Type | Description |
+|-------|------|-------------|
+| base_x | u64 | Base X coordinate |
+| base_y | u64 | Base Y coordinate |
+| base_z | u64 | Base Z coordinate |
+| height | u8 | Cantor tree height |
+| claimant_pubkey | [u8; 32] | Nostr pubkey of claimant |
+| Public_Commitment | [u8; 32] | Poseidon2 hash output |
 
-## 4. Summary of Key Changes
+### 2.5 Verification Complexity
 
-| # | Change | Why |
-|---|--------|-----|
-| 1 | **Structure: 3-Axis** | Reverted from "Volumetric Tree" (pairing 3D point hashes) to "3-Axis Structure" (pairing 1D coordinate ranges) as strictly required by the protocol |
-| 2 | **Mathematics: Integer Cantor** | Uses standard integer-based Cantor pairing function `cantor_pair(a, b)` on raw coordinate integers, matching the spec's `compute_subtree_cantor` definition |
-| 3 | **Privacy: R as Private Witness** | The final Cantor number R is used as a private witness to generate a public hash commitment, satisfying the requirement that "R must never be revealed" |
-| 4 | **Inputs: Geometric Only** | Simplified to raw geometric inputs (base/height) rather than point-enumeration, as this is sufficient to define the aligned subtrees in the spec |
+| Height | Territory Volume | Verifier Time |
+|--------|------------------|---------------|
+| Height 20 | 2^60 coords | ~35 ms |
+| Height 30 | 2^90 coords | ~50 ms |
+| Height 35 | 2^105 coords | ~60 ms |
 
-**Security implications:**
-- The circuit proves correct computation without revealing R
-- The commitment (`Poseidon2(region_n, time_root, claimant_pubkey)`) binds the claim to a specific R value
-- Verification remains O(log² N) with 128-bit security
-- No point-level enumeration required — axis subtrees are computed independently
+**Any smartphone can verify any domain.**
 
 ---
 
-## 5. Domain Event Structure
+## 3. Domain Event Structure
+
+### 3.1 Primary Event (Kind 33333)
 
 ```json
 {
   "kind": 33333,
   "content": "",
   "tags": [
-    ["d", "<full domain identifier as 16 hex chars>"],
-    ["h", "<hex prefix of domain identifier (first 8 chars)>"],
+    ["d", "<domain_identifier: 16 hex chars>"],
+    ["h", "<prefix: first 8 chars of d>"],
     ["base_x", "<base X coordinate>"],
     ["base_y", "<base Y coordinate>"],
     ["base_z", "<base Z coordinate>"],
     ["height", "<Cantor tree height>"],
-    ["block_height", "<Bitcoin block at claim time>"],
-    ["expires_at", "<expiration block height>"],
-    ["proof_url", "<HTTPS URL of STARK proof file>"],
-    ["proof_hash", "<SHA256 of proof file>"]
+    ["proof_url", "<HTTPS URL of STARK proof>"],
+    ["proof_hash", "<SHA256 of proof file>"],
+    ["policy_url", "<optional: URL to domain policy>"],
+    ["policy_hash", "<optional: SHA256 of policy file>"]
   ],
   "pubkey": "<claimant's Nostr pubkey>",
   "created_at": <Unix timestamp>,
@@ -167,22 +180,49 @@ This allows the verifier to confirm that the prover knows the correct spatial an
 }
 ```
 
-**NIP-33 Compliance:** Kind 33333 is in the parameterized replaceable event range (30000-39999). The `d` tag is required and must be unique per domain. To update a domain (renewal, new proof), publish a new event with the same `d` tag — relays will replace the old event.
+**NIP-33 Compliance:** Kind 33333 is parameterized replaceable. The `d` tag must be unique per domain.
+
+### 3.2 Domain Policy (Optional)
+
+Domain policy is a separate JSON document defining protocol-level controls:
+
+```json
+{
+  "version": 1,
+  "domain_id": "<domain_identifier>",
+  "actions": {
+    "derezz": "deny",
+    "hyperjump": "allow",
+    "spawn": "pubkey_list",
+    "scan": "limited",
+    "scan_range": 1000
+  },
+  "spawn_list": [
+    "<pubkey1>",
+    "<pubkey2>"
+  ],
+  "content_filter": "owner_only"
+}
+```
+
+**Action values:**
+- `"allow"` — Anyone can perform (default cyberspace behavior)
+- `"deny"` — No one can perform (disabled in this domain)
+- `"pubkey_list"` — Only listed pubkeys can perform
 
 ---
 
-## 6. Verification Protocol
+## 4. Verification Protocol
 
-### 6.1 Fetch and Validate
+### 4.1 Domain Verification Steps
 
 ```
 1. Fetch domain event from Nostr relay
 
-2. Extract tags:
+2. Extract and validate tags:
    - d (full domain identifier)
    - h (prefix, must match first 8 chars of d)
    - base_x, base_y, base_z, height
-   - block_height, expires_at
    - proof_url, proof_hash
 
 3. Validate prefix consistency:
@@ -197,271 +237,484 @@ This allows the verifier to confirm that the prover knows the correct spatial an
 6. Parse and verify STARK proof:
    public_inputs = {
        base_x, base_y, base_z, height,
-       block_height, expires_at,
        claimant_pubkey: event.pubkey,
        Public_Commitment: d
    }
-   result, output_id = verify_stark(proof, public_inputs)
+   result = verify_stark(proof, public_inputs)
    ASSERT result == true
-   ASSERT output_id == d
 
-7. Verify temporal validity:
-   current_block = get_bitcoin_block_height()
-   ASSERT current_block < expires_at
+7. Domain is VALID if all checks pass
 ```
 
-**Critical:** Step 6 verifies that the STARK proof was generated with the claimant's pubkey as a public input. This prevents proof theft — a proof generated by Alice cannot be reused by Bob.
+**Critical:** Step 6 verifies the STARK proof was generated with the claimant's pubkey. This prevents proof theft — a proof generated by Alice cannot be reused by Bob.
 
-### 6.2 Verification Complexity
+### 4.2 Policy Verification
 
-| Height | Territory Volume | Verifier Operations | Verifier Time |
-|--------|------------------|---------------------|---------------|
-| Height 10 | 2^30 ≈ 1B coords | ~900 ops | ~8 ms |
-| Height 15 | 2^45 ≈ 35T coords | ~2,025 ops | ~20 ms |
-| Height 20 | 2^60 ≈ 1e18 coords | ~3,600 ops | ~35 ms |
+If `policy_url` and `policy_hash` are present:
+
+```
+1. Fetch policy from HTTPS:
+   policy = https_get(policy_url)
+   
+2. Verify integrity:
+   ASSERT SHA256(policy) == policy_hash
+
+3. Validate policy structure:
+   - Check version field
+   - Validate action values
+   - Check spawn_list format if spawn == "pubkey_list"
+
+4. Policy is VALID if all checks pass
+```
 
 ---
 
-## 7. Domain Lifecycle
+## 5. Protocol Layer: Action Control
 
-### 7.1 Creation
+### 5.1 Default Cyberspace Behavior
 
-As specified in Section 5.1: compute both Cantor trees, generate STARK proof, publish Nostr event.
+In unclaimed space, all protocol actions are allowed:
 
-### 7.2 Renewal
+| Action | Default |
+|--------|---------|
+| derezz | allow |
+| hyperjump | allow |
+| spawn | allow |
+| scan | allow |
 
-To extend a domain before expiration:
+### 5.2 Domain Override
 
-1. **Generate new proof** with updated `expires_at`:
-   - Same `base_x, base_y, base_z, height`
-   - New `block_height` (current block)
-   - New `expires_at` (extended expiration)
-   - Recompute temporal tree (spatial tree can be cached)
+Domain owners can disable or restrict actions within their territory:
 
-2. **Publish replacement event** with same `d` tag:
-   - Same pubkey (required — proof is bound to identity)
-   - Same `d` tag → relays replace old event
-   - New `block_height`, `expires_at`, `proof_url`, `proof_hash`
+```json
+{
+  "actions": {
+    "derezz": "deny",
+    "spawn": "pubkey_list"
+  }
+}
+```
 
-**Note:** Renewal requires fresh work proportional to the new duration. The spatial proof can be reused (cached region_n), but the temporal proof must be recomputed.
+**Effect:**
+- `derezz: "deny"` — PVP attacks are protocol-invalid within this domain
+- `spawn: "pubkey_list"` — Only listed pubkeys can spawn here
 
-### 7.3 Expiration
+### 5.3 Action Enforcement
 
-When `current_block >= expires_at`:
-- The domain is considered **expired**
-- No longer valid for verification
-- Cannot be renewed (must create new domain claim)
+```
+User attempts action within domain D:
+    1. Find domain D for coordinate
+    2. If no domain: default rules apply
+    3. If domain exists:
+       a. Verify domain proof is valid
+       b. Check action against domain policy
+       c. If policy == "deny": REJECT
+       d. If policy == "pubkey_list" AND user not in list: REJECT
+       e. Otherwise: ALLOW
+```
 
-### 7.4 Revocation (Optional)
+### 5.4 Example: Safe Zones
 
-To explicitly revoke a domain before expiration:
+A domain with `"derezz": "deny"` becomes a safe zone:
+- No player-killing possible
+- Commerce-friendly environment
+- Trust established through cryptographic proof
 
-1. Publish a **deletion event** (kind 5 per NIP-09):
-   ```json
-   {
-     "kind": 5,
-     "tags": [["e", "<domain_event_id>"]],
-     "content": "Domain revoked"
-   }
-   ```
-
-2. Relays that support NIP-09 will delete the domain event
-
-**Note:** Revocation is optional and relay-dependent. An expired domain is implicitly invalid regardless of revocation.
-
-### 7.5 Transfer
-
-To transfer a domain to a new owner:
-
-1. **Current owner** publishes a transfer event (kind 33333 with special marker):
-   ```json
-   {
-     "kind": 33333,
-     "tags": [
-       ["d", "<domain_identifier>"],
-       ["transfer_to", "<new_owner_pubkey>"],
-       ...
-     ]
-   }
-   ```
-
-2. **New owner** must generate a fresh STARK proof with their pubkey:
-   - The proof is bound to the claimant's pubkey
-   - Transferring requires the new owner to recompute proofs
-   - This is intentional — prevents passive domain hoarding
-
-**Key insight:** Domain ownership is defined by the STARK proof's pubkey binding. A "transfer" is really a new claim by the new owner on the same territory.
+**Contrast with unclaimed space:**
+- Wild territory, PVP-enabled
+- Higher risk, potentially higher reward
+- No authority to appeal to
 
 ---
 
-## 8. Proof Hosting
+## 6. Protocol Layer: Content Sovereignty
 
-### 8.1 Standard HTTPS Hosting
+### 6.1 The Principle
 
+Within a valid domain, only content authored by the domain owner is recognized as valid/visible.
+
+**Mechanism:**
+```python
+def is_valid_content(event, coordinate):
+    domain = find_domain_at(coordinate)
+    
+    if domain is None:
+        return True  # Wild space - all content valid
+    
+    # Domain space - only owner content is valid
+    if event.references(domain.event_id) and event.author == domain.owner:
+        return True
+    
+    return False  # Content filtered by protocol
 ```
-proof_url = "https://{host}/proofs/{proof_hash}.bin"
-```
 
-**Requirements:**
-- Host must be publicly accessible
-- proof_hash in URL provides integrity verification
-- CDN recommended for availability
+### 6.2 Transmission vs. Visibility
 
-### 8.2 Integrity Verification
+**Transmission layer (Nostr):**
+- Censorship-resistant by design
+- Anyone CAN publish anywhere
+- Events are transmitted regardless of domain
 
-Always verify `SHA256(proof) == proof_hash` before accepting any proof.
+**Application layer (clients):**
+- Protocol-compliant clients filter by domain authority
+- Non-owner content is NOT displayed
+- "Official" content is owner-signed only
 
-The proof_hash in the Nostr event ensures:
-- Proof cannot be tampered with
-- Hosting provider cannot substitute fake proofs
-- Content integrity is cryptographically guaranteed
+### 6.3 Implications
+
+- Domain owners control what "officially exists" in their space
+- Spam/abuse is filtered at the application layer
+- Work to compute R earned this right
+- Non-owner content exists on the network but is invisible in clients
 
 ---
 
-## 9. Security Analysis
+## 7. Mathematical Layer: Hierarchical Knowledge
 
-### 9.1 Security Properties
+### 7.1 The Core Property
 
-| Property | Mechanism | Security Level |
-|----------|-----------|----------------|
-| Correctness | STARK proof of both Cantor trees | 128-bit |
-| Binding | STARK binds public inputs to hidden roots | 128-bit |
-| Hiding | region_n and time_root never leave prover | Information-theoretic |
+Computing the Cantor root R at height H gives knowledge of ALL subtree roots below.
+
+```python
+# Domain owner at height 35 knows R
+R = compute_region_root(base, height=35)
+
+# They can derive any child region's root
+R_child = derive_subtree_root(R, path_to_child)
+
+# This applies recursively
+# Parent domain knows all children's secrets
+```
+
+### 7.2 Implications
+
+**For domain owners:**
+- Can create hierarchical access control (room keys)
+- Can decrypt any location-encrypted content in their domain
+- Have "god mode" within their territory
+
+**For subsidiary domains:**
+- Cannot keep secrets from parent domain
+- Natural feudal hierarchy emerges
+- Information flows down, not up
+
+### 7.3 The Privacy Hierarchy Problem
+
+**Critical:** Location encryption protects against remote attackers, NOT against domain owners.
+
+```python
+# Location-encrypted content at coordinate C
+K = subtree_root(C, height=local_height)
+ciphertext = AES(content, K)
+
+# Domain owner can derive K from R
+K = derive_subtree_root(R, path_to_C)
+# Domain owner can decrypt WITHOUT being at C
+```
+
+**Users wanting privacy from domain owners must:**
+1. Add additional encryption layer (ABE, arbitrary key), OR
+2. Accept domain owner can see their content, OR
+3. Avoid domains entirely for sensitive content
+
+**This is not a bug** — it's the same property enabling hierarchical access control.
+
+---
+
+## 8. Mathematical Layer: CP-ABE Integration
+
+### 8.1 Overview
+
+Ciphertext-Policy Attribute-Based Encryption (CP-ABE) enables role-based access control without the domain owner being online.
+
+**How it works:**
+1. Domain owner generates ABE master key (arbitrary, NOT derived from R)
+2. Owner issues role keys to users (signed with domain pubkey)
+3. Content is encrypted with a policy
+4. Decryption succeeds IFF user's attributes satisfy the policy
+
+### 8.2 Authority Chain
+
+```
+R proves work (STARK witness)
+    ↓
+STARK binds pubkey P to domain
+    ↓
+P issues ABE role keys (signed)
+    ↓
+Anyone verifies role was issued by legitimate authority
+```
+
+**Key insight:** The ABE master key is arbitrary. Authority comes from pubkey binding, not key derivation.
+
+### 8.3 Role Issuance Event (Kind 33334)
+
+```json
+{
+  "kind": 33334,
+  "content": "<encrypted ABE private key>",
+  "tags": [
+    ["domain", "<domain_identifier>"],
+    ["recipient", "<user_pubkey>"],
+    ["attributes", "citizen,level_5,founder"],
+    ["expires", "<optional: Unix timestamp>"]
+  ],
+  "pubkey": "<domain owner pubkey>",
+  "created_at": <Unix timestamp>,
+  "id": "<event ID>",
+  "sig": "<Nostr signature>"
+}
+```
+
+**The content field contains the ABE private key, encrypted for the recipient.**
+
+### 8.4 Content with ABE Policy
+
+```json
+{
+  "kind": <any>,
+  "content": "<CP-ABE encrypted content>",
+  "tags": [
+    ["domain", "<domain_identifier>"],
+    ["abe_policy", "citizen AND level >= 3"],
+    ["encryption", "cp-abe"]
+  ],
+  "pubkey": "<domain owner pubkey>",
+  "created_at": <Unix timestamp>
+}
+```
+
+**Decryption:**
+1. User extracts policy from `"abe_policy"` tag
+2. User retrieves their ABE private key (from kind 33334 event)
+3. CP-ABE decryption succeeds IFF attributes satisfy policy
+4. No domain owner interaction required
+
+### 8.5 Example Policies
+
+| Policy | Meaning |
+|--------|---------|
+| `"citizen"` | Any citizen |
+| `"citizen AND level >= 5"` | High-level citizens |
+| `"admin OR founder"` | Leadership |
+| `"(citizen AND verified) OR guest"` | Verified citizens or guests |
+
+---
+
+## 9. Social Layer: Interactive Access Control
+
+### 9.1 Arbitrary Encryption
+
+Domain owners can encrypt content with any key and distribute access through social processes:
+
+```python
+# Domain owner encrypts with arbitrary key
+ciphertext = AES(content, arbitrary_key)
+
+# Owner dispenses key through:
+# - Payment (Lightning)
+# - Trust relationship
+# - Challenge completion
+# - Any criteria
+```
+
+**Properties:**
+- Maximum flexibility
+- Requires owner online/available
+- Pure social contract, no mathematical enforcement
+
+### 9.2 Privacy Models Within Domains
+
+| Model | Protection | Trust Required |
+|-------|------------|----------------|
+| Location-only | None from domain owner | Trust domain owner |
+| Location + ABE | Full (if ABE denies owner) | Trust ABE policy |
+| Independent key | Full | No trust needed |
+
+---
+
+## 10. Domain Lifecycle
+
+### 10.1 Creation
+
+1. Choose territory: base_x, base_y, base_z, height
+2. Compute Cantor subtree roots (O(2^height) work)
+3. Generate STARK proof (binds pubkey to R)
+4. Publish kind 33333 event
+5. Optionally publish domain policy
+
+### 10.2 Verification
+
+Any verifier can:
+1. Fetch domain event
+2. Verify STARK proof (O(log² N) work)
+3. Check policy validity
+4. Confirm domain owner's authority
+
+### 10.3 Recognition vs. Discovery
+
+**Discovery (permanent):**
+- STARK proof attests to computation of R
+- Mathematical fact, cannot be revoked
+- Multiple parties can eventually compute same R
+
+**Recognition (mutable):**
+- Network accepts specific pubkey as domain authority
+- Can transfer, expire, or be challenged
+- Lives in separate event type (future extension)
+
+**Current DECK-0002:** Discovery only. Recognition mechanics are protocol-level social coordination, specified separately.
+
+### 10.4 Multiple Claimants
+
+If multiple valid domain claims exist for overlapping regions:
+
+**Resolution rules:**
+1. Smaller domain (higher height) wins within its bounds
+2. Larger domain wins outside smaller domain's bounds
+3. Equal-size overlap: first valid claim wins
+
+**Note:** This doesn't affect mathematical knowledge — both claimants know their respective roots. It affects protocol-level recognition.
+
+---
+
+## 11. Security Analysis
+
+### 11.1 Security Properties
+
+| Property | Mechanism | Level |
+|----------|-----------|-------|
+| Correctness | STARK proof | 128-bit |
+| Binding | Pubkey in STARK public inputs | 128-bit |
+| Hiding | R is private witness | Information-theoretic |
 | Succinctness | FRI polynomial commitments | O(log N) proof size |
 | Transparency | No trusted setup | Trustless |
 
-### 9.2 Attack Resistance
+### 11.2 Attack Resistance
 
 | Attack | Mitigation |
 |--------|------------|
 | Fake domain | STARK verification fails |
-| Root theft | Both roots never revealed (ZK property) |
+| Root theft | R never revealed (ZK property) |
 | Proof forgery | STARK soundness (128-bit) |
-| Precomputation | Temporal proof binds to block_height |
-| Overlapping domains | Priority rules (see Section 10.2.1) |
+| Proof theft | Pubkey binding prevents reuse |
+| Overlapping claims | Priority rules (Section 10.4) |
+| Policy tampering | policy_hash verifies integrity |
 
-### 9.3 Trust Assumptions
+### 11.3 Trust Assumptions
 
 - **Hash functions:** Poseidon2, SHA256 are collision-resistant
 - **STARK soundness:** FRI protocol has proven security
-- **Random oracle model:** Used for Fiat-Shamir transformation
+- **Nostr signatures:** Schnorr signatures are secure
 
 ---
 
-## 10. Implementation Requirements
+## 12. Implementation Requirements
 
-### 10.1 Prover Requirements
+### 12.1 Prover Requirements
 
-| Domain Height | Territory Size | Duration (blocks) | Time | Storage |
-|---------------|----------------|-------------------|------|---------|
-| Height 35 | 4m | 1,000 | 2-5 days | 1-2 TB |
-| Height 35 | 4m | 100,000 | Weeks | TB |
-| Height 40 | 128m | 10,000 | ~month | Petabyte-scale |
-| Height 50 | City | 1,000 | Years | Infeasible |
+| Height | Time | Storage |
+|--------|------|---------|
+| Height 25 | Hours | GB |
+| Height 30 | Days | TB |
+| Height 35 | Years | PB (disk-based) |
 
-**Note:** Work scales with BOTH territory size (2^height) AND duration (expires_at - block_height).
-
-### 10.2 Verifier Requirements
+### 12.2 Verifier Requirements
 
 | Requirement | Value |
 |-------------|-------|
 | CPU | Any modern processor |
 | Memory | < 10 MB |
+| Time | < 100 ms |
 | Storage | None (stateless) |
-| Time | < 50 ms |
 
 **Any smartphone can verify any domain.**
 
-### 10.3 Recommended Stack
-
-```
-Field Arithmetic:    goldilocks (Rust crate)
-STARK Prover:        winterfell (STARKWare) or custom
-Hash Functions:      poseidon2 (leaves), sha2 (integrity)
-HTTPS Client:         https-api or rust-https
-Nostr Client:        nostr-sdk
-```
-
 ---
 
-## 11. Protocol Limits
+## 13. Privacy Considerations
 
-Verifiers SHOULD reject domains that exceed these bounds:
+### 13.1 Domain Owner Omniscience
 
-| Parameter | Maximum | Rationale |
-|-----------|---------|-----------|
-| `height` | 30 | Prevents computationally infeasible claims |
-| `duration` (`expires_at - block_height`) | 1,000,000 blocks (~19 years) | Prevents excessive temporal work |
-| `proof_size` | 200 KB | Prevents DoS via oversized proofs |
-| `proof_url` length | 512 chars | Prevents URL-based attacks |
+**Users must understand:**
+- Location encryption is NOT private from domain owner
+- Domain owner can decrypt all location-encrypted content in their domain
+- Additional encryption layer required for privacy from domain owner
 
-**Note:** These are RECOMMENDED limits. Individual verifiers may choose stricter or looser bounds.
+### 13.2 Recommended Disclosure
 
----
+Domain owners SHOULD disclose their privacy policy:
+- Whether they access user content
+- What they do with derived information
+- Whether ABE is used to limit their own access
 
-## 12. Privacy Considerations
+### 13.3 Network Privacy
 
 | Concern | Mitigation |
 |---------|------------|
-| Proof URL fetch leaks IP | Use Tor, VPN, or privacy proxy |
+| Proof URL fetch leaks IP | Use Tor, VPN, privacy proxy |
 | HTTPS host sees queries | proof_hash prevents tampering |
 | Nostr relay sees events | Events are public by design |
-| Domain location revealed | Only coordinates, not contents |
 
 ---
 
-## 13. Test Vectors
+## 14. Protocol Limits
 
-### 13.1 Minimal Example (Height 2)
+Verifiers SHOULD reject domains exceeding these bounds:
 
-```
-pubkey = "0000000000000000000000000000000000000000000000000000000000000001"
-base_x = 0
-base_y = 0
-base_z = 0
-height = 2  // 4x4x4 cube = 64 coordinates
-block_height = 800000
-expires_at = 800032  // 32 blocks duration
-
-// Expected output (placeholder - requires implementation):
-// domain_identifier = Poseidon2(pubkey, region_root, time_root)
-// region_root computed from 64 spatial leaves
-// time_root computed from 32 temporal leaves
-```
-
-### 13.2 Golden Vectors (Future Work)
-
-Production implementations MUST provide golden vectors including:
-- All 64 spatial leaf values for Height 2
-- All 32 temporal leaf values
-- Intermediate tree values (region_n, time_root)
-- Final domain_identifier
-- Serialized proof bytes
-
-**Status:** Golden vectors will be provided in a supplementary file once the reference implementation is complete.
+| Parameter | Maximum | Rationale |
+|-----------|---------|-----------|
+| height | 35 | Prevents infeasible claims |
+| proof_size | 200 KB | Prevents DoS |
+| policy_size | 64 KB | Prevents DoS |
+| URL length | 512 chars | Prevents URL attacks |
 
 ---
 
-## 14. Future Extensions
+## 15. Future Extensions
 
-### 14.1 Batch Proofs
+### 15.1 Recognition Events
 
-Prove multiple non-overlapping domains in one proof:
+Separate event type for mutable social recognition:
+- Transfer of authority
+- Expiration tracking
+- Challenge/response mechanics
 
-```
-BatchProof {
-    domains: [(base, height, block_height, expires_at), ...],
-    proof: STARKProof,
-    commitments: [Public_Commitment, ...]
-}
-```
+### 15.2 Batch Proofs
 
-### 14.2 Recursive Proofs
+Prove multiple domains in one proof for efficiency.
 
-For very large domains, use recursive STARK proofs to reduce verifier time:
+### 15.3 Recursive Proofs
 
-```
-RecursiveProof {
-    base_proof: STARKProof,
-    recursion_proof: STARKProof,
-    final_commitment: Public_Commitment
+For very large domains, recursive STARKs reduce verifier time.
+
+### 15.4 Domain Diplomacy
+
+Protocol for domain-to-domain coordination:
+- Shared secrets between domains
+- Treaties and agreements
+- Cross-domain citizenship
+
+---
+
+## 16. Summary
+
+**Domains provide:**
+
+| Layer | Capability |
+|-------|------------|
+| Mathematical | Proof of work, hierarchical knowledge, CP-ABE |
+| Protocol | Action control, content sovereignty |
+| Social | Interactive access, arbitrary gating |
+
+**The core principle:**
+
+> Work earns rights. Mathematics proves work. Protocol enforces rights.
+
+**The key insight:**
+
+> Knowledge of R is permanent and irrevocable. "Ownership" is social recognition layered on top of mathematical discovery.
+
+---
+
+**XOR 👾**
