@@ -201,8 +201,7 @@ Domain policy is a separate JSON document defining protocol-level controls:
     "hyperjump": "allow",
     "internal-shard": "allow",
     "external-shard": "deny"
-  },
-  "content_filter": "owner_only"
+  }
 }
 ```
 
@@ -304,8 +303,8 @@ If `policy_url` and `policy_hash` are present:
 
 3. Validate policy structure:
    - Check version field
-   - Validate action values
-   - Check spawn_list format if spawn == "pubkey_list"
+   - Validate action values (allow/deny/pubkey_list)
+   - Check pubkey_list format if any action uses pubkey_list
 
 4. Policy is VALID if all checks pass
 ```
@@ -352,9 +351,10 @@ User attempts action within domain D:
        a. Verify domain proof is valid
        b. Check action against domain policy
        c. If policy == "deny": REJECT
-       d. If policy == "pubkey_list" AND user not in list: REJECT
-       e. Otherwise: ALLOW
+       d. Otherwise: ALLOW
 ```
+
+**Note:** `pubkey_list` policy is defined for future use but not yet specified in this version.
 
 ### 5.4 Shard Content Filtering
 
