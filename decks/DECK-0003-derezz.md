@@ -163,7 +163,9 @@ Each action must be temporally ordered. The chain validates that:
 7. Check domain policy (if in a domain):
    domain = find_domain_at(victim_position)
    IF domain AND domain.policy.derezz == "deny":
-       REJECT (PVP disabled in this domain)
+       IF attacker != domain.owner:
+           REJECT (PVP disabled in this domain)
+       # Domain owner is exempt from policy
 
 8. Derezz is VALID if all checks pass
 ```
@@ -301,16 +303,16 @@ Domains can disable PVP within their territory:
 ### 7.2 Safe Zones
 
 A domain with `derezz: "deny"` becomes a safe zone:
-- No PVP combat possible
+- No PVP combat possible for visitors
 - Commerce-friendly environment
-- Players can idle without fear
+- Players can idle without fear (except from domain owner)
 
-**Trade-off:** Domain owner also cannot derezz within their own domain if disabled.
+**Important:** Domain owners are exempt from their own policies (per DECK-0002). Even in a safe zone, the domain owner can derezz anyone. This is the price of entering someone's domain — you accept their absolute authority.
 
 ### 7.3 PVP Zones
 
 A domain with `derezz: "allow"` (default):
-- PVP enabled
+- PVP enabled for everyone
 - Domain owner has god-mode advantage
 - Players enter at their own risk
 
