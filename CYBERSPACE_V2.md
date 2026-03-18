@@ -453,12 +453,14 @@ The base protocol defines two actions for kind 3333 events (identified by the `A
 | `spawn` | Initial spawn | This spec (§6.3) |
 | `hop` | Movement hop | This spec (§6.4) |
 
-DECKs MAY define additional action types. DECK-defined actions:
+DECKs MAY define additional action types or extend existing actions. DECK-defined actions:
 
 | `A` tag | Action | DECK |
 |---------|--------|------|
 | `derezz` | PVP attack | [DECK-0003: Derezz](decks/DECK-0003-derezz.md) |
 | `hyperjump` | Long-distance teleport | [DECK-0001: Hyperjumps](decks/DECK-0001-hyperjumps.md) |
+
+Note: `spawn` is extended by DECK-0003 to allow respawning after being derezzed, with relaxed validation (coord need not equal pubkey).
 
 Clients implementing a DECK MUST validate actions according to that DECK's specification.
 

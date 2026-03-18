@@ -51,14 +51,14 @@ Victim can only publish spawn event until respawned
 
 ### 2.1 Event Format (Kind 3333)
 
-Derezz uses the standard action event kind (3333) with `a` tag set to "derezz":
+Derezz uses the standard action event kind (3333) with `A` tag set to "derezz":
 
 ```json
 {
   "kind": 3333,
   "content": "<optional: message or taunt>",
   "tags": [
-    ["a", "derezz"],
+    ["A", "derezz"],
     ["p", "<victim_pubkey>"],
     ["proof_url", "<HTTPS URL of Cantor proof>"],
     ["proof_hash", "<SHA256 of proof file>"],
@@ -137,7 +137,7 @@ Each action must be temporally ordered. The chain validates that:
 ### 4.1 Derezz Validation Steps
 
 ```
-1. Fetch derezz event (kind 3333, a="derezz")
+1. Fetch derezz event (kind 3333, A="derezz")
 
 2. Validate basic structure:
    - Has a tag with value "derezz"
@@ -235,19 +235,21 @@ Bob cannot escape unless he leaves Sector 7
 
 ---
 
-## 6. Spawn Event (Kind 3333)
+## 6. Respawn After Derezz
 
-After being derezzed, the victim must publish a spawn event:
+After being derezzed, the victim must publish a spawn event to re-enter cyberspace.
+
+### 6.1 Respawn Event (Kind 3333)
+
+The respawn event uses the core protocol spawn action (`A: "spawn"`) with relaxed validation:
 
 ```json
 {
   "kind": 3333,
   "content": "",
   "tags": [
-    ["a", "spawn"],
-    ["coordinate", "<x>", "<y>", "<z>"],
-    ["proof_url", "<optional: proof for spawn location>"],
-    ["proof_hash", "<optional: SHA256 of proof>"]
+    ["A", "spawn"],
+    ["C", "<coord_hex>"]
   ],
   "pubkey": "<victim_pubkey>",
   "created_at": <Unix timestamp>,
@@ -256,7 +258,13 @@ After being derezzed, the victim must publish a spawn event:
 }
 ```
 
-### 6.2 Spawn Validation
+**Differences from initial spawn:**
+- Initial spawn (core protocol §6.3): `coord_hex` MUST equal `pubkey`
+- Respawn after derezz: `coord_hex` can be any valid coordinate
+- Initial spawn is the first event in a chain
+- Respawn can occur after any valid derezz
+
+### 6.2 Respawn Validation
 
 ```
 1. Victim must have been derezzed (status == "derezzed")
@@ -266,21 +274,10 @@ After being derezzed, the victim must publish a spawn event:
    - Some domains may require proof of presence
    - Some domains may restrict spawning entirely
 
-3. After valid spawn:
+3. After valid respawn:
    victim.status = "active"
    victim.position = spawn_coordinate
 ```
-
-### 6.3 Spawn Location Rules
-
-**Default cyberspace:**
-- Spawn anywhere
-- No proof required
-
-**Within domains:**
-- Check domain policy for spawn restrictions
-- Domain may require `pubkey_list` authorization
-- Domain may deny spawning entirely
 
 ---
 
@@ -378,10 +375,12 @@ A domain with `derezz: "allow"` (default):
 
 **Action Types (Kind 3333):**
 
-| `a` tag value | Action | Description |
-|---------------|--------|-------------|
-| `derezz` | PVP attack | Eliminate stationary avatar |
-| `spawn` | Respawn | Revive after being derezzed |
+| `A` tag | Action | Description | Reference |
+|---------|--------|-------------|-----------|
+| `spawn` | Initial spawn | First event (coord = pubkey) | Core §6.3 |
+| `spawn` | Respawn | After derezz | This DECK §6 |
+| `hop` | Movement | Traversal proof | Core §6.4 |
+| `derezz` | PVP attack | Eliminate stationary avatar | This DECK |
 
 **Policy Actions:**
 
