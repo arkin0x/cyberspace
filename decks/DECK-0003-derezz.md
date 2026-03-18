@@ -24,7 +24,7 @@ Derezz is a PVP (player-vs-player) combat action that eliminates stationary avat
 
 Derezz is a protocol-level action that "kills" a stationary avatar, forcing them to respawn. It represents the danger of being idle or predictable in cyberspace.
 
-**Etymology:** From "derezz" in Tron — to derez (delete/remove from the grid).
+**Etymology:** Short for "de-resurrect" — to undo a resurrection, returning an avatar to a pre-spawn state.
 
 ### 1.2 Core Mechanics
 
@@ -51,7 +51,7 @@ Victim can only publish spawn event until respawned
 
 ### 2.1 Event Format (Kind 3333)
 
-Derezz uses the standard action event kind (3333) with `A` tag set to "derezz":
+Derezz uses the standard action event kind (3333) with `A` tag set to "derezz". The structure follows the core protocol movement event pattern:
 
 ```json
 {
@@ -59,13 +59,17 @@ Derezz uses the standard action event kind (3333) with `A` tag set to "derezz":
   "content": "<optional: message or taunt>",
   "tags": [
     ["A", "derezz"],
+    ["e", "<attacker_spawn_event_id>", "", "genesis"],
+    ["e", "<attacker_previous_event_id>", "", "previous"],
     ["p", "<victim_pubkey>"],
-    ["proof_url", "<HTTPS URL of Cantor proof>"],
-    ["proof_hash", "<SHA256 of proof file>"],
-    ["region_base_x", "<region base X>"],
-    ["region_base_y", "<region base Y>"],
-    ["region_base_z", "<region base Z>"],
-    ["region_height", "<region Cantor height>"]
+    ["e", "<victim_movement_event_id>", "", "victim"],
+    ["c", "<attacker_prev_coord_hex>"],
+    ["C", "<attacker_current_coord_hex>"],
+    ["proof", "<proof_hash_hex>"],
+    ["X", "<sector_x>"],
+    ["Y", "<sector_y>"],
+    ["Z", "<sector_z>"],
+    ["S", "<sector_s>"]
   ],
   "pubkey": "<attacker_pubkey>",
   "created_at": <Unix timestamp>,
@@ -74,25 +78,40 @@ Derezz uses the standard action event kind (3333) with `A` tag set to "derezz":
 }
 ```
 
-**Tag details:**
-- `a` — Action type: "derezz"
+**Tag details (following core protocol §6.4 pattern):**
+- `A` — Action type: "derezz"
+- `e` (genesis) — Attacker's spawn event (chain root)
+- `e` (previous) — Attacker's previous movement event
 - `p` — Victim's pubkey (the target)
-- `proof_url` / `proof_hash` — Cantor proof for region containing both positions
-- `region_base_x/y/z`, `region_height` — The region parameters for the proof
+- `e` (victim) — Victim's most recent movement event (proves their position)
+- `c` — Attacker's previous coordinate (32-byte hex)
+- `C` — Attacker's current coordinate (32-byte hex)
+- `proof` — Cantor proof hash (32-byte hex)
+- `X`, `Y`, `Z`, `S` — Sector tags
+
+**Key difference from hop events:**
+- Includes `p` tag for victim pubkey
+- Includes `e` tag referencing victim's movement event
+- Proof must demonstrate both attacker and victim positions are in the same spatial region
 
 ### 2.2 Proof Requirements
 
-The Cantor proof must demonstrate:
+The Cantor proof must demonstrate spatial proximity between attacker and victim:
 
 ```
-Attacker_position ∈ Region(base, height)
-Victim_position ∈ Region(base, height)
+Attacker_position ∈ Region
+Victim_position ∈ Region
 ```
 
-**Proof structure:**
-- Compute Cantor subtree root for the region
-- Include both positions as leaves in the proof
-- Standard Cantor proof format (same as movement proofs)
+**Proof structure (following core protocol §5):**
+1. Compute the spatial region integer `region_n` for a region containing both positions
+2. Derive the temporal height `K` from the attacker's current coordinate
+3. Compute the temporal axis root `cantor_t` from the attacker's previous event id and `K`
+4. Compute `derezz_n = π(region_n, cantor_t)`
+5. Compute `proof_hash` per core protocol §5.6
+6. Place in `proof` tag
+
+The proof is computed the same way as a hop proof (core protocol §6.5), but the region must contain both the attacker's position AND the victim's position.
 
 ---
 
@@ -140,36 +159,37 @@ Each action must be temporally ordered. The chain validates that:
 1. Fetch derezz event (kind 3333, A="derezz")
 
 2. Validate basic structure:
-   - Has a tag with value "derezz"
+   - Has A tag with value "derezz"
+   - Has e tags (genesis, previous, victim)
    - Has p tag (victim pubkey)
-   - Has proof_url, proof_hash
-   - Has region parameters
+   - Has c, C tags (coordinates)
+   - Has proof tag
 
-3. Fetch proof and verify integrity:
-   ASSERT SHA256(proof) == proof_hash
+3. Validate attacker's chain:
+   a. Fetch attacker's previous event (e tag with marker "previous")
+   b. Verify derezz.timestamp > previous.timestamp + 1
+   c. Verify c tag matches previous event's C tag
 
-4. Fetch attacker's previous action:
-   previous = get_latest_action(attacker_pubkey, before=derezz.timestamp)
-   ASSERT derezz.timestamp > previous.timestamp + 1
+4. Validate victim reference:
+   a. Fetch victim's movement event (e tag with marker "victim")
+   b. Verify victim pubkey matches p tag
+   c. Verify victim_movement.timestamp <= derezz.timestamp
 
-5. Fetch victim's latest movement:
-   victim_movement = get_latest_movement(victim_pubkey, before_or_equal=derezz.timestamp)
-   ASSERT victim_movement exists
+5. Verify spatial proof (per core protocol §6.5):
+   a. Parse attacker coordinates from C tag
+   b. Parse victim coordinates from victim_movement event
+   c. Compute spatial region containing both positions
+   d. Compute region_n, cantor_t, and proof_hash
+   e. Verify proof_hash matches event's proof tag
 
-6. Verify spatial proof:
-   a. Parse proof and region parameters
-   b. Verify attacker_position ∈ region
-   c. Verify victim_position ∈ region
-   d. Verify Cantor proof is valid
-
-7. Check domain policy (if in a domain):
+6. Check domain policy (if in a domain):
    domain = find_domain_at(victim_position)
    IF domain AND domain.policy.derezz == "deny":
        IF attacker != domain.owner:
            REJECT (PVP disabled in this domain)
        # Domain owner is exempt from policy
 
-8. Derezz is VALID if all checks pass
+7. Derezz is VALID if all checks pass
 ```
 
 ### 4.2 After Valid Derezz
@@ -182,9 +202,9 @@ victim.derezzed_by = attacker_pubkey
 ```
 
 **Victim can only publish:**
-- Kind 334 (Spawn event) — to respawn
+- Spawn event (kind 3333, A="spawn") — to respawn
 
-**All other victim actions are ignored until spawn.**
+**All other victim actions are ignored until respawn.**
 
 ---
 
