@@ -712,11 +712,14 @@ If multiple valid domain claims exist for overlapping regions:
 
 ### 12.1 Prover Requirements
 
-| Height | Time | Storage |
-|--------|------|---------|
-| Height 25 | Hours | GB |
-| Height 30 | Days | TB |
-| Height 35 | Years | PB (disk-based) |
+| Height | Work | Notes |
+|--------|------|-------|
+| Height 25 | 2^25 ops | Consumer-feasible |
+| Height 30 | 2^30 ops | Consumer-feasible |
+| Height 35 | 2^35 ops | Consumer-feasible |
+| Height 40+ | 2^40+ ops | Market determines feasibility |
+
+**No protocol height limit.** Higher claims require more work but are valid. The exponential growth creates natural economic limits.
 
 ### 12.2 Verifier Requirements
 
@@ -759,14 +762,17 @@ Domain owners SHOULD disclose their privacy policy:
 
 ## 14. Protocol Limits
 
-Verifiers SHOULD reject domains exceeding these bounds:
+Verifiers SHOULD apply these bounds:
 
 | Parameter | Maximum | Rationale |
 |-----------|---------|-----------|
-| height | 35 | Prevents infeasible claims |
-| proof_size | 200 KB | Prevents DoS |
+| proof_size | TBD | Requires experimental testing for high claims |
 | policy_size | 64 KB | Prevents DoS |
 | URL length | 512 chars | Prevents URL attacks |
+
+**No height limit.** All claim heights are valid. The work required grows exponentially with height, creating natural economic limits. The market — not the protocol — determines what claims are worth mining.
+
+**Proof size consideration:** Implementations should verify they don't arbitrarily restrict proof validation size, excluding valid claims. Experimental testing needed for very high claims (~60+) to characterize proof sizes and set appropriate limits.
 
 ---
 
