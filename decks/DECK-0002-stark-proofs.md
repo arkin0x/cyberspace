@@ -341,7 +341,18 @@ Domain owners can disable or restrict actions within their territory:
 - `derezz: "deny"` — PVP attacks are protocol-invalid within this domain
 - `external-shard: "deny"` — Third-party content is filtered; only domain-referenced shards visible
 
-### 5.3 Action Enforcement
+### 5.3 Domain Owner Exemption
+
+**The domain owner is exempt from all policies defined for their domain.**
+
+This means:
+- If `derezz: "deny"` — Owner can still derezz within their domain
+- If `external-shard: "deny"` — Owner can still publish non-referenced shards
+- If `hyperjump: "deny"` — Owner can still hyperjump
+
+**Rationale:** The domain owner computed R through substantial work. They have absolute authority within their territory. Policies apply to visitors and citizens, not to the sovereign.
+
+### 5.4 Action Enforcement
 
 ```
 User attempts action within domain D:
@@ -349,14 +360,15 @@ User attempts action within domain D:
     2. If no domain: default rules apply
     3. If domain exists:
        a. Verify domain proof is valid
-       b. Check action against domain policy
-       c. If policy == "deny": REJECT
-       d. Otherwise: ALLOW
+       b. IF user == domain.owner: ALLOW (owner exempt from policy)
+       c. Check action against domain policy
+       d. If policy == "deny": REJECT
+       e. Otherwise: ALLOW
 ```
 
 **Note:** `pubkey_list` policy is defined for future use but not yet specified in this version.
 
-### 5.4 Shard Content Filtering
+### 5.5 Shard Content Filtering
 
 For shards (3D objects), enforcement works as follows:
 
@@ -387,7 +399,7 @@ Otherwise:
 
 This follows NIP-33 convention for referencing parameterized replaceable events.
 
-### 5.5 Example: Safe Zone with Content Control
+### 5.6 Example: Safe Zone with Content Control
 
 ```json
 {
