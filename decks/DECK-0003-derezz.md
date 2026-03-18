@@ -129,13 +129,22 @@ derezz.timestamp > attacker_previous_action.timestamp + 1
 
 ### 3.2 Victim State Requirement
 
-The derezz is only valid against the victim's **most recent movement action** where:
+The derezz targets the victim's **most recent movement action** where:
 
 ```
 victim_movement.timestamp <= derezz.timestamp
 ```
 
-If the victim has moved AFTER the derezz timestamp, the derezz fails (they already moved).
+**Critical:** If the derezz is valid, it **invalidates all future actions** in the victim's action chain. The victim must start a new chain with a new spawn event.
+
+This means an attacker can publish a derezz that is backdated (minutes or even hours old) to cut off a victim's chain at a point in the past. This is valid.
+
+**Why timing attacks are unlikely:** For a backdated derezz to work, the attacker must:
+1. Be spatially near the victim at the backdated time
+2. Have published NO movement events since (their chain timestamp must not have advanced)
+3. Essentially have a spawned pubkey "lying in wait" for the victim to pass by
+
+The probability of an attacker being near a victim without having published any movement events is extremely low. This is the natural defense against timing attacks.
 
 ### 3.3 Movement Chain Integrity
 
@@ -287,7 +296,6 @@ The respawn event uses the core protocol spawn action (`A: "spawn"`):
 
 2. Spawn location must be valid:
    - coord_hex MUST equal victim's pubkey (original spawn location)
-   - If in a domain with spawn restrictions, check policy
 
 3. After valid respawn:
    victim.status = "active"
@@ -295,6 +303,15 @@ The respawn event uses the core protocol spawn action (`A: "spawn"`):
 ```
 
 **The penalty of derezz:** Being sent back to your spawn location. All progress lost.
+
+**Note on spawn restrictions:** The protocol cannot have spawn restrictions that deny specific pubkeys access to cyberspace. Every pubkey has the right to spawn at their coordinate (pubkey = spawn location).
+
+**However, domain owners can derezz avatars spawning in their territory.** This creates de facto access control:
+- Mine a domain over someone else's spawn coordinate
+- Derezz them as soon as they spawn
+- They must respawn → you derezz again → infinite loop
+
+**The incentive:** Mine your own domain where your pubkey spawns. Own your spawn point. This is the natural defense against spawn camping.
 
 ---
 
@@ -352,11 +369,31 @@ A domain with `derezz: "allow"` (default):
 
 **Solution:** Domain ownership is verified via DECK-0002 (STARK proof binding pubkey to domain). Only the verified owner has knowledge of R.
 
-### 8.4 Race Conditions
+### 8.4 Backdated Derezz (Timing Attacks)
 
-**Problem:** Victim moves just as attacker publishes derezz.
+**Possibility:** An attacker could publish a derezz with a backdated timestamp (minutes or hours old) to cut off a victim's action chain at a point in the past.
 
-**Solution:** Temporal ordering rules. If victim's movement timestamp > derezz timestamp, derezz fails.
+**Why this is valid:** The derezz targets the victim's most recent movement action where `timestamp <= derezz.timestamp`. If the derezz is valid, all future actions in the victim's chain are invalidated.
+
+**Why this is unlikely:** For a backdated derezz to succeed, the attacker must:
+1. Have been spatially near the victim at the backdated time (proof must contain both positions)
+2. Have published NO movement events since (their chain timestamp must not have advanced beyond the derezz timestamp)
+3. Essentially have a "sleeper" pubkey lying in wait
+
+The probability of an attacker being near a victim without any published movement events is extremely low. Normal play involves continuous movement and chain advancement.
+
+**Mitigation:** The natural defense is continuous movement. A moving player's chain timestamp advances, making backdated attacks impractical.
+
+### 8.5 Spawn Camping by Domain Owners
+
+**Risk:** A domain owner can derezz anyone spawning in their territory repeatedly, creating an infinite loop of spawn → derezz → respawn → derezz.
+
+**Implication:** Domain owners have de facto access control over spawn points within their domain. This can be used to:
+- Extract payment for safe passage
+- Exclude specific individuals
+- Create private enclaves
+
+**Defense:** Mine your own domain at your spawn coordinate. Own your spawn point. This guarantees you cannot be spawn-camped (you're the domain owner).
 
 ---
 
