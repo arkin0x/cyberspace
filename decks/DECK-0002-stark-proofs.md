@@ -199,14 +199,9 @@ Domain policy is a separate JSON document defining protocol-level controls:
   "actions": {
     "derezz": "deny",
     "hyperjump": "allow",
-    "spawn": "pubkey_list",
-    "scan": "limited",
-    "scan_range": 1000
+    "internal-shard": "allow",
+    "external-shard": "deny"
   },
-  "spawn_list": [
-    "<pubkey1>",
-    "<pubkey2>"
-  ],
   "content_filter": "owner_only"
 }
 ```
@@ -215,6 +210,45 @@ Domain policy is a separate JSON document defining protocol-level controls:
 - `"allow"` — Anyone can perform (default cyberspace behavior)
 - `"deny"` — No one can perform (disabled in this domain)
 - `"pubkey_list"` — Only listed pubkeys can perform
+
+**Action definitions:**
+
+| Action | Description | Default |
+|--------|-------------|---------|
+| `derezz` | PVP attack against stationary avatars | allow |
+| `hyperjump` | Teleport into/out of domain | allow |
+| `internal-shard` | Publish shards with `a` tag referencing this domain | allow |
+| `external-shard` | Publish shards without referencing this domain | allow |
+
+**Shard content sovereignty:**
+
+Shards (3D objects in cyberspace) are controlled by two actions:
+
+- **`internal-shard`** — Controls whether shards can be published that explicitly belong to this domain (have `["a", "33333:<domain_pubkey>:<domain_id>"]` tag). By default `allow`. Set to `deny` to prevent even the domain owner's shards from being published (e.g., maintenance mode).
+
+- **`external-shard`** — Controls whether third parties can publish shards in this domain that do NOT reference the domain. Set to `deny` to enforce that all content in the domain must be "official" (domain-approved). Clients would not load shards lacking the domain reference.
+
+**Example: Strict content control**
+```json
+{
+  "actions": {
+    "internal-shard": "allow",
+    "external-shard": "deny"
+  }
+}
+```
+Only domain-approved content is visible. Third-party shards are filtered.
+
+**Example: Open content**
+```json
+{
+  "actions": {
+    "internal-shard": "allow",
+    "external-shard": "allow"
+  }
+}
+```
+Anyone can publish shards. Domain is a public space.
 
 ---
 
@@ -288,8 +322,8 @@ In unclaimed space, all protocol actions are allowed:
 |--------|---------|
 | derezz | allow |
 | hyperjump | allow |
-| spawn | allow |
-| scan | allow |
+| internal-shard | allow |
+| external-shard | allow |
 
 ### 5.2 Domain Override
 
@@ -299,14 +333,14 @@ Domain owners can disable or restrict actions within their territory:
 {
   "actions": {
     "derezz": "deny",
-    "spawn": "pubkey_list"
+    "external-shard": "deny"
   }
 }
 ```
 
 **Effect:**
 - `derezz: "deny"` — PVP attacks are protocol-invalid within this domain
-- `spawn: "pubkey_list"` — Only listed pubkeys can spawn here
+- `external-shard: "deny"` — Third-party content is filtered; only domain-referenced shards visible
 
 ### 5.3 Action Enforcement
 
@@ -322,17 +356,54 @@ User attempts action within domain D:
        e. Otherwise: ALLOW
 ```
 
-### 5.4 Example: Safe Zones
+### 5.4 Shard Content Filtering
 
-A domain with `"derezz": "deny"` becomes a safe zone:
-- No player-killing possible
-- Commerce-friendly environment
-- Trust established through cryptographic proof
+For shards (3D objects), enforcement works as follows:
 
-**Contrast with unclaimed space:**
-- Wild territory, PVP-enabled
-- Higher risk, potentially higher reward
-- No authority to appeal to
+**Internal shards (reference domain):**
+```
+Shard event has tag: ["a", "33333:<domain_pubkey>:<domain_id>"]
+
+If internal-shard == "deny":
+    REJECT shard publication
+Otherwise:
+    ALLOW (domain-approved content)
+```
+
+**External shards (no domain reference):**
+```
+Shard event lacks domain reference tag
+
+If external-shard == "deny":
+    Clients FILTER this content (don't load/render)
+Otherwise:
+    ALLOW (third-party content)
+```
+
+**The `a` tag format for domain reference:**
+```
+["a", "33333:<domain_owner_pubkey>:<domain_id>"]
+```
+
+This follows NIP-33 convention for referencing parameterized replaceable events.
+
+### 5.5 Example: Safe Zone with Content Control
+
+```json
+{
+  "actions": {
+    "derezz": "deny",
+    "internal-shard": "allow",
+    "external-shard": "deny"
+  }
+}
+```
+
+**Result:**
+- No PVP (safe commerce zone)
+- Domain owner can publish content
+- Third parties cannot publish content
+- Curated, controlled space
 
 ---
 
@@ -340,22 +411,7 @@ A domain with `"derezz": "deny"` becomes a safe zone:
 
 ### 6.1 The Principle
 
-Within a valid domain, only content authored by the domain owner is recognized as valid/visible.
-
-**Mechanism:**
-```python
-def is_valid_content(event, coordinate):
-    domain = find_domain_at(coordinate)
-    
-    if domain is None:
-        return True  # Wild space - all content valid
-    
-    # Domain space - only owner content is valid
-    if event.references(domain.event_id) and event.author == domain.owner:
-        return True
-    
-    return False  # Content filtered by protocol
-```
+Within a valid domain, content visibility is controlled by the `internal-shard` and `external-shard` actions (see Section 5.4).
 
 ### 6.2 Transmission vs. Visibility
 
@@ -365,16 +421,38 @@ def is_valid_content(event, coordinate):
 - Events are transmitted regardless of domain
 
 **Application layer (clients):**
-- Protocol-compliant clients filter by domain authority
-- Non-owner content is NOT displayed
-- "Official" content is owner-signed only
+- Protocol-compliant clients filter based on domain policy
+- `external-shard: "deny"` → Third-party content not rendered
+- `internal-shard: "deny"` → Even domain content not rendered
+- Content filtering happens at display time, not transmission
 
-### 6.3 Implications
+### 6.3 The `a` Tag for Domain Reference
 
-- Domain owners control what "officially exists" in their space
-- Spam/abuse is filtered at the application layer
-- Work to compute R earned this right
-- Non-owner content exists on the network but is invisible in clients
+Shards that belong to a domain include a reference tag:
+
+```json
+["a", "33333:<domain_owner_pubkey>:<domain_id>"]
+```
+
+This follows NIP-33 convention for referencing parameterized replaceable events.
+
+**Example:**
+```json
+{
+  "kind": 33335,
+  "content": "<shard data>",
+  "tags": [
+    ["a", "33333:abc123...:def456..."],
+    ["coordinate", "<x>", "<y>", "<z>"]
+  ],
+  ...
+}
+```
+
+Clients use this tag to:
+1. Determine if the shard is "internal" (has reference) or "external" (no reference)
+2. Apply the appropriate domain policy action
+3. Filter content accordingly
 
 ---
 
