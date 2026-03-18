@@ -460,7 +460,7 @@ DECKs MAY define additional action types or extend existing actions. DECK-define
 | `derezz` | PVP attack | [DECK-0003: Derezz](decks/DECK-0003-derezz.md) |
 | `hyperjump` | Long-distance teleport | [DECK-0001: Hyperjumps](decks/DECK-0001-hyperjumps.md) |
 
-Note: `spawn` is extended by DECK-0003 to allow respawning after being derezzed, with relaxed validation (coord need not equal pubkey).
+Note: `spawn` is extended by DECK-0003 for respawning after being derezzed. The victim must return to their original spawn location (coord = pubkey).
 
 Clients implementing a DECK MUST validate actions according to that DECK's specification.
 

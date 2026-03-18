@@ -9,7 +9,7 @@
 
 ## Abstract
 
-Derezz is a PVP (player-vs-player) combat action that eliminates stationary avatars in cyberspace. This DECK specifies:
+Derezz is a PVP (player-vs-player) combat action that returns avatars to their spawn location. This DECK specifies:
 
 - **Proof-based attack validation** using Cantor proofs for spatial proximity
 - **Temporal ordering rules** preventing gaming/timing attacks
@@ -22,7 +22,7 @@ Derezz is a PVP (player-vs-player) combat action that eliminates stationary avat
 
 ### 1.1 What Is Derezz?
 
-Derezz is a protocol-level action that "kills" a stationary avatar, forcing them to respawn. It represents the danger of being idle or predictable in cyberspace.
+Derezz is a protocol-level action that "kills" an avatar, forcing them to respawn at their original spawn location. It represents the danger of being predictable in cyberspace.
 
 **Etymology:** Short for "de-resurrect" — to undo a resurrection, returning an avatar to a pre-spawn state.
 
@@ -35,7 +35,7 @@ Action includes Cantor proof for region containing both positions
     ↓
 If valid: victim is "derezzed"
     ↓
-Victim can only publish spawn event until respawned
+Victim must respawn at their original spawn location
 ```
 
 ### 1.3 Design Principles
@@ -257,11 +257,11 @@ Bob cannot escape unless he leaves Sector 7
 
 ## 6. Respawn After Derezz
 
-After being derezzed, the victim must publish a spawn event to re-enter cyberspace.
+After being derezzed, the victim must publish a spawn event to re-enter cyberspace at their original spawn location.
 
 ### 6.1 Respawn Event (Kind 3333)
 
-The respawn event uses the core protocol spawn action (`A: "spawn"`) with relaxed validation:
+The respawn event uses the core protocol spawn action (`A: "spawn"`):
 
 ```json
 {
@@ -278,11 +278,7 @@ The respawn event uses the core protocol spawn action (`A: "spawn"`) with relaxe
 }
 ```
 
-**Differences from initial spawn:**
-- Initial spawn (core protocol §6.3): `coord_hex` MUST equal `pubkey`
-- Respawn after derezz: `coord_hex` can be any valid coordinate
-- Initial spawn is the first event in a chain
-- Respawn can occur after any valid derezz
+**Critical constraint:** `coord_hex` MUST equal `pubkey` — the victim returns to their original spawn location. This is the dire consequence of being derezzed.
 
 ### 6.2 Respawn Validation
 
@@ -290,14 +286,15 @@ The respawn event uses the core protocol spawn action (`A: "spawn"`) with relaxe
 1. Victim must have been derezzed (status == "derezzed")
 
 2. Spawn location must be valid:
+   - coord_hex MUST equal victim's pubkey (original spawn location)
    - If in a domain with spawn restrictions, check policy
-   - Some domains may require proof of presence
-   - Some domains may restrict spawning entirely
 
 3. After valid respawn:
    victim.status = "active"
-   victim.position = spawn_coordinate
+   victim.position = original_spawn_coordinate
 ```
+
+**The penalty of derezz:** Being sent back to your spawn location. All progress lost.
 
 ---
 
@@ -385,8 +382,8 @@ A domain with `derezz: "allow"` (default):
 
 | Requirement | Value |
 |-------------|-------|
-| After derezz | Can only publish spawn (kind 334) |
-| Spawn validation | Check domain spawn policy |
+| After derezz | Can only publish spawn (kind 3333, A="spawn") |
+| Spawn location | MUST equal pubkey (original spawn) |
 | Protection | Enter safe zone (domain with derezz: deny) |
 
 ---
@@ -397,10 +394,9 @@ A domain with `derezz: "allow"` (default):
 
 | `A` tag | Action | Description | Reference |
 |---------|--------|-------------|-----------|
-| `spawn` | Initial spawn | First event (coord = pubkey) | Core §6.3 |
-| `spawn` | Respawn | After derezz | This DECK §6 |
+| `spawn` | Spawn | Enter cyberspace (coord = pubkey) | Core §6.3 |
 | `hop` | Movement | Traversal proof | Core §6.4 |
-| `derezz` | PVP attack | Eliminate stationary avatar | This DECK |
+| `derezz` | PVP attack | Return victim to spawn | This DECK |
 
 **Policy Actions:**
 
@@ -411,11 +407,11 @@ A domain with `derezz: "allow"` (default):
 **The Game:**
 
 ```
-Movement → Idleness → Vulnerability
+Movement → Predictability → Vulnerability
     ↓
 Derezz (if PVP enabled)
     ↓
-Respawn
+Respawn at original spawn location
     ↓
 Movement → ...
 ```
@@ -425,7 +421,7 @@ Movement → ...
 - Stay in safe zones to avoid PVP
 - Enter domains at your own risk
 - Domain owners are gods within their territory
-- Movement is survival; idleness is death
+- Being idle makes you an easier target
 
 ---
 
