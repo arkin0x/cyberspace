@@ -443,8 +443,24 @@ This specification defines the base Cyberspace v2 protocol.
 Optional extensions MAY introduce new event kinds, new movement action types (`A` tag values), and/or additional validation rules that are only applied when an extension is in use.
 
 Extensions are specified as **Design Extension and Compatibility Kits (DECKs)** in the `decks/` directory.
-- Hyperjumps extension: `decks/DECK-0001-hyperjumps.md`
-- Hyperjumps extension: `extensions/DECK-0001-hyperjumps.md`
+
+### 6.7 DECK-defined Actions (Kind 3333)
+
+The base protocol defines two actions for kind 3333 events (identified by the `A` tag):
+
+| `A` tag | Action | Reference |
+|---------|--------|-----------|
+| `spawn` | Initial spawn | This spec (§6.3) |
+| `hop` | Movement hop | This spec (§6.4) |
+
+DECKs MAY define additional action types. DECK-defined actions:
+
+| `A` tag | Action | DECK |
+|---------|--------|------|
+| `derezz` | PVP attack | [DECK-0003: Derezz](decks/DECK-0003-derezz.md) |
+| `hyperjump` | Long-distance teleport | [DECK-0001: Hyperjumps](decks/DECK-0001-hyperjumps.md) |
+
+Clients implementing a DECK MUST validate actions according to that DECK's specification.
 
 ---
 

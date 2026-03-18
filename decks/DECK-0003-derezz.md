@@ -49,11 +49,13 @@ Victim can only publish spawn event until respawned
 
 ## 2. Derezz Event Structure
 
-### 2.1 Event Format (Kind 333)
+### 2.1 Event Format (Kind 3333)
+
+Derezz uses the standard action event kind (3333) with `a` tag set to "derezz":
 
 ```json
 {
-  "kind": 333,
+  "kind": 3333,
   "content": "<optional: message or taunt>",
   "tags": [
     ["a", "derezz"],
@@ -135,7 +137,7 @@ Each action must be temporally ordered. The chain validates that:
 ### 4.1 Derezz Validation Steps
 
 ```
-1. Fetch derezz event (kind 333, a="derezz")
+1. Fetch derezz event (kind 3333, a="derezz")
 
 2. Validate basic structure:
    - Has a tag with value "derezz"
@@ -233,15 +235,13 @@ Bob cannot escape unless he leaves Sector 7
 
 ---
 
-## 6. Spawn Event (Kind 334)
-
-### 6.1 Event Structure
+## 6. Spawn Event (Kind 3333)
 
 After being derezzed, the victim must publish a spawn event:
 
 ```json
 {
-  "kind": 334,
+  "kind": 3333,
   "content": "",
   "tags": [
     ["a", "spawn"],
@@ -376,12 +376,12 @@ A domain with `derezz: "allow"` (default):
 
 ## 10. Protocol Summary
 
-**Action Types:**
+**Action Types (Kind 3333):**
 
-| Kind | Action | Description |
-|------|--------|-------------|
-| 333 | derezz | PVP attack against stationary avatar |
-| 334 | spawn | Respawn after being derezzed |
+| `a` tag value | Action | Description |
+|---------------|--------|-------------|
+| `derezz` | PVP attack | Eliminate stationary avatar |
+| `spawn` | Respawn | Revive after being derezzed |
 
 **Policy Actions:**
 
