@@ -444,6 +444,20 @@ Optional extensions MAY introduce new event kinds, new movement action types (`A
 
 Extensions are specified as **Design Extension and Compatibility Kits (DECKs)** in the `decks/` directory.
 
+#### 6.6.1 Layer Framework (Non-normative)
+
+Each DECK should clearly distinguish which capabilities belong to each layer:
+
+| Layer | Enforcement | Characteristics |
+|-------|-------------|-----------------|
+| **Mathematical** | Cryptography | Trustless, deterministic, verifiable by anyone |
+| **Protocol** | Consensus rules | Client/relay validation, event structure |
+| **Social** | Human coordination | Trust-based, mutable, application-specific |
+
+The core protocol (this spec) is primarily mathematical with protocol-level event validation. DECKs may introduce protocol-layer rules (e.g., domain policies) and should explicitly acknowledge what remains in the social layer.
+
+This framework prevents mixing concerns: mathematical guarantees should not depend on trust, and social coordination should not be enforced by protocol rules.
+
 ### 6.7 DECK-defined Actions (Kind 3333)
 
 The base protocol defines two actions for kind 3333 events (identified by the `A` tag):

@@ -45,6 +45,18 @@ Victim must respawn at their original spawn location
 3. **Temporal ordering** — Timestamps prevent gaming
 4. **Domain authority** — Domain owners have natural advantage within their territory
 
+### 1.4 Layer Summary
+
+This DECK operates across three layers:
+
+| Layer | Components | Enforcement |
+|-------|------------|-------------|
+| **Mathematical** | Cantor proof of spatial proximity, temporal chain validation | Trustless — proof either validates or doesn't |
+| **Protocol** | Event structure (kind 3333, A="derezz"), chain invalidation rules, domain policy checks | Consensus — clients enforce rules |
+| **Social** | Bounties, reputation, safe zone agreements, spawn camping norms | Coordination — trust-based, cultural |
+
+**Key principle:** Derezz validity is mathematical — the proof either proves proximity or it doesn't. But safe zones and domain policies are protocol-layer rules that can be changed by governance.
+
 ---
 
 ## 2. Derezz Event Structure
