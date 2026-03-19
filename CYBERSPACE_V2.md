@@ -74,7 +74,6 @@ Key properties:
 - **Every hop costs work:** movement proofs include a temporal Cantor traversal derived from the previous event id.
 - **Movement requires work:** computing mathematical structure (Cantor roots of coordinate pairs), not arbitrary nonce grinding.
 - **Axis symmetry:** equal distances cost equal work regardless of direction.
-- **Cantor Height 34 scale:** the canonical scale for dataspace (plane=0) mapping to physical reality, defining 1 Gibson ≈ 1.16×10⁻¹⁰ meters. This scale applies only to the GPS→dataspace mapping.
 - **Location-based encryption:** keys derive from stable spatial region preimages.
 - **Compact and deterministic:** proofs fit in Nostr events and verify efficiently.
 
