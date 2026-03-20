@@ -532,7 +532,14 @@ Extensions are specified as **Design Extension and Compatibility Kits (DECKs)** 
 ---
 
 ## 7. Location-Based Encryption and Discovery
-This section defines key derivation from region Cantor numbers.
+Secrets may be encrypted with the hash of a Cantor number, binding the decryption of that secret to the public computation of the specific coordinate region's Cantor number at a specific height. This is referred to as a __local secret__ when it is published as a nostr event. A local secret may be decrypted by anyone who does the work to calculate the Cantor number that yields the decryption key. However, the local secret does not (by default) reveal any information about where it is located in the coordinate system. Therefore, the only likely way for it to be discovered is if:
+- the local secret is encrypted by a Cantor root where someone else is likely to travel
+- a user who travels near the local secret is scanning for secrets along their path
+- the user is scanninig in the height range where the local secret is encrypted (typically 0 to 16)
+
+The local secret may include a hint as to where it is located, but that is up to the publisher of it.
+
+This section defines key derivation from region Cantor numbers and how to compose local secrets.
 
 ### 7.1 Key derivation
 Given a spatial region integer `region_n` (the 3D region identifier from §5.5 for some aligned region):
@@ -559,7 +566,9 @@ At the Cantor Height 34 scale (2 meters per height-34 subtree), approximate phys
 | 40 | ~10¹² | 128 m | City block |
 | 50 | ~10¹⁵ | 131 km | City region |
 
-A message placed at height 34 is discoverable within ~2 meters — you must be standing next to it. A message at height 50 is discoverable from anywhere in a city.
+A local secret (message encrypted by the double-sha256 of the Cantor root) at height 34 is discoverable within ~2 meters. A message at height 50 is discoverable from anywhere in a city.
+
+However, it's important to note that discovery requires *equivalent computation* to secret creation, and typical scanning range is between 0 and 16 for sub-second continuous scanning on average consumer hardware. There is a direct relationship between the radius and the difficulty, so secrets may be unattainable if they occupy too large a region and don't provide some hint for users to scan up to their height. As hardware improves, passive scanning will also improve and larger secret regions will be passively attainable.
 
 The discovery radius grows exponentially with height, enabling a natural hierarchy of public, neighborhood, and intimate spatial messages.
 
