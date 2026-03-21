@@ -320,7 +320,7 @@ The **axis Cantor root** for movement `(v1 → v2)` is:
 
 ## 5.4.1 Sequential Decomposition Height Invariant
 
-**Conjecture:** For any two leaf positions `v1` and `v2` with `v1 < v2`:
+**Theorem** (follows from the alignment properties of complete binary trees and the 2-adic valuation)**:** For any two leaf positions `v1` and `v2` with `v1 < v2`:
 
 ```
 find_lca_height(v1, v2) == max(find_lca_height(i, i+1) for i in range(v1, v2))
@@ -330,7 +330,7 @@ The LCA height of the direct pair is always equal to the maximum LCA height amon
 
 **Implication:** Decomposing a movement `(v1 → v2)` into sequential adjacent steps `(v1 → v1+1), (v1+1 → v1+2), ..., (v2-1 → v2)` does not reduce the worst-case computational height. At least one adjacent pair in the sequence will require the same covering subtree height as the direct movement.
 
-**Rationale:** The LCA height `h` of `(v1, v2)` is determined by the highest bit position at which `v1` and `v2` differ. Any sequential walk from `v1` to `v2` must cross the largest power-of-2 boundary between them — the step at which this crossing occurs necessarily produces an XOR with a bit set at the same highest position, yielding an identical height `h`. Conversely, no adjacent pair `(i, i+1)` in the walk can produce a height exceeding `h`, since both `i` and `i+1` remain within the aligned subtree of height `h` rooted at `base(v1, h)`.
+**Proof sketch:** The LCA height `h` of `(v1, v2)` is determined by the highest bit position at which `v1` and `v2` differ. Any sequential walk from `v1` to `v2` must cross the largest power-of-2 boundary between them — the step at which this crossing occurs necessarily produces an XOR with a bit set at the same highest position, yielding an identical height `h`. Conversely, no adjacent pair `(i, i+1)` in the walk can produce a height exceeding `h`, since both `i` and `i+1` remain within the aligned subtree of height `h` rooted at `base(v1, h)`.
 
 **Consequence for axis root computation:** The most expensive `compute_subtree_cantor` evaluation encountered during a step-by-step traversal is exactly as expensive as computing the axis root for the direct movement. Sequential decomposition therefore offers no reduction in the maximum subtree size that must be evaluated, preserving the computational cost bound of 2^h leaves for the dominant step.
 
