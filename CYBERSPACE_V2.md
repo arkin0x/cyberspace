@@ -741,8 +741,6 @@ At u85 position `2^84` (the maximum u85 value, representing the half-axis extent
 - `black_sun_u85 = (x=0, y=0, z=2^84)` in u85 coordinates
 - In physical units: `black_sun = (x_km=0, y_km=0, z_km=+2.25×10^12 km)` (approximately 0.24 light-years from origin)
 
-**Note on coordinate interpretation:** The GPS→dataspace mapping in §4.4 maps GPS coordinates into a GEO-centered region spanning ~48,000 km. The black sun is at the full half-axis extent (~2.25 trillion km), far beyond this region. Do not use the §4.4 `units_per_km` formula for black sun positioning; use the u85 coordinate directly.
-
 The black sun is a directional guidepost for east (`+Z_cs`). Marker shape (point/sphere/circle/disk) is implementation-defined.
 
 The black sun marker MUST be visible in both planes. (The plane bit does not affect XYZ decoding; it only labels the plane.)
@@ -797,17 +795,27 @@ This appendix is explanatory only; it does not add or modify any normative requi
 
 This appendix explains the design rationale for the Cantor Height 34 scale parameter.
 
-### B.1 Primary Design Constraint: Territorial Balance
+### B.1 The Scale of Cyberspace in Reality
 
-The Cantor Height 34 scale is tuned to create a fundamental asymmetry between individual consumers and nation-state actors:
+The prior scale of cyberspace was set to fit the entire coordinate system within 96056km diameter on Earth's center point. This scale was not appropriate for the V2 spec as it made reasonable distances impossibly difficult to compute with consumer-level hardware. It could be argued that the V1 spec was also unreasonably difficult to traverse due to its unreasonably fine scale.
 
-**Consumers** can mine small territorial claims (a room, a building, a small property) with consumer-grade hardware and reasonable time investment.
+The new scale of cyberspace is vastly increased (0.48 light-years along each axis) in order that consumer level hardware can traverse human-centric distances.
 
-**Nation-states** cannot claim regions larger than a modest number of cities, and are computationally prevented from claiming the entire Earth or geosynchronous orbit sphere.
+The new mapping is this: a 3D Cantor axis root at height 34 represents 2 meters cubed in dataspace (ideaspace has no physical mapping).
 
-This balance is the primary focus of the scale parameter. The goal is not to make territory claims impossible for powerful actors, but to ensure that meaningful territorial presence requires proportional investment, and that no single actor can monopolize cyberspace.
+This mapping is the product of rigorous testing to determine what physical scales could be computed on consumer hardware (2026) versus nation-state resources.
 
-**Forward reference:** The territorial claim mechanism itself is specified in DECK-0002 (in development). The scale parameter in this base protocol ensures computational fairness independent of the claim mechanism — no single entity can efficiently compute the Cantor roots for planetary-scale regions, regardless of how claims are ultimately structured. The storage-bound nature of Cantor tree traversal guarantees this property.
+At this scale, consumers can travel reasonable distances and derive useful human-scale location-based secrets with significant effort, or, they can pay moderate amounts of money for cloud compute in order to travel large distances and derive larger location-based secrets with ease.
+
+Additionally, at this scale, it still remains impossible for nation states to derive the Cantor roots for large areas of land. By design, nation-states with unlimited resources should not be able to derive the Cantor root for a whole national territory, continent, Earth, nor geosynchronous orbit for the next ~100 years. The best a nation-state will be able to do is capture a whole city or part of a metropolis. 
+
+The primary bottleneck is the amount of data storage need to hold the Cantor pairs, which rapdily approaches all of the data storage on Earth long before any sizable territory could be calculated. See §B.6.
+
+Aesthetics of the height 34 mapping:
+- 2 meters is a metaphor for the human scale of the universe
+- Cantor Height 34 / 85 bit axis = 34 / 85 = 0.4 = 2/5. A rational and easy to remember relationship, 2:5
+- Cantor Height 33 = 1 meter
+- 1 Gibson at this scale is roughly the size of a hydrogen atom, the first atomic element.
 
 ### B.2 No Difficulty Adjustment
 
@@ -819,21 +827,11 @@ Unlike Bitcoin, Cyberspace has no difficulty adjustment mechanism. The Cantor He
 
 **Mitigation:** Future DECKs may define new "layers" with higher heights for applications requiring stronger territorial guarantees. The base protocol remains stable; difficulty migrates upward through extension mechanisms over decades.
 
-### B.3 The Cantor Height 34 / Axis Ratio
-
-Cantor Height 34 was chosen in part for its mathematical elegance:
-
-```
-Cantor Height 34 / Axis 85 = 0.4 = 2/5
-```
-
-This simple 2:5 ratio between the territorial height and the full axis width is easy to remember and communicate. Combined with the atomic-scale Gibson (≈ hydrogen atom diameter), Cantor Height 34 gives cyberspace a coherent physical metaphor.
-
 ### B.4 Consumer Benchmarks (Cantor Height 34, 2-meter scale)
 
 The following benchmarks assume disk-based computation (streaming intermediate values to storage rather than holding in RAM). Storage is the primary limiting factor in Cantor tree traversal at these heights.
 
-| Claim Volume | Time (Consumer) | Disk Space Required |
+| Root Volume | Time (Consumer) | Disk Space Required |
 |--------------|-----------------|---------------------|
 | 1 m³ | ~1.2 days | 0.5 TB |
 | 5 m³ | ~6.2 days | 2.5 TB |
@@ -849,7 +847,7 @@ The following benchmarks assume disk-based computation (streaming intermediate v
 
 At Cantor Height 34, even a nation-state-level actor with substantial computational resources faces hard limits:
 
-| Claim Type | Approximate Feasibility | Storage Required |
+| Root Size | Approximate Feasibility | Storage Required |
 |------------|------------------------|------------------|
 | Single city (~50 km²) | Feasible with significant investment | ~25 TB |
 | ~28 cities (~1,400 km² total) | Upper bound for sustained effort | ~700 TB |
@@ -861,9 +859,9 @@ At Cantor Height 34, even a nation-state-level actor with substantial computatio
 **Derivation of the ~28 cities limit:**
 
 A "city" is approximated as a 50 km² area (roughly a 7×7 km square). At Cantor Height 34/2m scale:
-- 1 m³ claim requires ~0.5 TB storage
-- 50 km² claim (at ~10m height) requires ~25 TB storage
-- A nation-state with 1 PB storage capacity can claim approximately 40 such regions
+- 1 m³ root requires ~0.5 TB storage
+- 50 km² root (at ~10m height) requires ~25 TB storage
+- A nation-state with 1 PB storage capacity can root approximately 40 such regions
 
 However, practical constraints (I/O bandwidth, computation time, infrastructure costs) reduce this to approximately 28-35 cities as a realistic upper bound for sustained effort.
 
@@ -881,23 +879,9 @@ The limiting factor is **data storage and I/O bandwidth**, not raw compute. A Ca
 Cantor tree computation is memory-bound. At Cantor Height 34, a single subtree contains 2³⁴ ≈ 17 billion leaf nodes. The intermediate values cannot fit in RAM and must be streamed to disk.
 
 **This is intentional.** Storage is the equalizer:
-- Consumer SSDs provide enough I/O for small claims
+- Consumer SSDs provide enough I/O for small roots
 - Nation-states have faster storage, but the exponential growth of tree size limits scaling
 - There is no "ASIC advantage" - the bottleneck is data movement, not hash rate
 
-The storage constraint ensures that territorial claims remain bounded by physical infrastructure, not just financial resources.
+The storage constraint ensures that territorial roots remain bounded by physical infrastructure, not just financial resources.
 
-### B.7 Territorial Cohesion (Emergent Property)
-
-An emergent property of the Cantor tree structure: **computing a contiguous region is dramatically cheaper than computing equivalent volume as discrete parcels.**
-
-For Cantor Height 34 claims, contiguous computation is approximately **22,500× more efficient** than discrete parcel computation for the same total volume.
-
-**Implications:**
-- Land speculation (claiming many small parcels) is computationally expensive
-- Meaningful presence (contiguous activity) is rewarded
-- Governance structures emerge naturally from mathematical efficiency
-
-This property was not explicitly designed - it emerges from the structure of Cantor pairing and subtree sharing.
-
-This appendix is explanatory only; it does not add or modify any normative requirements.
