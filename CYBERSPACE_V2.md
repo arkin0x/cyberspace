@@ -254,7 +254,7 @@ The Cantor pairing function takes two natural numbers and produces exactly one:
 
 `π(a, b) = (a + b) × (a + b + 1) / 2 + b`
 
-This function is a **bijection**: every pair of numbers maps to exactly one output, and every output maps back to exactly one pair. This is not an approximation or a hash. It is a lossless mathematical encoding. Crucially, the function can be reversed. Given any Cantor number, you can unpair it to recover the two numbers that produced it. Applied recursively, this means a single Cantor root encodes an entire tree and that tree can be fully reconstructed from the root alone.
+This function is a **bijection**: every input maps to exactly one output, and every output maps back to exactly one input. No two different pairs of numbers ever produce the same result, and every natural number is the result of some pair. Compare this to a hash function like SHA-256, where many different inputs can produce the same output and you cannot reverse it. The Cantor pairing function loses nothing. It is a perfectly reversible, lossless mathematical encoding. Crucially, the function can be reversed. Given any Cantor number, you can unpair it to recover the two numbers that produced it. Applied recursively, this means a single Cantor root encodes an entire tree and that tree can be fully reconstructed from the root alone.
 
 When applied recursively (pairing leaves into parents, parents into grandparents, all the way up) it builds a binary tree whose root is a single number that uniquely encodes every leaf in the tree.
 
