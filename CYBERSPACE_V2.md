@@ -1,7 +1,7 @@
 # Cyberspace v2 - Per-Axis Cantor Tree Traversal with Location-Based Encryption
 
 **Date:** February 10, 2026
-**Last updated:** March 14, 2026
+**Last updated:** April 2, 2026
 **Status:** Design complete (spec); reference implementation in progress
 
 This document is the canonical specification for Cyberspace v2.
@@ -11,8 +11,8 @@ Normative sections are written using RFC-style language (MUST/SHOULD/MAY). Expla
 This spec defines:
 - The 256-bit coordinate system (X/Y/Z u85 + plane bit)
 - A deterministic, consensus-oriented GPS→dataspace mapping (plane=0)
-- A movement proof system based on **per-axis Cantor pairing trees**
-- A per-hop **temporal work axis** derived from the Nostr movement chain (prevents cached/replayed hop proofs)
+- A movement proof system based on **per-axis Cantor pairing trees** (hop) and **per-axis Merkle hash trees** (sidestep)
+- A per-hop **temporal work axis** derived from the Nostr movement chain (prevents cached/replayed proofs)
 - Location-based encryption and discovery primitives derived from **region** Cantor numbers
 
 Reference implementation: https://github.com/arkin0x/cyberspace-cli
@@ -44,13 +44,16 @@ For design rationale and extended discussion, see `RATIONALE.md` https://github.
   - [5.6 Integer→bytes encoding (normative)](#56-integerbytes-encoding-normative)
   - [5.7 Movement proof hash](#57-movement-proof-hash)
   - [5.8 Performance expectations (non-normative)](#58-performance-expectations-non-normative)
+  - [5.9 Sidestep proofs (Merkle hash tree boundary crossing)](#59-sidestep-proofs-merkle-hash-tree-boundary-crossing)
 - [6. Nostr Protocol Integration (Movement Chain)](#6-nostr-protocol-integration-movement-chain)
   - [6.1 Event kind](#61-event-kind)
   - [6.2 Canonical event id (NIP-01)](#62-canonical-event-id-nip-01)
   - [6.3 Spawn event (first event)](#63-spawn-event-first-event)
   - [6.4 Hop event (subsequent events)](#64-hop-event-subsequent-events)
-  - [6.5 Verification summary](#65-verification-summary)
-  - [6.6 Protocol extensions](#66-protocol-extensions)
+  - [6.5 Sidestep event](#65-sidestep-event)
+  - [6.6 Verification summary](#66-verification-summary)
+  - [6.7 Core action types summary](#67-core-action-types-summary)
+  - [6.8 Protocol extensions](#68-protocol-extensions)
 - [7. Location-Based Encryption and Discovery](#7-location-based-encryption-and-discovery)
   - [7.1 Key derivation](#71-key-derivation)
   - [7.2 Encrypted content event (Nostr)](#72-encrypted-content-event-nostr)
@@ -60,6 +63,7 @@ For design rationale and extended discussion, see `RATIONALE.md` https://github.
 - [10. Visualization conventions (normative)](#10-visualization-conventions-normative)
 - [Appendix A. Philosophical foundation (non-normative)](#appendix-a-philosophical-foundation-non-normative)
 - [Appendix B. Scale Parameter Rationale (non-normative)](#appendix-b-scale-parameter-rationale-non-normative)
+- [Appendix C. Sidestep Rationale (non-normative)](#appendix-c-sidestep-rationale--storage-bottleneck-and-the-merkle-alternative-non-normative)
 
 ---
 
@@ -71,8 +75,9 @@ Keypairs traverse Cyberspace by publishing signed Nostr events that commit to th
 Key properties:
 - **Schnorr keypairs prove traversal** by publishing signed movement events.
 - **Public key = spawn coordinate:** identity maps directly into the coordinate fabric.
+- **Three movement primitives:** spawn (identity placement), hop (Cantor pairing proof), and sidestep (Merkle hash tree proof for storage-infeasible boundaries).
 - **Every hop costs work:** movement proofs include a temporal Cantor traversal derived from the previous event id.
-- **Movement requires work:** computing mathematical structure (Cantor roots of coordinate pairs), not arbitrary nonce grinding.
+- **Movement requires work:** computing mathematical structure (Cantor roots of coordinate pairs, or Merkle trees of coordinate hashes), not arbitrary nonce grinding.
 - **Axis symmetry:** equal distances cost equal work regardless of direction.
 - **Location-based encryption:** keys derive from stable spatial region preimages.
 - **Compact and deterministic:** proofs fit in Nostr events and verify efficiently.
@@ -89,6 +94,9 @@ This v2 design replaces earlier drift/quaternion/velocity approaches (deprecated
 - **Sector:** A cube of `2^30` Gibsons per axis.
 - **Cantor Height 34 scale:** The canonical scale for dataspace (plane=0) mapping to physical reality, where Cantor Height 34 = 2 meters. At this scale, one Gibson ≈ 1.16×10⁻¹⁰ meters (approximately the diameter of a hydrogen atom), and the full axis extent is ~4.5 trillion kilometers (~0.48 light-years). This scale applies only to the GPS→dataspace mapping; ideaspace (plane=1) has no physical mapping.
 - **Temporal axis (u85):** A per-hop work axis derived from chain context (the previous movement event id) used only for hop proof freshness; it does not affect stable spatial region identifiers. The temporal height `K` is in `[0, 16]`.
+- **Sidestep:** A movement action that crosses an LCA boundary via a Merkle hash tree proof instead of a Cantor pairing tree proof. Used when Cantor computation is storage-infeasible. A sidestep crosses exactly 1 Gibson past the boundary.
+- **Merkle root (sidestep):** The root hash of a binary Merkle tree built over SHA256 hashes of every leaf coordinate in an aligned subtree. Domain-separated from other protocol hashes.
+- **SIDESTEP_DOMAIN:** `b"CYBERSPACE_SIDESTEP_V1"` — the domain separation prefix used for all sidestep leaf hashes.
 
 ---
 
@@ -490,6 +498,193 @@ Approximate per-axis expectations from early benchmarks (illustrative only):
 
 Implementations should cap per-hop distance for UX and may rely on multiple hops for long travel.
 
+### 5.9 Sidestep proofs (Merkle hash tree boundary crossing)
+
+A **sidestep** is the third movement primitive. It enables crossing an LCA boundary when Cantor computation is **storage-infeasible** — that is, when the intermediate values of the Cantor pairing tree exceed available memory or disk.
+
+Cantor computation produces intermediate values that grow exponentially in bit size. At LCA height 40, storing intermediates requires ~11 TB; at height 50, ~11 PB; at height 60, ~11 EB (exceeding all storage on earth). The sidestep replaces the Cantor pairing tree with a Merkle hash tree over SHA256 hashes of leaf coordinates. SHA256 operations are fixed-size (256 bits in, 256 bits out), so the sidestep's cost is purely **time**, never storage.
+
+A sidestep is always more expensive in wall-clock time than an equivalent hop (~100× slower at heights where both are feasible). No rational agent would sidestep when they could hop. The sidestep exists only to fill the gap between a machine's Cantor storage capacity and the absolute hash-time ceiling.
+
+#### 5.9.1 Sidestep geometry (normative)
+
+A sidestep crosses exactly **1 Gibson** past an LCA boundary. Given source axis value `v1` and destination axis value `v2`:
+
+- The LCA height `h = find_lca_height(v1, v2)` identifies the boundary.
+- The destination MUST be the coordinate that differs from the source only at bit position `h - 1` (the bit that distinguishes the two children of the LCA), with all lower bits on the destination side set to zero. That is: the destination is the first leaf of the adjacent aligned subtree.
+- Non-crossing axes MUST have `v1 == v2` (a sidestep moves on exactly one axis per action) OR the sidestep crosses multiple axes simultaneously (see §5.9.7).
+
+#### 5.9.2 Per-axis Merkle root (normative)
+
+For each axis where movement occurs (`v1 ≠ v2`):
+
+1. Compute `h = find_lca_height(v1, v2)`.
+2. Compute the aligned subtree base: `base = (v1 >> h) << h`.
+3. The aligned subtree contains `2^h` leaves: `[base, base+1, ..., base + 2^h - 1]`.
+4. For each leaf value `L_i` (where `i` ranges from `0` to `2^h - 1`):
+   - Encode as big-endian minimal bytes: `leaf_bytes = int_to_bytes_be_min(base + i)`
+   - Compute leaf hash: `H_i = SHA256(SIDESTEP_DOMAIN || leaf_bytes)`
+5. Build the Merkle tree bottom-up:
+   - For each pair `(H_{2j}, H_{2j+1})`: `parent = SHA256(H_{2j} || H_{2j+1})`
+   - Continue until a single root `M_axis` remains.
+6. The per-axis Merkle root is `M_axis` (32 bytes).
+
+**Domain separation constant (normative):**
+```
+SIDESTEP_DOMAIN = b"CYBERSPACE_SIDESTEP_V1"
+```
+
+If any aspect of sidestep leaf hash computation changes in a future version (preimage format, domain string, encoding), the domain string MUST be bumped to a new value to avoid cross-version collisions.
+
+**Trivial axes (`h = 0`):** When `v1 == v2` on an axis, the Merkle root is the single leaf hash: `M_axis = SHA256(SIDESTEP_DOMAIN || int_to_bytes_be_min(v1))`. No tree construction is needed.
+
+#### 5.9.3 Streaming computation (normative)
+
+The Merkle tree MUST be computable in streaming fashion without storing all leaf hashes simultaneously:
+
+1. Process leaves in ascending order (deterministic enumeration from `base` to `base + 2^h - 1`).
+2. Maintain a stack of pending intermediate hashes, maximum depth `h`.
+3. Working memory: `h × 32` bytes (under 3 KB even at h85).
+4. Total hash operations: `2^(h+1) - 1` (`2^h` leaf hashes + `2^h - 1` internal hashes).
+
+```python
+def compute_merkle_root_streaming(base: int, height: int) -> bytes:
+    """Compute Merkle root over aligned subtree in O(h) memory."""
+    if height == 0:
+        return sha256(SIDESTEP_DOMAIN + int_to_bytes_be_min(base))
+
+    stack = []  # (hash_value, level)
+    for i in range(1 << height):
+        leaf_bytes = int_to_bytes_be_min(base + i)
+        current = sha256(SIDESTEP_DOMAIN + leaf_bytes)
+        level = 0
+        while stack and stack[-1][1] == level:
+            left = stack.pop()[0]
+            current = sha256(left + current)
+            level += 1
+        stack.append((current, level))
+    return stack[0][0]
+```
+
+(Implementations MAY use any equivalent algorithm; the result MUST match this definition.)
+
+#### 5.9.4 Spatial region integer (region_m)
+
+Combine per-axis Merkle roots into a single spatial proof integer:
+
+```python
+mx = int.from_bytes(M_x, "big")   # X-axis Merkle root as integer
+my = int.from_bytes(M_y, "big")   # Y-axis Merkle root as integer
+mz = int.from_bytes(M_z, "big")   # Z-axis Merkle root as integer
+region_m = cantor_pair(cantor_pair(mx, my), mz)
+```
+
+This mirrors the hop proof's `region_n = π(π(cantor_x, cantor_y), cantor_z)` but uses Merkle roots instead of Cantor roots.
+
+**All three axes always use Merkle roots in a sidestep.** There is no mixed mode — the proof type (Cantor or Merkle) is determined by the action type (`hop` or `sidestep`), not per-axis.
+
+#### 5.9.5 Temporal binding
+
+The temporal binding mechanism for sidesteps is **identical** to hop proofs (§5.5.2):
+
+1. Compute terrain height `K` at the destination coordinate per §5.5.2.1.
+2. Derive temporal seed `t` from `previous_event_id` per §5.5.2.2.
+3. Compute `cantor_t = compute_subtree_cantor(t_base, K)`.
+
+This is always feasible because `K ≤ 16` (maximum 65,536 Cantor pairs, ~100 ms).
+
+**Why temporal binding is required:** Without it, the spatial Merkle root is deterministic and replayable — anyone who computes it once could claim repeated crossings without new work. The temporal axis, seeded by `previous_event_id`, binds each proof to a unique chain position.
+
+**Precomputation note (non-normative):** An entity MAY precompute the spatial Merkle root as preparation for a planned crossing. The temporal component must still be computed fresh at crossing time (since `previous_event_id` is only known after the preceding event is published). This is acceptable — the spatial component is where all the real work is.
+
+#### 5.9.6 Sidestep proof hash (normative)
+
+Combine spatial and temporal components:
+
+```python
+sidestep_n = cantor_pair(region_m, cantor_t)
+```
+
+Apply double SHA256 (consistent with hop proofs, §5.7):
+
+```python
+sidestep_bytes = int_to_bytes_be_min(sidestep_n)
+proof_key = sha256(sidestep_bytes)
+proof_hash = sha256(proof_key)  # 32 bytes
+```
+
+When used in Nostr tags, `proof_hash` MUST be encoded as lowercase hex.
+
+#### 5.9.7 Multi-axis sidestep
+
+A single sidestep event MAY cross boundaries on multiple axes simultaneously (if source and destination differ on more than one axis). The proof is constructed independently per axis:
+
+- Each axis computes its own Merkle root (or trivial single-leaf hash for axes where `h = 0`).
+- The three roots are combined into `region_m` via Cantor pairing (§5.9.4).
+- Temporal binding applies once to the combined proof, not per-axis.
+- The total work is the sum of per-axis work.
+
+#### 5.9.8 Merkle inclusion proof
+
+In addition to the Merkle root, the prover MUST publish a Merkle inclusion proof for the destination leaf on each axis where movement occurs. This enables efficient verification (§6.5).
+
+Each per-axis inclusion proof is a sequence of sibling hashes from leaf to root:
+
+```
+axis_proof = H_sibling_0 || H_sibling_1 || ... || H_sibling_{h-1}
+```
+
+Where `H_sibling_i` is the 32-byte sibling hash at depth `i` (leaf = depth 0). The verifier determines left/right ordering at each level from the destination leaf's position in the subtree (deterministic from the leaf value).
+
+For trivial axes (`h = 0`), the inclusion proof is empty — the Merkle root IS the single leaf hash.
+
+#### 5.9.9 Verification levels
+
+**Level 1: Inclusion path verification — O(h) per axis**
+
+A verifier checks that the claimed destination leaf is consistent with the claimed Merkle root:
+
+1. Validate coordinates: source and destination are valid 256-bit Cyberspace coordinates.
+2. Validate crossing geometry: LCA height matches; destination is exactly 1 Gibson past boundary.
+3. Recompute destination leaf hash: `H_dest = SHA256(SIDESTEP_DOMAIN || int_to_bytes_be_min(v_dest))`
+4. Verify Merkle path from `H_dest` to claimed root `M_axis` using inclusion proof.
+5. Recompute `region_m`, temporal axis, and `proof_hash`. Compare against claimed value.
+
+**Level 2: Full root verification — O(2^h) per axis**
+
+To fully verify that the claimed Merkle root was computed over the correct aligned subtree, a verifier recomputes the entire Merkle tree from scratch. This costs the same order of work as the original proof.
+
+**Security model:** The protocol does NOT require every verifier to perform Level 2 on every proof. Security relies on **deterministic fraud detectability**: the Merkle root for any aligned subtree is deterministic, so a fraudulent root is permanently and objectively detectable by any party willing to do the work. Since sidestep proofs are published on Nostr (public, persistent), fraud can be detected at any time.
+
+In practice, Level 1 verification is expected for routine validation. Level 2 is performed by auditors, competitors, or automated fraud-detection services.
+
+#### 5.9.10 Non-revelation of Cantor root
+
+The sidestep Merkle tree is built over SHA256 hashes of leaf coordinates. The Cantor pairing tree over those same leaves produces a completely different value. Computing the Merkle root reveals **nothing** about the Cantor root.
+
+This preserves the **entering ≠ claiming** separation: sidestepping into a region does not grant domain authority. Domain authority still requires full Cantor root computation.
+
+#### 5.9.11 Performance expectations (non-normative)
+
+Sidestep cost is dominated by SHA256 leaf hashing. At every height where both hop and sidestep are feasible, the hop is approximately 100× faster:
+
+| LCA Height | Hop Time (Cantor) | Sidestep Time (Merkle) | Preferred |
+|---:|---:|---:|---|
+| h20 | ~2 ms | ~210 ms | Hop |
+| h30 | ~1 sec | ~22 sec | Hop |
+| h34 | ~17 sec | ~6 min | Hop (170 GB storage needed) |
+| h40 | ~18 min | ~6 hr | **Sidestep** (Cantor needs 11 TB) |
+| h45 | ~10 hr | ~8 days | **Sidestep** (Cantor needs 340 TB) |
+| h50 | ~2 weeks | ~37 weeks | **Sidestep** (Cantor needs 11 PB) |
+| h55 | ~1 year | ~23 years | **Sidestep** (Cantor needs 340 PB) |
+| h60 | IMPOSSIBLE | ~731 years | Hyperjump needed |
+
+(Merkle times assume SHA256 with SHA-NI at ~10⁸ hashes/sec. Cantor times assume ~10⁹ pairings/sec at low heights; upper heights are storage-limited. Ratio narrows at higher heights because Cantor per-operation cost increases with intermediate value size while SHA256 stays fixed.)
+
+The practical sidestep ceiling is ~h45–50 on consumer hardware (days to months). Cloud compute ($200–$1,000 budget) can extend this by 5–15 heights. Beyond ~h60, even sidesteps take centuries — hyperjumps are required.
+
+This creates natural "continents" in the space: regions reachable by hops + sidesteps (walls ≤ ~h50) and regions separated by impassable boundaries requiring hyperjump transit (walls > ~h50). No arbitrary ceiling is designed; the boundary emerges from thermodynamics.
+
 ---
 
 ## 6. Nostr Protocol Integration (Movement Chain)
@@ -528,7 +723,28 @@ Required:
 - `proof` tag: `["proof", "<proof_hash_hex>"]` (32-byte lowercase hex string)
 - sector tags: `X`, `Y`, `Z`, `S` (per §3)
 
-### 6.5 Verification summary
+### 6.5 Sidestep event
+Required:
+- `A` tag: `["A", "sidestep"]`
+- `e` genesis: `["e", "<spawn_event_id>", "", "genesis"]`
+- `e` previous: `["e", "<previous_event_id>", "", "previous"]`
+- `c` tag: `["c", "<prev_coord_hex>"]` (32-byte lowercase hex string)
+- `C` tag: `["C", "<coord_hex>"]` (32-byte lowercase hex string)
+- `proof` tag: `["proof", "<proof_hash_hex>"]` (32-byte lowercase hex string)
+- `mr` tag: `["mr", "<M_x_hex>:<M_y_hex>:<M_z_hex>"]` — per-axis Merkle roots, colon-separated (each 64 hex chars)
+- `mp` tag: `["mp", "<proof_x_hex>:<proof_y_hex>:<proof_z_hex>"]` — per-axis Merkle inclusion proofs, colon-separated
+- `hx` tag: `["hx", "<lca_height_x>"]` — LCA height on X axis (decimal string)
+- `hy` tag: `["hy", "<lca_height_y>"]` — LCA height on Y axis (decimal string)
+- `hz` tag: `["hz", "<lca_height_z>"]` — LCA height on Z axis (decimal string)
+- sector tags: `X`, `Y`, `Z`, `S` (per §3)
+
+**Merkle inclusion proof encoding:** Each per-axis proof in the `mp` tag is a concatenation of sibling hashes from leaf to root, hex-encoded (`64 × h` hex characters per axis for an axis with LCA height `h`). For trivial axes (`h = 0`), the proof segment is an empty string between colons.
+
+**Height tags:** The `hx`, `hy`, `hz` tags enable verifiers to determine expected proof lengths without re-deriving LCA heights from coordinates.
+
+### 6.6 Verification summary
+
+#### 6.6.1 Hop verification
 To verify a hop:
 1. Parse previous and current coords; decode to `(x1,y1,z1,plane)` and `(x2,y2,z2,plane)`.
 2. Plane changes are valid in v2; verifiers MUST support hops where `plane1 != plane2`.
@@ -539,7 +755,35 @@ To verify a hop:
 7. Compute `proof_hash` per §5.7.
 8. Accept iff it matches the event's `proof` tag.
 
-### 6.6 Protocol extensions
+#### 6.6.2 Sidestep verification (Level 1: inclusion path)
+To verify a sidestep (Level 1 — inclusion path check):
+1. Parse previous and current coords; decode to `(x1,y1,z1,plane)` and `(x2,y2,z2,plane)`.
+2. Validate crossing geometry: for each axis, confirm the destination is exactly 1 Gibson past the LCA boundary (§5.9.1). Verify the `hx`, `hy`, `hz` tags match the computed LCA heights.
+3. Parse per-axis Merkle roots from the `mr` tag.
+4. For each axis where movement occurs:
+   a. Compute the destination leaf hash: `H_dest = SHA256(SIDESTEP_DOMAIN || int_to_bytes_be_min(v_dest))`
+   b. Parse the axis inclusion proof from the `mp` tag.
+   c. Verify the Merkle path from `H_dest` to the claimed root `M_axis`.
+5. Compute `region_m = π(π(mx, my), mz)` from the claimed Merkle roots (§5.9.4).
+6. Derive `K` and `cantor_t` from destination coordinate and `previous_event_id` (§5.9.5, same as hop).
+7. Compute `sidestep_n = π(region_m, cantor_t)` and `proof_hash` per §5.9.6.
+8. Accept iff it matches the event's `proof` tag.
+
+Level 2 (full root) verification is described in §5.9.9.
+
+### 6.7 Core action types summary
+
+The base Cyberspace v2 protocol defines three movement action types:
+
+| `A` tag value | Description | Proof type | Defined in |
+|---|---|---|---|
+| `spawn` | Identity placement at pubkey-derived coordinate | None (identity proof) | §6.3 |
+| `hop` | Movement via Cantor pairing tree | Cantor root (§5.4) | §6.4 |
+| `sidestep` | Boundary crossing via Merkle hash tree | Merkle root (§5.9) | §6.5 |
+
+All three use event `kind = 3333`.
+
+### 6.8 Protocol extensions
 This specification defines the base Cyberspace v2 protocol.
 
 Optional extensions MAY introduce new event kinds, new movement action types (`A` tag values), and/or additional validation rules that are only applied when an extension is in use.
@@ -884,4 +1128,60 @@ Cantor tree computation is memory-bound. At Cantor Height 34, a single subtree c
 - There is no "ASIC advantage" - the bottleneck is data movement, not hash rate
 
 The storage constraint ensures that territorial roots remain bounded by physical infrastructure, not just financial resources.
+
+---
+
+## Appendix C. Sidestep Rationale — Storage Bottleneck and the Merkle Alternative (non-normative)
+
+### C.1 Why the sidestep exists
+
+The sidestep was introduced to solve a specific problem: Cantor pairing trees become **storage-infeasible** well before they become compute-infeasible.
+
+At LCA height `h`, a Cantor pairing tree produces `2^h` leaves, but the **intermediate values** grow exponentially in bit size. The Cantor pairing function `π(a, b) = (a + b)(a + b + 1)/2 + b` produces outputs roughly quadratic in the size of its inputs. After `h` levels of binary pairing, intermediate values can be millions or billions of bits long. These intermediates must be stored during tree construction because the tree is built bottom-up and parent nodes require both children.
+
+| LCA Height | Cantor Intermediate Storage | Merkle Working Memory |
+|---:|---:|---:|
+| h20 | ~11 MB | 640 bytes |
+| h30 | ~11 GB | 960 bytes |
+| h34 | ~170 GB | 1,088 bytes |
+| h40 | ~11 TB | 1,280 bytes |
+| h50 | ~11 PB | 1,600 bytes |
+| h60 | ~11 EB (exceeds all storage on earth) | 1,920 bytes |
+
+The fundamental insight: SHA256 operations are **fixed-size** (256 bits in, 256 bits out) regardless of tree height. A Merkle tree over the same leaf set requires the same number of operations as a Cantor tree but with O(h × 32 bytes) working memory instead of O(2^h × variable) storage.
+
+### C.2 Why not replace Cantor entirely?
+
+The Cantor pairing tree has properties that the Merkle tree does not:
+
+1. **Bijective spatial encoding:** Each Cantor root uniquely identifies a region and is a mathematical function of its coordinates. Merkle roots are SHA256 digests — opaque identifiers with no algebraic relationship to the coordinate space.
+2. **Location-based encryption:** The double-SHA256 key derivation in §7 relies on Cantor roots as the region preimage. Merkle roots cannot substitute here because they don't share the hierarchical algebraic structure that makes Cantor roots meaningful as encryption anchors.
+3. **Decomposition invariance (§5.4.1):** The proof that sequential decomposition doesn't reduce cost is a property of the Cantor pairing, not of Merkle hashing.
+
+The sidestep is therefore a **complement** to the hop, not a replacement. Each serves a different regime:
+
+| Regime | Action | Why |
+|---|---|---|
+| LCA ≤ machine storage capacity | **Hop** (Cantor) | Faster (~100×), produces meaningful spatial root |
+| LCA > storage capacity, ≤ hash-time ceiling | **Sidestep** (Merkle) | Storage-efficient, trades time for memory |
+| LCA > hash-time ceiling | **Hyperjump** (DECK-0001) | Neither Cantor nor Merkle is feasible |
+
+### C.3 The entering ≠ claiming separation
+
+A critical consequence of using Merkle trees instead of Cantor trees for sidesteps: the sidestep proof reveals **nothing** about the Cantor root of the region.
+
+This means sidestepping into a claimed domain does not grant domain authority. The domain owner computed the full Cantor root (a far more expensive operation). A visitor who sidesteps in only proved they hashed the leaf coordinates — a fundamentally different computation.
+
+This separation is desirable: it creates a natural asymmetry between residents (who have invested in Cantor computation) and visitors (who have done the minimum work to cross the boundary).
+
+### C.4 Natural continents
+
+The sidestep ceiling creates emergent geography in the coordinate space. Boundaries at different LCA heights have different crossing costs:
+
+- **h ≤ ~35:** Crossable by hop on consumer hardware (seconds to minutes)
+- **h35–50:** Crossable by sidestep on consumer hardware (hours to months)
+- **h50–58:** Crossable by sidestep with cloud compute investment ($200–$1,000)
+- **h60+:** Not crossable by any direct computation — requires hyperjump transit
+
+This layered accessibility means that "continents" (regions bounded by high LCA walls) emerge naturally from the mathematics, not from protocol parameters. Different agents experience different continental boundaries based on their hardware and patience — there is no single universal map of "passable" and "impassable" walls.
 
