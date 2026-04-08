@@ -1,6 +1,7 @@
 # DECK-0001 (Draft v2): Plane-Based Hyperjump Access with Shadow Derivation
 
 **DECK:** 0001  
+**Version:** 2.1 (corrected for sector-wide planes)  
 **Title:** Plane-Based Hyperjump Access with Shadow Derivation  
 **Status:** Proposal (supersedes 2026-02-28 draft)  
 **Created:** 2026-04-08  
@@ -15,7 +16,7 @@ This revision extends DECK-0001 to solve the **bootstrap problem**: how can a ne
 
 The original design required avatars to hop to the **exact** hyperjump coordinate (a 3D point), which at typical distances (LCA h≈84) requires ~10¹¹ years of computation—categorically infeasible.
 
-This proposal introduces two mechanisms:
+This proposal introduces two mechanisms (with sector-wide entry planes):
 
 1. **Plane-based entry**: Each hyperjump defines three 2D entry planes (one per axis). Avatars can enter by reaching *any* point on one plane, reducing the sidestep from 3D (h≈84) to 1D (h≈57-63).
 
@@ -33,8 +34,9 @@ The Cantor pairing tree's **decomposition invariant** (Property 5) proves that *
 
 **However**, plane-based entry does NOT violate this theorem. It changes the *target*: instead of reaching a 3D point (Hx, Hy, Hz), you reach a 2D plane where *one* coordinate matches. The LCA is computed on a **single axis**, not all three.
 
-- **3D point entry:** LCA = max(LCA_x, LCA_y, LCA_z) ≈ 84
-- **1D plane entry:** LCA = min(LCA_x, LCA_y, LCA_z) ≈ 57-63 (best of 3 axes)
+- **3D point entry:** LCA = max(LCA_x, LCA_y, LCA_z) ≈ 84 (full 85-bit Gibson space)
+- **1D sector-plane entry:** LCA ≈ log₂(2⁵⁵ / HJs) ≈ 29-35 (55-bit sector space)
+- **With 60x shadow:** LCA ≈ log₂(2⁵⁵ / 56M) ≈ 29 (consumer: ~3 hours, cloud: ~$0.05)
 
 This is not a cheat—it's exploiting the geometric fact that a plane has lower dimensionality than a point in 3D space. The theorem still holds *within* each dimension; we're simply choosing the cheapest dimension.
 
@@ -220,29 +222,27 @@ This ensures the commitment is **single-use** and **non-transferable**. Validato
 - Current blocks (2026): ~940,000
 - Shadow multiplier: 60x (N ≤ 60 practical limit)
 - Effective plane HJs: blocks × 3 planes × 60 shadows = **169M** by 2026
-- Average 1D LCA gap formula: `LCA ≈ log₂(total_space / effective_HJs)`
-  - 85-bit axis space = 2⁸⁵ sectors
-  - With 169M plane HJs: LCA ≈ log₂(2⁸⁵ / 1.69×10⁸) ≈ **log₂(2.2×10¹⁷) ≈ 57.5**
+- Average 1D LCA gap formula for sector matching: `LCA ≈ log₂(2⁵⁵ / effective_HJs)`
+  - **55-bit sector space** = 2⁵⁵ sectors per axis (plane is 1 sector = 2³⁰ Gibsons thick)
+  - With 169M plane HJs: LCA ≈ log₂(2⁵⁵ / 1.69×10⁸) ≈ **log₂(2.1×10⁸) ≈ 27.7**
 
 ### Spawn-to-HJ LCA Projection (1D, best-of-3 axes)
 
 | Year | Blocks | Effective Plane HJs | Avg LCA | Consumer Time | Cloud Cost ($0.15/hr GPU) |
 |------|--------|---------------------|---------|---------------|---------------------------|
-| 2026 | 940K | 169M | 57.5 | ~13 years | ~$800 |
-| 2031 | 1.2M | 216M | 56.8 | ~8 years | ~$500 |
-| 2036 | 1.5M | 270M | 56.2 | ~5 years | ~$350 |
-| 2046 | 2.0M | 360M | 55.3 | ~2.5 years | ~$180 |
-| 2056 | 2.5M | 450M | 54.6 | ~1.3 years | ~$100 |
+| 2026 | 940K | 169M | 27.7 | ~3 hours | ~$0.05 |
+| 2031 | 1.2M | 216M | 27.4 | ~2 hours | ~$0.03 |
+| 2036 | 1.5M | 270M | 27.2 | ~1.5 hours | ~$0.02 |
+| 2046 | 2.0M | 360M | 26.9 | ~1 hour | ~$0.01 |
+| 2056 | 2.5M | 450M | 26.7 | ~45 minutes | < $0.01 |
 
-**With Moore's Law (compute doubles every 2.5 years):**
+**With Moore's Law (compute doubles every 2.5 years) — already trivial in 2026:**
 
-| Year | Compute Multiplier | Effective LCA Reduction | Time to First HJ |
-|------|-------------------|-------------------------|------------------|
-| 2026 | 1× | baseline | 13 years / $800 |
-| 2031 | 4× | -0.5 | 3.3 years / $200 |
-| 2036 | 16× | -1.0 | 0.8 years / $50 |
-| 2041 | 64× | -1.5 | **2.5 months / $15** |
-| 2046 | 256× | -2.0 | **3 weeks / $4** |
+| Year | Compute Multiplier | Time to First HJ | Cloud Cost |
+|------|-------------------|------------------|------------|
+| 2026 | 1× | ~3 hours | ~$0.05 |
+| 2031 | 4× | ~45 minutes | ~$0.01 |
+| 2036 | 16× | ~10 minutes | <$0.01 |
 
 ### Total Cyberspace Coverage
 
