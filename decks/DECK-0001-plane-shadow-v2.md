@@ -22,9 +22,7 @@ This proposal introduces two mechanisms (with sector-wide entry planes):
 
 2. **Shadow hyperjump derivation**: Each base hyperjump coordinate can be iteratively hashed to derive "shadow" hyperjumps at exponentially increasing entry cost. This multiplies effective HJ density by ~60x, further reducing entry LCA to h≈50-57.
 
-**Result:** With ~940K Bitcoin block HJs and sector-wide planes, entry cost drops from ~$50,000 to **~$0.09 cloud** (**~15 minutes consumer**). Adding 60x shadow derivation makes it essentially instant (~14 sec, ~$0.001).
-
-The key innovation is **sector-wide planes**, not shadow HJs. Shadows are a 61× optimization layer, but blocks-only already solves the bootstrap problem.
+**Result:** With ~940K Bitcoin block HJs + 60x shadow derivation = **56M effective plane HJs**, the entry cost drops from ~$50,000 cloud compute to **~$800**, enabling consumer access within a 1-year budget.
 
 ---
 
@@ -245,27 +243,6 @@ This ensures the commitment is **single-use** and **non-transferable**. Validato
 | 2026 | 1× | ~3 hours | ~$0.05 |
 | 2031 | 4× | ~45 minutes | ~$0.01 |
 | 2036 | 16× | ~10 minutes | <$0.01 |
-
-
-### Critical Finding: Sector Planes Alone Are Sufficient
-
-**Shadow HJs are an optimization, NOT a requirement.**
-
-| Configuration | Median LCA | Consumer Time | Cloud Cost |
-|--------------|------------|---------------|------------|
-| **Blocks only** (no shadows) | h=33 | ~15 minutes | ~$0.09 |
-| **+ 60x shadows** | h=27 | ~14 seconds | ~$0.001 |
-| **Improvement** | 6 bits easier | 61× faster | 61× cheaper |
-
-This means:
-- **Sector-wide planes solve the bootstrap problem** (15 min is very feasible)
-- **Shadow HJs provide "instant" access** (seconds, pennies) as an optimization layer
-- The design is robust — it works with or without shadow derivation
-
-In practice:
-- 2026 consumers: blocks-only (15 min) is acceptable for first HJ access
-- Power users: use +60x shadows for instant entry
-- Future: as Bitcoin accumulates more blocks, even blocks-only becomes faster
 
 ### Total Cyberspace Coverage
 
