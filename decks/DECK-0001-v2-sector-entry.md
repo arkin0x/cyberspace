@@ -68,7 +68,38 @@ For a hyperjump at coordinate **H = (Hx, Hy, Hz, Hp)**, three entry planes are d
 
 Each plane is **1 sector thick** (2³⁰ Gibsons). The plane bit **Hp** is inherited from the hyperjump coordinate (plane 0 = dataspace, plane 1 = ideaspace).
 
-Sector extraction: `sector(coord) = coord >> 30` (high 55 bits)
+#### Sector Extraction (Normative)
+
+Coordinates are **interleaved** per `CYBERSPACE_V2.md` §2.2 (bit pattern: `XYZXYZXYZ...P`). To extract a sector:
+
+1. **De-interleave** the coord256 to extract the 85-bit axis value (X, Y, or Z)
+2. **Extract high 55 bits**: `sector_value = axis_value >> 30`
+
+Reference implementation:
+```python
+def extract_axis(coord256: int, axis: str) -> int:
+    """De-interleave coord256 to get 85-bit axis value."""
+    if axis == 'X':
+        shift = 3  # X bits at positions 3, 6, 9, ...
+    elif axis == 'Y':
+        shift = 2  # Y bits at positions 2, 5, 8, ...
+    elif axis == 'Z':
+        shift = 1  # Z bits at positions 1, 4, 7, ...
+    
+    result = 0
+    for i in range(85):
+        bit_pos = shift + (3 * i)
+        if coord256 & (1 << bit_pos):
+            result |= (1 << i)
+    return result
+
+def sector(coord256: int, axis: str) -> int:
+    """Extract 55-bit sector value from an axis."""
+    axis_value = extract_axis(coord256, axis)
+    return axis_value >> 30  # High 55 bits of 85-bit axis
+```
+
+**Complexity:** De-interleaving is O(85) bit operations — negligible compared to sidestep computation.
 
 #### Entry Validation
 
