@@ -345,3 +345,19 @@ Median LCA ≈ 33 bits
 
 This matches our empirical calculations.
 
+
+---
+
+## PR Description (for reference)
+
+**Title:** DECK-0001 v2: Sector-based hyperjump entry planes
+
+**Summary:**
+Each HJ has 3 sector-wide entry planes (1 sector thick). Match ONE axis sector (55 bits) instead of exact Gibson coordinate (85 bits). Entry cost: h≈84 → h≈33, enabling consumer access in ~15 minutes ($0.09 cloud).
+
+**Open Questions:**
+1. Commitment height formula? (popcount vs alternatives)
+2. Welcome HJ for spawns?
+3. Route discovery method?
+4. Bitcoin reorg handling?
+
