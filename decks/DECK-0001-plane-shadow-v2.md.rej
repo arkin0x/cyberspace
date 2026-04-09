@@ -1,0 +1,32 @@
+--- DECK-0001-plane-shadow-v2.md
++++ DECK-0001-plane-shadow-v2.md
+@@ -61,12 +63,14 @@ This aligns with Cyberspace's ethos: **infrastructure for everyone, owned by no
+ 
+ ### Entry Validation
+ 
+-To enter a hyperjump via a plane, an avatar MUST prove they have reached a coordinate on that plane. This is done via a standard **sidestep movement event** (`A=sidestep`) with:
++To enter a hyperjump via a plane, an avatar MUST prove they have reached a coordinate whose **sector** matches the hyperjump's sector on the chosen axis.
++
++This is done via a standard **sidestep movement event** (`A=sidestep`) with:
+ 
+ - Destination coordinate **D** where `sector(chosen_axis) = sector(HJ_axis)`
+ - Standard sidestep Merkle proof for all three axes
+ 
+-Example (entering via Y-plane):
++Example (entering via Y-plane, matching sector not exact coordinate):
+ ```json
+ {
+   "kind": 3333,
+@@ -166,10 +170,10 @@ Validators reject any hyperjump event where the commitment doesn't match the spe
+ 
+ ### Coverage and Accessibility Analysis
+ 
+ ### Assumptions
+ 
+-- Bitcoin block production: 52,560 blocks/year (~10 min average)
++- Bitcoin block production: 52,560 blocks/year (~10 min average)
+ - Current blocks (2026): ~940,000
+ - Shadow multiplier: 60x (N ≤ 60 practical limit)
+-- Effective plane HJs: blocks × 3 planes × 60 shadows = **169M** by 2026
++- Effective plane HJs: blocks × 3 sector-planes × 60 shadows = **169M** by 2026
+ - Average 1D LCA gap formula: `LCA ≈ log₂(total_space / effective_HJs)`
