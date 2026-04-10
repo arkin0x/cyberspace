@@ -33,7 +33,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
 
 ## Table of Contents
 
-- [1. Overview: Why This Exists](#1-overview--why-this-exists)
+- [1. Overview: Why This Exists](#1-overview-why-this-exists)
   - [1.1 The problem](#11-the-problem)
   - [1.2 The approach](#12-the-approach)
   - [1.3 Key properties](#13-key-properties)
@@ -45,7 +45,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
 - [3. Identity Is Location](#3-identity-is-location)
   - [3.1 Your key is your coordinate](#31-your-key-is-your-coordinate)
   - [3.2 The spawn event](#32-the-spawn-event)
-- [4. Movement: Cantor Pairing Trees](#4-movement--cantor-pairing-trees)
+- [4. Movement: Cantor Pairing Trees](#4-movement-cantor-pairing-trees)
   - [4.1 Why structured work, not hash grinding](#41-why-structured-work-not-hash-grinding)
   - [4.2 The Cantor pairing function](#42-the-cantor-pairing-function)
   - [4.3 Per-axis trees](#43-per-axis-trees)
@@ -55,7 +55,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [4.7 Combining into 3D (region_n)](#47-combining-into-3d-region_n)
   - [4.8 Why you can't cheat distance (decomposition invariance)](#48-why-you-cant-cheat-distance-decomposition-invariance)
   - [4.9 Five properties unique to this design (non-normative)](#49-five-properties-unique-to-this-design-non-normative)
-- [5. The Temporal Axis: Every Hop Costs Fresh Work](#5-the-temporal-axis--every-hop-costs-fresh-work)
+- [5. The Temporal Axis: Every Hop Costs Fresh Work](#5-the-temporal-axis-every-hop-costs-fresh-work)
   - [5.1 The problem: cacheable spatial roots](#51-the-problem-cacheable-spatial-roots)
   - [5.2 Terrain-derived temporal height K (normative)](#52-terrain-derived-temporal-height-k-normative)
   - [5.3 Temporal axis seed and root (normative)](#53-temporal-axis-seed-and-root-normative)
@@ -85,7 +85,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [7.3 Discovery radius (non-normative)](#73-discovery-radius-non-normative)
   - [7.4 Discovery scanning (recommended)](#74-discovery-scanning-recommended)
   - [7.5 Caching optimization (non-normative)](#75-caching-optimization-non-normative)
-- [8. Nostr Integration: The Movement Chain](#8-nostr-integration--the-movement-chain)
+- [8. Nostr Integration: The Movement Chain](#8-nostr-integration-the-movement-chain)
   - [8.1 Event kind](#81-event-kind)
   - [8.2 Canonical event id (NIP-01)](#82-canonical-event-id-nip-01)
   - [8.3 Spawn event (first event)](#83-spawn-event-first-event)
@@ -93,9 +93,11 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [8.5 Sidestep event](#85-sidestep-event)
   - [8.6 Encrypted content event](#86-encrypted-content-event)
   - [8.7 Verification summary](#87-verification-summary)
+    - [8.7.1 Hop verification](#871-hop-verification)
+    - [8.7.2 Sidestep verification (Level 1: inclusion path)](#872-sidestep-verification-level-1-inclusion-path)
   - [8.8 Core action types summary](#88-core-action-types-summary)
   - [8.9 Protocol extensions (DECKs)](#89-protocol-extensions-decks)
-- [9. Mapping to Physical Reality: GPS and Dataspace](#9-mapping-to-physical-reality--gps-and-dataspace)
+- [9. Mapping to Physical Reality: GPS and Dataspace](#9-mapping-to-physical-reality-gps-and-dataspace)
   - [9.1 Why a physical mapping exists](#91-why-a-physical-mapping-exists)
   - [9.2 Dataspace cube size (Cantor Height 34 scale)](#92-dataspace-cube-size-cantor-height-34-scale)
   - [9.3 Scale rationale (non-normative)](#93-scale-rationale-non-normative)
@@ -114,7 +116,15 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [11.3 Camera convention ("facing the black sun")](#113-camera-convention-facing-the-black-sun)
   - [11.4 Engine adaptation](#114-engine-adaptation)
 - [12. Limitations and Threat Model (non-normative)](#12-limitations-and-threat-model-non-normative)
+  - [12.1 What the protocol provides](#121-what-the-protocol-provides)
+  - [12.2 What the protocol does NOT provide](#122-what-the-protocol-does-not-provide)
+  - [12.3 Acknowledged attack vectors](#123-acknowledged-attack-vectors)
 - [13. Structured Proof-of-Work (non-normative)](#13-structured-proof-of-work-non-normative)
+  - [13.1 A new class of proof-of-work](#131-a-new-class-of-proof-of-work)
+  - [13.2 Storage-bound, not compute-bound](#132-storage-bound-not-compute-bound)
+  - [13.3 Fixed difficulty](#133-fixed-difficulty)
+  - [13.4 Where the energy goes](#134-where-the-energy-goes)
+  - [13.5 The sidestep as traditional proof-of-work](#135-the-sidestep-as-traditional-proof-of-work)
 - [14. Reference Implementation](#14-reference-implementation)
 
 ---
@@ -372,10 +382,10 @@ Each axis computes its root independently:
 Then they are combined using nested Cantor pairing:
 - `region_n = π(π(cantor_x, cantor_y), cantor_z)`
 
-The resulting `region_n` is the **stable spatial region integer** — a single number that uniquely identifies the 3D region implied by the movement. This number is used for location-based encryption and discovery (§7).
+The resulting `region_n` is the **stable spatial region integer**, a single number that uniquely identifies the 3D region implied by the movement. This number is used for location-based encryption and discovery (§7).
 
 **Region uniqueness (non-normative):**
-Each aligned subtree root corresponds to a unique region (Cantor pairing is a bijection). Many coordinate pairs inside the same aligned subtree share the same root — this is intentional. The Cantor root is a **region identifier**, not a unique coordinate-pair identifier.
+Each aligned subtree root corresponds to a unique region (Cantor pairing is a bijection). Many coordinate pairs inside the same aligned subtree share the same root; this is intentional. The Cantor root is a **region identifier**, not a unique coordinate-pair identifier.
 
 Example (1D):
 ```
@@ -384,7 +394,7 @@ LCA(1, 2) => subtree [0..3] => root = 228
 LCA(0, 2) => subtree [0..3] => root = 228
 ```
 
-This means all these movements "see" the same region — which is exactly what enables location-based discovery.
+This means all these movements "see" the same region, which is exactly what enables location-based discovery.
 
 ### 4.8 Why you can't cheat distance (decomposition invariance)
 
@@ -400,11 +410,11 @@ find_lca_height(v1, v2) == max(find_lca_height(i, i+1) for i in range(v1, v2))
 
 The LCA height of the direct pair is always equal to the maximum LCA height among all unit-step pairs in the sequence.
 
-**What this means in plain terms:** If you decompose a movement `(v1 → v2)` into sequential adjacent steps, at least one step in the sequence will require the same covering subtree height as the direct movement. You can't avoid the expensive boundary crossing — any path from v1 to v2 must cross it.
+**What this means in plain terms:** If you decompose a movement `(v1 → v2)` into sequential adjacent steps, at least one step in the sequence will require the same covering subtree height as the direct movement. You can't avoid the expensive boundary crossing, because any path from v1 to v2 must cross it.
 
-**Proof sketch:** The LCA height `h` of `(v1, v2)` is determined by the highest bit position where `v1` and `v2` differ. Any sequential walk from `v1` to `v2` must cross the largest power-of-2 boundary between them — the step at which this crossing occurs produces an XOR with a bit set at the same highest position, yielding identical height `h`.
+**Proof sketch:** The LCA height `h` of `(v1, v2)` is determined by the highest bit position where `v1` and `v2` differ. Any sequential walk from `v1` to `v2` must cross the largest power-of-2 boundary between them. The step at which this crossing occurs produces an XOR with a bit set at the same highest position, yielding identical height `h`.
 
-In simple terms: the computational cost of movement is the same whether you take small steps or large steps. You can't avoid, decompose, or sidestep the computational burden of power-of-two boundaries along each axis. This is the digital equivalent of the triangle inequality — you can't cheat geometry.
+In simple terms: the computational cost of movement is the same whether you take small steps or large steps. You can't avoid, decompose, or sidestep the computational burden of power-of-two boundaries along each axis. This is the digital equivalent of the triangle inequality: you can't cheat geometry.
 
 ### 4.9 Five properties unique to this design (non-normative)
 
@@ -414,7 +424,7 @@ The Cantor pairing tree produces five properties that, to our knowledge, no othe
 
 **2. Hierarchical spatial encryption.** Because each region has a unique Cantor root, that root can serve as a cryptographic key. Content encrypted with a region's root can only be decrypted by someone who computes that root (see §7). This is the digital equivalent of writing a message in chalk on a sidewalk: you can only read it by being there.
 
-**3. Work equivalence.** In most digital systems, observing is free and doing costs. In Cyberspace, observation and action cost the same. To discover what's in a region, you must compute the region's root — the same work a traveler would do to cross it. There is no free surveillance.
+**3. Work equivalence.** In most digital systems, observing is free and doing costs. In Cyberspace, observation and action cost the same. To discover what's in a region, you must compute the region's root, the same work a traveler would do to cross it. There is no free surveillance.
 
 **4. Deterministic regions.** Any two people computing the Cantor root of the same aligned subtree will get the same answer. Regions don't need to be assigned, registered, or coordinated. They exist as mathematical facts. Spatial consensus happens automatically, without communication.
 
@@ -428,11 +438,11 @@ These five properties together create something unprecedented: digital space wit
 
 ### 5.1 The problem: cacheable spatial roots
 
-The per-axis Cantor roots described in §4 are **region identifiers** — the same region always produces the same root. This is desirable for discovery and encryption (you want the "address" of a region to be stable). But it creates a movement loophole: once a mover has computed the Cantor root for a region, they could reuse that cached result to generate arbitrarily many hop events through the same region at near-zero marginal cost.
+The per-axis Cantor roots described in §4 are **region identifiers**: the same region always produces the same root. This is desirable for discovery and encryption (you want the "address" of a region to be stable). But it creates a movement loophole: once a mover has computed the Cantor root for a region, they could reuse that cached result to generate arbitrarily many hop events through the same region at near-zero marginal cost.
 
-They would only be able to return to places they had already been — but instant teleportation over previously-trod terrain breaks the proof-of-work continuity of Cyberspace as a thermodynamic system.
+They would only be able to return to places they had already been, but instant teleportation over previously-trod terrain breaks the proof-of-work continuity of Cyberspace as a thermodynamic system.
 
-The solution: extend movement proofs into a fourth dimension — a **temporal work axis** derived from the Nostr movement chain. Each hop includes an additional Cantor tree computation whose inputs are derived from chain context. Because each Nostr event id commits to the previous event (including its proof), the temporal seed for hop N is not known until hop N-1 is complete. The work cannot be precomputed or amortized.
+The solution: extend movement proofs into a fourth dimension, a **temporal work axis** derived from the Nostr movement chain. Each hop includes an additional Cantor tree computation whose inputs are derived from chain context. Because each Nostr event id commits to the previous event (including its proof), the temporal seed for hop N is not known until hop N-1 is complete. The work cannot be precomputed or amortized.
 
 **What this does NOT change:** Stable spatial region identifiers (used for location-based encryption and discovery in §7) remain a pure function of coordinates, independent of time or identity. The temporal axis exists only to make advancing the movement chain cost work.
 
@@ -440,7 +450,7 @@ The solution: extend movement proofs into a fourth dimension — a **temporal wo
 
 ### 5.2 Terrain-derived temporal height K (normative)
 
-The temporal axis has a height `K` that varies by destination — a deterministic "terrain" function that makes some regions of Cyberspace intrinsically easier or harder to traverse. Think of it as hills and valleys in the computational landscape.
+The temporal axis has a height `K` that varies by destination: a deterministic "terrain" function that makes some regions of Cyberspace intrinsically easier or harder to traverse. Think of it as hills and valleys in the computational landscape.
 
 **Constants:**
 - `TERRAIN_DOMAIN_V2 = b"CYBERSPACE_TERRAIN_K_V2"` (ASCII bytes)
@@ -467,7 +477,7 @@ If any part of this terrain function changes (constants, hashing preimage format
 3. Define `K` as the popcount of `word16` (the number of 1 bits in its 16-bit binary representation).
    - Therefore `K` MUST be an integer in `[0, 16]`.
 
-**Why this works (non-normative):** Because `K` is the popcount of 16 pseudorandom bits, it follows approximately a binomial distribution with mean 8. The worst-case temporal computation is `2^16 = 65,536` Cantor pairs (~100 ms on modern hardware). The aligned cells at different scales introduce spatial correlation — nearby coordinates tend to share the same K value, creating "hills" in the temporal landscape.
+**Why this works (non-normative):** Because `K` is the popcount of 16 pseudorandom bits, it follows approximately a binomial distribution with mean 8. The worst-case temporal computation is `2^16 = 65,536` Cantor pairs (~100 ms on modern hardware). The aligned cells at different scales introduce spatial correlation, so nearby coordinates tend to share the same K value, creating "hills" in the temporal landscape.
 
 ### 5.3 Temporal axis seed and root (normative)
 
@@ -481,7 +491,7 @@ For hop events, let `previous_event_id` be the 32-byte NIP-01 event id reference
    - `t_base = (t >> K) << K`
    - `cantor_t = compute_subtree_cantor(t_base, K)`
 
-**Key insight (non-normative):** The temporal axis is derived from chain context and destination coordinates, not wall-clock time. There is no continuous "alive" cost — you pay this work only when you publish a hop.
+**Key insight (non-normative):** The temporal axis is derived from chain context and destination coordinates, not wall-clock time. There is no continuous "alive" cost; you pay this work only when you publish a hop.
 
 ### 5.4 The 4D hop preimage
 
@@ -576,11 +586,11 @@ Implementations should cap per-hop distance for UX and may rely on multiple hops
 
 ## 6. The Wall and the Sidestep
 
-The Cantor pairing tree gives Cyberspace its spatial fabric — but it also reveals a fascinating limitation that turns out to be a feature.
+The Cantor pairing tree gives Cyberspace its spatial fabric, but it also reveals a fascinating limitation that turns out to be a feature.
 
 ### 6.1 The storage bottleneck (non-normative)
 
-As the Cantor tree gets taller (meaning, as you cross larger regions of space), the intermediate values computed during the pairing process grow exponentially in **bit size**. The Cantor pairing function `π(a, b) = (a + b)(a + b + 1)/2 + b` produces outputs roughly quadratic in the size of its inputs. After `h` levels of pairing, intermediate values can be millions or billions of bits long — and they must be stored during construction because parent nodes require both children.
+As the Cantor tree gets taller (meaning, as you cross larger regions of space), the intermediate values computed during the pairing process grow exponentially in **bit size**. The Cantor pairing function `π(a, b) = (a + b)(a + b + 1)/2 + b` produces outputs roughly quadratic in the size of its inputs. After `h` levels of pairing, intermediate values can be millions or billions of bits long, and they must be stored during construction because parent nodes require both children.
 
 | LCA Height | Cantor Intermediate Storage | Merkle Working Memory |
 |---:|---:|---:|
@@ -593,20 +603,20 @@ As the Cantor tree gets taller (meaning, as you cross larger regions of space), 
 
 This is not a bug. This is the digital equivalent of a mountain range.
 
-The storage bottleneck creates natural barriers in Cyberspace — walls that cannot be crossed by direct Cantor computation regardless of how much time you have, because you simply can't store the intermediate values. These walls aren't designed by anyone. They emerge from the mathematics.
+The storage bottleneck creates natural barriers in Cyberspace: walls that cannot be crossed by direct Cantor computation regardless of how much time you have, because you simply can't store the intermediate values. These walls aren't designed by anyone. They emerge from the mathematics.
 
 But walls are only interesting if there's a way to get past them — expensively, deliberately, with real effort.
 
 ### 6.2 How the sidestep works
 
-A **sidestep** replaces the Cantor pairing tree with a **Merkle hash tree** over SHA-256 hashes of leaf coordinates. The critical insight: SHA-256 operations are **fixed-size** (256 bits in, 256 bits out) regardless of tree height. No storage bottleneck. The cost of a sidestep is purely **time** — how long it takes to hash every leaf coordinate.
+A **sidestep** replaces the Cantor pairing tree with a **Merkle hash tree** over SHA-256 hashes of leaf coordinates. The critical insight: SHA-256 operations are **fixed-size** (256 bits in, 256 bits out) regardless of tree height. No storage bottleneck. The cost of a sidestep is purely **time**: how long it takes to hash every leaf coordinate.
 
 A sidestep is always more expensive in wall-clock time than an equivalent hop (~100× slower at heights where both are feasible). No rational agent would sidestep when they could hop. The sidestep exists only to fill the gap between a machine's Cantor storage capacity and the absolute hash-time ceiling.
 
 **Core terms:**
 - **Sidestep:** A movement action that crosses an LCA boundary via a Merkle hash tree proof instead of a Cantor pairing tree proof. Crosses exactly 1 Gibson past the boundary.
 - **Merkle root (sidestep):** The root hash of a binary Merkle tree built over SHA-256 hashes of every leaf coordinate in an aligned subtree. Domain-separated from other protocol hashes.
-- **SIDESTEP_DOMAIN:** `b"CYBERSPACE_SIDESTEP_V1"` — the domain separation prefix used for all sidestep leaf hashes.
+- **SIDESTEP_DOMAIN:** `b"CYBERSPACE_SIDESTEP_V1"`, the domain separation prefix used for all sidestep leaf hashes.
 
 ### 6.3 Sidestep geometry (normative)
 
@@ -683,7 +693,7 @@ region_m = cantor_pair(cantor_pair(mx, my), mz)
 
 This mirrors the hop proof's `region_n = π(π(cantor_x, cantor_y), cantor_z)` but uses Merkle roots instead of Cantor roots.
 
-**All three axes always use Merkle roots in a sidestep.** There is no mixed mode — the proof type (Cantor or Merkle) is determined by the action type (`hop` or `sidestep`), not per-axis.
+**All three axes always use Merkle roots in a sidestep.** There is no mixed mode; the proof type (Cantor or Merkle) is determined by the action type (`hop` or `sidestep`), not per-axis.
 
 ### 6.7 Temporal binding
 
@@ -695,9 +705,9 @@ The temporal binding mechanism for sidesteps is **identical** to hop proofs (§5
 
 This is always feasible because `K ≤ 16` (maximum 65,536 Cantor pairs, ~100 ms).
 
-**Why temporal binding is required:** Without it, the spatial Merkle root is deterministic and replayable — anyone who computes it once could claim repeated crossings without new work. The temporal axis, seeded by `previous_event_id`, binds each proof to a unique chain position.
+**Why temporal binding is required:** Without it, the spatial Merkle root is deterministic and replayable. Anyone who computes it once could claim repeated crossings without new work. The temporal axis, seeded by `previous_event_id`, binds each proof to a unique chain position.
 
-**Precomputation note (non-normative):** An entity MAY precompute the spatial Merkle root as preparation for a planned crossing. The temporal component must still be computed fresh at crossing time (since `previous_event_id` is only known after the preceding event is published). This is acceptable — the spatial component is where all the real work is.
+**Precomputation note (non-normative):** An entity MAY precompute the spatial Merkle root as preparation for a planned crossing. The temporal component must still be computed fresh at crossing time (since `previous_event_id` is only known after the preceding event is published). This is acceptable because the spatial component is where all the real work is.
 
 ### 6.8 Sidestep proof hash (normative)
 
@@ -738,13 +748,13 @@ axis_proof = H_sibling_0 || H_sibling_1 || ... || H_sibling_{h-1}
 
 Where `H_sibling_i` is the 32-byte sibling hash at depth `i` (leaf = depth 0). The verifier determines left/right ordering at each level from the destination leaf's position in the subtree (deterministic from the leaf value).
 
-For trivial axes (`h = 0`), the inclusion proof is empty — the Merkle root IS the single leaf hash.
+For trivial axes (`h = 0`), the inclusion proof is empty: the Merkle root IS the single leaf hash.
 
 ### 6.11 Verification levels
 
 Sidestep verification has two levels, reflecting a trade-off between verification cost and trust assumptions:
 
-**Level 1: Inclusion path verification — O(h) per axis**
+**Level 1: Inclusion path verification, O(h) per axis**
 
 A verifier checks that the claimed destination leaf is consistent with the claimed Merkle root:
 
@@ -754,7 +764,7 @@ A verifier checks that the claimed destination leaf is consistent with the claim
 4. Verify Merkle path from `H_dest` to claimed root `M_axis` using inclusion proof.
 5. Recompute `region_m`, temporal axis, and `proof_hash`. Compare against claimed value.
 
-**Level 2: Full root verification — O(2^h) per axis**
+**Level 2: Full root verification, O(2^h) per axis**
 
 To fully verify that the claimed Merkle root was computed over the correct aligned subtree, a verifier recomputes the entire Merkle tree from scratch. This costs the same order of work as the original proof.
 
