@@ -1,4 +1,4 @@
-# Cyberspace v2 — Protocol Specification
+# Cyberspace v2: Protocol Specification
 
 **Date:** February 10, 2026
 **Last updated:** April 2, 2026
@@ -10,9 +10,9 @@
 
 This is the canonical specification for the Cyberspace Protocol, version 2.
 
-Cyberspace is a 256-bit coordinate system navigated by cryptographic keypairs using structured mathematical computation. It is not a game, not a platform, and not a virtual reality experience. It is a **protocol** — a specification for how to encode, prove, and verify spatial relationships using irreversible computational work.
+Cyberspace is a 256-bit coordinate system navigated by cryptographic keypairs using structured mathematical computation. It is not a game, not a platform, and not a virtual reality experience. It is a **protocol**: a specification for how to encode, prove, and verify spatial relationships using irreversible computational work.
 
-The goal is simple: impose **locality** — the fundamental property of physical space — on a digital system. In physical space, crossing distance costs energy, and no one is exempt from that cost. Cyberspace does the same thing, but with computation instead of physics. Movement requires mathematical work. The work scales with distance. There are no shortcuts, no teleportation, no administrator who can move you or delete you. The math is the same for everyone.
+The goal is simple: impose **locality**, the fundamental property of physical space, on a digital system. In physical space, crossing distance costs energy, and no one is exempt from that cost. Cyberspace does the same thing, but with computation instead of physics. Movement requires mathematical work. The work scales with distance. There are no shortcuts, no teleportation, no administrator who can move you or delete you. The math is the same for everyone.
 
 This document specifies:
 - A 256-bit coordinate system with three spatial axes and a plane bit
@@ -33,7 +33,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
 
 ## Table of Contents
 
-- [1. Overview — Why This Exists](#1-overview--why-this-exists)
+- [1. Overview: Why This Exists](#1-overview--why-this-exists)
   - [1.1 The problem](#11-the-problem)
   - [1.2 The approach](#12-the-approach)
   - [1.3 Key properties](#13-key-properties)
@@ -45,7 +45,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
 - [3. Identity Is Location](#3-identity-is-location)
   - [3.1 Your key is your coordinate](#31-your-key-is-your-coordinate)
   - [3.2 The spawn event](#32-the-spawn-event)
-- [4. Movement — Cantor Pairing Trees](#4-movement--cantor-pairing-trees)
+- [4. Movement: Cantor Pairing Trees](#4-movement--cantor-pairing-trees)
   - [4.1 Why structured work, not hash grinding](#41-why-structured-work-not-hash-grinding)
   - [4.2 The Cantor pairing function](#42-the-cantor-pairing-function)
   - [4.3 Per-axis trees](#43-per-axis-trees)
@@ -55,7 +55,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [4.7 Combining into 3D (region_n)](#47-combining-into-3d-region_n)
   - [4.8 Why you can't cheat distance (decomposition invariance)](#48-why-you-cant-cheat-distance-decomposition-invariance)
   - [4.9 Five properties unique to this design (non-normative)](#49-five-properties-unique-to-this-design-non-normative)
-- [5. The Temporal Axis — Every Hop Costs Fresh Work](#5-the-temporal-axis--every-hop-costs-fresh-work)
+- [5. The Temporal Axis: Every Hop Costs Fresh Work](#5-the-temporal-axis--every-hop-costs-fresh-work)
   - [5.1 The problem: cacheable spatial roots](#51-the-problem-cacheable-spatial-roots)
   - [5.2 Terrain-derived temporal height K (normative)](#52-terrain-derived-temporal-height-k-normative)
   - [5.3 Temporal axis seed and root (normative)](#53-temporal-axis-seed-and-root-normative)
@@ -85,7 +85,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [7.3 Discovery radius (non-normative)](#73-discovery-radius-non-normative)
   - [7.4 Discovery scanning (recommended)](#74-discovery-scanning-recommended)
   - [7.5 Caching optimization (non-normative)](#75-caching-optimization-non-normative)
-- [8. Nostr Integration — The Movement Chain](#8-nostr-integration--the-movement-chain)
+- [8. Nostr Integration: The Movement Chain](#8-nostr-integration--the-movement-chain)
   - [8.1 Event kind](#81-event-kind)
   - [8.2 Canonical event id (NIP-01)](#82-canonical-event-id-nip-01)
   - [8.3 Spawn event (first event)](#83-spawn-event-first-event)
@@ -95,7 +95,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [8.7 Verification summary](#87-verification-summary)
   - [8.8 Core action types summary](#88-core-action-types-summary)
   - [8.9 Protocol extensions (DECKs)](#89-protocol-extensions-decks)
-- [9. Mapping to Physical Reality — GPS and Dataspace](#9-mapping-to-physical-reality--gps-and-dataspace)
+- [9. Mapping to Physical Reality: GPS and Dataspace](#9-mapping-to-physical-reality--gps-and-dataspace)
   - [9.1 Why a physical mapping exists](#91-why-a-physical-mapping-exists)
   - [9.2 Dataspace cube size (Cantor Height 34 scale)](#92-dataspace-cube-size-cantor-height-34-scale)
   - [9.3 Scale rationale (non-normative)](#93-scale-rationale-non-normative)
@@ -114,31 +114,32 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [11.3 Camera convention ("facing the black sun")](#113-camera-convention-facing-the-black-sun)
   - [11.4 Engine adaptation](#114-engine-adaptation)
 - [12. Limitations and Threat Model (non-normative)](#12-limitations-and-threat-model-non-normative)
-- [13. Reference Implementation](#13-reference-implementation)
+- [13. Structured Proof-of-Work (non-normative)](#13-structured-proof-of-work-non-normative)
+- [14. Reference Implementation](#14-reference-implementation)
 
 ---
 
-## 1. Overview — Why This Exists
+## 1. Overview: Why This Exists
 
 ### 1.1 The problem
 
-Every digital system that calls itself a "space" — virtual worlds, social platforms, VR environments, cloud services — shares a fundamental limitation: they are owned. Every one of them has an administrator who can move you, delete you, change the rules, or shut the whole thing down. Your "presence" in any of these systems exists only because someone permits it.
+Every digital system that calls itself a "space" (virtual worlds, social platforms, VR environments, cloud services) shares a fundamental limitation: they are owned. Every one of them has an administrator who can move you, delete you, change the rules, or shut the whole thing down. Your "presence" in any of these systems exists only because someone permits it.
 
 This isn't a flaw in specific products. It's a consequence of how they're built. They are **permissioned** systems. And permissioned systems are not space. They are services.
 
-Physical space works differently. It imposes costs that nobody can cheat — not governments, not corporations, not anyone. The cost is thermodynamic: paid in energy, irreversibly, to the universe itself. This is the deepest kind of fairness: not fairness by agreement (which can be broken), but fairness by physics (which cannot).
+Physical space works differently. It imposes costs that nobody can cheat. Not governments, not corporations, not anyone. The cost is thermodynamic: paid in energy, irreversibly, to the universe itself. This is the deepest kind of fairness: not fairness by agreement (which can be broken), but fairness by physics (which cannot).
 
 ### 1.2 The approach
 
-Cyberspace imposes the same constraint — irreversible computational work — on a 256-bit coordinate system. Movement requires computing mathematical structures called Cantor pairing trees, whose cost scales with the distance crossed. The work is not arbitrary hash grinding; it is the computation of the actual mathematical fabric between coordinates. The proof of your movement IS the mathematics of the region you crossed.
+Cyberspace imposes the same constraint, irreversible computational work, on a 256-bit coordinate system. Movement requires computing mathematical structures called Cantor pairing trees, whose cost scales with the distance crossed. The work is not arbitrary hash grinding; it is the computation of the actual mathematical fabric between coordinates. The proof of your movement *is* the mathematics of the region you crossed.
 
 Keypairs traverse Cyberspace by publishing signed Nostr events that commit to their movement history. Each event includes a proof derived from the Cantor tree computation, creating an auditable chain of verified movement.
 
 ### 1.3 Key properties
 
 - **Public key = spawn coordinate:** your cryptographic identity maps directly into the coordinate fabric. Where you start is determined by who you are.
-- **Three movement primitives:** spawn (identity placement), hop (Cantor pairing proof), and sidestep (Merkle hash tree proof for storage-infeasible boundaries).
-- **Every hop costs work:** movement proofs include a temporal Cantor traversal derived from the previous event id, preventing cached or replayed proofs.
+- **Three movement primitives:** spawn (identity placement), hop (Cantor pairing tree proof), and sidestep (Merkle hash tree proof for storage-infeasible boundaries).
+- **Hash chain continuity:** each movement event references the previous one by its cryptographic hash, forming a linear chain of signed proofs. This chain is the keypair's verifiable movement history and ensures every hop costs fresh work that cannot be cached or replayed.
 - **Axis symmetry:** equal distances cost equal work regardless of direction.
 - **Location-based encryption:** keys derive from stable spatial region preimages, enabling content that can only be decrypted by those who do the work to be "there."
 - **Compact and deterministic:** proofs fit in Nostr events and verify efficiently.
@@ -151,7 +152,7 @@ This v2 design replaces earlier drift/quaternion/velocity approaches (deprecated
 
 ### 2.1 A 256-bit universe
 
-Cyberspace exists in a 256-bit integer space. This number was not chosen arbitrarily — 256-bit numbers are the standard unit of work in cryptographic systems like SHA-256, Nostr, and Bitcoin. Working in 256 bits means the coordinate system is natively compatible with the tools that power the rest of the protocol.
+Cyberspace exists in a 256-bit integer space. This number was not chosen arbitrarily. 256-bit numbers are the standard unit of work in cryptographic systems like SHA-256, Nostr, and Bitcoin. Working in 256 bits means the coordinate system is natively compatible with the tools that power the rest of the protocol.
 
 Those 256 bits are divided into:
 - **Three spatial axes:** X, Y, and Z, each **85 bits** wide (an unsigned integer from 0 to 2^85 - 1)
@@ -163,7 +164,7 @@ That accounts for 85 × 3 + 1 = 256 bits exactly.
 - **Coordinate (coord256):** A 256-bit integer encoding X/Y/Z plus the plane bit.
 - **Axes (u85):** X, Y, Z are 85-bit unsigned integers.
 - **Plane:** 1 bit. `0 = dataspace` (physical mapping), `1 = ideaspace` (non-physical).
-- **Gibson (G):** The fundamental unit — one axis step in u85 space.
+- **Gibson (G):** The fundamental unit of distance, equal to one axis step in u85 space.
 
 ### 2.2 Bit layout (normative)
 
@@ -177,7 +178,7 @@ Specifically:
 
 The result looks like: `XYZXYZXYZ...P`
 
-The interleaving has an important consequence: coordinates that are spatially close share similar bit prefixes. This is what makes the Cantor pairing tree work efficiently — nearby coordinates fall into the same aligned subtrees.
+The interleaving has an important consequence: coordinates that are spatially close share similar bit prefixes. This is what makes the Cantor pairing tree work efficiently, because nearby coordinates fall into the same aligned subtrees.
 
 ### 2.3 Reference pseudocode
 
@@ -209,7 +210,7 @@ The plane bit creates two overlapping coordinate spaces:
 - **Dataspace (plane = 0):** Maps to physical reality via GPS coordinates (see §9). The same X/Y/Z values in dataspace correspond to specific physical locations on and around Earth.
 - **Ideaspace (plane = 1):** Has no physical mapping. The same X/Y/Z values are purely abstract positions. Ideaspace is where things exist that have no physical counterpart.
 
-Both planes share the same mathematical properties — movement costs, encryption, and discovery all work identically. They differ only in whether the coordinates have a physical-world interpretation.
+Both planes share the same mathematical properties. Movement costs, encryption, and discovery all work identically. They differ only in whether the coordinates have a physical-world interpretation.
 
 ---
 
@@ -217,11 +218,11 @@ Both planes share the same mathematical properties — movement costs, encryptio
 
 ### 3.1 Your key is your coordinate
 
-One of the most distinctive properties of Cyberspace is that your cryptographic identity determines your spawn location. Your Nostr public key — the 256-bit number that IS your identity — is also your coordinate. When you first enter Cyberspace, you appear at the point defined by your key.
+One of the most distinctive properties of Cyberspace is that your cryptographic identity determines your spawn location. Your Nostr public key, the 256-bit number that *is* your identity, is also your coordinate. When you first enter Cyberspace, you appear at the point defined by your key.
 
 You don't choose where to spawn. Your identity chooses for you.
 
-This means identity and location are the same thing. Not metaphorically — mathematically. Your key encodes a specific X, Y, Z position. If someone knows your public key, they know where you spawn. If you want a different spawn point, you need a different identity.
+This means identity and location are the same thing. Not metaphorically, but mathematically. Your key encodes a specific X, Y, Z position. If someone knows your public key, they know where you spawn. If you want a different spawn point, you need a different identity.
 
 **Implication:** In every other digital system, identity and location are separate concerns managed by separate authorities. In Cyberspace, the mapping from identity to space is deterministic, public, and permanent. No authority assigns locations. No registry tracks who is where. The math does it.
 
@@ -231,17 +232,19 @@ A spawn event is a signed Nostr event that declares "I exist at this coordinate.
 
 After spawning, a keypair can begin moving through Cyberspace by publishing hop or sidestep events that extend the chain.
 
+A keypair may also **respawn** at any time by simply publishing a new spawn event. Because the new spawn event has a newer timestamp, it invalidates all prior movement events in the old chain. The keypair returns to its original spawn coordinate and starts fresh. Prior movement history remains on relays but is no longer part of the active chain.
+
 ---
 
-## 4. Movement — Cantor Pairing Trees
+## 4. Movement: Cantor Pairing Trees
 
-This is the heart of the protocol. Everything else — encryption, discovery, territory, transit — builds on top of the movement system. So it's worth understanding not just *how* it works, but *why* it works this way.
+This is the heart of the protocol. Everything else (encryption, discovery, territory, transit) builds on top of the movement system. So it's worth understanding not just *how* it works, but *why* it works this way.
 
 ### 4.1 Why structured work, not hash grinding
 
-Standard proof-of-work (like Bitcoin mining) works by grinding random numbers until you find a hash that meets a difficulty target. The work is real — you burn energy — but the work is **arbitrary**. You're searching a hash space, not traversing a space. Finding nonce #4,821,337 doesn't tell you anything about where you are or where you went.
+Standard proof-of-work (like Bitcoin mining) works by grinding random numbers until you find a hash that meets a difficulty target. The work is real. You burn energy. But the work is **arbitrary**. You're searching a hash space, not traversing a space. Finding nonce #4,821,337 doesn't tell you anything about where you are or where you went.
 
-Cyberspace needs work that is **structural** — work where the computation itself encodes spatial information. The proof of movement should not be "I burned energy" but "I computed the mathematical fabric between these two coordinates."
+Cyberspace needs work that is **structural**: work where the computation itself encodes spatial information. The proof of movement should not be "I burned energy" but "I computed the mathematical fabric between these two coordinates."
 
 Cantor pairing trees achieve this. They create actual mathematical structure: each root uniquely represents a specific region of coordinate space. Computing it means building a tree from leaves to root. The number you produce is mathematically meaningful, not arbitrary. This is the difference between "digging a hole" and "following a path." Both cost energy, but only one has spatial semantics.
 
@@ -251,9 +254,9 @@ The Cantor pairing function takes two natural numbers and produces exactly one:
 
 `π(a, b) = (a + b) × (a + b + 1) / 2 + b`
 
-This function is a **bijection** — every pair of numbers maps to exactly one output, and every output maps back to exactly one pair. This is not an approximation or a hash; it is a lossless mathematical encoding.
+This function is a **bijection**: every input maps to exactly one output, and every output maps back to exactly one input. No two different pairs of numbers ever produce the same result, and every natural number is the result of some pair. Compare this to a hash function like SHA-256, where many different inputs can produce the same output and you cannot reverse it. The Cantor pairing function loses nothing. It is a perfectly reversible, lossless mathematical encoding. Crucially, the function can be reversed. Given any Cantor number, you can unpair it to recover the two numbers that produced it. Applied recursively, this means a single Cantor root encodes an entire tree and that tree can be fully reconstructed from the root alone.
 
-When applied recursively — pairing leaves into parents, parents into grandparents, all the way up — it builds a binary tree whose root is a single number that uniquely encodes every leaf in the tree.
+When applied recursively (pairing leaves into parents, parents into grandparents, all the way up) it builds a binary tree whose root is a single number that uniquely encodes every leaf in the tree.
 
 ### 4.3 Per-axis trees
 
@@ -272,7 +275,7 @@ The v2 solution: each axis (X, Y, Z) gets its own independent 85-bit Cantor tree
 
 ### 4.4 Lowest common ancestor (LCA) height
 
-When you move from one position to another along a single axis, the **distance** of that movement is captured by the Lowest Common Ancestor (LCA) height — the level in a binary tree where the paths from the two positions first diverge.
+When you move from one position to another along a single axis, the cost of that movement depends on which **binary boundary** you cross. The Lowest Common Ancestor (LCA) height captures this: it is the level in a binary tree where the paths from the two positions first diverge.
 
 For a 1D axis movement between `v1` and `v2`:
 
@@ -283,13 +286,30 @@ def find_lca_height(v1: int, v2: int) -> int:
     return (v1 ^ v2).bit_length()
 ```
 
-The LCA height is a measure of how "far apart" two values are in the binary structure of the coordinate space. A small move (like 1 Gibson) produces LCA height 1. A move across 1,024 Gibsons produces LCA height ~11. A move across billions of Gibsons produces LCA height ~30+.
+The LCA height determines how much work is required: the Cantor tree you need to compute has `2^h` leaves, where `h` is the LCA height.
 
-This height determines how much work is required: the Cantor tree you need to compute has `2^h` leaves, where `h` is the LCA height.
+An important subtlety: the LCA height is not simply a measure of distance in Gibsons. It depends on *which boundary you cross*, not just how far you move. A move of 1,024 Gibsons within a single aligned region might have the same LCA height as a move of 1 Gibson that happens to cross a large power-of-two boundary.
+
+Consider two single-Gibson moves that have very different costs:
+
+- Moving from position 4 to position 5: `4 ^ 5 = 1`, bit_length = 1, so `h = 1`. This is cheap. You are staying within a small aligned block.
+- Moving from position 7 to position 8: `7 ^ 8 = 15`, bit_length = 4, so `h = 4`. This costs 16 times as many Cantor pairs, even though you only moved 1 Gibson. The reason is that position 8 sits on the boundary of a height-4 aligned subtree, and crossing that boundary requires computing the entire subtree.
+
+At the extreme: moving from position `2^34 - 1` to position `2^34` is a single-Gibson step, but the LCA height is 34. That one step requires computing a Cantor tree with over 17 billion leaves, because you are crossing the largest binary boundary in that region of the axis.
+
+This is not a quirk. It is the core mechanism by which Cyberspace imposes locality. Boundaries in the binary structure of the coordinate space act as natural walls, and crossing them costs real work regardless of how small the step is. This property is formalized as decomposition invariance in §4.8.
 
 ### 4.5 Aligned subtrees
 
-An **aligned subtree** of height `h` is a binary subtree whose base is a multiple of `2^h`. Think of it as a region of coordinate space that lines up with the natural binary boundaries.
+Before defining aligned subtrees formally, it is worth understanding why they exist and what problem they solve.
+
+When two coordinates are paired into a Cantor tree, the tree must cover a specific range of leaf values. If we allowed the tree to start at any arbitrary position, then two different movements through the same neighborhood could produce different trees with different roots. There would be no stable "regions." Every pair of coordinates would generate its own unique tree, and no two people would agree on what a region looks like or what its identifier is.
+
+Alignment solves this by snapping tree boundaries to power-of-two positions in the coordinate space. An aligned subtree of height `h` always starts at a position that is a multiple of `2^h` and always covers exactly `2^h` consecutive leaves. This means the boundaries are fixed and universal. Everyone agrees on where the blocks are, because the blocks are determined by the math, not by anyone's specific movement. Two people standing in the same neighborhood will compute the same Cantor root without ever communicating, because they are both computing the root of the same aligned subtree.
+
+This property is what makes location-based encryption work (§7). It is what makes spatial consensus happen automatically. Without alignment, there is no consensus about what a region is, and the entire discovery and encryption system falls apart.
+
+**Formal definition:** An **aligned subtree** of height `h` is a binary subtree whose base is a multiple of `2^h`. Think of it like a base address: the subtree "owns" a block of `2^h` leaves, and the base tells you where that block starts.
 
 For any value `v` and height `h`:
 - `base = (v >> h) << h` (the aligned base)
@@ -308,6 +328,7 @@ For movement between `v1` and `v2`, the **covering aligned subtree** is the smal
 - `h = find_lca_height(4, 7) = 2` (because `4 ^ 7 = 3`, bit_length = 2)
 - `base = (4 >> 2) << 2 = 4`
 - Aligned subtree covers leaves `[4, 5, 6, 7]` (4 leaves = `2^2`)
+
 
 The alignment property is what makes region-based discovery work: coordinates within the same subtree share the same root. Two people standing in the same region will compute the same Cantor number without ever communicating. The math determines the answer, and the math is the same for everyone.
 
@@ -403,7 +424,7 @@ These five properties together create something unprecedented: digital space wit
 
 ---
 
-## 5. The Temporal Axis — Every Hop Costs Fresh Work
+## 5. The Temporal Axis: Every Hop Costs Fresh Work
 
 ### 5.1 The problem: cacheable spatial roots
 
@@ -756,9 +777,9 @@ The combination of Cantor hops and Merkle sidesteps creates emergent geography i
 - **h ≤ ~35:** Crossable by hop on consumer hardware (seconds to minutes)
 - **h35–50:** Crossable by sidestep on consumer hardware (hours to months)
 - **h50–58:** Crossable by sidestep with cloud compute investment ($200–$1,000)
-- **h60+:** Not crossable by any direct computation — requires hyperjump transit
+- **h60+:** Not crossable by any direct computation. Requires hyperjump transit
 
-Nobody designed these continents. They emerge from the interaction between the Cantor pairing function, SHA-256, and the physical limits of computation and storage. Different agents experience different continental boundaries depending on their hardware and patience — there is no single universal map of "passable" and "impassable" walls.
+Nobody designed these continents. They emerge from the interaction between the Cantor pairing function, SHA-256, and the physical limits of computation and storage. Different agents experience different continental boundaries depending on their hardware and patience. There is no single universal map of "passable" and "impassable" walls.
 
 No arbitrary ceiling is designed. The boundary emerges from thermodynamics.
 
@@ -779,11 +800,9 @@ Sidestep cost is dominated by SHA-256 leaf hashing. At every height where both h
 
 (Merkle times assume SHA-256 with SHA-NI at ~10⁸ hashes/sec. Cantor times assume ~10⁹ pairings/sec at low heights; upper heights are storage-limited. Ratio narrows at higher heights because Cantor per-operation cost increases with intermediate value size while SHA-256 stays fixed.)
 
-The practical sidestep ceiling is ~h45–50 on consumer hardware (days to months). Cloud compute ($200–$1,000 budget) can extend this by 5–15 heights. Beyond ~h60, even sidesteps take centuries — hyperjumps are required.
+The practical sidestep ceiling is ~h45–50 on consumer hardware (days to months). Cloud compute ($200–$1,000 budget) can extend this by 5–15 heights. Beyond ~h60, even sidesteps take centuries. Hyperjumps are required.
 
 ---
-
-
 
 ## 7. Location-Based Encryption and Discovery
 
