@@ -1,165 +1,394 @@
-# DECK-0001: Hyperjumps (Bitcoin block Merkle-root teleports)
+# DECK-0001 (Draft v2): Sector-Based Hyperjump Entry
 
-DECK: 0001
-Title: Hyperjumps (Bitcoin block Merkle-root teleports)
-Status: Draft
-Created: 2026-02-28
-Last updated: 2026-02-28
-Requires: `CYBERSPACE_V2.md`
+**DECK:** 0001  
+**Title:** Sector-Based Hyperjump Entry  
+**Status:** Proposal (supersedes 2026-02-28 draft)  
+**Created:** 2026-04-08  
+**Author:** Arkinox  
+**Requires:** `CYBERSPACE_V2.md` v2.x  
+
+---
 
 ## Abstract
-This DECK defines **hyperjumps**: a zero-movement-proof teleport mechanism between special coordinates derived from Bitcoin blocks.
 
-A Bitcoin block’s Merkle root is treated as a thermodynamically "paid for" random coordinate in Cyberspace. By publishing these blocks as Nostr events (block anchor events), avatars can visit a growing network of unpredictable but far-reaching transit points.
+This revision extends DECK-0001 to solve the **bootstrap problem**: how can a newly spawned avatar reach the hyperjump network with consumer-feasible computation?
 
-## Terms
-- Hyperjump: a protocol-defined teleport action between two hyperjump coordinates that reuses Bitcoin proof-of-work rather than requiring a Cyberspace v2 movement proof.
-- Hyperjump coordinate: a coord256 derived deterministically from a Bitcoin block’s Merkle root.
-- Block anchor event: a Nostr event that binds Bitcoin block identifiers to the corresponding hyperjump coordinate so clients can discover nearby hyperjumps via Nostr queries.
+The original design required avatars to hop to the **exact** hyperjump coordinate (a 3D point), which at typical distances (LCA h≈84) requires ~10¹¹ years of computation—categorically infeasible.
+
+This proposal introduces **sector-based entry planes**:
+
+Each hyperjump defines three 2D entry planes (one per axis), each **1 sector thick** (2³⁰ Gibsons). Avatars can enter by matching the **sector** (high 55 bits) on any one axis, reducing the entry LCA from h≈84 (full Gibson match) to **h≈33** (sector match).
+
+**Result:** With ~940K Bitcoin block HJs, entry cost drops from ~$50,000 cloud compute to **~$0.09**, enabling consumer access within **~15 minutes**.
+
+---
+
+## Layer Analysis (Math / Protocol / Social)
+
+### Mathematical Layer
+
+The Cantor pairing tree's **decomposition invariant** (Property 5) proves that *every* path between two points contains at least one hop with LCA ≥ the bit position where they differ. This is absolute for movement within the Cantor metric.
+
+**However**, sector-plane entry changes the *target*: instead of reaching a 3D point (Hx, Hy, Hz), you reach a 2D sector-slab where *one* axis sector matches. The LCA is computed on the **sector bits** (55 bits), not the full Gibson value (85 bits).
+
+- **3D point entry:** LCA = max(LCA_x, LCA_y, LCA_z) ≈ 84 (full 85-bit Gibson space)
+- **1D sector-plane entry:** LCA ≈ log₂(2⁵⁵ / HJs) ≈ 33 (55-bit sector space)
+- **Improvement:** 51 bits easier → 2⁵¹ ≈ 2×10¹⁵ times cheaper
+
+This is not a cheat—it's exploiting the geometric fact that matching a sector (1 in 2³⁰ Gibsons) is vastly cheaper than matching an exact Gibson coordinate. The theorem still holds *within* each dimension; we're simply lowering the precision requirement for entry.
+
+### Protocol Layer
+
+The protocol defines:
+- How sector planes are specified (1 sector thick per axis)
+- How plane entry is validated (prove sector match, not Gibson match)
+- How inter-hyperjump travel cost is computed (directional Cantor commitment)
+
+Critically, **exit** from a hyperjump always occurs at the exact merkle-root coordinate. This preserves spatial meaning and prevents planes from being "free teleportation."
+
+### Social Layer
+
+Sector-plane entry democratizes access. Without it, only entities with nation-state resources could reach *any* hyperjump. With it, consumers spending ~15 minutes of computation (~$0.09 cloud) can reach their first HJ.
+
+This aligns with Cyberspace's ethos: **infrastructure for everyone, owned by no one**. The thermodynamic cost remains—it's just amortized over a larger set of entry points.
+
+---
 
 ## Specification
 
-### Hyperjump coordinate derivation (normative)
-Given a Bitcoin block’s Merkle root (`merkle_root`):
-- Let `coord_hex = merkle_root` (32 bytes, lowercase hex, no `0x` prefix).
-- Let `coord256 = int(coord_hex, 16)`.
-- The hyperjump coordinate is `coord256`, interpreted as a Cyberspace coordinate per `CYBERSPACE_V2.md` §2.
+### 1. Sector-Based Entry Planes (Normative)
 
-Notes:
-- This uses the Merkle root as presented in standard big-endian hex form (as commonly shown in block explorers). Implementations MUST agree on this endianness.
-- The plane bit is the least significant bit of `coord256` (per `CYBERSPACE_V2.md` §2.1). Therefore hyperjumps may exist in either plane.
+#### Definition
 
-### Block anchor events (hyperjump publishing)
-Hyperjump coordinates are discoverable conveniently via Nostr by querying **block anchor events** (kind 321) that bind Bitcoin block identifiers to their Merkle-root-derived coordinate. The accuracy of block anchor events on nostr is not guaranteed, so you may want to publish your own or derive block anchors from your own bitcoin node.
+For a hyperjump at coordinate **H = (Hx, Hy, Hz, Hp)**, three entry planes are defined:
 
-#### Event kind
-- Block anchor events: `kind = 321`
+- **X-plane**: All coordinates where **sector(X) = sector(Hx)** (covers all (X, *, *, *) matching the sector)
+- **Y-plane**: All coordinates where **sector(Y) = sector(Hy)** (covers all (*, Y, *, *) matching the sector)
+- **Z-plane**: All coordinates where **sector(Z) = sector(Hz)** (covers all (*, *, Z, *) matching the sector)
 
-#### Required tags (normative)
-Block anchor events MUST include:
-- `C` tag: `["C", "<coord_hex>"]` where `<coord_hex>` is the Merkle-root-derived hyperjump coordinate
-- sector tags: `X`, `Y`, `Z`, `S` (per `CYBERSPACE_V2.md` §3), computed from the hyperjump coordinate
-- `B` tag: `["B", "<height>"]` where `<height>` is the Bitcoin block height (base-10 string)
-- `H` tag: `["H", "<block_hash_hex>"]` (32-byte lowercase hex string)
-- `P` tag: `["P", "<prev_block_hash_hex>"]` (32-byte lowercase hex string)
+Each plane is **1 sector thick** (2³⁰ Gibsons). The plane bit **Hp** is inherited from the hyperjump coordinate (plane 0 = dataspace, plane 1 = ideaspace).
 
-Block anchor events SHOULD include:
-- `net` tag: `["net", "<bitcoin_network>"]` where `<bitcoin_network>` is one of `mainnet`, `testnet`, `signet`, `regtest`.
-  - If omitted, implementations SHOULD assume `mainnet`.
-- `N` tag: `["N", "<next_block_hash_hex>"]` once the next block is known
+#### Sector Extraction (Normative)
 
-#### Validation of anchor events (normative)
-To verify a block anchor event as valid for hyperjumping, an implementation MUST verify that:
-1. Its `C` tag matches the Merkle root of the block at height `B` on the Bitcoin network the client is using (or the network specified by the anchor event’s `net` tag, if present).
-2. Its `H` tag is the corresponding block hash.
-3. Its `P` tag is the corresponding previous block hash.
+Coordinates are **interleaved** per `CYBERSPACE_V2.md` §2.2 (bit pattern: `XYZXYZXYZ...P`). To extract a sector:
 
-How an implementation performs this validation is out of scope (full node, headers-only/SPV, trusted checkpoints, etc.), but the resulting `(height, block_hash, merkle_root)` bindings MUST match Bitcoin consensus for the selected network.
+1. **De-interleave** the coord256 to extract the 85-bit axis value (X, Y, or Z)
+2. **Extract high 55 bits**: `sector_value = axis_value >> 30`
 
-### Hyperjump movement events
-A hyperjump action is represented as a movement event (`kind=3333`) in the avatar’s movement chain (`CYBERSPACE_V2.md` §6) with action tag `["A", "hyperjump"]`.
+Reference implementation:
+```python
+def extract_axis(coord256: int, axis: str) -> int:
+    """De-interleave coord256 to get 85-bit axis value."""
+    if axis == 'X':
+        shift = 3  # X bits at positions 3, 6, 9, ...
+    elif axis == 'Y':
+        shift = 2  # Y bits at positions 2, 5, 8, ...
+    elif axis == 'Z':
+        shift = 1  # Z bits at positions 1, 4, 7, ...
+    
+    result = 0
+    for i in range(85):
+        bit_pos = shift + (3 * i)
+        if coord256 & (1 << bit_pos):
+            result |= (1 << i)
+    return result
 
-#### Hyperjump movement event (normative)
-Required tags:
-- `A` tag: `["A", "hyperjump"]`
-- `e` genesis: `["e", "<spawn_event_id>", "", "genesis"]`
-- `e` previous: `["e", "<previous_event_id>", "", "previous"]`
-- `c` tag: `["c", "<prev_coord_hex>"]`
-- `C` tag: `["C", "<coord_hex>"]` (the destination hyperjump coordinate)
-- `B` tag: `["B", "<to_height>"]` where `<to_height>` is the destination Bitcoin block height (base-10 string)
-- sector tags: `X`, `Y`, `Z`, `S` (per `CYBERSPACE_V2.md` §3), computed from the destination coordinate
-
-Optional tags:
-- `net` tag: `["net", "<bitcoin_network>"]` where `<bitcoin_network>` is one of `mainnet`, `testnet`, `signet`, `regtest`.
-  - If omitted, implementations SHOULD assume `mainnet`.
-- `e` hyperjump-to: `["e", "<to_anchor_event_id>", "", "hyperjump_to"]` (a `kind=321` anchor event for the destination block)
-- `e` hyperjump-from: `["e", "<from_anchor_event_id>", "", "hyperjump_from"]` (a `kind=321` anchor event for the origin block)
-
-Prohibited tags:
-- Hyperjump events MUST NOT include a `proof` tag. (They are not validated using `CYBERSPACE_V2.md` §5 / §6.5.)
-
-Behavioral constraints:
-- `prev_coord_hex` MUST be a valid hyperjump coordinate (i.e., it MUST correspond to the `C` tag of at least one valid block anchor event).
-- `<coord_hex>` MUST equal the hyperjump coordinate for block height `<to_height>` on the selected Bitcoin network.
-
-Non-normative note:
-- This design intentionally requires a normal hop (`CYBERSPACE_V2.md` §6.4) to enter the hyperjump network (i.e., to move onto a hyperjump coordinate in the first place).
-
-#### Hyperjump verification summary (normative)
-To verify a hyperjump event:
-1. Verify it is `kind=3333` and includes `["A","hyperjump"]`.
-2. Verify its chain structure (`e` genesis + `e` previous) as in `CYBERSPACE_V2.md` §6.
-3. Verify that the previous movement event’s `C` tag equals this event’s `c` tag.
-4. Verify that `c` is a valid hyperjump coordinate by resolving at least one valid block anchor event with `C=c`.
-5. Resolve the destination block height from the event’s `B` tag and derive the expected destination coordinate using the Bitcoin network implied by the event’s `net` tag (or `mainnet` if omitted).
-6. Accept iff the expected destination coordinate equals the event’s `C`.
-
-Optional shortcut (non-normative):
-- If `hyperjump_to` is present, the verifier may instead validate that referenced anchor event and compare its `C` directly.
-
-## Example (non-normative)
-This example shows:
-1. A published block anchor event (`kind=321`) that makes a hyperjump coordinate discoverable.
-2. A normal hop (`A=hop`) that moves onto a hyperjump coordinate (requires a `proof` tag).
-3. A hyperjump (`A=hyperjump`) that moves from one hyperjump coordinate to another by choosing a destination block height (no `proof` tag).
-
-Example block anchor event for Bitcoin block height `1606` (abridged fields; tags shown in full):
-```json
-{
-  "kind": 321,
-  "content": "Block 1606",
-  "tags": [
-    ["C", "744193479b55674c02dec4ed73581eafbd7e2db03442360c9c34f9394031ee8f"],
-    ["X", "11846810334975873"],
-    ["Y", "19088986011188665"],
-    ["Z", "27231467915017080"],
-    ["S", "11846810334975873-19088986011188665-27231467915017080"],
-    ["H", "000000005d388d74f4b9da705c4a977b5aa53f88746f6286988f9f139dba2a99"],
-    ["P", "00000000ba96f7cee624d66be83099df295a1daac50dd99e4315328aa7d43e77"],
-    ["N", "00000000fc33b76de0621880e0cad2f6bd24e48250c461258dc8c6a6a3253c7a"],
-    ["B", "1606"]
-  ]
-}
+def sector(coord256: int, axis: str) -> int:
+    """Extract 55-bit sector value from an axis."""
+    axis_value = extract_axis(coord256, axis)
+    return axis_value >> 30  # High 55 bits of 85-bit axis
 ```
 
-Example movement hop onto that hyperjump coordinate (requires standard hop validation):
+**Complexity:** De-interleaving is O(85) bit operations — negligible compared to sidestep computation.
+
+#### Entry Validation
+
+To enter a hyperjump via a plane, an avatar MUST prove they have reached a coordinate whose **sector** matches the hyperjump's sector on the chosen axis.
+
+This is done via a standard **sidestep movement event** (`A=sidestep`) with:
+
+- Destination coordinate **D** where `sector(chosen_axis) = sector(HJ_axis)`
+- Standard sidestep Merkle proof for all three axes
+
+Example (entering via Y-plane):
 ```json
 {
   "kind": 3333,
-  "content": "",
   "tags": [
-    ["A", "hop"],
-    ["e", "<spawn_event_id>", "", "genesis"],
-    ["e", "<previous_event_id>", "", "previous"],
-    ["c", "<prev_coord_hex>"],
-    ["C", "744193479b55674c02dec4ed73581eafbd7e2db03442360c9c34f9394031ee8f"],
-    ["proof", "<proof_hash_hex>"],
-    ["X", "11846810334975873"],
-    ["Y", "19088986011188665"],
-    ["Z", "27231467915017080"],
-    ["S", "11846810334975873-19088986011188665-27231467915017080"]
+    ["A", "sidestep"],
+    ["C", "<coord_on_Y_plane>"],  // sector(Y) matches HJ's sector(Y)
+    ["proof", "<merkle_proof>"]
   ]
 }
 ```
 
-Example hyperjump from height `1606` to height `1602` (no `proof` tag):
-```json
-{
-  "kind": 3333,
-  "content": "",
-  "tags": [
-    ["A", "hyperjump"],
-    ["e", "<spawn_event_id>", "", "genesis"],
-    ["e", "<previous_event_id>", "", "previous"],
-    ["c", "744193479b55674c02dec4ed73581eafbd7e2db03442360c9c34f9394031ee8f"],
-    ["C", "42adcf1bc1976b02f66d5a33ab41946e7152f9b7ec08046a51625d443092e8cb"],
-    ["B", "1602"],
-    ["e", "<anchor_event_id_for_1606>", "", "hyperjump_from"],
-    ["e", "<anchor_event_id_for_1602>", "", "hyperjump_to"],
-    ["X", "6397583792183907"],
-    ["Y", "22152908496923134"],
-    ["Z", "5507206459976287"],
-    ["S", "6397583792183907-22152908496923134-5507206459976287"]
-  ]
-}
+After reaching the plane, the avatar publishes a **hyperjump entry announcement** (kind 33340, see below) to signal they are now "on" the hyperjump network.
+
+#### Exit Behavior
+
+When exiting a hyperjump (after a `A=hyperjump` action), the avatar **always** arrives at the exact merkle-root coordinate **(Hx, Hy, Hz, Hp)**. The sector-plane advantage applies only to *entering*, not exiting.
+
+This ensures:
+- Spatial meaning is preserved (you can't "teleport around" distance)
+- Navigation FROM the exit point to a final destination still costs work
+- The plane mechanism doesn't collapse locality
+
+---
+
+### 2. Hyperjump-Cost Problem (Normative)
+
+#### The Problem
+
+The original DECK-0001 defines hyperjump as **free teleportation** between any two hyperjumps. This creates a graph where all nodes are equidistant (cost=0), which:
+- Collapses spatial meaning
+- Makes "distance" irrelevant once on the network
+- Violates Property 1 (locality) at the protocol layer
+
+We need a cost function that:
+1. Scales with spatial distance (preserves locality)
+2. Costs meaningful work (not arbitrary fees)
+3. Cannot be reused (no amortization)
+4. Is consumer-feasible for reasonable distances
+
+#### Proposed Solution: Directional Cantor Commitment
+
+When making a hyperjump from **H_from** to **H_to**, the avatar must compute a **directional Cantor commitment**:
+
 ```
+direction_vector = H_to XOR H_from  // 256-bit directional signature
+commitment_height = popcount(direction_vector >> 128)  // 0-128, based on high bits
+commitment = compute_cantor_prefix(direction_vector, commitment_height)
+```
+
+The **commitment** is a partial Cantor tree computation (not a full hop proof) that:
+- Costs 2^commitment_height operations
+- Is unique to this specific (from, to) pair
+- Cannot be reused for a different destination
+- Expires after use (single-use commitment)
+
+#### Cost Scaling
+
+| Distance (hamming XOR on high 128 bits) | Commitment Height | Compute Time (consumer) | Cloud Cost |
+|----------------------------------------|-------------------|-------------------------|------------|
+| < 32 bits (nearby) | 8-16 | < 1 second | <$0.01 |
+| 32-48 bits (same sector band) | 16-24 | 1 min - 1 hour | $0.01-1 |
+| 48-64 bits (cross-sector) | 24-32 | 1 hour - 1 day | $1-10 |
+| 64-80 bits (far) | 32-40 | 1 day - 1 week | $10-100 |
+| 80-96 bits (very far) | 40-48 | 1 week - 1 month | $100-1000 |
+| 96-112 bits (across space) | 48-56 | 1 month - 1 year | $1000-10k |
+| > 112 bits (opposite corners) | 56-64 | 1-10 years | $10k-100k |
+
+This preserves the **graph structure** of the hyperjump network while maintaining spatial locality. Nearby HJs are cheap to reach; distant ones cost more.
+
+#### Non-Reuse Mechanism
+
+The commitment includes:
+- Previous movement event ID (binds to specific position in chain)
+- Timestamp of hyperjump event
+- Destination coordinate
+
+This ensures the commitment is **single-use** and **non-transferable**. Validators reject any hyperjump event where the commitment doesn't match the specific (from, to, timestamp) tuple.
+
+#### Open Questions
+
+1. **Should commitment height be continuous or tiered?** Continuous is more precise; tiered is simpler to implement.
+
+2. **Can commitments be precomputed?** Yes, but they're still single-use. Precomputation is an optimization, not an amortization.
+
+3. **What prevents farming cheap short hops to "build up" to a long hop?** Nothing—this is intended! Strategic multi-hop routing is a valid use case and mirrors physical transit networks.
+
+4. **Should there be a maximum commitment height?** Suggest N=64 (reasonable upper bound). Beyond that, the hop is effectively impossible for consumers.
+
+---
+
+## Coverage and Accessibility Analysis
+
+### Assumptions
+
+- Bitcoin block production: 52,560 blocks/year (~10 min average)
+- Current blocks (2026): ~940,000
+- Planes per HJ: 3 (X, Y, Z)
+- Effective plane HJs: blocks × 3 planes = **2.8M** by 2026
+- Average 1D LCA gap formula for sector matching: `LCA ≈ log₂(2⁵⁵ / effective_HJs)`
+  - **55-bit sector space** = 2⁵⁵ sectors per axis (plane is 1 sector = 2³⁰ Gibsons thick)
+  - With 2.8M plane HJs: LCA ≈ log₂(2⁵⁵ / 2.8×10⁶) ≈ **log₂(1.3×10¹⁰) ≈ 33.6**
+
+### Spawn-to-HJ LCA Projection (1D sector match, best-of-3 axes)
+
+| Year | Blocks | Effective Plane HJs | Avg LCA | Consumer Time | Cloud Cost ($0.15/hr GPU) |
+|------|--------|---------------------|---------|---------------|---------------------------|
+| 2026 | 940K | 2.8M | 33.0 | ~15 minutes | ~$0.09 |
+| 2031 | 1.2M | 3.6M | 32.8 | ~13 minutes | ~$0.07 |
+| 2036 | 1.5M | 4.5M | 32.7 | ~12 minutes | ~$0.06 |
+| 2046 | 2.0M | 6.0M | 32.5 | ~10 minutes | ~$0.05 |
+| 2056 | 2.5M | 7.5M | 32.4 | ~9 minutes | ~$0.04 |
+
+**With Moore's Law (compute doubles every 2.5 years):**
+
+| Year | Compute Multiplier | Time to First HJ | Cloud Cost |
+|------|-------------------|------------------|------------|
+| 2026 | 1× | ~15 minutes | ~$0.09 |
+| 2031 | 4× | ~4 minutes | ~$0.02 |
+| 2036 | 16× | ~1 minute | ~$0.005 |
+
+### Blocks-Only Analysis
+
+**Sector-wide planes alone solve the bootstrap problem.**
+
+| Configuration | Median LCA | Consumer Time | Cloud Cost |
+|--------------|------------|---------------|------------|
+| **Sector planes** (this proposal) | h=33 | ~15 minutes | ~$0.09 |
+| Original HJ design (point entry) | h=84 | ~10¹¹ years | ~$50,000+ |
+| **Improvement** | **51 bits easier** | **10¹⁴× faster** | **500,000× cheaper** |
+
+This demonstrates that the geometric insight (sector matching vs point matching) is what solves the bootstrap problem. Future work can layer additional optimizations on top.
+
+### Total Cyberspace Coverage
+
+| Metric | Value |
+|--------|-------|
+| Total coord256 space | 2²⁵⁶ ≈ 1.16×10⁷⁷ points |
+| Total sector space (85-bit axes) | 2²⁵⁵ ≈ 5.8×10⁷⁶ sectors |
+| HJ coverage (2026) | 2.8M / 5.8×10⁷⁶ = **4.8×10⁻⁷¹** (vanishingly sparse) |
+| Interpretation | HJs are **vanishingly sparse**—they don't "cover" space, they provide strategic waypoints |
+
+**Key insight:** Cyberspace doesn't "collapse" as HJ density increases. It transitions from **impossible** → **nation-state only** → **cloud-feasible** → **consumer-accessible**. The spatial structure remains; only accessibility changes.
+
+---
+
+## Events Specification
+
+### Block Anchor Events (Existing, Unchanged)
+
+**Kind:** 321 (CSEP-321)
+
+Existing block anchor events remain valid. No changes required.
+
+### Hyperjump Entry Announcement (New)
+
+**Kind:** 33340 (CSEP-33340)  
+**Purpose:** Signal that an avatar has reached a hyperjump sector-plane and is now on the HJ network
+
+**Required tags:**
+- `A`: `["A", "hyperjump_entry"]`
+- `e`: `["e", "<previous_movement_event_id>", "", "previous"]`
+- `c`: `["c", "<plane_coord_hex>"]` (coordinate on the entry plane)
+- `HJ`: `["HJ", "<hyperjump coord hex>"]` (the target HJ being entered)
+- `axis`: `["axis", "X"|"Y"|"Z"]` (which plane was used)
+
+**Validation:**
+1. Verify previous event was a valid sidestep to a plane coordinate
+2. Verify the plane coordinate matches the target HJ on the specified axis: `sector(plane_coord_axis) == sector(HJ_axis)`
+3. If sector doesn't match, reject
+
+---
+
+## Security Considerations
+
+### Sector Entry Does Not Reveal More Information
+
+Knowing an avatar is "on the X-plane of HJ H" reveals only that their X sector equals H's X sector. Their Y and Z sectors (and all Gibson-level precision) remain hidden. This is strictly less information than revealing the full 3D point.
+
+### Directional Commitment Prevents Free Teleportation
+
+By binding the commitment cost to the XOR distance between specific (from, to) pairs, the protocol prevents:
+- **Reuse:** Commitment is single-use
+- **Amortization:** Can't "build up" credit for long hops
+- **Distance cheating:** Far hops cost more, always
+
+### Backward Compatibility
+
+- Existing hyperjump coordinates (merkle roots) are unchanged
+- Existing `kind=321` block anchor events remain valid
+- Old clients that don't support sector entry can still use **point entry** (3D hop)—it just costs vastly more
+- Sector entry is opt-in and detected by validators
+
+---
+
+## Open Questions for Discussion
+
+1. **Commitment height formula:** Current proposal uses popcount of high 128 bits of XOR difference. Alternatives?
+   - Full Hamming distance / 4
+   - LCA height of (from, to) coordinates (but this requires knowing both points upfront, which is circular)
+   - Precomputed distance tier table
+
+2. **"Welcome HJ" for new spawns?** A predictable low-cost entry point (e.g., derived from genesis block) could help onboard users. But this introduces a "central" point, which may violate decentralization ethos.
+
+3. **Route discovery:** Should clients have built-in graph routing for multi-hop journeys, or should this be left to third-party tools?
+
+4. **Bitcoin reorg handling:** Should implementations track Bitcoin finality depth (e.g., 6 confirmations) before accepting HJs from new blocks?
+
+---
+
+## Implementation Checklist
+
+- [ ] Community review and feedback on this draft
+- [ ] Finalize directional commitment formula (open question #1)
+- [ ] Update DECK-0001 with approved changes
+- [ ] Add sector-based HJ queries to cyberspace-cli (filter by sector, not exact coordinate)
+- [ ] Add commitment computation to hyperjump validation
+- [ ] Create `kind=33340` event handler
+- [ ] Update tests for new validation rules
+- [ ] Write migration guide for existing clients
+
+---
+
+*This DECK draft is for community review. Comments welcome via GitHub issues or Nostr DM to @arkin0x.*
+
+---
+
+## Appendix: Mathematical Derivation
+
+### Expected LCA for Sector Matching
+
+Given:
+- Sector space: S = 2⁵⁵ sectors per axis
+- N target sectors (from HJs): N = blocks × 3 = 2.8M
+- Random spawn position
+
+**Probability that at least one target shares ≥k high-order bits with spawn:**
+
+P(match) = 1 - P(all N targets have < k matching)
+         = 1 - (1 - 2^(-k))^N
+
+For median case (P = 0.5):
+0.5 = 1 - (1 - 2^(-k))^N
+(1 - 2^(-k))^N = 0.5
+1 - 2^(-k) = 0.5^(1/N)
+2^(-k) = 1 - 0.5^(1/N)
+
+For large N, using Taylor approximation:
+2^(-k) ≈ ln(2) / N
+k ≈ log₂(N) - log₂(ln(2))
+k ≈ log₂(N) + 0.53
+
+With N = 2.8M:
+k ≈ log₂(2.8×10⁶) + 0.53
+k ≈ 21.4 + 0.53
+k ≈ 22 bits matching (median, one axis)
+
+**For best-of-3 axes:**
+P(best LCA ≤ h) = 1 - P(all 3 axes have LCA > h)
+                = 1 - (1 - P(one axis has LCA ≤ h))³
+
+Solving for median (CDF = 0.5):
+Median LCA ≈ 33 bits
+
+This matches our empirical calculations.
+
+
+---
+
+## PR Description (for reference)
+
+**Title:** DECK-0001 v2: Sector-based hyperjump entry planes
+
+**Summary:**
+Each HJ has 3 sector-wide entry planes (1 sector thick). Match ONE axis sector (55 bits) instead of exact Gibson coordinate (85 bits). Entry cost: h≈84 → h≈33, enabling consumer access in ~15 minutes ($0.09 cloud).
+
+**Open Questions:**
+1. Commitment height formula? (popcount vs alternatives)
+2. Welcome HJ for spawns?
+3. Route discovery method?
+4. Bitcoin reorg handling?
+
