@@ -135,7 +135,7 @@ This ensures:
 
 ---
 
-### 2. Hyperjump-Cost Problem (Normative)
+### 2. Directional Cantor Commitment (Normative)
 
 #### The Problem
 
@@ -145,59 +145,94 @@ The original DECK-0001 defines hyperjump as **free teleportation** between any t
 - Violates Property 1 (locality) at the protocol layer
 
 We need a cost function that:
-1. Scales with spatial distance (preserves locality)
+1. Scales with distance (preserves locality)
 2. Costs meaningful work (not arbitrary fees)
 3. Cannot be reused (no amortization)
-4. Is consumer-feasible for reasonable distances
+4. Is consumer-feasible for all practical distances
 
-#### Proposed Solution: Directional Cantor Commitment
+#### Problem with Coordinate-Based Distance
 
-When making a hyperjump from **H_from** to **H_to**, the avatar must compute a **directional Cantor commitment**:
+An initial approach used XOR distance of full 256-bit merkle-root coordinates:
 
 ```
-direction_vector = H_to XOR H_from  // 256-bit directional signature
-commitment_height = popcount(direction_vector >> 128)  // 0-128, based on high bits
-commitment = compute_cantor_prefix(direction_vector, commitment_height)
+direction_vector = H_to XOR H_from  (256-bit merkle roots)
+commitment_height = popcount(high 128 bits)
 ```
 
-The **commitment** is a partial Cantor tree computation (not a full hop proof) that:
-- Costs 2^commitment_height operations
-- Is unique to this specific (from, to) pair
-- Cannot be reused for a different destination
-- Expires after use (single-use commitment)
+**Result:** For random 256-bit merkle roots, median commitment height is **h=64**, costing 2^64 ≈ 1.8×10^19 operations (~5.8 million years). This makes the HJ network unusable.
+
+**Root cause:** Bitcoin merkle roots are uniformly random. Any two random 256-bit values have XOR distance ≈256 bits and popcount ≈64. The formula accidentally makes every HJ pair maximally distant.
+
+#### Solution: Bitcoin Block Height Difference
+
+The commitment height is derived from **Bitcoin block height difference**, not spatial coordinate distance:
+
+```
+block_diff = |B_to - B_from|  (absolute difference in block heights)
+commitment_height = block_diff.bit_length()  # log2(block_diff), or 0 if block_diff = 0
+commitment_cost = 2^commitment_height SHA256 operations
+```
+
+**Why this works:**
+- Block height is the only meaningful "distance" in the HJ system (merkle coordinates are random, block numbers are ordered)
+- Nearby blocks (in height) represent "nearby" HJs conceptually
+- With ~940K blocks, random block pairs have median Δ=271K → h=19 → 524K ops (~5ms)
+- **100% of hops are h≤20** (maximum possible with current Bitcoin history)
+- Cost scales naturally: adjacent blocks are trivial, distant blocks cost more
 
 #### Cost Scaling
 
-| Distance (hamming XOR on high 128 bits) | Commitment Height | Compute Time (consumer) | Cloud Cost |
-|----------------------------------------|-------------------|-------------------------|------------|
-| < 32 bits (nearby) | 8-16 | < 1 second | <$0.01 |
-| 32-48 bits (same sector band) | 16-24 | 1 min - 1 hour | $0.01-1 |
-| 48-64 bits (cross-sector) | 24-32 | 1 hour - 1 day | $1-10 |
-| 64-80 bits (far) | 32-40 | 1 day - 1 week | $10-100 |
-| 80-96 bits (very far) | 40-48 | 1 week - 1 month | $100-1000 |
-| 96-112 bits (across space) | 48-56 | 1 month - 1 year | $1000-10k |
-| > 112 bits (opposite corners) | 56-64 | 1-10 years | $10k-100k |
+| Block Height Difference | Commitment Height | SHA256 Operations | Time (consumer GPU) | Cloud Cost |
+|------------------------|-------------------|-------------------|---------------------|------------|
+| Δ = 1 (adjacent) | h = 1 | 2 ops | < 1 μs | $0 |
+| Δ = 10 (nearby) | h = 4 | 16 ops | < 1 μs | $0 |
+| Δ = 100 (~1 day) | h = 7 | 128 ops | < 1 μs | $0 |
+| Δ = 1,000 (~1 week) | h = 10 | 1K ops | ~1 μs | $0 |
+| Δ = 10,000 (~2 months) | h = 14 | 16K ops | ~0.2 ms | $0 |
+| Δ = 100,000 (~2 years) | h = 17 | 131K ops | ~1 ms | $0 |
+| Δ = 500,000 (across chain) | h = 19 | 524K ops | ~5 ms | $0.0001 |
+| **Median (random pair)** | **h = 19** | **524K ops** | **~5 ms** | **$0.0001** |
+| **Maximum (940K blocks)** | **h = 20** | **1M ops** | **~10 ms** | **$0.0002** |
 
-This preserves the **graph structure** of the hyperjump network while maintaining spatial locality. Nearby HJs are cheap to reach; distant ones cost more.
+**Note:** Maximum possible block difference is ~940K (in 2026), so **h never exceeds 20**. As Bitcoin grows, h increases by ~1 every 10 years (when block count doubles). At year 2100 with 10M blocks, max h=24 (16M ops, ~160ms) — still consumer-feasible.
 
 #### Non-Reuse Mechanism
 
-The commitment includes:
-- Previous movement event ID (binds to specific position in chain)
-- Timestamp of hyperjump event
-- Destination coordinate
+The commitment MUST be single-use and bound to the specific movement:
 
-This ensures the commitment is **single-use** and **non-transferable**. Validators reject any hyperjump event where the commitment doesn't match the specific (from, to, timestamp) tuple.
+```python
+commitment_preimage = (
+    previous_movement_event_id +  # binds to chain position
+    hyperjump_event_timestamp +   # prevents precomputation attacks
+    destination_coordinate +      # binds to specific target
+    block_diff                    # the distance metric
+)
+commitment_hash = SHA256(commitment_preimage)
+```
 
-#### Open Questions
+Validators MUST verify:
+1. `block_diff` matches the actual height difference from anchor events
+2. Commitment hash is valid
+3. Commitment has not been reused (track by `previous_movement_event_id`)
+4. Reject if any check fails
 
-1. **Should commitment height be continuous or tiered?** Continuous is more precise; tiered is simpler to implement.
+#### Triangle Invariance (No Cheating)
 
-2. **Can commitments be precomputed?** Yes, but they're still single-use. Precomputation is an optimization, not an amortization.
+Strategic multi-hop routing is **valid and encouraged**:
 
-3. **What prevents farming cheap short hops to "build up" to a long hop?** Nothing—this is intended! Strategic multi-hop routing is a valid use case and mirrors physical transit networks.
+- Direct hop Δ=500K: h=19, 524K ops
+- Two hops Δ=250K + Δ=250K: 2 × (h=18, 262K ops) = 524K ops total
 
-4. **Should there be a maximum commitment height?** Suggest N=64 (reasonable upper bound). Beyond that, the hop is effectively impossible for consumers.
+**Total cost is identical.** The triangle inequality holds. No cheating.
+
+This mirrors physical transit: taking 3 bus stops costs the same as one long route covering the same distance. Multi-hop routing is a skill, not an exploit.
+
+#### Open Questions (Resolved)
+
+1. **Commitment height formula?** → **Block height bit_length** (see above)
+2. **Maximum commitment height?** → **No cap needed**, naturally bounded by Bitcoin growth (h≤20 in 2026, h≤24 by 2100)
+3. **Can commitments be precomputed?** → Yes, but still single-use. Optimization, not amortization.
+4. **What prevents farming cheap hops?** → Nothing! Multi-hop routing is valid. Triangle inequality ensures total cost equals direct hop cost.
 
 ---
 
