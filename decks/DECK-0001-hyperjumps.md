@@ -431,7 +431,7 @@ By binding the commitment cost to the XOR distance between specific (from, to) p
 - [ ] Update DECK-0001 with approved changes
 - [ ] Add sector-based HJ queries to cyberspace-cli (filter by sector, not exact coordinate)
 - [ ] Add commitment computation to hyperjump validation
-- [ ] Create `kind=33340` event handler
+- [ ] Create kind 3333 event handler for enter action
 - [ ] Update tests for new validation rules
 - [ ] Write migration guide for existing clients
 

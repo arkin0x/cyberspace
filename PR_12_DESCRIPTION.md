@@ -150,7 +150,7 @@ See `decks/DECK-0001-finalization-summary.md` for detailed analysis and recommen
 - [ ] Add sector-based HJ queries to cyberspace-cli
 - [ ] Add commitment computation to hyperjump validation
 - [ ] Add Cantor tree builder for traversal proofs
-- [ ] Implement **enter** action handler (kind 33340, A=enter)
+- [ ] Implement **enter** action handler (kind 3333, A=enter)
 - [ ] Update tests for enter action validation (Cantor proof + sector match)
 - [ ] Write migration guide for existing clients
 

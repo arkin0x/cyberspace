@@ -20,7 +20,7 @@ File: `decks/DECK-0001-hyperjumps.md`
 
 **Major changes:**
 - Sector-based entry planes (1 sector thick per axis)
-- Entry via dedicated **enter** action (kind 33340, A=enter) with Cantor proof
+- Entry via dedicated **enter** action (kind 3333, A=enter) with Cantor proof
 - Enter is 4th movement primitive (spawn, hop, sidestep, enter)
 - Exit always at exact 3D merkle-root coordinate
 - Removed shadow HJ derivation section
