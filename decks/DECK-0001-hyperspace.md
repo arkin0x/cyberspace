@@ -104,7 +104,7 @@ To enter Hyperspace via a sector plane, an identity MUST publish an **enter-hype
 - `e` previous: `["e", "<previous_event_id>", "", "previous"]`
 - `c` tag: `["c", "<prev_coord_hex>"]`
 - `C` tag: `["C", "<coord_hex>"]` (the entered coordinate on the sector plane)
-- `H` tag: `["H", "<hyperjump_merkle_root_hex>"]` (the Merkle root of the Hyperjump being entered; enables Nostr queries)
+- `M` tag: `["M", "<hyperjump_merkle_root_hex>"]` (the Merkle root of the Hyperjump being entered; enables Nostr queries)
 - `B` tag: `["B", "<block_height>"]` (the Bitcoin block height of the Hyperjump)
 - `axis` tag: `["axis", "X"|"Y"|"Z"]` (which plane was used)
 - `proof` tag: `["proof", "<cantor_proof_hex>"]` (standard Cantor proof for reaching the coordinate)
@@ -124,7 +124,7 @@ To enter Hyperspace via a sector plane, an identity MUST publish an **enter-hype
     ["e", "<previous_event_id>", "", "previous"],
     ["c", "<prev_coord_hex>"],
     ["C", "<coord_on_Y_plane_hex>"],
-    ["H", "744193479b55674c02dec4ed73581eafbd7e2db03442360c9c34f9394031ee8f"],
+    ["M", "744193479b55674c02dec4ed73581eafbd7e2db03442360c9c34f9394031ee8f"],
     ["B", "1606"],
     ["axis", "Y"],
     ["proof", "<cantor_proof_hex>"],
@@ -139,10 +139,10 @@ To enter Hyperspace via a sector plane, an identity MUST publish an **enter-hype
 **Validation:**
 1. Verify it is `kind=3333` and includes `["A", "enter-hyperspace"]`
 2. Verify the Cantor proof is valid for the path to the entered coordinate
-3. Verify sector match: `sector(entered_coord_axis) == sector(HJ_axis)` on the specified axis (where HJ_axis is extracted from the Merkle root in the `H` tag)
-4. Verify the `B` tag matches the block height of the Hyperjump identified by the `H` tag
+3. Verify sector match: `sector(entered_coord_axis) == sector(HJ_axis)` on the specified axis (where HJ_axis is extracted from the Merkle root in the `M` tag)
+4. Verify the `B` tag matches the block height of the Hyperjump identified by the `M` tag
 5. Verify chain structure (`e` genesis + `e` previous) per `CYBERSPACE_V2.md` §6
-6. If `hyperjump-anchor` is present, verify it references a valid kind 321 block anchor event with matching `H` and `B` values
+6. If `hyperjump-anchor` is present, verify it references a valid kind 321 block anchor event with matching `M` and `B` values
 
 **Why `enter-hyperspace` instead of `sidestep`:**
 - **Sidestep** uses Merkle proofs for storage-infeasible LCA heights (h>35-40)
