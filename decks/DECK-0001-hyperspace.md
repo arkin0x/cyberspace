@@ -11,133 +11,55 @@
 
 ## Abstract
 
-This DECK defines **Hyperspace**: a POW-backed teleport mechanism for identities between special coordinates derived from Bitcoin blocks.
+This DECK defines **Hyperspace**: a PoW-backed teleport mechanism for identities between special coordinates derived from Bitcoin blocks.
 
-A Bitcoin block's Merkle root is treated as a thermodynamically "paid for" coordinate in Cyberspace (with a random distribution across all blocks). The network of all Bitcoin blocks forms a 1-dimensional path (by block height) called **Hyperspace**, which is an alternative transit media for keypairs to navigate cyberspace.
+A Bitcoin block's Merkle root is treated as a thermodynamically "paid for" coordinate in Cyberspace (with a random distribution across all blocks). The network of all Bitcoin blocks forms a 1-dimensional path (by block height) called **Hyperspace**, which is an alternative transit medium for identities to navigate Cyberspace.
 
-Each valid Bitcoin block exists in cyberspace as a **Hyperjump**, and identities can navigate to a hyperjump to enter the hyperspace system. Once in the system, identities can navigate between hyperjumps at a nominal cost relative to the cyberspace distances they are traversing.
+Each valid Bitcoin block exists in Cyberspace as a **Hyperjump**, and identities can navigate to a hyperjump to enter the Hyperspace system. Once in the system, identities can navigate between hyperjumps at a nominal cost relative to the Cyberspace distances they are traversing.
 
-As a convenience, **block anchor events** may be published to nostr containing necessary hyperjump information so that the bitcoin chain does not have to be consulted directly for hyperjump access, but this is not necessary to publish a valid action chain including hyperspace traversal.
+**Two actions are defined:**
+1. **enter-hyperspace** (`kind=3333`, `A=enter-hyperspace`) - Boards the Hyperspace network from Cyberspace via sector-plane entry
+2. **hyperjump** (`kind=3333`, `A=hyperjump`) - Traverses between hyperjumps within Hyperspace, with optional Cantor proof for multi-block paths
 
-As nobody can predict the next Bitcoin block's Merkle root, nobody can predict where hyperspace will connect to next, but every 10 minutes it punches a new hole in the vastness of cyberspace, opening new territory and enabling new opportunities.
+As a convenience, **block anchor events** (kind 321) may be published to Nostr containing hyperjump information so the Bitcoin chain does not have to be consulted directly, but this is not required to publish a valid action chain including Hyperspace traversal.
+
+As nobody can predict the next Bitcoin block's Merkle root, nobody can predict where Hyperspace will connect to next, but every ~10 minutes it punches a new hole in the vastness of Cyberspace, opening new territory and enabling new opportunities.
 
 ---
 
 ## Terms
 
-- **Hyperspace**: the 1-dimensional path through cyberspace where each point is a Bitcoin block Merkle root in block height order
-- **Hyperjump** (Object): a cyberspace object defined by a valid Bitcoin block Merkle root
-- **hyperjump** (Action): the kind 3333 action type to move between one or many Hyperjumps
-- **Hyperjump coordinate**: a Bitcoin block's Merkle root interpreted without modification as a coord256 in cyberspace
-- **Block anchor event**: a Nostr event that represents a Bitcoin block for convenience so clients can discover nearby hyperjumps via Nostr queries.
-- **Sector entry plane**: a volume of cyberspace occupying every Gibson sharing the same sector along a single axis as a hyperjump. (1 sector is 2³⁰ Gibsons). Identities can use the `enter-hyperspace` action when inside of this volume (by matching the high 55 bits of one axis to a hyperjump's coordinate/Merkle root)
-- **Hyperspace proof**: A hyperspace-specific Cantor tree proof-of-work proving an entity traveled from one hyperjump to another.
+- **Hyperspace**: The 1-dimensional path through Cyberspace where each point is a Bitcoin block Merkle root in block height order. Hyperspace is the transit *network*.
+- **Hyperjump** (noun): A Cyberspace object (coordinate) defined by a valid Bitcoin block Merkle root. A Hyperjump is a *location* in both Cyberspace and Hyperspace.
+- **hyperjump** (verb): The `kind=3333` action type to move between one or more Hyperjumps within Hyperspace.
+- **Hyperjump coordinate**: A Bitcoin block's Merkle root interpreted without modification as a coord256 in Cyberspace.
+- **Block anchor event**: A Nostr event (kind 321) that represents a Bitcoin block for discovery convenience.
+- **Sector entry plane**: A volume of Cyberspace occupying every Gibson sharing the same sector along a single axis as a hyperjump (1 sector = 2³⁰ Gibsons). Identities use the `enter-hyperspace` action when inside this volume.
+- **Hyperspace proof**: A Hyperspace-specific Cantor tree PoW proving an identity traveled from one hyperjump to another through the block-height path.
 
 ---
 
-## Part I: Core Hyperjump Specification
+## Part I: Enter-Hyperspace Action (Cyberspace → Hyperspace)
 
-### 1. Hyperjump Coordinate Derivation (Normative)
+### 1. The Bootstrap Problem
 
-Given a Bitcoin block's Merkle root (`merkle_root`):
-- Let `coord_hex = merkle_root` (32 bytes, lowercase hex, no `0x` prefix).
-- Let `coord256 = int(coord_hex, 16)`.
-- The hyperjump coordinate is `coord256`, interpreted as a Cyberspace coordinate per `CYBERSPACE_V2.md` §2.
+To use the Hyperspace transit network, an identity must first reach a Hyperjump coordinate. The original design required identities to hop to the **exact** Hyperjump coordinate (a 3D point in Cyberspace). At typical distances from a random spawn point, this requires reaching an LCA of h≈84, which costs 2⁸⁴ operations—approximately 10¹¹ years of computation, categorically infeasible.
 
-**Notes:**
-- This uses the Merkle root as presented in standard big-endian hex form (as commonly shown in block explorers). Implementations MUST agree on this endianness.
-- The plane bit is the least significant bit of `coord256` (per `CYBERSPACE_V2.md` §2.1). Therefore hyperjumps may exist in either plane.
+**This is the bootstrap problem:** How can a newly spawned identity reach the Hyperspace network with consumer-feasible computation?
 
-### 2. Block Anchor Events (Hyperjump Publishing)
+**Solution:** Sector-based entry planes reduce the entry cost from h≈84 to h≈33 (~15 minutes, ~$0.09 cloud).
 
-Hyperjump coordinates are discoverable via Nostr by querying **block anchor events** (kind 321) that bind Bitcoin block identifiers to their Merkle-root-derived coordinate.
-
-**Event kind:** `kind = 321`
-
-#### Required Tags (Normative)
-
-Block anchor events MUST include:
-- `C` tag: `["C", "<coord_hex>"]` where `<coord_hex>` is the Merkle-root-derived hyperjump coordinate
-- Sector tags: `X`, `Y`, `Z`, `S` (per `CYBERSPACE_V2.md` §3), computed from the hyperjump coordinate
-- `B` tag: `["B", "<height>"]` where `<height>` is the Bitcoin block height (base-10 string)
-- `H` tag: `["H", "<block_hash_hex>"]` (32-byte lowercase hex string)
-- `P` tag: `["P", "<prev_block_hash_hex>"]` (32-byte lowercase hex string)
-
-#### Optional Tags
-
-Block anchor events SHOULD/MAY include:
-- `net` tag: `["net", "<bitcoin_network>"]` where `<bitcoin_network>` is one of `mainnet`, `testnet`, `signet`, `regtest`. If omitted, implementations SHOULD assume `mainnet`.
-- `N` tag: `["N", "<next_block_hash_hex>"]` once the next block is known
-
-#### Validation of Anchor Events (Normative)
-
-To verify a block anchor event as valid for hyperjumping, an implementation MUST verify that:
-1. Its `C` tag matches the Merkle root of the block at height `B` on the Bitcoin network the client is using (or the network specified by the anchor event's `net` tag, if present).
-2. Its `H` tag is the corresponding block hash.
-3. Its `P` tag is the corresponding previous block hash.
-
-How an implementation performs this validation is out of scope (full node, headers-only/SPV, trusted checkpoints, etc.), but the resulting `(height, block_hash, merkle_root)` bindings MUST match Bitcoin consensus for the selected network.
-
-### 3. Hyperjump Movement Events
-
-A hyperjump action is represented as a movement event (`kind=3333`) in the identity's movement chain (`CYBERSPACE_V2.md` §6) with action tag `["A", "hyperjump"]`.
-
-#### Hyperjump Movement Event (Normative)
-
-**Required tags:**
-- `A` tag: `["A", "hyperjump"]`
-- `e` genesis: `["e", "<spawn_event_id>", "", "genesis"]`
-- `e` previous: `["e", "<previous_event_id>", "", "previous"]`
-- `c` tag: `["c", "<prev_coord_hex>"]`
-- `C` tag: `["C", "<coord_hex>"]` (the destination hyperjump coordinate)
-- `B` tag: `["B", "<to_height>"]` where `<to_height>` is the destination Bitcoin block height (base-10 string)
-- Sector tags: `X`, `Y`, `Z`, `S` (per `CYBERSPACE_V2.md` §3), computed from the destination coordinate
-
-**Optional tags:**
-- `net` tag: `["net", "<bitcoin_network>"]` where `<bitcoin_network>` is one of `mainnet`, `testnet`, `signet`, `regtest`. If omitted, implementations SHOULD assume `mainnet`.
-- `e` hyperjump-to: `["e", "<to_anchor_event_id>", "", "hyperjump_to"]` (a `kind=321` anchor event for the destination block)
-- `e` hyperjump-from: `["e", "<from_anchor_event_id>", "", "hyperjump_from"]` (a `kind=321` anchor event for the origin block)
-
-**Prohibited tags:**
-- Hyperjump events MUST NOT include a `proof` tag. (They are not validated using `CYBERSPACE_V2.md` §5 / §6.5.)
-
-**Behavioral constraints:**
-- `prev_coord_hex` MUST be a valid hyperjump coordinate (i.e., it MUST correspond to the `C` tag of at least one valid block anchor event).
-- `<coord_hex>` MUST equal the hyperjump coordinate for block height `<to_height>` on the selected Bitcoin network.
-
-#### Hyperjump Verification Summary (Normative)
-
-To verify a hyperjump event:
-1. Verify it is `kind=3333` and includes `["A","hyperjump"]`.
-2. Verify its chain structure (`e` genesis + `e` previous) as in `CYBERSPACE_V2.md` §6.
-3. Verify that the previous movement event's `C` tag equals this event's `c` tag.
-4. Verify that `c` is a valid hyperjump coordinate by resolving at least one valid block anchor event with `C=c`.
-5. Resolve the destination block height from the event's `B` tag and derive the expected destination coordinate using the Bitcoin network implied by the event's `net` tag (or `mainnet` if omitted).
-6. Accept iff the expected destination coordinate equals the event's `C`.
-
-**Optional shortcut (non-normative):** If `hyperjump_to` is present, the verifier may instead validate that referenced anchor event and compare its `C` directly.
-
----
-
-## Part II: Sector-Based Entry Planes (v2 Addition)
-
-### 4. The Bootstrap Problem
-
-The original hyperjump design requires identities to hop to the **exact** hyperjump coordinate (a 3D point). At typical distances from a random spawn point, this requires reaching an LCA of h≈84, which costs 2⁸⁴ operations—approximately 10¹¹ years of computation, categorically infeasible.
-
-**This is the bootstrap problem:** How can a newly spawned identity reach the hyperjump network with consumer-feasible computation?
-
-### 5. Sector-Based Entry Planes (Normative)
+### 2. Sector-Based Entry Planes (Normative)
 
 #### Definition
 
-For a hyperjump at coordinate **H = (Hx, Hy, Hz, Hp)**, three entry planes are defined:
+For a Hyperjump at coordinate **H = (Hx, Hy, Hz, Hp)**, three entry planes are defined:
 
 - **X-plane**: All coordinates where **sector(X) = sector(Hx)** (covers all (X, *, *, *) matching the sector)
 - **Y-plane**: All coordinates where **sector(Y) = sector(Hy)** (covers all (*, Y, *, *) matching the sector)
 - **Z-plane**: All coordinates where **sector(Z) = sector(Hz)** (covers all (*, *, Z, *) matching the sector)
 
-Each plane is **1 sector thick** (2³⁰ Gibsons). The plane bit **Hp** is inherited from the hyperjump coordinate (plane 0 = dataspace, plane 1 = ideaspace).
+Each plane is **1 sector thick** (2³⁰ Gibsons). The plane bit **Hp** is inherited from the Hyperjump coordinate (plane 0 = dataspace, plane 1 = ideaspace).
 
 #### Sector Extraction (Normative)
 
@@ -170,104 +92,182 @@ def sector(coord256: int, axis: str) -> int:
     return axis_value >> 30  # High 55 bits of 85-bit axis
 ```
 
-**Complexity:** De-interleaving is O(85) bit operations — negligible compared to sidestep computation.
+**Complexity:** De-interleaving is O(85) bit operations — negligible compared to Proof-of-Work computation.
 
-#### Entry Validation
+### 3. Enter-Hyperspace Action Event (Normative)
 
-To enter a hyperjump via a plane, an identity MUST publish an **enter-hyperspace action** (kind 3333, `A=enter-hyperspace`) proving they have reached a coordinate whose **sector** matches the hyperjump's sector on the chosen axis.
+To enter Hyperspace via a sector plane, an identity MUST publish an **enter-hyperspace action** (`kind=3333`, `A=enter-hyperspace`) proving they have reached a coordinate whose **sector** matches a Hyperjump's sector on the chosen axis.
 
-**The enter action includes:**
-- Destination coordinate **D** where `sector(chosen_axis) = sector(HJ_axis)`
-- Standard Cantor proof for the path to **D** (same as hop proof)
-- Reference to the target HJ being entered
+**Required tags:**
+- `A` tag: `["A", "enter-hyperspace"]`
+- `e` genesis: `["e", "<spawn_event_id>", "", "genesis"]`
+- `e` previous: `["e", "<previous_event_id>", "", "previous"]`
+- `c` tag: `["c", "<prev_coord_hex>"]`
+- `C` tag: `["C", "<coord_hex>"]` (the entered coordinate on the sector plane)
+- `HJ` tag: `["HJ", "<hyperjump_coord_hex>"]` (the target Hyperjump being entered)
+- `axis` tag: `["axis", "X"|"Y"|"Z"]` (which plane was used)
+- `proof` tag: `["proof", "<cantor_proof_hex>"]` (standard Cantor proof for reaching the coordinate)
+- Sector tags: `X`, `Y`, `Z`, `S` (per `CYBERSPACE_V2.md` §3), computed from the entered coordinate
 
 **Example (entering via Y-plane):**
 ```json
 {
   "kind": 3333,
+  "content": "",
   "tags": [
     ["A", "enter-hyperspace"],
-    ["C", "<coord_on_Y_plane>"],  // sector(Y) matches HJ's sector(Y)
-    ["HJ", "<hyperjump_coord_hex>"],
+    ["e", "<spawn_event_id>", "", "genesis"],
+    ["e", "<previous_event_id>", "", "previous"],
+    ["c", "<prev_coord_hex>"],
+    ["C", "<coord_on_Y_plane_hex>"],
+    ["HJ", "744193479b55674c02dec4ed73581eafbd7e2db03442360c9c34f9394031ee8f"],
     ["axis", "Y"],
-    ["proof", "<cantor_proof_hex>"]
+    ["proof", "<cantor_proof_hex>"],
+    ["X", "<sector_X_value>"],
+    ["Y", "<sector_Y_value>"],
+    ["Z", "<sector_Z_value>"],
+    ["S", "<sector_S_value>"]
   ]
 }
 ```
 
-**Why `enter` instead of `sidestep`:**
+**Validation:**
+1. Verify it is `kind=3333` and includes `["A", "enter-hyperspace"]`
+2. Verify the Cantor proof is valid for the path to the entered coordinate
+3. Verify sector match: `sector(entered_coord_axis) == sector(HJ_axis)` on the specified axis
+4. Verify chain structure (`e` genesis + `e` previous) per `CYBERSPACE_V2.md` §6
+
+**Why `enter-hyperspace` instead of `sidestep`:**
 - **Sidestep** uses Merkle proofs for storage-infeasible LCA heights (h>35-40)
 - **Enter-hyperspace** uses Cantor proofs for sector-level precision (h≈33, consumer-feasible)
-- The enter-hyperspace action is specifically for hyperjump plane entry, with HJ reference and validation
+- The enter-hyperspace action is specifically for boarding the Hyperspace network, with Hyperjump reference and sector validation
 
-After publishing the enter-hyperspace action, the identity is now "on" the hyperjump network and can publish hyperspace proofs to move between HJs.
+**After publishing the enter-hyperspace action**, the identity is now "on" the Hyperspace network and can publish hyperjump actions to traverse between Hyperjumps.
 
-#### Exit Behavior
+### 4. Exit Behavior
 
-When exiting a hyperjump (after a `A=hyperjump` action), the identity **always** arrives at the exact merkle-root coordinate **(Hx, Hy, Hz, Hp)**. The sector-plane advantage applies only to *entering*, not exiting.
+When an identity executes a **hyperjump** action to exit Hyperspace, they **always** arrive at the exact Merkle-root coordinate **(Hx, Hy, Hz, Hp)** of the destination Hyperjump. The sector-plane advantage applies only to *entering* Hyperspace, not exiting.
 
 This ensures:
-- Spatial meaning is preserved (you can't "teleport around" distance)
-- Navigation FROM the exit point to a final destination still costs work
+- Spatial meaning is preserved (identities can't "teleport around" distance)
+- Navigation FROM the exit point to a final destination still costs standard Cyberspace movement work
 - The plane mechanism doesn't collapse locality
 
-### 6. Coverage and Accessibility Analysis
+### 5. Coverage and Accessibility
 
 #### Assumptions
-
 - Bitcoin block production: 52,560 blocks/year (~10 min average)
 - Current blocks (2026): ~940,000
-- Planes per HJ: 3 (X, Y, Z)
-- Effective plane HJs: blocks × 3 planes = **2.8M** by 2026
-- Average 1D LCA gap formula for sector matching: `LCA ≈ log₂(2⁵⁵ / effective_HJs)`
-  - **55-bit sector space** = 2⁵⁵ sectors per axis (plane is 1 sector = 2³⁰ Gibsons thick)
-  - With 2.8M plane HJs: LCA ≈ log₂(2⁵⁵ / 2.8×10⁶) ≈ **log₂(1.3×10¹⁰) ≈ 33.6**
+- Planes per Hyperjump: 3 (X, Y, Z)
+- Effective plane Hyperjumps: blocks × 3 planes = **2.8M** by 2026
+- Average 1D LCA gap formula: `LCA ≈ log₂(2⁵⁵ / effective_HJs)`
+  - **55-bit sector space** = 2⁵⁵ sectors per axis
+  - With 2.8M plane Hyperjumps: LCA ≈ log₂(2⁵⁵ / 2.8×10⁶) ≈ **33.6**
 
-#### Spawn-to-HJ LCA Projection (1D sector match, best-of-3 axes)
+#### Spawn-to-Hyperjump Entry Cost
 
-| Year | Blocks | Effective Plane HJs | Avg LCA | Consumer Time | Cloud Cost ($0.15/hr GPU) |
-|------|--------|---------------------|---------|---------------|---------------------------|
-| 2026 | 940K | 2.8M | 33.0 | ~15 minutes | ~$0.09 |
-| 2031 | 1.2M | 3.6M | 32.8 | ~13 minutes | ~$0.07 |
-| 2036 | 1.5M | 4.5M | 32.7 | ~12 minutes | ~$0.06 |
-| 2046 | 2.0M | 6.0M | 32.5 | ~10 minutes | ~$0.05 |
-| 2056 | 2.5M | 7.5M | 32.4 | ~9 minutes | ~$0.04 |
+| Year | Blocks | Effective Plane HJs | Median LCA | Consumer Time | Cloud Cost |
+|------|--------|---------------------|------------|---------------|------------|
+| 2026 | 940K | 2.8M | h≈33 | ~15 minutes | ~$0.09 |
+| 2031 | 1.2M | 3.6M | h≈32.8 | ~13 minutes | ~$0.07 |
+| 2036 | 1.5M | 4.5M | h≈32.7 | ~12 minutes | ~$0.06 |
 
 **With Moore's Law (compute doubles every 2.5 years):**
-
-| Year | Compute Multiplier | Time to First HJ | Cloud Cost |
-|------|-------------------|------------------|------------|
-| 2026 | 1× | ~15 minutes | ~$0.09 |
-| 2031 | 4× | ~4 minutes | ~$0.02 |
-| 2036 | 16× | ~1 minute | ~$0.005 |
+- 2026: ~15 minutes / $0.09
+- 2031: ~4 minutes / $0.02
+- 2036: ~1 minute / $0.005
 
 **Comparison:**
 
-| Configuration | Median LCA | Consumer Time | Cloud Cost |
-|--------------|------------|---------------|------------|
-| **Sector planes** (this proposal) | h=33 | ~15 minutes | ~$0.09 |
-| Original HJ design (point entry) | h=84 | ~10¹¹ years | ~$50,000+ |
-| **Improvement** | **51 bits easier** | **10¹⁴× faster** | **500,000× cheaper** |
+| Configuration | Median LCA | Consumer Time | Improvement |
+|--------------|------------|---------------|-------------|
+| **Sector planes** (enter-hyperspace) | h≈33 | ~15 minutes | **Baseline** |
+| Original design (exact point entry) | h≈84 | ~10¹¹ years | **10¹⁴× slower** |
 
-This demonstrates that the geometric insight (sector matching vs point matching) is what solves the bootstrap problem.
+The geometric insight (sector matching vs exact coordinate matching) solves the bootstrap problem.
 
 ---
 
-## Part III: Hyperspace Proof (v2 Addition)
+## Part II: Hyperjump Action (Hyperspace Traversal)
 
-### 7. Why Hyperspace Proof is Required
+### 6. Hyperjump Coordinate and Block Anchors
 
-Movement through Hyperspace between Bitcoin blocks requires:
-1. **Access commitment** - paying the "toll" to use the Hyperspace network
-2. **Hyperspace proof** - demonstrating that an entity actually traveled the path, not just paid a cost
+#### Hyperjump Coordinate Derivation (Normative)
 
-The original block height commitment metric (`block_diff.bit_length()` → 2^h SHA256 ops) solved access cost but did not define hyperspace proof. An identity traveling from block N to block M must publish proof that they traversed the Hyperspace path.
+Given a Bitcoin block's Merkle root (`merkle_root`):
+- Let `coord_hex = merkle_root` (32 bytes, lowercase hex, no `0x` prefix)
+- Let `coord256 = int(coord_hex, 16)`
+- The Hyperjump coordinate is `coord256`, interpreted as a Cyberspace coordinate per `CYBERSPACE_V2.md` §2
 
-### 8. Hyperspace Proof: Incremental Cantor Tree with Temporal Leaf
+**Notes:**
+- This uses the Merkle root as presented in standard big-endian hex form. Implementations MUST agree on this endianness.
+- The plane bit is the least significant bit of `coord256` (per `CYBERSPACE_V2.md` §2.1). Therefore Hyperjumps may exist in either plane.
+
+#### Block Anchor Events (Kind 321)
+
+Hyperjump coordinates are discoverable via Nostr by querying **block anchor events** (kind 321) that bind Bitcoin block identifiers to their Merkle-root-derived coordinate.
+
+**Required tags:**
+- `C` tag: `["C", "<coord_hex>"]` (the Merkle-root-derived Hyperjump coordinate)
+- Sector tags: `X`, `Y`, `Z`, `S` (per `CYBERSPACE_V2.md` §3)
+- `B` tag: `["B", "<height>"]` (Bitcoin block height, base-10 string)
+- `H` tag: `["H", "<block_hash_hex>"]` (32-byte lowercase hex)
+- `P` tag: `["P", "<prev_block_hash_hex>"]` (32-byte lowercase hex)
+
+**Optional tags:**
+- `net` tag: `["net", "mainnet"|"testnet"|"signnet"|"regtest"]` (default: mainnet)
+- `N` tag: `["N", "<next_block_hash_hex>"]` (once the next block is known)
+
+**Validation:** Implementations MUST verify that the `C`, `H`, `P`, and `B` tags match Bitcoin consensus for the selected network.
+
+### 7. Hyperjump Action Event (Normative)
+
+A **hyperjump** action (`kind=3333`, `A=hyperjump`) moves an identity between Hyperjumps within Hyperspace.
+
+#### Required tags:
+- `A` tag: `["A", "hyperjump"]`
+- `e` genesis: `["e", "<spawn_event_id>", "", "genesis"]`
+- `e` previous: `["e", "<previous_event_id>", "", "previous"]`
+- `c` tag: `["c", "<prev_coord_hex>"]` (the origin Hyperjump coordinate)
+- `C` tag: `["C", "<coord_hex>"]` (the destination Hyperjump coordinate)
+- `B` tag: `["B", "<to_height>"]` (destination Bitcoin block height, base-10 string)
+- Sector tags: `X`, `Y`, `Z`, `S` (computed from the destination coordinate)
+
+#### Optional tags:
+- `net` tag: `["net", "<bitcoin_network>"]` (default: mainnet)
+- `e` hyperjump-to: `["e", "<to_anchor_event_id>", "", "hyperjump_to"]` (kind 321 anchor for destination)
+- `e` hyperjump-from: `["e", "<from_anchor_event_id>", "", "hyperjump_from"]` (kind 321 anchor for origin)
+- `from_height` tag: `["from_height", "<B_from>"]` (origin block height, required when using hyperspace proof)
+- `from_hj` tag: `["from_hj", "<from_hyperjump_hex>"]` (origin Hyperjump coordinate, required with proof)
+- `prev` tag: `["prev", "<previous_movement_event_id>"]` (required with hyperspace proof)
+- `proof` tag: `["proof", "<hyperspace_proof_hex>"]` (Cantor traversal proof for multi-block paths)
+
+#### Prohibited:
+- Hyperjump events MUST NOT include a `proof` tag for single-block jumps (block_diff = 1). Proof is only required for multi-block traversal.
+
+#### Behavioral constraints:
+- `prev_coord_hex` MUST be a valid Hyperjump coordinate (corresponds to a valid block anchor event)
+- `<coord_hex>` MUST equal the Hyperjump coordinate for block height `<to_height>` on the selected Bitcoin network
+- If `proof` is present, it MUST be a valid hyperspace proof from `B_from` to `B_to`
+
+### 8. Hyperspace Proof: Incremental Cantor Tree (Multi-Block Traversal)
+
+#### When is a Hyperspace Proof Required?
+
+- **Single-block hyperjump** (B_to - B_from = 1): No proof required. The block height difference itself is the commitment.
+- **Multi-block hyperjump** (B_to - B_from > 1): Hyperspace proof REQUIRED to demonstrate the identity traversed the entire block-height path.
+
+#### Why Hyperspace Proof is Required
+
+Movement through Hyperspace requires:
+1. **Access commitment** - paying the "toll" via block-height difference
+2. **Hyperspace proof** - demonstrating the identity actually traveled the path, not just paid the cost
+
+The original block height commitment metric (`block_diff.bit_length()` → 2^h SHA256 ops) solved access cost but did not define traversal proof. An identity traveling from block N to block M must publish proof that they traversed the Hyperspace path.
 
 #### Leaf Construction
 
-For movement through Hyperspace from block `B_from` to block `B_to` (where `B_to > B_from`):
+For traversal from block `B_from` to block `B_to` (where `B_to > B_from`):
 
 **Leaves:** The temporal seed followed by each block height in the path:
 ```
@@ -278,7 +278,7 @@ Where:
 - `temporal_seed = previous_event_id (as big-endian int) % 2^256`
 - `previous_event_id` is the NIP-01 event ID of the identity's most recent movement event
 
-**Why temporal-as-first-leaf:** The temporal seed propagates through the entire Cantor tree, making the root unique to this entity at this chain position. Simpler than per-leaf temporal offsets, cryptographically equivalent under the Cantor Rigidity Theorem.
+**Why temporal-as-first-leaf:** The temporal seed propagates through the entire Cantor tree, making the root unique to this identity at this chain position. Simpler than per-leaf temporal offsets, cryptographically equivalent under the Cantor Rigidity Theorem.
 
 #### Cantor Tree Construction
 
@@ -288,7 +288,7 @@ def cantor_pair(a: int, b: int) -> int:
     s = a + b
     return (s * (s + 1)) // 2 + b
 
-def build_traversal_tree(leaves: list[int]) -> int:
+def build_hyperspace_proof(leaves: list[int]) -> int:
     """Build Cantor pairing tree from leaves, return root."""
     current_level = leaves
     
@@ -306,24 +306,29 @@ def build_traversal_tree(leaves: list[int]) -> int:
     return current_level[0]  # Root
 ```
 
-#### Proof Publication
+#### Proof Publication Example
 
-**Event kind:** 3333 (standard movement action)
-
-**Tags:**
 ```json
 {
   "kind": 3333,
+  "content": "",
   "tags": [
     ["A", "hyperjump"],
-    ["from_height", "<B_from>"],
-    ["to_height", "<B_to>"],
-    ["from_hj", "<merkle_root_B_from_hex>"],
-    ["to_hj", "<merkle_root_B_to_hex>"],
-    ["prev", "<previous_event_id>"],
-    ["proof", "<traversal_root_hex>"]
-  ],
-  "content": ""
+    ["e", "<spawn_event_id>", "", "genesis"],
+    ["e", "<prev_event_id>", "", "previous"],
+    ["c", "<from_hyperjump_hex>"],
+    ["C", "<to_hyperjump_hex>"],
+    ["from_height", "850000"],
+    ["to_height", "850100"],
+    ["from_hj", "<merkle_root_850000_hex>"],
+    ["to_hj", "<merkle_root_850100_hex>"],
+    ["prev", "<previous_movement_event_id>"],
+    ["proof", "<cantor_traversal_root_hex>"],
+    ["X", "<X_sector>"],
+    ["Y", "<Y_sector>"],
+    ["Z", "<Z_sector>"],
+    ["S", "<S_value>"]
+  ]
 }
 ```
 
@@ -336,32 +341,31 @@ def build_traversal_tree(leaves: list[int]) -> int:
 
 #### Non-Reuse Mechanism
 
-**Equivocation detection:** If an entity publishes two traversal proofs with the same `previous_event_id`, they have created two children of the same parent event. This is detectable and socially punishable (chain invalidation).
+**Equivocation detection:** If an identity publishes two hyperspace proofs with the same `previous_event_id`, they have created two children of the same parent event. This is detectable and socially punishable (chain invalidation).
 
 **Why this works:** The temporal seed makes every proof unique to a specific chain position. Replaying a proof requires reusing the same `previous_event_id`, which breaks the hash chain.
 
 #### Cost Analysis
 
-| Path Length | Pairings | Consumer Time (10⁹ pairs/sec) | Nation-State Time (10¹² pairs/sec) |
-|-------------|----------|-------------------------------|-------------------------------------|
+| Path Length | Pairings | Consumer Time | Nation-State Time |
+|-------------|----------|---------------|-------------------|
 | 100 blocks | 100 | 0.1 μs | 0.1 ns |
 | 1,000 blocks | 1,000 | 1 μs | 1 ns |
 | 10,000 blocks | 10,000 | 10 μs | 10 ns |
 | 100,000 blocks | 100,000 | 0.1 ms | 0.1 μs |
 | 1,000,000 blocks | 1,000,000 | 1 ms | 1 μs |
 
-**Consumer throughput:** ~1M blocks/day (continuous traversal)  
-**Nation-state throughput:** ~1B blocks/day (1000× advantage, linear scaling)
+**Consumer throughput:** ~1M blocks/day  
+**Nation-state throughput:** ~1B blocks/day (1000× linear advantage)
 
-**Key insight:** The advantage is linear (compute-bound), not exponential (storage-bound). Nation-states can traverse further, but consumers can still traverse meaningful distances.
+**Key insight:** The advantage is linear (compute-bound), not exponential (storage-bound).
 
 ---
 
-## Part IV: Action Examples
+## Part III: Complete Examples
 
-### Example 1: Block Anchor Event
+### Example 1: Block Anchor Event (Kind 321)
 
-Example block anchor event for Bitcoin block height `1606`:
 ```json
 {
   "kind": 321,
@@ -380,68 +384,44 @@ Example block anchor event for Bitcoin block height `1606`:
 }
 ```
 
-### Example 2: Hop onto Hyperjump (Standard Movement)
+### Example 2: Enter-Hyperspace via Sector Plane
 
-Movement hop onto that hyperjump coordinate (requires standard hop validation with proof):
-```json
-{
-  "kind": 3333,
-  "content": "",
-  "tags": [
-    ["A", "hop"],
-    ["e", "<spawn_event_id>", "", "genesis"],
-    ["e", "<previous_event_id>", "", "previous"],
-    ["c", "<prev_coord_hex>"],
-    ["C", "744193479b55674c02dec4ed73581eafbd7e2db03442360c9c34f9394031ee8f"],
-    ["proof", "<proof_hash_hex>"],
-    ["X", "11846810334975873"],
-    ["Y", "19088986011188665"],
-    ["Z", "27231467915017080"],
-    ["S", "11846810334975873-19088986011188665-27231467915017080"]
-  ]
-}
-```
-
-### Example 3: Enter-Hyperspace via Sector Plane
-
-Enter-hyperspace action to board the Hyperspace network via Y-plane:
 ```json
 {
   "kind": 3333,
   "content": "",
   "tags": [
     ["A", "enter-hyperspace"],
-    ["e", "<spawn_event_id>", "", "genesis"],
-    ["e", "<previous_event_id>", "", "previous"],
-    ["c", "<prev_coord_hex>"],
-    ["C", "<coord_on_Y_plane_hex>"],  // sector(Y) matches HJ's sector(Y)
+    ["e", "<spawn_id>", "", "genesis"],
+    ["e", "<prev_id>", "", "previous"],
+    ["c", "<prev_coord>"],
+    ["C", "<coord_on_Y_plane>"],
     ["HJ", "744193479b55674c02dec4ed73581eafbd7e2db03442360c9c34f9394031ee8f"],
     ["axis", "Y"],
-    ["proof", "<cantor_proof_hex>"],
-    ["X", "<sector_X_value>"],
-    ["Y", "<sector_Y_value>"],  // matches HJ's sector(Y)
-    ["Z", "<sector_Z_value>"],
-    ["S", "<sector_S_value>"]
+    ["proof", "<cantor_proof>"],
+    ["X", "<sector_X>"],
+    ["Y", "<sector_Y_matching_HJ>"],
+    ["Z", "<sector_Z>"],
+    ["S", "<S_value>"]
   ]
 }
 ```
 
-### Example 4: Hyperjump (Single Block, No Proof Required)
+### Example 3: Hyperjump (Single Block, No Proof)
 
-Hyperjump from height `1606` to height `1602` (no `proof` tag):
 ```json
 {
   "kind": 3333,
   "content": "",
   "tags": [
     ["A", "hyperjump"],
-    ["e", "<spawn_event_id>", "", "genesis"],
-    ["e", "<previous_event_id>", "", "previous"],
+    ["e", "<spawn_id>", "", "genesis"],
+    ["e", "<prev_id>", "", "previous"],
     ["c", "744193479b55674c02dec4ed73581eafbd7e2db03442360c9c34f9394031ee8f"],
     ["C", "42adcf1bc1976b02f66d5a33ab41946e7152f9b7ec08046a51625d443092e8cb"],
     ["B", "1602"],
-    ["e", "<anchor_event_id_for_1606>", "", "hyperjump_from"],
-    ["e", "<anchor_event_id_for_1602>", "", "hyperjump_to"],
+    ["e", "<anchor_1606_id>", "", "hyperjump_from"],
+    ["e", "<anchor_1602_id>", "", "hyperjump_to"],
     ["X", "6397583792183907"],
     ["Y", "22152908496923134"],
     ["Z", "5507206459976287"],
@@ -450,123 +430,19 @@ Hyperjump from height `1606` to height `1602` (no `proof` tag):
 }
 ```
 
-### Example 5: Hyperjump (Multiple Blocks, with Hyperspace Proof)
+### Example 4: Hyperjump (Multiple Blocks, with Hyperspace Proof)
 
-Long-distance hyperjump with Cantor hyperspace proof:
 ```json
 {
   "kind": 3333,
   "content": "",
   "tags": [
     ["A", "hyperjump"],
-    ["e", "<spawn_event_id>", "", "genesis"],
-    ["e", "<prev_hyperjump_event_id>", "", "previous"],
+    ["e", "<spawn_id>", "", "genesis"],
+    ["e", "<prev_id>", "", "previous"],
     ["c", "744193479b55674c02dec4ed73581eafbd7e2db03442360c9c34f9394031ee8f"],
-    ["C", "85bd9d664474ff652dfe84aff926d22700626e70..."],  // merkle root of block 850100
+    ["C", "85bd9d664474ff652dfe84aff926d22700626e70..."],
     ["from_height", "850000"],
     ["to_height", "850100"],
     ["from_hj", "744193479b55674c02dec4ed73581eafbd7e2db03442360c9c34f9394031ee8f"],
-    ["to_hj", "85bd9d664474ff652dfe84aff926d22700626e70..."],
-    ["prev", "<prev_hyperjump_event_id>"],
-    ["proof", "<cantor_traversal_root_hex>"],
-    ["X", "<X_sector>"],
-    ["Y", "<Y_sector>"],
-    ["Z", "<Z_sector>"],
-    ["S", "<S_value>"]
-  ]
-}
-```
-
----
-
-## Part V: Security and Implementation
-
-### Sector Entry Does Not Reveal More Information
-
-Knowing an identity has entered via the X-plane of a Hyperjump reveals only that their X sector equals H's X sector. Their Y and Z sectors (and all Gibson-level precision) remain hidden. This is strictly less information than revealing the full 3D point.
-
-### Hyperspace Proof Prevents Free Teleportation
-
-By requiring a Cantor traversal proof bound to `previous_event_id`, the protocol prevents:
-- **Reuse:** Proof is single-use (temporal seed binding)
-- **Amortization:** Can't precompute proofs for future use
-- **Cheating:** Proof cost is O(path_length), linear with distance traveled
-
-### Implementation Checklist
-
-- [ ] Add sector extraction and de-interleaving functions to cyberspace-cli
-- [ ] Implement `enter-hyperspace` action handler (kind 3333, A=enter-hyperspace)
-- [ ] Add hyperspace proof builder (Incremental Cantor Tree)
-- [ ] Update kind 3333 validator to handle `A=hyperjump` with hyperspace proofs
-- [ ] Add equivocation detection (track `previous_event_id` usage)
-- [ ] Update tests for enter-hyperspace validation (Cantor proof + sector match)
-- [ ] Write migration guide for existing clients
-
-### Backward Compatibility
-
-- Existing hyperjump coordinates (merkle roots) are unchanged
-- Existing `kind=321` block anchor events remain valid
-- Existing `kind=3333` hyperjump events (without sector entry) remain valid
-- Old clients that don't support sector entry can still use **point entry** via standard hop—it just costs vastly more (h≈84)
-- Sector entry and traversal proofs are opt-in and detected by validators
-
----
-
----
-
-## Appendix: Mathematical Derivation
-
-### Expected LCA for Sector Matching
-
-Given:
-- Sector space: S = 2⁵⁵ sectors per axis
-- N target sectors (from HJs): N = blocks × 3 = 2.8M
-- Random spawn position
-
-**Probability that at least one target shares ≥k high-order bits with spawn:**
-
-P(match) = 1 - P(all N targets have < k matching)
-         = 1 - (1 - 2^(-k))^N
-
-For median case (P = 0.5):
-```
-0.5 = 1 - (1 - 2^(-k))^N
-(1 - 2^(-k))^N = 0.5
-1 - 2^(-k) = 0.5^(1/N)
-2^(-k) = 1 - 0.5^(1/N)
-```
-
-For large N, using Taylor approximation:
-```
-2^(-k) ≈ ln(2) / N
-k ≈ log₂(N) - log₂(ln(2))
-k ≈ log₂(N) + 0.53
-```
-
-With N = 2.8M:
-```
-k ≈ log₂(2.8×10⁶) + 0.53
-k ≈ 21.4 + 0.53
-k ≈ 22 bits matching (median, one axis)
-```
-
-**For best-of-3 axes:**
-```
-P(best LCA ≤ h) = 1 - P(all 3 axes have LCA > h)
-                = 1 - (1 - P(one axis has LCA ≤ h))³
-```
-
-Solving for median (CDF = 0.5):
-**Median LCA ≈ 33 bits**
-
-This matches our empirical calculations.
-
----
-
-*This DECK v2 draft is for community review. Comments welcome via GitHub issues or Nostr DM to @arkin0x.*
-
-**References:**
-- `CYBERSPACE_V2.md` - Core protocol specification
-- `sidestep-proof-formal-spec.md` (2026-04-02) - Merkle sidestep mechanism
-- `hyperjump-traversal-proof.md` (2026-04-15) - Cantor traversal proof specification
-- `DECISIONS.md` (2026-04-15) - Kind 3333 locked pattern for all actions
+    ["to_hj", "85bd9d6644
