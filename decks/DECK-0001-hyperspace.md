@@ -15,7 +15,7 @@ This DECK defines **Hyperspace**: a PoW-backed teleport mechanism for identities
 
 A Bitcoin block's Merkle root is treated as a thermodynamically "paid for" coordinate in Cyberspace (with a random distribution across all blocks). The network of all Bitcoin blocks forms a 1-dimensional path (by block height) called **Hyperspace**, which is an alternative transit medium for identities to navigate Cyberspace.
 
-Each valid Bitcoin block exists in Cyberspace as a **Hyperjump**, and identities can navigate to a hyperjump to enter the Hyperspace system. Once in the system, identities can navigate between hyperjumps at a nominal cost relative to the Cyberspace distances they are traversing.
+Each valid Bitcoin block exists in Cyberspace as a **Hyperjump**, and identities can navigate to a Hyperjump's Sector entry plane to enter the Hyperspace system. Once in the system, identities can navigate between hyperjumps at a nominal cost relative to the Cyberspace distances they are traversing.
 
 **Two actions are defined:**
 1. **enter-hyperspace** (`kind=3333`, `A=enter-hyperspace`) - Boards the Hyperspace network from Cyberspace via sector-plane entry
@@ -104,10 +104,14 @@ To enter Hyperspace via a sector plane, an identity MUST publish an **enter-hype
 - `e` previous: `["e", "<previous_event_id>", "", "previous"]`
 - `c` tag: `["c", "<prev_coord_hex>"]`
 - `C` tag: `["C", "<coord_hex>"]` (the entered coordinate on the sector plane)
-- `HJ` tag: `["HJ", "<hyperjump_coord_hex>"]` (the target Hyperjump being entered)
+- `H` tag: `["H", "<hyperjump_merkle_root_hex>"]` (the Merkle root of the Hyperjump being entered; enables Nostr queries)
+- `B` tag: `["B", "<block_height>"]` (the Bitcoin block height of the Hyperjump)
 - `axis` tag: `["axis", "X"|"Y"|"Z"]` (which plane was used)
 - `proof` tag: `["proof", "<cantor_proof_hex>"]` (standard Cantor proof for reaching the coordinate)
 - Sector tags: `X`, `Y`, `Z`, `S` (per `CYBERSPACE_V2.md` §3), computed from the entered coordinate
+
+**Optional tag:**
+- `e` hyperjump-anchor: `["e", "<block_anchor_event_id>", "", "hyperjump-anchor"]` (references the kind 321 block anchor event for the Hyperjump being entered)
 
 **Example (entering via Y-plane):**
 ```json
@@ -120,7 +124,8 @@ To enter Hyperspace via a sector plane, an identity MUST publish an **enter-hype
     ["e", "<previous_event_id>", "", "previous"],
     ["c", "<prev_coord_hex>"],
     ["C", "<coord_on_Y_plane_hex>"],
-    ["HJ", "744193479b55674c02dec4ed73581eafbd7e2db03442360c9c34f9394031ee8f"],
+    ["H", "744193479b55674c02dec4ed73581eafbd7e2db03442360c9c34f9394031ee8f"],
+    ["B", "1606"],
     ["axis", "Y"],
     ["proof", "<cantor_proof_hex>"],
     ["X", "<sector_X_value>"],
@@ -134,8 +139,10 @@ To enter Hyperspace via a sector plane, an identity MUST publish an **enter-hype
 **Validation:**
 1. Verify it is `kind=3333` and includes `["A", "enter-hyperspace"]`
 2. Verify the Cantor proof is valid for the path to the entered coordinate
-3. Verify sector match: `sector(entered_coord_axis) == sector(HJ_axis)` on the specified axis
-4. Verify chain structure (`e` genesis + `e` previous) per `CYBERSPACE_V2.md` §6
+3. Verify sector match: `sector(entered_coord_axis) == sector(HJ_axis)` on the specified axis (where HJ_axis is extracted from the Merkle root in the `H` tag)
+4. Verify the `B` tag matches the block height of the Hyperjump identified by the `H` tag
+5. Verify chain structure (`e` genesis + `e` previous) per `CYBERSPACE_V2.md` §6
+6. If `hyperjump-anchor` is present, verify it references a valid kind 321 block anchor event with matching `H` and `B` values
 
 **Why `enter-hyperspace` instead of `sidestep`:**
 - **Sidestep** uses Merkle proofs for storage-infeasible LCA heights (h>35-40)
@@ -144,14 +151,25 @@ To enter Hyperspace via a sector plane, an identity MUST publish an **enter-hype
 
 **After publishing the enter-hyperspace action**, the identity is now "on" the Hyperspace network and can publish hyperjump actions to traverse between Hyperjumps.
 
-### 4. Exit Behavior
+### 4. Exit Behavior (Hyperspace → Cyberspace)
 
-When an identity executes a **hyperjump** action to exit Hyperspace, they **always** arrive at the exact Merkle-root coordinate **(Hx, Hy, Hz, Hp)** of the destination Hyperjump. The sector-plane advantage applies only to *entering* Hyperspace, not exiting.
+To exit Hyperspace and return to Cyberspace, an identity publishes a normal **hop** or **sidestep** action (per `CYBERSPACE_V2.md` §6) starting from the Hyperjump's Merkle-root coordinate.
 
-This ensures:
-- Spatial meaning is preserved (identities can't "teleport around" distance)
-- Navigation FROM the exit point to a final destination still costs standard Cyberspace movement work
-- The plane mechanism doesn't collapse locality
+**The exit process:**
+1. The identity is at a Hyperjump with Merkle root `M` (which is also a coord256 in Cyberspace)
+2. The identity publishes a hop or sidestep with:
+   - `c` tag: `["c", "<M_hex>"]` (the Hyperjump's Merkle root)
+   - `C` tag: `["C", "<destination_coord_hex>"]` (the target Cyberspace coordinate)
+   - `proof` tag: Standard Cantor or Merkle proof for the movement
+3. This movement is validated like any other Cyberspace hop/sidestep
+
+**Key insight:** The Merkle root `M` serves as both:
+- The Hyperjump's identifier in Hyperspace
+- A valid coord256 in Cyberspace (the exit point)
+
+The `c` tag of the exit hop/sidestep equals the `C` tag of the block anchor event for the Hyperjump, which equals the Merkle root of the Bitcoin block. This makes the Merkle root the **bridge coordinate** between Hyperspace and Cyberspace.
+
+**Spatial integrity:** Because the identity exits at the exact Merkle-root coordinate and then performs a standard Cyberspace movement to their final destination, they cannot "teleport around" distance. The sector-plane advantage applies only to *entering* Hyperspace, not exiting.
 
 ### 5. Coverage and Accessibility
 
