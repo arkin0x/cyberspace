@@ -1,7 +1,7 @@
-# DECK-0001: Hyperjumps (Bitcoin Block Merkle-Root Teleports)
+# DECK-0001: Hyperspace (Bitcoin Block Merkle-Root Teleports)
 
 **DECK:** 0001  
-**Title:** Hyperjumps (Bitcoin Block Merkle-Root Teleports)  
+**Title:** Hyperspace (Bitcoin Block Merkle-Root Teleports)  
 **Status:** Draft v2 (supersedes 2026-02-28 draft)  
 **Created:** 2026-02-28  
 **Last updated:** 2026-04-16  
@@ -11,11 +11,11 @@
 
 ## Abstract
 
-This DECK defines **hyperjumps**: a POW-backed teleport mechanism for identities between special coordinates derived from Bitcoin blocks.
+This DECK defines **Hyperspace**: a POW-backed teleport mechanism for identities between special coordinates derived from Bitcoin blocks.
 
-A Bitcoin block's Merkle root is treated as a thermodynamically "paid for" coordinate in Cyberspace (with a random distribution across all blocks). The network of all Bitcoin blocks forms a 1-dimensional path (by block height) called **hyperspace**, which is an alternative transit media for keypairs to navigate cyberspace.
+A Bitcoin block's Merkle root is treated as a thermodynamically "paid for" coordinate in Cyberspace (with a random distribution across all blocks). The network of all Bitcoin blocks forms a 1-dimensional path (by block height) called **Hyperspace**, which is an alternative transit media for keypairs to navigate cyberspace.
 
-Each valid Bitcoin block exists in cyberspace as a **hyperjump**, and identities can navigate to a hyperjump to enter the hyperspace system. Once in the system, identities can navigate between hyperjumps at a nominal cost relative to the cyberspace distances they are traversing.
+Each valid Bitcoin block exists in cyberspace as a **Hyperjump**, and identities can navigate to a hyperjump to enter the hyperspace system. Once in the system, identities can navigate between hyperjumps at a nominal cost relative to the cyberspace distances they are traversing.
 
 As a convenience, **block anchor events** may be published to nostr containing necessary hyperjump information so that the bitcoin chain does not have to be consulted directly for hyperjump access, but this is not necessary to publish a valid action chain including hyperspace traversal.
 
