@@ -150,6 +150,8 @@ We need a cost function that:
 3. Cannot be reused (no amortization)
 4. Is consumer-feasible for all practical distances
 
+**Additionally:** We need a **traversal proof** mechanism - an entity traveling from block N to block M must publish proof that they traversed the path, not just that they paid a cost.
+
 #### Problem with Coordinate-Based Distance
 
 An initial approach used XOR distance of full 256-bit merkle-root coordinates:
@@ -165,7 +167,7 @@ commitment_height = popcount(high 128 bits)
 
 #### Solution: Bitcoin Block Height Difference
 
-The commitment height is derived from **Bitcoin block height difference**, not spatial coordinate distance:
+The **access commitment** is derived from **Bitcoin block height difference**, not spatial coordinate distance:
 
 ```
 block_diff = |B_to - B_from|  (absolute difference in block heights)
@@ -179,6 +181,51 @@ commitment_cost = 2^commitment_height SHA256 operations
 - With ~940K blocks, random block pairs have median Δ=271K → h=19 → 524K ops (~5ms)
 - **100% of hops are h≤20** (maximum possible with current Bitcoin history)
 - Cost scales naturally: adjacent blocks are trivial, distant blocks cost more
+
+#### Traversal Proof: Incremental Cantor Tree
+
+Access commitment pays the "toll" to use the HJ network. **Traversal proof** demonstrates that an entity actually traveled the path.
+
+**Mechanism:** Incremental Cantor Tree with Temporal Leaf binding.
+
+**Leaves:** `[temporal_seed, B_from, B_from+1, ..., B_to]`
+- `temporal_seed = previous_event_id (as big-endian int) % 2^256`
+- Binds proof to entity's specific chain position
+
+**Tree construction:** Sequential Cantor pairing of all leaves:
+```python
+def cantor_pair(a: int, b: int) -> int:
+    """π(a, b) = (a+b)(a+b+1)/2 + b"""
+    s = a + b
+    return (s * (s + 1)) // 2 + b
+
+# Build tree from leaves
+root = leaves[0]
+for leaf in leaves[1:]:
+    root = cantor_pair(root, leaf)
+```
+
+**Publication:** Kind 3333 event with `A=hyperjump` tag:
+```json
+{
+  "kind": 3333,
+  "tags": [
+    ["A", "hyperjump"],
+    ["from_height", "850000"],
+    ["to_height", "850100"],
+    ["from_hj", "<merkle_root_850000>"],
+    ["to_hj", "<merkle_root_850100>"],
+    ["prev", "<previous_event_id>"],
+    ["proof", "<cantor_root_hex>"]
+  ]
+}
+```
+
+**Verification:** Recompute tree from leaves, verify root matches. O(path_length) operations.
+
+**Non-reuse:** Temporal seed binds proof to chain position. Replay = equivocation (detectable).
+
+**See:** `decks/hyperjump-traversal-proof.md` for full specification.
 
 #### Cost Scaling
 
