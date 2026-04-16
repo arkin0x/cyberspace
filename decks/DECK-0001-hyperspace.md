@@ -13,7 +13,9 @@
 
 This DECK defines **Hyperspace**: a PoW-backed teleport mechanism for identities between special coordinates derived from Bitcoin blocks.
 
-A Bitcoin block's Merkle root is treated as a thermodynamically "paid for" coordinate in Cyberspace (with a random distribution across all blocks). The network of all Bitcoin blocks forms a 1-dimensional path (by block height) called **Hyperspace**, which is an alternative transit medium for identities to navigate Cyberspace.
+**Problem:** The vastness of cyberspace and natural LCA barriers make it impossible for identities to travel to arbitrary points of interest in cyberspace. The Hyperspace system enables the largest proof-of-work system on Earth to thread new transit routes that can bypass these natural barriers in a uniformly fair way.
+
+**Solution:** A Bitcoin block's Merkle root is treated as a thermodynamically "paid for" coordinate in Cyberspace (with a uniformly random distribution across all blocks). The network of all Bitcoin blocks forms a 1-dimensional path (by block height) called **Hyperspace**, which is an alternative transit medium for identities to navigate Cyberspace.
 
 Each valid Bitcoin block exists in Cyberspace as a **Hyperjump**, and identities can navigate to a Hyperjump's Sector entry plane to enter the Hyperspace system. Once in the system, identities can navigate between hyperjumps at a nominal cost relative to the Cyberspace distances they are traversing.
 
