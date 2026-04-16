@@ -80,7 +80,7 @@ How an implementation performs this validation is out of scope (full node, heade
 
 ### 3. Hyperjump Movement Events
 
-A hyperjump action is represented as a movement event (`kind=3333`) in the avatar's movement chain (`CYBERSPACE_V2.md` §6) with action tag `["A", "hyperjump"]`.
+A hyperjump action is represented as a movement event (`kind=3333`) in the identity's movement chain (`CYBERSPACE_V2.md` §6) with action tag `["A", "hyperjump"]`.
 
 #### Hyperjump Movement Event (Normative)
 
@@ -123,9 +123,9 @@ To verify a hyperjump event:
 
 ### 4. The Bootstrap Problem
 
-The original hyperjump design requires avatars to hop to the **exact** hyperjump coordinate (a 3D point). At typical distances from a random spawn point, this requires reaching an LCA of h≈84, which costs 2⁸⁴ operations—approximately 10¹¹ years of computation, categorically infeasible.
+The original hyperjump design requires identities to hop to the **exact** hyperjump coordinate (a 3D point). At typical distances from a random spawn point, this requires reaching an LCA of h≈84, which costs 2⁸⁴ operations—approximately 10¹¹ years of computation, categorically infeasible.
 
-**This is the bootstrap problem:** How can a newly spawned avatar reach the hyperjump network with consumer-feasible computation?
+**This is the bootstrap problem:** How can a newly spawned identity reach the hyperjump network with consumer-feasible computation?
 
 ### 5. Sector-Based Entry Planes (Normative)
 
@@ -174,7 +174,7 @@ def sector(coord256: int, axis: str) -> int:
 
 #### Entry Validation
 
-To enter a hyperjump via a plane, an avatar MUST publish an **enter action** (kind 3333, `A=enter`) proving they have reached a coordinate whose **sector** matches the hyperjump's sector on the chosen axis.
+To enter a hyperjump via a plane, an identity MUST publish an **enter-hyperspace action** (kind 3333, `A=enter-hyperspace`) proving they have reached a coordinate whose **sector** matches the hyperjump's sector on the chosen axis.
 
 **The enter action includes:**
 - Destination coordinate **D** where `sector(chosen_axis) = sector(HJ_axis)`
@@ -186,7 +186,7 @@ To enter a hyperjump via a plane, an avatar MUST publish an **enter action** (ki
 {
   "kind": 3333,
   "tags": [
-    ["A", "enter"],
+    ["A", "enter-hyperspace"],
     ["C", "<coord_on_Y_plane>"],  // sector(Y) matches HJ's sector(Y)
     ["HJ", "<hyperjump_coord_hex>"],
     ["axis", "Y"],
@@ -197,14 +197,14 @@ To enter a hyperjump via a plane, an avatar MUST publish an **enter action** (ki
 
 **Why `enter` instead of `sidestep`:**
 - **Sidestep** uses Merkle proofs for storage-infeasible LCA heights (h>35-40)
-- **Enter** uses Cantor proofs for sector-level precision (h≈33, consumer-feasible)
-- The enter action is specifically for hyperjump plane entry, with HJ reference and validation
+- **Enter-hyperspace** uses Cantor proofs for sector-level precision (h≈33, consumer-feasible)
+- The enter-hyperspace action is specifically for hyperjump plane entry, with HJ reference and validation
 
-After publishing the enter action, the avatar is now "on" the hyperjump network and can publish hyperjump traversal proofs to move between HJs.
+After publishing the enter-hyperspace action, the identity is now "on" the hyperjump network and can publish hyperspace proofs to move between HJs.
 
 #### Exit Behavior
 
-When exiting a hyperjump (after a `A=hyperjump` action), the avatar **always** arrives at the exact merkle-root coordinate **(Hx, Hy, Hz, Hp)**. The sector-plane advantage applies only to *entering*, not exiting.
+When exiting a hyperjump (after a `A=hyperjump` action), the identity **always** arrives at the exact merkle-root coordinate **(Hx, Hy, Hz, Hp)**. The sector-plane advantage applies only to *entering*, not exiting.
 
 This ensures:
 - Spatial meaning is preserved (you can't "teleport around" distance)
@@ -253,21 +253,21 @@ This demonstrates that the geometric insight (sector matching vs point matching)
 
 ---
 
-## Part III: Inter-Hyperjump Traversal (v2 Addition)
+## Part III: Hyperspace Proof (v2 Addition)
 
-### 7. The Need for Traversal Proof
+### 7. Why Hyperspace Proof is Required
 
-Hyperjump travel between Bitcoin blocks requires:
-1. **Access commitment** - paying the "toll" to use the HJ network
-2. **Traversal proof** - demonstrating that an entity actually traveled the path, not just paid a cost
+Movement through Hyperspace between Bitcoin blocks requires:
+1. **Access commitment** - paying the "toll" to use the Hyperspace network
+2. **Hyperspace proof** - demonstrating that an entity actually traveled the path, not just paid a cost
 
-The original block height commitment metric (`block_diff.bit_length()` → 2^h SHA256 ops) solved access cost but did not define traversal proof. An entity traveling from block N to block M must publish proof that they traversed the path.
+The original block height commitment metric (`block_diff.bit_length()` → 2^h SHA256 ops) solved access cost but did not define hyperspace proof. An identity traveling from block N to block M must publish proof that they traversed the Hyperspace path.
 
-### 8. Incremental Cantor Tree with Temporal Leaf
+### 8. Hyperspace Proof: Incremental Cantor Tree with Temporal Leaf
 
 #### Leaf Construction
 
-For traversal from block `B_from` to block `B_to` (where `B_to > B_from`):
+For movement through Hyperspace from block `B_from` to block `B_to` (where `B_to > B_from`):
 
 **Leaves:** The temporal seed followed by each block height in the path:
 ```
@@ -276,7 +276,7 @@ leaves = [temporal_seed, B_from, B_from+1, ..., B_to]
 
 Where:
 - `temporal_seed = previous_event_id (as big-endian int) % 2^256`
-- `previous_event_id` is the NIP-01 event ID of the entity's most recent movement event
+- `previous_event_id` is the NIP-01 event ID of the identity's most recent movement event
 
 **Why temporal-as-first-leaf:** The temporal seed propagates through the entire Cantor tree, making the root unique to this entity at this chain position. Simpler than per-leaf temporal offsets, cryptographically equivalent under the Cantor Rigidity Theorem.
 
@@ -357,7 +357,7 @@ def build_traversal_tree(leaves: list[int]) -> int:
 
 ---
 
-## Part IV: Complete Examples
+## Part IV: Action Examples
 
 ### Example 1: Block Anchor Event
 
@@ -402,15 +402,15 @@ Movement hop onto that hyperjump coordinate (requires standard hop validation wi
 }
 ```
 
-### Example 3: Enter Hyperjump via Sector Plane (NEW)
+### Example 3: Enter-Hyperspace via Sector Plane
 
-Enter action to board the hyperjump network via Y-plane:
+Enter-hyperspace action to board the Hyperspace network via Y-plane:
 ```json
 {
   "kind": 3333,
   "content": "",
   "tags": [
-    ["A", "enter"],
+    ["A", "enter-hyperspace"],
     ["e", "<spawn_event_id>", "", "genesis"],
     ["e", "<previous_event_id>", "", "previous"],
     ["c", "<prev_coord_hex>"],
@@ -426,7 +426,7 @@ Enter action to board the hyperjump network via Y-plane:
 }
 ```
 
-### Example 4: Hyperjump Between Blocks (No Proof Required)
+### Example 4: Hyperjump (Single Block, No Proof Required)
 
 Hyperjump from height `1606` to height `1602` (no `proof` tag):
 ```json
@@ -450,9 +450,9 @@ Hyperjump from height `1606` to height `1602` (no `proof` tag):
 }
 ```
 
-### Example 5: Hyperjump with Traversal Proof (NEW)
+### Example 5: Hyperjump (Multiple Blocks, with Hyperspace Proof)
 
-Long-distance hyperjump with Cantor traversal proof:
+Long-distance hyperjump with Cantor hyperspace proof:
 ```json
 {
   "kind": 3333,
@@ -479,18 +479,28 @@ Long-distance hyperjump with Cantor traversal proof:
 
 ---
 
-## Part V: Security Considerations
+## Part V: Security and Implementation
 
 ### Sector Entry Does Not Reveal More Information
 
-Knowing an avatar is "on the X-plane of HJ H" reveals only that their X sector equals H's X sector. Their Y and Z sectors (and all Gibson-level precision) remain hidden. This is strictly less information than revealing the full 3D point.
+Knowing an identity has entered via the X-plane of a Hyperjump reveals only that their X sector equals H's X sector. Their Y and Z sectors (and all Gibson-level precision) remain hidden. This is strictly less information than revealing the full 3D point.
 
-### Traversal Proof Prevents Free Teleportation
+### Hyperspace Proof Prevents Free Teleportation
 
 By requiring a Cantor traversal proof bound to `previous_event_id`, the protocol prevents:
 - **Reuse:** Proof is single-use (temporal seed binding)
 - **Amortization:** Can't precompute proofs for future use
 - **Cheating:** Proof cost is O(path_length), linear with distance traveled
+
+### Implementation Checklist
+
+- [ ] Add sector extraction and de-interleaving functions to cyberspace-cli
+- [ ] Implement `enter-hyperspace` action handler (kind 3333, A=enter-hyperspace)
+- [ ] Add hyperspace proof builder (Incremental Cantor Tree)
+- [ ] Update kind 3333 validator to handle `A=hyperjump` with hyperspace proofs
+- [ ] Add equivocation detection (track `previous_event_id` usage)
+- [ ] Update tests for enter-hyperspace validation (Cantor proof + sector match)
+- [ ] Write migration guide for existing clients
 
 ### Backward Compatibility
 
@@ -501,17 +511,6 @@ By requiring a Cantor traversal proof bound to `previous_event_id`, the protocol
 - Sector entry and traversal proofs are opt-in and detected by validators
 
 ---
-
-## Part VI: Implementation Checklist
-
-- [ ] Community review and feedback on this v2 draft
-- [ ] Add sector-based HJ queries to cyberspace-cli (filter by sector, not exact coordinate)
-- [ ] Implement `enter` action handler (kind 3333, A=enter)
-- [ ] Add Cantor traversal proof builder for inter-HJ movement
-- [ ] Update kind 3333 validator to handle `A=hyperjump` with traversal proofs
-- [ ] Add equivocation detection (track `previous_event_id` usage)
-- [ ] Update tests for enter action validation (Cantor proof + sector match)
-- [ ] Write migration guide for existing clients
 
 ---
 
