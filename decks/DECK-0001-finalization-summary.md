@@ -20,7 +20,8 @@ File: `decks/DECK-0001-hyperjumps.md`
 
 **Major changes:**
 - Sector-based entry planes (1 sector thick per axis)
-- Entry via standard sidestep movement event (A=sidestep)
+- Entry via dedicated **enter** action (kind 33340, A=enter) with Cantor proof
+- Enter is 4th movement primitive (spawn, hop, sidestep, enter)
 - Exit always at exact 3D merkle-root coordinate
 - Removed shadow HJ derivation section
 
@@ -165,8 +166,8 @@ Full journey planning left to third-party tools and services.
 - [ ] Update DECK-0001 spec with approved changes
 - [ ] Add sector-based HJ queries to cyberspace-cli
 - [ ] Add commitment computation to hyperjump validation
-- [ ] Create kind=33340 event handler (hyperjump_entry announcement)
-- [ ] Update tests for new validation rules
+- [ ] Implement **enter** action handler (kind 3333, A=enter)
+- [ ] Update tests for enter action validation (Cantor proof + sector match)
 - [ ] Write migration guide for existing clients
 
 ---

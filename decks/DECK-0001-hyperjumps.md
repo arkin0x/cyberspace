@@ -103,7 +103,7 @@ def sector(coord256: int, axis: str) -> int:
 
 #### Entry Validation
 
-To enter a hyperjump via a plane, an avatar MUST publish an **enter action** (kind 33340, `A=enter`) proving they have reached a coordinate whose **sector** matches the hyperjump's sector on the chosen axis.
+To enter a hyperjump via a plane, an avatar MUST publish an **enter action** (kind 3333, `A=enter`) proving they have reached a coordinate whose **sector** matches the hyperjump's sector on the chosen axis.
 
 The enter action includes:
 - Destination coordinate **D** where `sector(chosen_axis) = sector(HJ_axis)`
@@ -113,7 +113,7 @@ The enter action includes:
 Example (entering via Y-plane):
 ```json
 {
-  "kind": 33340,
+  "kind": 3333,
   "tags": [
     ["A", "enter"],
     ["C", "<coord_on_Y_plane>"],  // sector(Y) matches HJ's sector(Y)
@@ -355,11 +355,11 @@ Existing block anchor events remain valid. No changes required.
 
 ### Hyperjump Entry Announcement (New)
 
-**Kind:** 33340 (CSEP-33340)  
+**Kind:** 3333 (standard movement action)  
 **Purpose:** Signal that an avatar has entered a hyperjump sector-plane and is now on the HJ network
 
 **Required tags:**
-- `A`: `["A", "enter"]` (action type)
+- `A`: `["A", "enter"]` (action type - 4th movement primitive)
 - `e`: `["e", "<previous_movement_event_id>", "", "previous"]`
 - `c`: `["c", "<entered_coord_hex>"]` (coordinate on the entry plane)
 - `HJ`: `["HJ", "<hyperjump coord hex>"]` (the target HJ being entered)
