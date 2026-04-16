@@ -250,6 +250,9 @@ A **hyperjump** action (`kind=3333`, `A=hyperjump`) moves an identity between Hy
 - `e` previous: `["e", "<previous_event_id>", "", "previous"]`
 - `c` tag: `["c", "<prev_coord_hex>"]` (the origin Hyperjump coordinate)
 - `C` tag: `["C", "<coord_hex>"]` (the destination Hyperjump coordinate)
+- `from_height` tag: `["from_height", "<B_from>"]` (origin Bitcoin block height)
+- `from_hj` tag: `["from_hj", "<from_hyperjump_hex>"]` (origin Hyperjump coordinate)
+- `proof` tag: `["proof", "<hyperspace_proof_hex>"]` (Cantor traversal proof; see §8)
 - `B` tag: `["B", "<to_height>"]` (destination Bitcoin block height, base-10 string)
 - Sector tags: `X`, `Y`, `Z`, `S` (computed from the destination coordinate)
 
@@ -257,33 +260,40 @@ A **hyperjump** action (`kind=3333`, `A=hyperjump`) moves an identity between Hy
 - `net` tag: `["net", "<bitcoin_network>"]` (default: mainnet)
 - `e` hyperjump-to: `["e", "<to_anchor_event_id>", "", "hyperjump_to"]` (kind 321 anchor for destination)
 - `e` hyperjump-from: `["e", "<from_anchor_event_id>", "", "hyperjump_from"]` (kind 321 anchor for origin)
-- `from_height` tag: `["from_height", "<B_from>"]` (origin block height, required when using hyperspace proof)
-- `from_hj` tag: `["from_hj", "<from_hyperjump_hex>"]` (origin Hyperjump coordinate, required with proof)
-- `prev` tag: `["prev", "<previous_movement_event_id>"]` (required with hyperspace proof)
-- `proof` tag: `["proof", "<hyperspace_proof_hex>"]` (Cantor traversal proof for multi-block paths)
+- `from_height` tag: `["from_height", "<B_from>"]` (origin Bitcoin block height)
+- `from_hj` tag: `["from_hj", "<from_hyperjump_hex>"]` (origin Hyperjump coordinate)
+- `prev` tag: `["prev", "<previous_movement_event_id>"]` (required for proof verification)
+- `proof` tag: `["proof", "<hyperspace_proof_hex>"]` (Cantor traversal proof; REQUIRED for all hyperjump actions)
 
-#### Prohibited:
-- Hyperjump events MUST NOT include a `proof` tag for single-block jumps (block_diff = 1). Proof is only required for multi-block traversal.
+#### Required:
+- `proof` tag: MUST be present and valid for ALL hyperjump actions, including single-block jumps. The Cantor tree proof is the mechanism that scales with block height traveled and proves the identity traversed the Hyperspace path.
 
 #### Behavioral constraints:
 - `prev_coord_hex` MUST be a valid Hyperjump coordinate (corresponds to a valid block anchor event)
 - `<coord_hex>` MUST equal the Hyperjump coordinate for block height `<to_height>` on the selected Bitcoin network
-- If `proof` is present, it MUST be a valid hyperspace proof from `B_from` to `B_to`
+- `proof` MUST be a valid hyperspace proof from `B_from` to `B_to` (constructed per §8)
 
-### 8. Hyperspace Proof: Incremental Cantor Tree (Multi-Block Traversal)
+### 8. Hyperspace Proof: Incremental Cantor Tree (Traversal Verification)
 
-#### When is a Hyperspace Proof Required?
+#### Proof Requirement
 
-- **Single-block hyperjump** (B_to - B_from = 1): No proof required. The block height difference itself is the commitment.
-- **Multi-block hyperjump** (B_to - B_from > 1): Hyperspace proof REQUIRED to demonstrate the identity traversed the entire block-height path.
+**ALL hyperjump actions MUST include a hyperspace proof.** The Cantor tree proof scales with the block height traveled:
+
+- **1-block hyperjump**: 3 leaves → 2 Cantor pairings (~200 ns)
+- **100-block hyperjump**: 102 leaves → ~100 pairings (~1 μs)
+- **1,000-block hyperjump**: 1,002 leaves → ~1,000 pairings (~10 μs)
+
+The proof mechanism is uniform across all distances; computational cost scales linearly with path length.
 
 #### Why Hyperspace Proof is Required
 
-Movement through Hyperspace requires:
-1. **Access commitment** - paying the "toll" via block-height difference
-2. **Hyperspace proof** - demonstrating the identity actually traveled the path, not just paid the cost
+Movement through Hyperspace requires proving the identity traversed the block-height path between two Hyperjumps. The temporal-leaf Cantor tree provides this proof:
 
-The original block height commitment metric (`block_diff.bit_length()` → 2^h SHA256 ops) solved access cost but did not define traversal proof. An identity traveling from block N to block M must publish proof that they traversed the Hyperspace path.
+1. **Traversal verification** - demonstrates the identity moved through each block height in sequence
+2. **Non-reuse mechanism** - the temporal seed (derived from `previous_event_id`) makes each proof unique to this identity at this chain position
+3. **Scaled commitment** - computational cost scales linearly with distance traveled (number of Cantor pairings = number of blocks traversed)
+
+An identity traveling from block N to block M must publish a Cantor tree proof incorporating all intermediate block heights.
 
 #### Leaf Construction
 
@@ -297,6 +307,10 @@ leaves = [temporal_seed, B_from, B_from+1, ..., B_to]
 Where:
 - `temporal_seed = previous_event_id (as big-endian int) % 2^256`
 - `previous_event_id` is the NIP-01 event ID of the identity's most recent movement event
+
+**Examples:**
+- **1-block jump** (B_from=1606, B_to=1607): `leaves = [temporal_seed, 1606, 1607]` (3 leaves → 2 pairings)
+- **100-block jump** (B_from=850000, B_to=850100): `leaves = [temporal_seed, 850000, 850001, ..., 850100]` (102 leaves → 100 pairings)
 
 **Why temporal-as-first-leaf:** The temporal seed propagates through the entire Cantor tree, making the root unique to this identity at this chain position. Simpler than per-leaf temporal offsets, cryptographically equivalent under the Cantor Rigidity Theorem.
 
@@ -353,11 +367,13 @@ def build_hyperspace_proof(leaves: list[int]) -> int:
 ```
 
 **Verification:**
-1. Extract `previous_event_id` from `prev` tag
+1. Extract `previous_event_id` from the `prev` tag of the hyperjump event
 2. Recompute `temporal_seed = int.from_bytes(previous_event_id, "big") % 2^256`
-3. Reconstruct leaves: `[temporal_seed, B_from, B_from+1, ..., B_to]`
-4. Rebuild Cantor tree
+3. Reconstruct leaves: `[temporal_seed, B_from, B_from+1, ..., B_to]` (using `from_height` and `B` tags)
+4. Rebuild Cantor tree from leaves
 5. Verify root matches `proof` tag
+6. Verify `from_hj` matches the Merkle root coordinate for block `B_from`
+7. Verify `C` tag matches the Merkle root coordinate for block `B_to` (from `B` tag)
 
 #### Non-Reuse Mechanism
 
@@ -367,13 +383,14 @@ def build_hyperspace_proof(leaves: list[int]) -> int:
 
 #### Cost Analysis
 
-| Path Length | Pairings | Consumer Time | Nation-State Time |
-|-------------|----------|---------------|-------------------|
-| 100 blocks | 100 | 0.1 μs | 0.1 ns |
-| 1,000 blocks | 1,000 | 1 μs | 1 ns |
-| 10,000 blocks | 10,000 | 10 μs | 10 ns |
-| 100,000 blocks | 100,000 | 0.1 ms | 0.1 μs |
-| 1,000,000 blocks | 1,000,000 | 1 ms | 1 μs |
+| Path Length | Leaves | Pairings | Consumer Time | Nation-State Time |
+|-------------|--------|----------|---------------|-------------------|
+| 1 block | 3 | 2 | ~200 ns | ~2 ns |
+| 100 blocks | 102 | 100 | 0.1 μs | 0.1 ns |
+| 1,000 blocks | 1,002 | 1,000 | 1 μs | 1 ns |
+| 10,000 blocks | 10,002 | 10,000 | 10 μs | 10 ns |
+| 100,000 blocks | 100,002 | 100,000 | 0.1 ms | 0.1 μs |
+| 1,000,000 blocks | 1,000,002 | 1,000,000 | 1 ms | 1 μs |
 
 **Consumer throughput:** ~1M blocks/day  
 **Nation-state throughput:** ~1B blocks/day (1000× linear advantage)
@@ -428,7 +445,7 @@ def build_hyperspace_proof(leaves: list[int]) -> int:
 }
 ```
 
-### Example 3: Hyperjump (Single Block, No Proof)
+### Example 3: Hyperjump (Single Block)
 
 ```json
 {
@@ -439,8 +456,12 @@ def build_hyperspace_proof(leaves: list[int]) -> int:
     ["e", "<spawn_id>", "", "genesis"],
     ["e", "<prev_id>", "", "previous"],
     ["c", "744193479b55674c02dec4ed73581eafbd7e2db03442360c9c34f9394031ee8f"],
+    ["from_hj", "744193479b55674c02dec4ed73581eafbd7e2db03442360c9c34f9394031ee8f"],
+    ["from_height", "1606"],
     ["C", "42adcf1bc1976b02f66d5a33ab41946e7152f9b7ec08046a51625d443092e8cb"],
     ["B", "1602"],
+    ["prev", "<previous_movement_event_id>"],
+    ["proof", "<cantor_proof_3_leaves>"],
     ["e", "<anchor_1606_id>", "", "hyperjump_from"],
     ["e", "<anchor_1602_id>", "", "hyperjump_to"],
     ["X", "6397583792183907"],
