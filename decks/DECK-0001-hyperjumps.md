@@ -11,25 +11,27 @@
 
 ## Abstract
 
-This DECK defines **hyperjumps**: a zero-movement-proof teleport mechanism between special coordinates derived from Bitcoin blocks.
+This DECK defines **hyperjumps**: a POW-backed teleport mechanism for identities between special coordinates derived from Bitcoin blocks.
 
-A Bitcoin block's Merkle root is treated as a thermodynamically "paid for" random coordinate in Cyberspace. By publishing these blocks as Nostr events (block anchor events), avatars can visit a growing network of unpredictable but far-reaching transit points.
+A Bitcoin block's Merkle root is treated as a thermodynamically "paid for" coordinate in Cyberspace (with a random distribution across all blocks). The network of all Bitcoin blocks forms a 1-dimensional path (by block height) called **hyperspace**, which is an alternative transit media for keypairs to navigate cyberspace.
 
-**This v2 revision adds:**
-- **Sector-based entry planes** to solve the bootstrap problem (consumer-feasible entry at h≈33, ~15 minutes)
-- **Enter action** (`kind=3333`, `A=enter`) as the 4th movement primitive for boarding the hyperjump network
-- **Cantor traversal proof** for inter-hyperjump travel (Incremental Cantor Tree with Temporal Leaf binding)
+Each valid Bitcoin block exists in cyberspace as a **hyperjump**, and identities can navigate to a hyperjump to enter the hyperspace system. Once in the system, identities can navigate between hyperjumps at a nominal cost relative to the cyberspace distances they are traversing.
+
+As a convenience, **block anchor events** may be published to nostr containing necessary hyperjump information so that the bitcoin chain does not have to be consulted directly for hyperjump access, but this is not necessary to publish a valid action chain including hyperspace traversal.
+
+As nobody can predict the next Bitcoin block's Merkle root, nobody can predict where hyperspace will connect to next, but every 10 minutes it punches a new hole in the vastness of cyberspace, opening new territory and enabling new opportunities.
 
 ---
 
 ## Terms
 
-- **Hyperjump**: a protocol-defined teleport action between two hyperjump coordinates that reuses Bitcoin proof-of-work rather than requiring a Cyberspace v2 movement proof.
-- **Hyperjump coordinate**: a coord256 derived deterministically from a Bitcoin block's Merkle root.
-- **Block anchor event**: a Nostr event that binds Bitcoin block identifiers to the corresponding hyperjump coordinate so clients can discover nearby hyperjumps via Nostr queries.
-- **Sector entry plane**: a 2D plane (1 sector thick, 2³⁰ Gibsons) where avatars can enter the hyperjump network by matching the high 55 bits of one axis.
-- **Enter action**: movement primitive for entering a hyperjump plane (`kind=3333`, `A=enter`).
-- **Traversal proof**: Cantor tree proving an entity traveled from one hyperjump to another.
+- **Hyperspace**: the 1-dimensional path through cyberspace where each point is a Bitcoin block Merkle root in block height order
+- **Hyperjump** (Object): a cyberspace object defined by a valid Bitcoin block Merkle root
+- **hyperjump** (Action): the kind 3333 action type to move between one or many Hyperjumps
+- **Hyperjump coordinate**: a Bitcoin block's Merkle root interpreted without modification as a coord256 in cyberspace
+- **Block anchor event**: a Nostr event that represents a Bitcoin block for convenience so clients can discover nearby hyperjumps via Nostr queries.
+- **Sector entry plane**: a volume of cyberspace occupying every Gibson sharing the same sector along a single axis as a hyperjump. (1 sector is 2³⁰ Gibsons). Identities can use the `enter-hyperspace` action when inside of this volume (by matching the high 55 bits of one axis to a hyperjump's coordinate/Merkle root)
+- **Hyperspace proof**: A hyperspace-specific Cantor tree proof-of-work proving an entity traveled from one hyperjump to another.
 
 ---
 
