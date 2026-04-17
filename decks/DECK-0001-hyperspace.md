@@ -150,6 +150,8 @@ To enter Hyperspace via a sector plane, an identity MUST publish an **enter-hype
 
 **Coordinate clarification:** The identity's location after publishing their enter-hyperspace action is the `C` coordinate they made a standard Cantor movement proof toward. After the identity publishes 1 hyperjump action to their chain, their location will resolve to the Merkle-root-as-coord256 of the destination Hyperjump. This is to clarify that the enter-hyperspace action does not resolve the identity's location to the Merkle-root-as-coord256 of the Hyperjump used as entry to Hyperspace.
 
+**Exit after entry:** If the identity publishes a hop or sidestep immediately after an enter-hyperspace action, they will exit Hyperspace and move from the `C` tag on the enter-hyperspace action, effectively canceling the setup to traverse Hyperspace.
+
 ### 4. Exit Behavior (Hyperspace → Cyberspace)
 
 To exit Hyperspace and return to Cyberspace, an identity publishes a normal **hop** or **sidestep** action (per `CYBERSPACE_V2.md` §6) starting from the Hyperjump's Merkle-root coordinate.
