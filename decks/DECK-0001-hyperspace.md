@@ -146,12 +146,9 @@ To enter Hyperspace via a sector plane, an identity MUST publish an **enter-hype
 5. Verify chain structure (`e` genesis + `e` previous) per `CYBERSPACE_V2.md` §6
 6. If `hyperjump-anchor` is present, verify it references a valid kind 321 block anchor event with matching `M` and `B` values
 
-**Why `enter-hyperspace` instead of `sidestep`:**
-- **Sidestep** uses Merkle proofs for storage-infeasible LCA heights (h>35-40)
-- **Enter-hyperspace** uses Cantor proofs for sector-level precision (h≈33, consumer-feasible)
-- The enter-hyperspace action is specifically for boarding the Hyperspace network, with Hyperjump reference and sector validation
-
 **After publishing the enter-hyperspace action**, the identity is now "on" the Hyperspace network and can publish hyperjump actions to traverse between Hyperjumps.
+
+**Coordinate clarification:** The identity's location after publishing their enter-hyperspace action is the `C` coordinate they made a standard Cantor movement proof toward. After the identity publishes 1 hyperjump action to their chain, their location will resolve to the Merkle-root-as-coord256 of the destination Hyperjump. This is to clarify that the enter-hyperspace action does not resolve the identity's location to the Merkle-root-as-coord256 of the Hyperjump used as entry to Hyperspace.
 
 ### 4. Exit Behavior (Hyperspace → Cyberspace)
 
