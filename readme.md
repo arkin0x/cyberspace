@@ -104,6 +104,12 @@ cyberspace history
 cyberspace chain status
 ```
 
+**Interactive movement visualization:**
+```bash
+cyberspace move viz
+```
+Launch a terminal TUI for planning movements. Navigate with arrow keys or `a`/`d`, switch axes with `x`/`y`/`z`, use `:` to jump to an offset, and press Enter to execute. The visualization shows adjacent coordinates, LCA heights, terrain difficulty (K), and estimated compute time.
+
 Other useful utilities:
 ```bash
 cyberspace sector
