@@ -2,7 +2,8 @@
   "delta_u85": "4835703278458516698824704",
   "notes": [
     "These vectors are non-normative test material intended to sanity-check visualization conventions.",
-    "They are centered around AXIS_CENTER (2^84) with delta_u85 = 2^82 (~12,007 km)."
+    "They are centered around AXIS_CENTER (2^84) with delta_u85 = 2^82 (~562,949,953,421.312 km at Cantor Height 34).",
+    "Previous revisions of this file used the Cyberspace v1 axis length of 96,056 km, which labelled delta_u85 = 2^82 as ~12,007 km. That is wrong by a factor of ~4.69e7 and places Earth's surface 13.6 cm from the origin. Decoding the CYBERSPACE_V2.md 9.8 golden vectors under the scale block below reproduces WGS84: equator 6378.14 km, pole 6356.75 km."
   ],
   "vectors": [
     {
@@ -22,7 +23,7 @@
       "x_u85": "24178516392292583494123520",
       "y_u85": "19342813113834066795298816",
       "z_u85": "19342813113834066795298816",
-      "x_km_from_center": 12007.0,
+      "x_km_from_center": 562949953421.312,
       "y_km_from_center": 0.0,
       "z_km_from_center": 0.0,
       "coord_hex": "e200000000000000000000000000000000000000000000000000000000000000"
@@ -33,7 +34,7 @@
       "x_u85": "14507109835375550096474112",
       "y_u85": "19342813113834066795298816",
       "z_u85": "19342813113834066795298816",
-      "x_km_from_center": -12007.0,
+      "x_km_from_center": -562949953421.312,
       "y_km_from_center": 0.0,
       "z_km_from_center": 0.0,
       "coord_hex": "7200000000000000000000000000000000000000000000000000000000000000"
@@ -45,7 +46,7 @@
       "y_u85": "24178516392292583494123520",
       "z_u85": "19342813113834066795298816",
       "x_km_from_center": 0.0,
-      "y_km_from_center": 12007.0,
+      "y_km_from_center": 562949953421.312,
       "z_km_from_center": 0.0,
       "coord_hex": "e100000000000000000000000000000000000000000000000000000000000000"
     },
@@ -56,7 +57,7 @@
       "y_u85": "14507109835375550096474112",
       "z_u85": "19342813113834066795298816",
       "x_km_from_center": 0.0,
-      "y_km_from_center": -12007.0,
+      "y_km_from_center": -562949953421.312,
       "z_km_from_center": 0.0,
       "coord_hex": "a900000000000000000000000000000000000000000000000000000000000000"
     },
@@ -68,7 +69,7 @@
       "z_u85": "24178516392292583494123520",
       "x_km_from_center": 0.0,
       "y_km_from_center": 0.0,
-      "z_km_from_center": 12007.0,
+      "z_km_from_center": 562949953421.312,
       "coord_hex": "e080000000000000000000000000000000000000000000000000000000000000"
     },
     {
@@ -79,7 +80,7 @@
       "z_u85": "14507109835375550096474112",
       "x_km_from_center": 0.0,
       "y_km_from_center": 0.0,
-      "z_km_from_center": -12007.0,
+      "z_km_from_center": -562949953421.312,
       "coord_hex": "c480000000000000000000000000000000000000000000000000000000000000"
     },
     {
@@ -99,7 +100,7 @@
       "x_u85": "24178516392292583494123520",
       "y_u85": "19342813113834066795298816",
       "z_u85": "19342813113834066795298816",
-      "x_km_from_center": 12007.0,
+      "x_km_from_center": 562949953421.312,
       "y_km_from_center": 0.0,
       "z_km_from_center": 0.0,
       "coord_hex": "e200000000000000000000000000000000000000000000000000000000000001"
@@ -110,7 +111,7 @@
       "x_u85": "14507109835375550096474112",
       "y_u85": "19342813113834066795298816",
       "z_u85": "19342813113834066795298816",
-      "x_km_from_center": -12007.0,
+      "x_km_from_center": -562949953421.312,
       "y_km_from_center": 0.0,
       "z_km_from_center": 0.0,
       "coord_hex": "7200000000000000000000000000000000000000000000000000000000000001"
@@ -122,7 +123,7 @@
       "y_u85": "24178516392292583494123520",
       "z_u85": "19342813113834066795298816",
       "x_km_from_center": 0.0,
-      "y_km_from_center": 12007.0,
+      "y_km_from_center": 562949953421.312,
       "z_km_from_center": 0.0,
       "coord_hex": "e100000000000000000000000000000000000000000000000000000000000001"
     },
@@ -133,7 +134,7 @@
       "y_u85": "14507109835375550096474112",
       "z_u85": "19342813113834066795298816",
       "x_km_from_center": 0.0,
-      "y_km_from_center": -12007.0,
+      "y_km_from_center": -562949953421.312,
       "z_km_from_center": 0.0,
       "coord_hex": "a900000000000000000000000000000000000000000000000000000000000001"
     },
@@ -145,7 +146,7 @@
       "z_u85": "24178516392292583494123520",
       "x_km_from_center": 0.0,
       "y_km_from_center": 0.0,
-      "z_km_from_center": 12007.0,
+      "z_km_from_center": 562949953421.312,
       "coord_hex": "e080000000000000000000000000000000000000000000000000000000000001"
     },
     {
@@ -156,8 +157,14 @@
       "z_u85": "14507109835375550096474112",
       "x_km_from_center": 0.0,
       "y_km_from_center": 0.0,
-      "z_km_from_center": -12007.0,
+      "z_km_from_center": -562949953421.312,
       "coord_hex": "c480000000000000000000000000000000000000000000000000000000000001"
     }
-  ]
+  ],
+  "scale": {
+    "spec": "CYBERSPACE_V2.md 9.2 / 9.7 (Cantor Height 34)",
+    "units_per_km": "8589934592000",
+    "dataspace_axis_km": "4503599627370.496",
+    "note": "km_from_center = (u85 - 2^84) / units_per_km"
+  }
 }
