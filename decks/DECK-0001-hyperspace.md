@@ -92,7 +92,7 @@ The result lies on the ellipsoid (geodetic altitude 0). The distribution is unif
 | 900399 | `00000000000000000001e412795ed39b18e56338e9b3c20d91edf59d20e020c9` | `c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724` | 6.07, -75.88 |
 | 950399 | `00000000000000000001f081b994866dc3beb2c3ecd5976e9bda474e54e027c1` | `e000000000000000000000618f9c2d172da11fc0701996d4a89df1f60aecf732` | 3.86, 63.90 |
 
-Reference implementation: `hyperspace_earth_reachability` tooling in the cyberspace-cli repository (Python Decimal) and the `landfall` module of the ONOSENDAI client (decimal.js); both reproduce these vectors.
+Reference implementation: `decks/landfall-reference.py` in this repository (stdlib Python; executing it checks all eight vectors). The ONOSENDAI client's `landfall` module (decimal.js) and the NTH publisher reproduce them byte for byte.
 
 ### 1.3 Sector tags
 
