@@ -38,4 +38,4 @@ Each DECK MUST include:
 - `Requires:` base spec and (optionally) minimum versions
 
 ## Registry
-- `DECK-0001-hyperjumps.md` — Bitcoin block Merkle-root “hyperjump” transit
+- `DECK-0001-hyperspace.md`: Hyperspace, Bitcoin block transit (ports, landfalls, stations, rides)
