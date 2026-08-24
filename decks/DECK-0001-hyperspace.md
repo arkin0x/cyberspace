@@ -179,18 +179,20 @@ d(p, q) = max(find_lca_height(px, qx), find_lca_height(py, qy), find_lca_height(
 
 ### 4.2 Definition
 
-Let `C_e` be the coordinate of the identity's `enter-hyperspace` event and `B_to` the destination height of its first ride. Let `Stops(B_to)` be the set of all stops with height `≤ B_to` on the selected network.
+Let `C_e` be the coordinate of the identity's `enter-hyperspace` event, and let `A` be the **station set bound**: a block height declared in the `as_of` tag of the identity's first `hyperjump` event (§5.2). `A` MUST be a height that exists on the selected network and MUST be `≥ B_to`, the ride's destination height. Let `Stops(A)` be the set of all stops with height `≤ A`.
 
 ```
-station(C_e, B_to) = the stop s in Stops(B_to) minimising d(C_e, C_s),
-                     ties broken by the lowest height
+station(C_e, A) = the stop s in Stops(A) minimising d(C_e, C_s),
+                  ties broken by the lowest height
 ```
 
-The set is bounded by the destination height so that the station is a fixed fact for a given trip without reference to a clock: stops are only ever appended at the end of the line, and the identity's position is fixed by its chain.
+Travelers SHOULD declare the highest height they have synced (the tip) so the station is their genuine nearest stop. The declared bound replaces a clock the protocol does not have: `A` is pinned inside the signed event, so the station is a fixed, verifiable fact for the trip.
+
+**Why not bind to the destination height (non-normative).** An earlier draft used `Stops(B_to)`. Riding toward an old block then excluded every newer stop, so a traveler whose nearest stop was recent would be assigned an ancient station and a ride hundreds of thousands of blocks long. Letting the traveler declare `A` restores the genuine nearest. The freedom this concedes is bounded: for a fixed position, the nearest stop as a function of the bound changes only at record points, roughly fourteen candidates over the whole chain history, so a traveler chooses among those and nothing else; no choice of `A` reaches an arbitrary stop.
 
 ### 4.3 Chain rule
 
-- The first `hyperjump` after an `enter-hyperspace` MUST have `from_height = station(C_e, B_to)`.
+- The first `hyperjump` after an `enter-hyperspace` MUST carry an `as_of` tag and have `from_height = station(C_e, as_of)`.
 - Every subsequent `hyperjump` not separated from the previous one by a `hop` or `sidestep` MUST have `from_height` equal to the previous `hyperjump`'s `B`.
 - A `hyperjump` whose previous event is neither `enter-hyperspace` nor `hyperjump` is invalid.
 
@@ -230,6 +232,7 @@ Required tags:
 - `C`: `["C", "<destination_stop_coord_hex>"]`
 - `from_height`: `["from_height", "<B_from>"]` (base-10)
 - `B`: `["B", "<B_to>"]` (destination height, base-10; `B_to != B_from` unless §5.6 applies)
+- `as_of`: `["as_of", "<A>"]` (the station set bound, base-10; REQUIRED on the first ride after boarding, per §4.2; `A ≥ B_to`)
 - `proof`: `["proof", "<merkle_root_hex>"]` per §5.4
 - `mp`: `["mp", "<openings>"]` per §5.5
 - Sector tags from `C`
@@ -268,7 +271,7 @@ idx_i = int(sha256(HYPERSPACE_SAMPLE_DOMAIN || root || be32(i))) mod n
 
 **Level 1 verification (routine):**
 
-1. Check chain structure, `c`, and the §4.3 chain rule (recomputing the station when the previous event is an `enter-hyperspace`).
+1. Check chain structure, `c`, and the §4.3 chain rule (recomputing the station from the declared `as_of` bound when the previous event is an `enter-hyperspace`; the bound MUST reference an existing height and be `≥ B_to`).
 2. Check `C` equals the stop coordinate for height `B` per §1 on the selected network.
 3. Recompute the sample indices from `root`.
 4. For each sampled index, recompute `leaf_b` from scratch per §5.3 (this requires the block hash of `b` and repeats the block's Cantor work), and verify its inclusion path to `root`.
