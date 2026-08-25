@@ -608,14 +608,14 @@ The storage bottleneck creates natural barriers in Cyberspace: walls that cannot
 
 But walls are only interesting if there's a way to get past them — expensively, deliberately, with real effort.
 
-### 6.2 How the sidestep works
+### 6.2 How the sidestep action works
 
-A **sidestep** replaces the Cantor pairing tree with a **Merkle hash tree** over SHA-256 hashes of leaf coordinates. The critical insight: SHA-256 operations are **fixed-size** (256 bits in, 256 bits out) regardless of tree height. No storage bottleneck. The cost of a sidestep is purely **time**: how long it takes to hash every leaf coordinate.
+A **sidestep** action traverses 1 Gibson in a direction using an alternative POW that makes otherwise impossible LCA barriers feasible to cross. Instead of Cantor pairing, a sidestep produces a tree with a **Merkle hash tree** over SHA-256 hashes of leaf coordinates. The critical insight: SHA-256 operations are **fixed-size** (256 bits in, 256 bits out) regardless of tree height. No storage bottleneck. The cost of a sidestep is purely **time**: how long it takes to hash every leaf coordinate.
 
-At heights above roughly h16 a sidestep is cheaper in wall-clock time than the equivalent hop, and the gap widens with height (see §6.14). The hop remains the primitive that produces a region root; the sidestep is the primitive that crosses a boundary. An agent hops when it wants the root (a discovery key or a domain) and sidesteps when it wants to move.
+At heights above roughly h16 a sidestep is cheaper in wall-clock time than the equivalent hop, and the gap widens with height (see §6.14). The hop remains the primitive that produces a region root; the sidestep is the primitive that crosses a boundary. Only hop actions produce the root; sidesteps forego calculating it, but remain valid for travesal.
 
 **Core terms:**
-- **Sidestep:** A movement action that crosses an LCA boundary via a Merkle hash tree proof instead of a Cantor pairing tree proof. Crosses exactly 1 Gibson past the boundary.
+- **Sidestep:** A movement action that crosses an LCA boundary via a Merkle hash tree proof instead of a Cantor pairing tree proof. Crosses exactly 1 Gibson past the boundary, regardless of the amount of work it takes.
 - **Merkle root (sidestep):** The root hash of a binary Merkle tree built over SHA-256 hashes of every leaf coordinate in an aligned subtree. Domain-separated from other protocol hashes.
 - **SIDESTEP_DOMAIN:** `b"CYBERSPACE_SIDESTEP_V1"`, the domain separation prefix used for all sidestep leaf hashes.
 
