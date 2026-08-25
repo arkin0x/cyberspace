@@ -123,6 +123,24 @@ Anchors published before this revision carry `C = merkle_root` for every block a
 
 An anchor is valid for a given stop iff `M` and `H` match the block at height `B` on the selected network, `P` matches its previous block hash, and `C` equals the derivation of §1 from `M` and `H`. How an implementation obtains block data is out of scope (full node, headers-only, trusted checkpoints).
 
+### 2.4 Bulk distribution (non-normative)
+
+Fetching the whole line as anchor events does not scale: the ~964k stops of
+2026 are roughly 570 MB of signed events, and per-event signature checks
+alone dominate a session. The reference stack instead distributes the line
+as **header blobs**: statically served files of 48-byte records (version,
+merkle root, time, bits, nonce; the previous-block hash is omitted and
+reconstructed), from which a client rebuilds each 80-byte wire header,
+verifies SPV rules end to end (hash linkage, proof of work against `bits`,
+the 2016-block difficulty windows), and derives every stop coordinate per
+§1 locally. Nothing about the blobs is trusted: they prove their own work,
+a manifest carries the final block hash of each blob, and the client pins
+its own embedded checkpoint hashes so a compromised manifest host cannot
+substitute a chain. Measured in the reference web client, the full line
+verifies and derives from ~46 MB of static files in about 30 seconds,
+with anchors remaining the live tail and the fallback. The format is
+specified in `docs/HEADER-BLOBS.md` of the `nth` repository.
+
 ---
 
 ## 3. Enter-hyperspace action
@@ -287,7 +305,7 @@ If `station(C_e, B_to) == B_to` (the identity's nearest stop is its destination)
 
 ### 5.7 Cost expectations (non-normative)
 
-Per block the expected work is about `2^6 * (3/2)^16 ≈ 42,000` Cantor pairs, with a worst block of 2^22 pairs (a 45 MB root, seconds). A ride between two random stops today averages about 320,000 blocks. Measured in the reference implementation at small heights (pure Python: h14 12 ms, h16 100 ms, h18 720 ms, h20 6.6 s), a typical ride is on the order of ten minutes with a compiled bignum library and hours in an interpreted one; implementations SHOULD run rides in a background worker with progress and resumption. The line grows by about 26,000 stops of each kind per year, so the same trip lengthens slowly over time. Level 1 verification is `SAMPLES` blocks of work, seconds.
+Per block the expected work is about `2^6 * (3/2)^16 ≈ 42,000` Cantor pairs, with a worst block of 2^22 pairs (a 45 MB root, seconds). A ride between two random stops today averages about 320,000 blocks. Measured in the reference implementations: pure Python at small heights h14 12 ms, h16 100 ms, h18 720 ms, h20 6.6 s; the web client's worker pool averages roughly 190 ms per block in single-threaded JavaScript, which prices a full random ride in hours divided by the pool width, and a compiled bignum library brings it to the order of ten minutes. Implementations SHOULD run rides in a background worker with progress, and SHOULD persist completed leaves keyed by `(previous_event_id, b)` so an interrupted ride resumes instead of restarting; §5.3's seeding makes this safe, because a cached leaf is only ever valid for the boarding it was computed under. The line grows by about 26,000 stops of each kind per year, so the same trip lengthens slowly over time. Level 1 verification is `SAMPLES` blocks of work, seconds.
 
 ---
 
@@ -358,6 +376,18 @@ In an ultrametric space, targets become reachable by becoming numerous, never by
 - v2 (2026-04-16): sector-plane entry (units error, see Appendix A); Cantor path tree over block heights as the ride proof (free in practice).
 - v3 (this document): plane-bit rule with landfalls; boarding from anywhere at a deterministic station; seeded per-block ride work with sampled verification; toll reserved.
 
+## Appendix C: Reference implementations (non-normative)
+
+- **ONOSENDAI v2** (`arkin0x/ONOSENDAI`, merged 2026-08-25): full web
+  client. Anchor and header-blob sync with embedded checkpoints, the §4.4
+  station lookup over the sorted line, boarding and rides with a persistent
+  resumable worker pool, Level 1 verification, and a decimal landfall
+  module reproducing the §1.2 golden vectors byte for byte.
+- **NTH** (`arkin0x/nth`): the anchor publisher (kind 321, §2.1 tags) and
+  the header-blob packer with manifest and checkpoint emission.
+- **`decks/landfall-reference.py`** (this repository): stdlib Python §1.2
+  derivation; executing it checks all eight golden vectors.
+
 ## Example (non-normative)
 
 Anchor for a landfall (block 398):
@@ -381,6 +411,6 @@ Boarding, then riding from the station to block 398, then exiting:
 
 ```json
 {"kind": 3333, "tags": [["A", "enter-hyperspace"], ["e", "<spawn_id>", "", "genesis"], ["e", "<prev_id>", "", "previous"], ["c", "<here>"], ["C", "<here>"], ["proof", "<enter_proof_hash>"], ["X", "..."], ["Y", "..."], ["Z", "..."], ["S", "..."]]}
-{"kind": 3333, "tags": [["A", "hyperjump"], ["e", "<spawn_id>", "", "genesis"], ["e", "<enter_id>", "", "previous"], ["c", "<here>"], ["C", "56db6db6db6db6db6db6db3e27c436f9d3b79fb5fc6457798936b3e749e38f56"], ["from_height", "<station_height>"], ["B", "398"], ["proof", "<merkle_root>"], ["mp", "<32 inclusion paths>"], ["X", "..."], ["Y", "..."], ["Z", "..."], ["S", "..."]]}
+{"kind": 3333, "tags": [["A", "hyperjump"], ["e", "<spawn_id>", "", "genesis"], ["e", "<enter_id>", "", "previous"], ["c", "<here>"], ["C", "56db6db6db6db6db6db6db3e27c436f9d3b79fb5fc6457798936b3e749e38f56"], ["from_height", "<station_height>"], ["B", "398"], ["as_of", "<station_set_bound_height>"], ["proof", "<merkle_root>"], ["mp", "<32 inclusion paths>"], ["X", "..."], ["Y", "..."], ["Z", "..."], ["S", "..."]]}
 {"kind": 3333, "tags": [["A", "hop"], ["e", "<spawn_id>", "", "genesis"], ["e", "<hyperjump_id>", "", "previous"], ["c", "56db6db6db6db6db6db6db3e27c436f9d3b79fb5fc6457798936b3e749e38f56"], ["C", "<somewhere in Texas>"], ["proof", "<hop_proof_hash>"], ["X", "..."], ["Y", "..."], ["Z", "..."], ["S", "..."]]}
 ```
