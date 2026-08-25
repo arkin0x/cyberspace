@@ -1,7 +1,7 @@
 # Cyberspace v2: Protocol Specification
 
 **Date:** February 10, 2026
-**Last updated:** April 2, 2026
+**Last updated:** August 24, 2026
 **Status:** Design complete (spec); reference implementation in progress
 
 ---
@@ -599,7 +599,8 @@ As the Cantor tree gets taller (meaning, as you cross larger regions of space), 
 | h34 | ~170 GB | 1,088 bytes |
 | h40 | ~11 TB | 1,280 bytes |
 | h50 | ~11 PB | 1,600 bytes |
-| h60 | ~11 EB (exceeds all storage on earth) | 1,920 bytes |
+| h60 | ~12 EB (about 0.1% of installed world storage) | 1,920 bytes |
+| h70 | ~12 ZB (roughly all installed storage today) | 2,240 bytes |
 
 This is not a bug. This is the digital equivalent of a mountain range.
 
@@ -607,14 +608,14 @@ The storage bottleneck creates natural barriers in Cyberspace: walls that cannot
 
 But walls are only interesting if there's a way to get past them — expensively, deliberately, with real effort.
 
-### 6.2 How the sidestep works
+### 6.2 How the sidestep action works
 
-A **sidestep** replaces the Cantor pairing tree with a **Merkle hash tree** over SHA-256 hashes of leaf coordinates. The critical insight: SHA-256 operations are **fixed-size** (256 bits in, 256 bits out) regardless of tree height. No storage bottleneck. The cost of a sidestep is purely **time**: how long it takes to hash every leaf coordinate.
+A **sidestep** action traverses 1 Gibson in a direction using an alternative POW that makes otherwise impossible LCA barriers feasible to cross. Instead of Cantor pairing, a sidestep produces a tree with a **Merkle hash tree** over SHA-256 hashes of leaf coordinates. The critical insight: SHA-256 operations are **fixed-size** (256 bits in, 256 bits out) regardless of tree height. No storage bottleneck. The cost of a sidestep is purely **time**: how long it takes to hash every leaf coordinate.
 
-A sidestep is always more expensive in wall-clock time than an equivalent hop (~100× slower at heights where both are feasible). No rational agent would sidestep when they could hop. The sidestep exists only to fill the gap between a machine's Cantor storage capacity and the absolute hash-time ceiling.
+At heights above roughly h16 a sidestep is cheaper in wall-clock time than the equivalent hop, and the gap widens with height (see §6.14). The hop remains the primitive that produces a region root; the sidestep is the primitive that crosses a boundary. Only hop actions produce the root; sidesteps forego calculating it, but remain valid for travesal.
 
 **Core terms:**
-- **Sidestep:** A movement action that crosses an LCA boundary via a Merkle hash tree proof instead of a Cantor pairing tree proof. Crosses exactly 1 Gibson past the boundary.
+- **Sidestep:** A movement action that crosses an LCA boundary via a Merkle hash tree proof instead of a Cantor pairing tree proof. Crosses exactly 1 Gibson past the boundary, regardless of the amount of work it takes.
 - **Merkle root (sidestep):** The root hash of a binary Merkle tree built over SHA-256 hashes of every leaf coordinate in an aligned subtree. Domain-separated from other protocol hashes.
 - **SIDESTEP_DOMAIN:** `b"CYBERSPACE_SIDESTEP_V1"`, the domain separation prefix used for all sidestep leaf hashes.
 
@@ -784,10 +785,10 @@ This is desirable: it creates a natural asymmetry between residents (who have in
 
 The combination of Cantor hops and Merkle sidesteps creates emergent geography in the coordinate space:
 
-- **h ≤ ~35:** Crossable by hop on consumer hardware (seconds to minutes)
-- **h35–50:** Crossable by sidestep on consumer hardware (hours to months)
-- **h50–58:** Crossable by sidestep with cloud compute investment ($200–$1,000)
-- **h60+:** Not crossable by any direct computation. Requires hyperjump transit
+- **h ≤ ~20:** Crossable by hop (Cantor) on consumer hardware in milliseconds to seconds. Above this the Merkle sidestep is faster at every height and is the practical movement primitive.
+- **h20–50:** Crossable by sidestep on consumer hardware (seconds to days on a GPU).
+- **h50–58:** Crossable by sidestep with a rented-GPU budget of roughly $20 to $3,000.
+- **h60+:** Not crossable by consumer computation. Crossable by ASIC-scale hash work (a 1 EH/s farm crosses h78 in about a week; a Bitcoin-scale fleet crosses h85 in about a day). Hyperspace (DECK-0001) is the consumer route.
 
 Nobody designed these continents. They emerge from the interaction between the Cantor pairing function, SHA-256, and the physical limits of computation and storage. Different agents experience different continental boundaries depending on their hardware and patience. There is no single universal map of "passable" and "impassable" walls.
 
@@ -795,22 +796,21 @@ No arbitrary ceiling is designed. The boundary emerges from thermodynamics.
 
 ### 6.14 Performance expectations (non-normative)
 
-Sidestep cost is dominated by SHA-256 leaf hashing. At every height where both hop and sidestep are feasible, the hop is approximately 100× faster:
+Sidestep cost is dominated by SHA-256 leaf hashing and is fixed-size per leaf. Hop cost grows faster than 2× per height because the Cantor operands double in size as well as in count. Measured in the reference implementation (pure Python, same language for both): h14 hop 12 ms vs sidestep 27 ms; h16 100 ms vs 100 ms; h18 720 ms vs 270 ms; h20 6.6 s vs 1.1 s. Above roughly h16 the sidestep wins and its advantage widens by about 1.5× per height; a compiled bignum library is 5 to 10× faster for hops, and SHA-NI or a GPU is 50 to 10,000× faster for sidesteps, so the ordering only sharpens in optimized code.
 
-| LCA Height | Hop Time (Cantor) | Sidestep Time (Merkle) | Preferred |
-|---:|---:|---:|---|
-| h20 | ~2 ms | ~210 ms | Hop |
-| h30 | ~1 sec | ~22 sec | Hop |
-| h34 | ~17 sec | ~6 min | Hop (170 GB storage needed) |
-| h40 | ~18 min | ~6 hr | **Sidestep** (Cantor needs 11 TB) |
-| h45 | ~10 hr | ~8 days | **Sidestep** (Cantor needs 340 TB) |
-| h50 | ~2 weeks | ~37 weeks | **Sidestep** (Cantor needs 11 PB) |
-| h55 | ~1 year | ~23 years | **Sidestep** (Cantor needs 340 PB) |
-| h60 | IMPOSSIBLE | ~731 years | Hyperjump needed |
+| LCA Height | Hop (Cantor) | Sidestep (1 CPU core, 10⁸ H/s) | Sidestep (1 GPU, 2×10¹⁰ H/s) | Notes |
+|---:|---:|---:|---:|---|
+| h14 | ~10 ms | 0.3 ms | 1.5 μs | either |
+| h20 | ~6 s | 21 ms | 0.1 ms | sidestep |
+| h30 | ~days (11 GB root) | 21 s | 0.1 s | sidestep |
+| h34 | ~a day (185 GB root) | 6 min | 1.6 s | sidestep; hop only when the region root itself is wanted |
+| h40 | not feasible (12 TB) | 6 h | 100 s | sidestep |
+| h50 | not feasible (12 PB) | 261 d | 28 h | sidestep |
+| h55 | not feasible | 23 y | 38 d | sidestep, ~$700 of rented GPU |
+| h60 | not feasible (12 EB) | 731 y | 3.3 y | ASIC-class hash work |
+| h85 | not feasible | 2.5×10¹⁰ y | 1.1×10⁸ y | Bitcoin-scale ASIC fleet: about a day |
 
-(Merkle times assume SHA-256 with SHA-NI at ~10⁸ hashes/sec. Cantor times assume ~10⁹ pairings/sec at low heights; upper heights are storage-limited. Ratio narrows at higher heights because Cantor per-operation cost increases with intermediate value size while SHA-256 stays fixed.)
-
-The practical sidestep ceiling is ~h45–50 on consumer hardware (days to months). Cloud compute ($200–$1,000 budget) can extend this by 5–15 heights. Beyond ~h60, even sidesteps take centuries. Hyperjumps are required.
+The practical consumer sidestep ceiling is about h55 per axis for a thousand dollars of rented GPU time. Sidestep work is plain SHA-256 over short preimages and is therefore subject to ASIC acceleration; the storage bound of §13.2 applies to Cantor roots, not to travel. Beyond consumer reach, hyperspace (DECK-0001) is the route.
 
 ---
 
@@ -1073,7 +1073,7 @@ This specification defines the base Cyberspace v2 protocol.
 Optional extensions MAY introduce new event kinds, new movement action types (`A` tag values), and/or additional validation rules that are only applied when an extension is in use.
 
 Extensions are specified as **Design Extension and Compatibility Kits (DECKs)** in the `decks/` directory.
-- Hyperjumps extension: `decks/DECK-0001-hyperjumps.md`
+- Hyperspace extension (DECK-0001): `decks/DECK-0001-hyperspace.md`
 
 ---
 
@@ -1104,7 +1104,7 @@ The Cantor Height 34 scale was chosen through rigorous testing to balance severa
 
 **For consumers:** At this scale, consumer hardware can traverse human-centric distances and derive useful location-based secrets with significant but achievable effort. Moderate cloud compute expenditure ($200–$1,000) extends range substantially.
 
-**Against nation-states:** Even with unlimited resources, a nation-state cannot derive the Cantor root for a whole national territory, continent, Earth, or geosynchronous orbit for the foreseeable future (~100 years). The best a nation-state can do is capture a whole city or part of a metropolis. The primary bottleneck is data storage, which rapidly approaches all storage on Earth long before any sizable territory could be calculated.
+**Against nation-states:** Cantor root cost scales with the side length of the aligned cube, per axis (about 86 × 2^h bits): a person (h34) is 185 GB, a 7 km city (h46) is 756 TB, a 262 km country (h51) is 24 PB, an Earth octant (h57) is 1.5 EB, and the GEO cube (h60) is 12 EB, against roughly 10 to 20 ZB of installed world storage. A country-scale root is within reach of a well-funded organization today and an Earth-scale root is within reach of a hyperscaler or a state. This is structural rather than a calibration choice: a country is only 2^17 times wider than a person, while the storage gap between a consumer and a state is about 2^20, so any scale that keeps human-scale hops feasible for consumers keeps country-scale roots feasible for states. The scale therefore does not deliver a century-long guarantee against large territorial claims; that has to come from maintenance economics and social layers defined in extensions.
 
 **Aesthetics:**
 - 2 meters is a metaphor for the human scale of the universe
@@ -1169,6 +1169,8 @@ The canonical mapping is defined for latitude/longitude plus an optional altitud
    Derivation: At Cantor Height 34 scale, `2^34` Gibsons = 2 meters. Therefore 1 Gibson = `2^-33` meters, and 1 km = `1000 * 2^33` Gibsons. This formula maps GPS coordinates into a region centered at u85 value `2^84` (the half-axis point).
 10. Produce coord256 with `plane=0` using the interleaving in §2.
 
+**Note (non-normative): the three h85 planes.** Because the mapping centers Earth at exactly 2^84 on every axis, the equatorial plane (`Y_cs = 2^84`) and the planes `X_cs = 2^84` and `Z_cs = 2^84` (the meridians at 0°/180° and ±90° longitude) are h85 boundaries: a one-metre step across the equator costs the same as crossing the whole axis. They behave like oceans, uncrossable on foot and crossed routinely through hyperspace (DECK-0001), whose landfalls sit on both shores. Only points within one last mile of a plane (about 0.75% of the surface at current landfall density) ever notice them. The centering is kept for symmetry; an offset of 2^56 would lower the walls to h57 and remains available as a future revision if landfall density is ever reduced.
+
 ### 9.8 Golden vectors (consensus locks)
 
 Implementations SHOULD include golden-vector tests to detect accidental mapping drift.
@@ -1191,34 +1193,31 @@ Golden vectors assume `altitude_m = 0` with clamp-to-surface behavior enabled:
 
 ### 9.9 Consumer benchmarks (non-normative)
 
-The following benchmarks assume disk-based computation (streaming intermediate values to storage rather than holding in RAM). Storage is the primary limiting factor in Cantor tree traversal at these heights.
+Cantor root cost scales with the side length of the aligned cube, per axis, not with its volume: a region twice as wide costs twice as much storage and somewhat more than twice the time. The root of a height-h subtree over 85-bit leaves is about 86 × 2^h bits, and construction needs roughly two levels live at once.
 
-| Root Volume | Time (Consumer) | Disk Space Required |
-|--------------|-----------------|---------------------|
-| 1 m³ | ~1.2 days | 0.5 TB |
-| 5 m³ | ~6.2 days | 2.5 TB |
-| 50 m³ | ~62 days | 25 TB |
-| 150 m³ | ~186 days | 75 TB |
+| Region | Aligned height | Root per axis | Consumer feasibility |
+|---|---:|---:|---|
+| 1 m cube | h33 | 92 GB | hours to a day on a desktop with a fast SSD |
+| 2 m cube (canonical) | h34 | 185 GB | about a day |
+| 4 m cube | h35 | 370 GB | days |
+| 128 m block | h40 | 12 TB | external storage array, weeks |
 
 **Notes:**
-- "Consumer" assumes a modern desktop or small server with 1-2 TB available storage for smaller claims, or external storage arrays for larger claims.
-- Computation is parallelizable; cloud spot instances can reduce wall-clock time at additional cost.
+- A 50 m³ region is h35, twice the cost of h34, not fifty times. Volume-linear accounting overstates small claims and understates large ones.
+- Computation is parallelizable across axes and levels; storage and I/O bandwidth are the binding constraints.
 - Contiguous claims are significantly more efficient than discrete parcels due to Cantor subtree structure sharing.
 
 ### 9.10 Nation-state limits (non-normative)
 
-At Cantor Height 34, even a nation-state-level actor with substantial computational resources faces hard limits:
+| Root side | Height | Root per axis | Feasibility |
+|---|---:|---:|---|
+| City (7 km) | h46 | 756 TB | a well-funded organization |
+| Country (262 km) | h51 | 24 PB | a state or a large company today (about a million dollars of disks, days of I/O) |
+| Earth octant (16,777 km) | h57 | 1.5 EB | a hyperscaler or a state |
+| GEO cube (134,000 km) | h60 | 12 EB | about 0.1% of installed world storage |
+| h70 | h70 | 12.7 ZB | roughly all installed storage today |
 
-| Root Size | Approximate Feasibility | Storage Required |
-|------------|------------------------|------------------|
-| Single city (~50 km²) | Feasible with significant investment | ~25 TB |
-| ~28 cities (~1,400 km² total) | Upper bound for sustained effort | ~700 TB |
-| Country-scale (e.g., Netherlands, ~41,000 km²) | Not feasible | ~20 PB |
-| Continental-scale | Not feasible | Exabyte-scale |
-| Earth surface | Not feasible | Zettabyte-scale |
-| GEO sphere | Not feasible | Beyond current technology |
-
-The limiting factor is **data storage and I/O bandwidth**, not raw compute. The protocol's work equivalence property ensures that storing and processing this data cannot be optimized away. There is no "ASIC advantage" because the bottleneck is data movement, not hash rate.
+The limiting factor for Cantor roots is **data storage and I/O bandwidth**, not raw compute, and the protocol's work equivalence property ensures that storing and processing this data cannot be optimized away. There is no ASIC advantage for Cantor roots because the bottleneck is data movement. Sidestep travel (§6) is plain hash work and has no such protection; see §12.3.
 
 ### 9.11 Storage as the primary constraint (non-normative)
 
@@ -1327,6 +1326,8 @@ For quick regression tests and cross-implementation debugging, see `visualizatio
 
 - **Coordinate scanning:** An observer can compute region preimages for arbitrary coordinates and query for content. This is considered acceptable because the work required is the same as for a traveler.
 - **Chain abandonment:** An entity may abandon a keypair and start fresh, or publish a new spawn event to restart their chain. Applications can require continuity/reputation at higher layers.
+- **ASIC-accelerated sidesteps:** Sidestep work is plain SHA-256 over short preimages. A purpose-built ASIC fleet crosses boundaries that consumers cannot: a 1 EH/s farm crosses h78 in about a week and a Bitcoin-scale fleet crosses h85 in about a day. The storage bound protects Cantor roots (claims and keys), not travel.
+- **Key grinding:** Spawning inside an aligned region of height h costs about 2^(3·(85−h)) key generations. Regions walled above roughly h75 can be spawn-camped by grinding; travel reaches about h50 and hyperspace reaches stop neighbourhoods; regions walled between h50 and h75 therefore have the strongest isolation the protocol offers. Applications should know which regime they are building in.
 
 ---
 
