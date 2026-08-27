@@ -1466,5 +1466,5 @@ Implementers should treat that repo as the reference for:
 - Canonical GPS→dataspace mapping (`CANONICAL_GPS_TO_DATASPACE_SPEC_VERSION` and golden vectors)
 
 This repository also carries stdlib-only reference scripts that are executable statements of specific sections, each self-checking when run:
-- `sidestep-reference.py` — the v2 sidestep construction (§6.4, §6.5, §6.10, §6.11), with golden vectors and a check that each property those sections claim actually holds
-- `decks/landfall-reference.py` — landfall derivation (DECK-0001 §1.2)
+- `sidestep-reference.py`: the v2 sidestep construction (§6.4, §6.5, §6.10, §6.11), with golden vectors and a check that each property those sections claim actually holds
+- `decks/landfall-reference.py`: landfall derivation (DECK-0001 §1.2)
