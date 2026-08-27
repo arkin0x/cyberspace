@@ -889,6 +889,10 @@ The seeding of §6.4, the axis separation of §6.4, and the sampled openings of 
 
 Implementations of the base protocol prior to this revision computed leaves as `SHA256(b"CYBERSPACE_SIDESTEP_V1" || leaf_bytes)` with no seed and no axis separation, and published a single destination inclusion path. Those proofs are recognisable by their `mp` tag carrying exactly one path per axis rather than `SIDESTEP_SAMPLES + 1`.
 
+**Porting hazard: which leaf the path covers.** v1 implementations diverged on this and the spec was not the tie-breaker it should have been. §6.10 and §8.7.2 have always specified the **destination** leaf, and that is what the two TypeScript ports and every sidestep so far published to a public relay actually use. The Python reference implementation named in §14 instead collected the path for leaf 0, the base of the aligned subtree, so its inclusion verifier rejects conforming events and accepts its own. Because the choice never entered `region_m`, it never affected `proof_hash`, which is why the divergence survived: the events verified at the proof level while their `mp` tags were mutually unreadable.
+
+Implementations porting to v2 MUST use destination-leaf semantics for the first opening. The sampled openings make any remaining divergence self-correcting, since a verifier built on the wrong convention fails the sampled paths as well as the destination path, rather than silently ignoring both.
+
 ---
 
 ## 7. Location-Based Encryption and Discovery
