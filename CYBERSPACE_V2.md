@@ -826,6 +826,8 @@ With `SIDESTEP_SAMPLES = 8`, passing half the time requires honestly computing a
 
 In practice, Level 1 is for routine validation. Level 2 is for auditors, competitors, or automated fraud-detection services.
 
+**Small heights (non-normative).** Level 1 costs about `(SIDESTEP_SAMPLES + 1) × (h + 1)` hash operations and Level 2 costs `2^(h+1) - 1`, so the two cross over near h5. Below that, a verifier SHOULD simply perform Level 2, which is both cheaper and complete. Provers still publish the full opening set at every height, so that the `mp` encoding of §8.5 stays fixed-width.
+
 ### 6.12 Entering ≠ claiming (non-normative)
 
 The sidestep Merkle tree is built over SHA-256 hashes of leaf coordinates. The Cantor pairing tree over those same leaves produces a completely different value. Computing the Merkle root reveals **nothing** about the Cantor root.
