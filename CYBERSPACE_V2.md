@@ -74,11 +74,12 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [6.7 Temporal binding](#67-temporal-binding)
   - [6.8 Sidestep proof hash (normative)](#68-sidestep-proof-hash-normative)
   - [6.9 Multi-axis sidestep](#69-multi-axis-sidestep)
-  - [6.10 Merkle inclusion proof](#610-merkle-inclusion-proof)
+  - [6.10 Openings (normative)](#610-openings-normative)
   - [6.11 Verification levels](#611-verification-levels)
   - [6.12 Entering ≠ claiming (non-normative)](#612-entering--claiming-non-normative)
   - [6.13 Natural continents (non-normative)](#613-natural-continents-non-normative)
   - [6.14 Performance expectations (non-normative)](#614-performance-expectations-non-normative)
+  - [6.15 Version 2 of the sidestep construction (normative)](#615-version-2-of-the-sidestep-construction-normative)
 - [7. Location-Based Encryption and Discovery](#7-location-based-encryption-and-discovery)
   - [7.1 The purpose: chalk on the sidewalk (non-normative)](#71-the-purpose-chalk-on-the-sidewalk-non-normative)
   - [7.2 Key derivation (normative)](#72-key-derivation-normative)
@@ -612,12 +613,18 @@ But walls are only interesting if there's a way to get past them — expensively
 
 A **sidestep** action traverses 1 Gibson in a direction using an alternative POW that makes otherwise impossible LCA barriers feasible to cross. Instead of Cantor pairing, a sidestep produces a tree with a **Merkle hash tree** over SHA-256 hashes of leaf coordinates. The critical insight: SHA-256 operations are **fixed-size** (256 bits in, 256 bits out) regardless of tree height. No storage bottleneck. The cost of a sidestep is purely **time**: how long it takes to hash every leaf coordinate.
 
-At heights above roughly h16 a sidestep is cheaper in wall-clock time than the equivalent hop, and the gap widens with height (see §6.14). The hop remains the primitive that produces a region root; the sidestep is the primitive that crosses a boundary. Only hop actions produce the root; sidesteps forego calculating it, but remain valid for travesal.
+At heights above roughly h16 a sidestep is cheaper in wall-clock time than the equivalent hop, and the gap widens with height (see §6.14). The hop remains the primitive that produces a region root; the sidestep is the primitive that crosses a boundary. An agent hops when it wants the root (a discovery key or a domain) and sidesteps when it wants to move.
+
+The sidestep is a **toll**: its work is seeded by the mover's chain position, so it is paid in full by every traveller and cannot be reduced, sold, or inherited from anyone else's published proof (§6.4, §6.15). The hop is deliberately not a toll, because its work product is a canonical region root that a holder may choose to share (§6.12).
 
 **Core terms:**
 - **Sidestep:** A movement action that crosses an LCA boundary via a Merkle hash tree proof instead of a Cantor pairing tree proof. Crosses exactly 1 Gibson past the boundary, regardless of the amount of work it takes.
-- **Merkle root (sidestep):** The root hash of a binary Merkle tree built over SHA-256 hashes of every leaf coordinate in an aligned subtree. Domain-separated from other protocol hashes.
-- **SIDESTEP_DOMAIN:** `b"CYBERSPACE_SIDESTEP_V1"`, the domain separation prefix used for all sidestep leaf hashes.
+- **Merkle root (sidestep):** The root hash of a binary Merkle tree built over SHA-256 hashes of every leaf coordinate in an aligned subtree, **seeded by the mover's chain position**. Domain-separated from other protocol hashes.
+- **Toll:** The property that a sidestep's spatial work is non-transferable. Every traveller crossing a given boundary pays the full price; no published proof reduces the cost for any other traveller.
+- **Openings:** The inclusion paths published with a sidestep: the destination leaf's path plus `SIDESTEP_SAMPLES` paths at pseudorandomly sampled positions (§6.10).
+- **SIDESTEP_DOMAIN:** `b"CYBERSPACE_SIDESTEP_V2"`, the domain separation prefix used for all sidestep leaf hashes.
+- **SIDESTEP_SAMPLE_DOMAIN:** `b"CYBERSPACE_SIDESTEP_SAMPLE_V1"`, the domain separation prefix used to derive sampled opening indices.
+- **SIDESTEP_SAMPLES:** `8`, the number of sampled openings published per non-trivial axis.
 
 ### 6.3 Sidestep geometry (normative)
 
@@ -629,6 +636,14 @@ A sidestep crosses exactly **1 Gibson** past an LCA boundary. Given source axis 
 
 ### 6.4 Per-axis Merkle root (normative)
 
+Sidestep leaves are **seeded**. Let `previous_event_id` be the 32 raw bytes of the id referenced by this event's `e` tag with marker `previous`, and let `axis_byte` be a single byte identifying the axis: `0x00` for X, `0x01` for Y, `0x02` for Z. Define the per-axis seed prefix:
+
+```
+seed_prefix = SIDESTEP_DOMAIN || previous_event_id || axis_byte || SEED_PAD
+```
+
+`SIDESTEP_DOMAIN` is 22 bytes and `SEED_PAD` is 9 zero bytes, so `seed_prefix` is **exactly 64 bytes**: one full SHA-256 block. This is deliberate (§6.5).
+
 For each axis where movement occurs (`v1 ≠ v2`):
 
 1. Compute `h = find_lca_height(v1, v2)`.
@@ -636,7 +651,7 @@ For each axis where movement occurs (`v1 ≠ v2`):
 3. The aligned subtree contains `2^h` leaves: `[base, base+1, ..., base + 2^h - 1]`.
 4. For each leaf value `L_i` (where `i` ranges from `0` to `2^h - 1`):
    - Encode as big-endian minimal bytes: `leaf_bytes = int_to_bytes_be_min(base + i)`
-   - Compute leaf hash: `H_i = SHA256(SIDESTEP_DOMAIN || leaf_bytes)`
+   - Compute leaf hash: `H_i = SHA256(seed_prefix || leaf_bytes)`
 5. Build the Merkle tree bottom-up:
    - For each pair `(H_{2j}, H_{2j+1})`: `parent = SHA256(H_{2j} || H_{2j+1})`
    - Continue until a single root `M_axis` remains.
@@ -644,12 +659,17 @@ For each axis where movement occurs (`v1 ≠ v2`):
 
 **Domain separation constant (normative):**
 ```
-SIDESTEP_DOMAIN = b"CYBERSPACE_SIDESTEP_V1"
+SIDESTEP_DOMAIN = b"CYBERSPACE_SIDESTEP_V2"   # 22 bytes
+SEED_PAD        = b"\x00" * 9                 # brings seed_prefix to exactly 64 bytes
 ```
 
 If any aspect of sidestep leaf hash computation changes in a future version (preimage format, domain string, encoding), the domain string MUST be bumped to a new value to avoid cross-version collisions.
 
-**Trivial axes (`h = 0`):** When `v1 == v2` on an axis, the Merkle root is the single leaf hash: `M_axis = SHA256(SIDESTEP_DOMAIN || int_to_bytes_be_min(v1))`. No tree construction is needed.
+**Trivial axes (`h = 0`):** When `v1 == v2` on an axis, the Merkle root is the single leaf hash: `M_axis = SHA256(seed_prefix || int_to_bytes_be_min(v1))`. No tree construction is needed.
+
+**Why the seed (normative rationale):** Without it, the leaf preimage contains no identity and no chain context, so the root for a given aligned subtree is the same 32 bytes for every traveller in the history of the protocol. Because the destination is deterministic (§6.3) and both the roots and the openings are published in the clear (§8.5), the first identity to cross any boundary would publish everything a later identity needs: a follower could copy `mr` and `mp` from a relay, compute only the temporal axis (at most 2^16 Cantor pairs, about 100 ms), and produce a proof that passes both verification levels, because the copied root *is* the correct root. Boundary crossings would be priced for the pioneer and free for everyone after. The seed makes each traveller's tree unique to its chain position, so the price in §6.14 is what every traveller pays, every time.
+
+**Why the axis byte (normative rationale):** Earth is centred at exactly `2^84` on every axis (§9.7) and its surface radius is about `2^55.6` Gibsons. Because `2^84` is a multiple of `2^h` for every `h ≤ 84`, the centre is always a cell boundary, so above about h56 the aligned base on each axis takes one of only two values, and any two axes falling on the same side of the centre plane share it exactly. Without axis separation such a crossing would compute one tree and claim it as two or three, and §6.9's "the total work is the sum of per-axis work" would be false by that factor at exactly the heights where the work is largest.
 
 ### 6.5 Streaming computation (normative)
 
@@ -661,15 +681,15 @@ The Merkle tree MUST be computable in streaming fashion without storing all leaf
 4. Total hash operations: `2^(h+1) - 1` (`2^h` leaf hashes + `2^h - 1` internal hashes).
 
 ```python
-def compute_merkle_root_streaming(base: int, height: int) -> bytes:
+def compute_merkle_root_streaming(seed_prefix: bytes, base: int, height: int) -> bytes:
     """Compute Merkle root over aligned subtree in O(h) memory."""
     if height == 0:
-        return sha256(SIDESTEP_DOMAIN + int_to_bytes_be_min(base))
+        return sha256(seed_prefix + int_to_bytes_be_min(base))
 
     stack = []  # (hash_value, level)
     for i in range(1 << height):
         leaf_bytes = int_to_bytes_be_min(base + i)
-        current = sha256(SIDESTEP_DOMAIN + leaf_bytes)
+        current = sha256(seed_prefix + leaf_bytes)
         level = 0
         while stack and stack[-1][1] == level:
             left = stack.pop()[0]
@@ -680,6 +700,10 @@ def compute_merkle_root_streaming(base: int, height: int) -> bytes:
 ```
 
 (Implementations MAY use any equivalent algorithm; the result MUST match this definition.)
+
+**Midstate optimization (normative for performance, not for consensus):** `seed_prefix` is exactly 64 bytes and constant for the whole tree, so it fills exactly one SHA-256 block. Implementations SHOULD precompute the compression-function midstate over that block once per axis and resume from it for every leaf. Because `leaf_bytes` is at most 11 bytes and SHA-256 padding needs 9, each leaf then costs exactly one further compression, which is the same per-leaf cost as an unseeded leaf. The figures in §6.14 are therefore unchanged by seeding.
+
+Had `seed_prefix` not been padded to a block boundary, each leaf would have straddled two blocks and every sidestep in the protocol would have cost twice as much. Implementations that ignore the midstate optimization are still consensus-correct; they are simply half as fast.
 
 ### 6.6 Spatial region integer (region_m)
 
@@ -706,9 +730,11 @@ The temporal binding mechanism for sidesteps is **identical** to hop proofs (§5
 
 This is always feasible because `K ≤ 16` (maximum 65,536 Cantor pairs, ~100 ms).
 
-**Why temporal binding is required:** Without it, the spatial Merkle root is deterministic and replayable. Anyone who computes it once could claim repeated crossings without new work. The temporal axis, seeded by `previous_event_id`, binds each proof to a unique chain position.
+**Why temporal binding is retained:** In v1 of the sidestep construction the temporal axis was the *only* thing binding a proof to a chain position, because the spatial Merkle root was deterministic and replayable. Since §6.4 now seeds the spatial leaves with `previous_event_id`, replay protection is already provided by the spatial component. The temporal axis is retained because it carries the terrain-derived height `K` (§5.2), which is a property of the destination and not of the mover, and because it keeps sidestep and hop proofs structurally parallel. It is no longer load-bearing for replay.
 
-**Precomputation note (non-normative):** An entity MAY precompute the spatial Merkle root as preparation for a planned crossing. The temporal component must still be computed fresh at crossing time (since `previous_event_id` is only known after the preceding event is published). This is acceptable because the spatial component is where all the real work is.
+**No precomputation (normative consequence):** Because `seed_prefix` depends on `previous_event_id`, which is only known once the preceding event is published, the spatial Merkle root cannot be computed in advance of a crossing. An entity MUST perform the full spatial work between publishing its previous event and publishing the sidestep. This is the intended behaviour: it is what makes the cost in §6.14 a toll rather than a one-time preparation that can be amortized or scheduled.
+
+**Resumption (non-normative):** A crossing at h47 or above is hours of GPU work that can no longer be staged ahead of time, so an interrupted crossing is expensive to lose. Implementations SHOULD persist completed subtree state keyed by `(previous_event_id, axis_byte, base, h)` so an interrupted sidestep resumes rather than restarting. The seeding of §6.4 makes this safe: cached state is only ever valid for the one chain position it was computed under, so it can never be replayed into a later crossing. This mirrors `decks/DECK-0001-hyperspace.md` §5.7.
 
 ### 6.8 Sidestep proof hash (normative)
 
@@ -737,39 +763,66 @@ A single sidestep event MAY cross boundaries on multiple axes simultaneously (if
 - Temporal binding applies once to the combined proof, not per-axis.
 - The total work is the sum of per-axis work.
 
-### 6.10 Merkle inclusion proof
+### 6.10 Openings (normative)
 
-In addition to the Merkle root, the prover MUST publish a Merkle inclusion proof for the destination leaf on each axis where movement occurs. This enables efficient verification (see §6.11).
+In addition to the Merkle root, the prover MUST publish, for each axis where movement occurs, an inclusion proof for the destination leaf **and** `SIDESTEP_SAMPLES` inclusion proofs at pseudorandomly sampled positions.
 
-Each per-axis inclusion proof is a sequence of sibling hashes from leaf to root:
+Each inclusion proof is a sequence of sibling hashes from leaf to root:
 
 ```
 axis_proof = H_sibling_0 || H_sibling_1 || ... || H_sibling_{h-1}
 ```
 
-Where `H_sibling_i` is the 32-byte sibling hash at depth `i` (leaf = depth 0). The verifier determines left/right ordering at each level from the destination leaf's position in the subtree (deterministic from the leaf value).
+Where `H_sibling_i` is the 32-byte sibling hash at depth `i` (leaf = depth 0). The verifier determines left/right ordering at each level from the leaf's position in the subtree (deterministic from the leaf value).
 
-For trivial axes (`h = 0`), the inclusion proof is empty: the Merkle root IS the single leaf hash.
+**Sample indices.** For an axis with root `M_axis`, height `h`, and `axis_byte` as in §6.4, the sampled positions are, for `i` in `0 .. SIDESTEP_SAMPLES - 1`:
+
+```
+idx_i = int(SHA256(SIDESTEP_SAMPLE_DOMAIN || M_axis || axis_byte || be32(i))) mod 2^h
+```
+
+`be32(i)` is `i` as four big-endian bytes. Indices are positions within the aligned subtree, so the sampled leaf value is `base + idx_i`. Indices MAY collide; implementations MUST NOT deduplicate, so that the opening count is fixed and the encoding in §8.5 is fixed-width.
+
+**Constants (normative):**
+```
+SIDESTEP_SAMPLE_DOMAIN = b"CYBERSPACE_SIDESTEP_SAMPLE_V1"
+SIDESTEP_SAMPLES       = 8
+```
+
+**Ordering.** The openings for an axis are ordered: the destination proof first, then the sampled proofs in ascending `i`. Each is exactly `h` sibling hashes, so an axis contributes exactly `(SIDESTEP_SAMPLES + 1) × h × 32` bytes.
+
+**Trivial axes (`h = 0`):** no openings are published. The Merkle root IS the single leaf hash and there is nothing to sample.
+
+**Why sampling is required (normative rationale):** The destination inclusion proof alone proves only that the destination leaf sits in *some* tree with the claimed root. It does not prove the tree was built over the aligned subtree, and it never did. A prover can fabricate `h` arbitrary sibling hashes, hash upward from the genuine destination leaf, and publish the result: `h` hash operations instead of `2^h`, passing the destination check exactly.
+
+Under the v1 unseeded construction this gap was survivable, because every honest root for a boundary was the same 32 bytes, so any party holding that root detected the forgery by comparison, and no rational prover forged when copying was free and correct. Seeding removes the copy, and with it removes comparison auditing: after §6.4 there is no canonical root to compare a claim against, and only a full `O(2^h)` recomputation would catch a fabricated tree. Seeding without sampling would therefore be strictly worse than the design it replaces. The two changes MUST ship together.
 
 ### 6.11 Verification levels
 
 Sidestep verification has two levels, reflecting a trade-off between verification cost and trust assumptions:
 
-**Level 1: Inclusion path verification, O(h) per axis**
+**Level 1: Sampled opening verification, O(SIDESTEP_SAMPLES × h) per axis**
 
-A verifier checks that the claimed destination leaf is consistent with the claimed Merkle root:
+A verifier checks that the claimed openings are consistent with the claimed root and that the sampled leaves are the correct seeded values:
 
 1. Validate coordinates: source and destination are valid 256-bit Cyberspace coordinates.
 2. Validate crossing geometry: LCA height matches; destination is exactly 1 Gibson past boundary.
-3. Recompute destination leaf hash: `H_dest = SHA256(SIDESTEP_DOMAIN || int_to_bytes_be_min(v_dest))`
-4. Verify Merkle path from `H_dest` to claimed root `M_axis` using inclusion proof.
-5. Recompute `region_m`, temporal axis, and `proof_hash`. Compare against claimed value.
+3. Reconstruct `seed_prefix` from the event's `e previous` tag and `axis_byte` per §6.4.
+4. Recompute the destination leaf hash `H_dest = SHA256(seed_prefix || int_to_bytes_be_min(v_dest))` and verify its path to the claimed root `M_axis`.
+5. Derive the sample indices from `M_axis` per §6.10. For each, recompute the sampled leaf hash `SHA256(seed_prefix || int_to_bytes_be_min(base + idx_i))` from scratch and verify its path to `M_axis`.
+6. Recompute `region_m`, temporal axis, and `proof_hash`. Compare against claimed value.
+
+Level 1 costs `SIDESTEP_SAMPLES + 1` leaf hashes and the same number of paths, seconds at any height.
 
 **Level 2: Full root verification, O(2^h) per axis**
 
 To fully verify that the claimed Merkle root was computed over the correct aligned subtree, a verifier recomputes the entire Merkle tree from scratch. This costs the same order of work as the original proof.
 
-**Security model:** The protocol does NOT require every verifier to perform Level 2. Security relies on **deterministic fraud detectability**: the Merkle root for any aligned subtree is deterministic, so a fraudulent root is permanently and objectively detectable by any party willing to do the work. Since sidestep proofs are published on Nostr (public, persistent), fraud can be detected at any time.
+**Security model:** The protocol does NOT require every verifier to perform Level 2. Security relies on **deterministic fraud detectability**: the Merkle root for an aligned subtree is a deterministic function of `(previous_event_id, axis_byte, base, h)`, every one of which is public on the event itself, so a fraudulent root remains permanently and objectively detectable by any party willing to do the work. Seeding changes who bears the audit cost, not whether fraud is detectable. Under v1 an auditor could compute a boundary's root once and check every crossing of it forever; under v2 each event must be audited on its own, which is why Level 1 was strengthened from a single destination path to sampled openings.
+
+**What sampling bounds (non-normative).** A tree over `2^h` leaves requires `2^h` leaf hashes and `2^h - 1` internal hashes, so the internal tree is an irreducible half of the honest work and no prover can avoid it. A prover who honestly computes a fraction `f` of the leaves and fabricates the rest passes Level 1 with probability `f^SIDESTEP_SAMPLES`, because the sampled positions are spread pseudorandomly over the whole subtree and each sampled leaf is recomputed by the verifier from the public seed. Grinding is not an escape: the sample indices are derived from the root, so steering them requires rebuilding the tree, and each rebuild costs at least the `2^h - 1` internal hashes, which is half the honest total.
+
+With `SIDESTEP_SAMPLES = 8`, passing half the time requires honestly computing about 92 percent of the leaves. Skipping the other 8 percent saves about 4 percent of the crossing's total work, since the internal tree is untouched, and buys a one-in-two chance of publishing permanently detectable fraud that invalidates the chain from that event forward. A prover willing to accept a one-in-a-thousand pass rate still has to compute 42 percent of the leaves, saving 29 percent. The security margin here comes primarily from the rebuild cost, not from the sample count, which is why 8 suffices where `decks/DECK-0001-hyperspace.md` §5.5 needs 32: a hyperspace leaf is expensive and its tree is cheap, and a sidestep is the reverse.
 
 In practice, Level 1 is for routine validation. Level 2 is for auditors, competitors, or automated fraud-detection services.
 
@@ -781,6 +834,14 @@ This preserves a critical separation: **sidestepping into a region does not gran
 
 This is desirable: it creates a natural asymmetry between residents (who have invested in Cantor computation) and visitors (who have done the minimum work to cross the boundary).
 
+**A crossing cannot be sold; a root can (non-normative).** After §6.4 the two primitives are priced on opposite principles, deliberately.
+
+A sidestep is a **toll on an edge**. Its proof is seeded to one chain position, so it is worth nothing to anyone else. There is no market in crossings, no pioneer subsidising later travellers, and no way to buy a wall crossing except by paying for it yourself.
+
+A hop is a **canonical price on a cell**. Its work product is the region root of §4.6, whose hash is the region key of §7.2, and the one property that makes region keys work at all is canonical convergence (§4.9, property 4): two parties at the same place derive the same key without meeting. That property is what makes a key issuer-free, and it cannot survive seeding. A consequence is that an identity handed a region root can produce a hop across the corresponding boundary for the cost of the temporal axis alone, roughly 100 ms, at any height.
+
+This is not an oversight and it is not a road in the sense §6.4 forbids. A region root is disclosed only when a holder chooses to disclose it, one recipient at a time, and that disclosure is exactly the act the protocol is built to support: handing someone the key to a place. The v1 sidestep published the equivalent to the whole world automatically, as a side effect of one traveller moving, with nobody choosing anything. Movement is priced; disclosure is a social act.
+
 ### 6.13 Natural continents (non-normative)
 
 The combination of Cantor hops and Merkle sidesteps creates emergent geography in the coordinate space:
@@ -789,6 +850,8 @@ The combination of Cantor hops and Merkle sidesteps creates emergent geography i
 - **h20–50:** Crossable by sidestep on consumer hardware (seconds to days on a GPU).
 - **h50–58:** Crossable by sidestep with a rented-GPU budget of roughly $20 to $3,000.
 - **h60+:** Not crossable by consumer computation. Crossable by ASIC-scale hash work (a 1 EH/s farm crosses h78 in about a week; a Bitcoin-scale fleet crosses h85 in about a day). Hyperspace (DECK-0001) is the consumer route.
+
+These prices are per traveller and per crossing. Because §6.4 seeds every sidestep tree to its mover's chain position, a boundary that costs three GPU hours costs three GPU hours for the first identity to cross it and three GPU hours for the ten thousandth. The continents below are therefore a description of the space as every agent actually experiences it, rather than a description of what the first arrival paid.
 
 Nobody designed these continents. They emerge from the interaction between the Cantor pairing function, SHA-256, and the physical limits of computation and storage. Different agents experience different continental boundaries depending on their hardware and patience. There is no single universal map of "passable" and "impassable" walls.
 
@@ -811,6 +874,18 @@ Sidestep cost is dominated by SHA-256 leaf hashing and is fixed-size per leaf. H
 | h85 | not feasible | 2.5×10¹⁰ y | 1.1×10⁸ y | Bitcoin-scale ASIC fleet: about a day |
 
 The practical consumer sidestep ceiling is about h55 per axis for a thousand dollars of rented GPU time. Sidestep work is plain SHA-256 over short preimages and is therefore subject to ASIC acceleration; the storage bound of §13.2 applies to Cantor roots, not to travel. Beyond consumer reach, hyperspace (DECK-0001) is the route.
+
+Every figure in this table is now what each traveller pays on each crossing, and none of it can be prepared in advance (§6.7). The openings of §6.10 cost `(SIDESTEP_SAMPLES + 1) × h × 32` bytes per non-trivial axis, which the `mp` tag carries as hex and so doubles: about 11 KB of tag text at h20, 23 KB at h40, and 26 KB at h47 for a single-axis crossing. A three-axis crossing at h47 approaches 80 KB and at h55 approaches 93 KB. Implementations SHOULD confirm their relays' event size limits before attempting multi-axis crossings above h40.
+
+### 6.15 Version 2 of the sidestep construction (normative)
+
+The seeding of §6.4, the axis separation of §6.4, and the sampled openings of §6.10 are a breaking change to sidestep verification. They were adopted together because seeding without sampling is strictly worse than the construction it replaces (§6.10).
+
+- `SIDESTEP_DOMAIN` is bumped from `CYBERSPACE_SIDESTEP_V1` to `CYBERSPACE_SIDESTEP_V2`, so no v1 proof can be mistaken for a v2 proof or collide with one.
+- Verifiers implementing this revision MUST reject sidestep events built under the v1 construction. There is no grace period and no dual-acceptance mode: accepting v1 proofs would keep the pioneer-priced path open, which is the entire defect being repaired.
+- Chains containing a v1 sidestep are invalidated from that event forward and must respawn. At adoption this affected three events published by two identities, all single-axis crossings at h19 and h20, which is why no migration path was specified.
+
+Implementations of the base protocol prior to this revision computed leaves as `SHA256(b"CYBERSPACE_SIDESTEP_V1" || leaf_bytes)` with no seed and no axis separation, and published a single destination inclusion path. Those proofs are recognisable by their `mp` tag carrying exactly one path per axis rather than `SIDESTEP_SAMPLES + 1`.
 
 ---
 
@@ -1001,13 +1076,15 @@ Required tags:
 - `C` tag: `["C", "<coord_hex>"]` (32-byte lowercase hex string)
 - `proof` tag: `["proof", "<proof_hash_hex>"]` (32-byte lowercase hex string)
 - `mr` tag: `["mr", "<M_x_hex>:<M_y_hex>:<M_z_hex>"]` (per-axis Merkle roots, colon-separated, each 64 hex chars)
-- `mp` tag: `["mp", "<proof_x_hex>:<proof_y_hex>:<proof_z_hex>"]` (per-axis Merkle inclusion proofs, colon-separated)
+- `mp` tag: `["mp", "<openings_x_hex>:<openings_y_hex>:<openings_z_hex>"]` (per-axis openings, colon-separated)
 - `hx` tag: `["hx", "<lca_height_x>"]` (LCA height on X axis, decimal string)
 - `hy` tag: `["hy", "<lca_height_y>"]` (LCA height on Y axis, decimal string)
 - `hz` tag: `["hz", "<lca_height_z>"]` (LCA height on Z axis, decimal string)
 - Sector tags: `X`, `Y`, `Z`, `S` (per §10)
 
-**Merkle inclusion proof encoding:** Each per-axis proof in the `mp` tag is a concatenation of sibling hashes from leaf to root, hex-encoded (`64 × h` hex characters per axis for an axis with LCA height `h`). For trivial axes (`h = 0`), the proof segment is an empty string between colons.
+**Openings encoding:** Each per-axis segment in the `mp` tag is the concatenation of `SIDESTEP_SAMPLES + 1` inclusion proofs in the order defined by §6.10 (destination first, then samples in ascending `i`). Each proof is `h` sibling hashes from leaf to root, hex-encoded, so an axis with LCA height `h` contributes exactly `64 × h × (SIDESTEP_SAMPLES + 1)` hex characters. For trivial axes (`h = 0`), the segment is an empty string between colons.
+
+Because the segment is fixed-width given `h`, a verifier reads the per-axis `hx`, `hy`, `hz` tags and splits the segment without ambiguity. A segment whose length is not an exact multiple of `64 × h` is malformed and the event MUST be rejected; a segment of exactly `64 × h` characters is a v1 proof and MUST be rejected per §6.15.
 
 **Height tags:** The `hx`, `hy`, `hz` tags enable verifiers to determine expected proof lengths without re-deriving LCA heights from coordinates.
 
@@ -1037,20 +1114,23 @@ To verify a hop:
 7. Compute `proof_hash` per §5.6.
 8. Accept iff it matches the event's `proof` tag.
 
-#### 8.7.2 Sidestep verification (Level 1: inclusion path)
+#### 8.7.2 Sidestep verification (Level 1: sampled openings)
 
-To verify a sidestep (Level 1, inclusion path check):
+To verify a sidestep (Level 1, sampled openings check):
 1. Parse previous and current coords; decode to `(x1,y1,z1,plane)` and `(x2,y2,z2,plane)`.
 2. Validate crossing geometry: for each axis, confirm the destination is exactly 1 Gibson past the LCA boundary (§6.3). Verify the `hx`, `hy`, `hz` tags match the computed LCA heights.
-3. Parse per-axis Merkle roots from the `mr` tag.
+3. Parse per-axis Merkle roots from the `mr` tag. Read `previous_event_id` from the `e` tag with marker `previous`.
 4. For each axis where movement occurs:
-   a. Compute the destination leaf hash: `H_dest = SHA256(SIDESTEP_DOMAIN || int_to_bytes_be_min(v_dest))`
-   b. Parse the axis inclusion proof from the `mp` tag.
-   c. Verify the Merkle path from `H_dest` to the claimed root `M_axis`.
+   a. Build `seed_prefix = SIDESTEP_DOMAIN || previous_event_id || axis_byte || SEED_PAD` per §6.4, and the aligned base `base = (v1 >> h) << h`.
+   b. Split the axis segment of the `mp` tag into `SIDESTEP_SAMPLES + 1` proofs of `h` siblings each; reject if the length does not match (§8.5).
+   c. Compute the destination leaf hash `H_dest = SHA256(seed_prefix || int_to_bytes_be_min(v_dest))` and verify its path to the claimed root `M_axis`.
+   d. Derive the sample indices from `M_axis` per §6.10. For each `idx_i`, compute `SHA256(seed_prefix || int_to_bytes_be_min(base + idx_i))` and verify its path to `M_axis`.
 5. Compute `region_m = π(π(mx, my), mz)` from the claimed Merkle roots (§6.6).
 6. Derive `K` and `cantor_t` from destination coordinate and `previous_event_id` (§6.7, same as hop).
 7. Compute `sidestep_n = π(region_m, cantor_t)` and `proof_hash` per §6.8.
 8. Accept iff it matches the event's `proof` tag.
+
+A verifier that skips step 4d is performing a strictly weaker check than v1's, not an equivalent one, because after seeding there is no canonical root to compare `M_axis` against (§6.10).
 
 Level 2 (full root) verification is described in §6.11.
 
@@ -1371,6 +1451,8 @@ The sidestep (§6), which uses SHA-256 Merkle hash trees instead of Cantor pairi
 
 This creates an interesting layering: Cantor hops are storage-bound structured work (fast but limited by storage), while Merkle sidesteps are compute-bound hash work (slow but unlimited by storage). The protocol naturally routes movement through whichever regime is feasible for the boundary being crossed.
 
+The two also differ in what the work leaves behind, and the difference is deliberate (§6.12). A Cantor hop's output is durable public infrastructure: a canonical region root that anyone may be handed and reuse. A Merkle sidestep's output is consumed at the moment of use: seeded to one chain position, worth nothing to anyone else, and disposable in exactly the way §13.1 says a Bitcoin hash is disposable. The sidestep is the one place in Cyberspace where work is burned rather than accumulated, which is precisely what makes it a price on movement instead of an investment in a place.
+
 ---
 
 ## 14. Reference Implementation
@@ -1382,3 +1464,7 @@ Implementers should treat that repo as the reference for:
 - Integer→bytes canonicalization for hashing
 - Movement proof computation
 - Canonical GPS→dataspace mapping (`CANONICAL_GPS_TO_DATASPACE_SPEC_VERSION` and golden vectors)
+
+This repository also carries stdlib-only reference scripts that are executable statements of specific sections, each self-checking when run:
+- `sidestep-reference.py` — the v2 sidestep construction (§6.4, §6.5, §6.10, §6.11), with golden vectors and a check that each property those sections claim actually holds
+- `decks/landfall-reference.py` — landfall derivation (DECK-0001 §1.2)
