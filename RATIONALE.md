@@ -113,6 +113,14 @@ Each Cantor number represents a **region**, not a point. A number computed at he
 
 Anyone who traverses through the region computes the same Cantor number. They derive the same decryption key. They discover the same content.
 
+### Hints: The Hider Chooses How Bright the Chalk Is
+
+Chalk that nobody knows about is not chalk on a sidewalk; it is chalk in a drawer. The lookup id deliberately reveals nothing, and a scan only reaches a few heights around the scanner, so an unhinted bag in a 2^255 space can only be stumbled upon. That is the right default for an intimate message and the wrong one for anything meant to be found.
+
+A hint (spec §7.6) is the hider's answer, and it is the hider's alone: an aligned box, one height per axis, published on the bag. The gap between the box and the bag's own region is the price of the search, because a seeker sweeps the box by deriving keys at the bag's height, and the work equivalence of §7.1 says that sweep costs the same from anywhere. Nothing about the seeker's position enters the cost of *reading*. Only *reaching*, standing in the region with a movement chain to prove it, still costs distance. Keeping those two apart is the point: the protocol hands the hider a difficulty knob and hands applications a clean fact to reward, without inventing a registry, a referee, or a trusted index.
+
+Per-axis heights fall out of the aligned geometry for free and turn out to matter. An exact X with coarse Y and Z is a two-dimensional hunt. A sector on all three axes is a place to travel to rather than a place to search. Three heights equal to the bag's own height is a destination. One tag covers all of them, and the sector tags of §10 come along whenever a hint fixes a sector, so relays can answer "what is hidden in this sector" without a new query language.
+
 ---
 
 ## 4. What Cyberspace Does NOT Solve
