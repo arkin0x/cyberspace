@@ -944,9 +944,9 @@ Note: this caching optimization applies to spatial region computations for disco
 
 ### 7.6 Hints (optional)
 
-A bag (§8.6) publishes nothing about where it is. Its `lookup_id` is a hash of a hash (§7.2), and discovery scanning (§7.4) reaches only a few heights around the scanner. Without more, a bag is found by walking into it.
+A bag is a cache of data encrypted by a region key at a height (§8.6) and it reveals nothing about where it is. Its `lookup_id` is a hash of a hash (§7.2), and discovery scanning (§7.4) reaches only a few heights around the scanner. Without more information, a bag is found only by intentionally deep scanning and/or wandering. With no additional information, any given bag is equally likely to be at any point in the full 2^256 coordinate space: an impossibly hardened secret.
 
-A **hint** is the hider's answer. It is optional, public, and as coarse as the hider wants: the aligned box the bag's region lies in, one height per axis, on one plane. A seeker sweeps the box instead of the space.
+A **hint** is the hider's clue as to where the bag is. It is optional, public, and as coarse as the hider wants: the aligned box the bag's region lies in, one height per axis, on one plane. The hint box is scalable along each axis; the bag is somewhere within the box. A seeker simply sweeps the box to find the secret, and the hider scales the hint to achieve the desired difficulty.
 
 **The hinted box (normative):**
 - `Hx`, `Hy`, `Hz`: integers in `[0, 85]`, the hint heights
