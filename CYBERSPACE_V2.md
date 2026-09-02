@@ -87,6 +87,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [7.5 Caching optimization (non-normative)](#75-caching-optimization-non-normative)
   - [7.6 The bag (normative)](#76-the-bag-normative)
   - [7.7 Hints (optional)](#77-hints-optional)
+  - [7.8 Holding a region (non-normative)](#78-holding-a-region-non-normative)
 - [8. Nostr Integration: The Movement Chain](#8-nostr-integration-the-movement-chain)
   - [8.1 Event kind](#81-event-kind)
   - [8.2 Canonical event id (NIP-01)](#82-canonical-event-id-nip-01)
@@ -793,9 +794,9 @@ In practice, Level 1 is for routine validation. Level 2 is for auditors, competi
 
 The sidestep Merkle tree is built over SHA-256 hashes of leaf coordinates. The Cantor pairing tree over those same leaves produces a completely different value. Computing the Merkle root reveals **nothing** about the Cantor root.
 
-This preserves a critical separation: **sidestepping into a region does not grant domain authority.** Domain authority still requires full Cantor root computation. A visitor who sidesteps through a wall has proven they spent the computational time to cross it, but they haven't gained any authority over the space. You can walk into a building without having the keys.
+This preserves a critical separation: **sidestepping into a region does not yield the region's keys.** The region's Cantor root, and with it every location-based key inside the region (§7), still requires the full Cantor computation. A visitor who sidesteps through a wall has proven they spent the computational time to cross it, but they hold none of the keys to the space. You can walk into a building without having the keys.
 
-This is desirable: it creates a natural asymmetry between residents (who have invested in Cantor computation) and visitors (who have done the minimum work to cross the boundary).
+This is desirable: it creates a natural asymmetry between those who hold a region (who have invested in Cantor computation and keep its keys, §7.8) and visitors (who have done the minimum work to cross the boundary). Holding is a capability, not a title: anyone who does the work holds the same keys, and no one is excluded. There are no domains in the base protocol; `RATIONALE.md` §6 says what holding does and does not buy, and `docs/territory-conflict-game-layer.md` records the design decision.
 
 ### 6.13 Natural continents (non-normative)
 
@@ -1063,6 +1064,22 @@ Produced and checked by `hint-reference.py`. Points are 256-bit coordinates per 
 
 The ideaspace point is `x = 2^84 + 12345`, `y = 3 · 2^80 + 777`, `z = 2^85 - 1 - 4242` on plane 1. The second vector is a two-dimensional hunt: X is exact, so the seeker sweeps a 2^9 by 2^9 slab of height-5 regions. The third has an open axis: `Hy = 40` leaves the Y sector undetermined, so the bag carries `X` and `Z` but neither `Y` nor `S`, and the sweep is 2^40 candidates, far beyond any search; that hint tells the seeker where to travel.
 
+### 7.8 Holding a region (non-normative)
+
+Computing a region's Cantor root produces every intermediate node of the per-axis trees on the way up, and every intermediate node is itself the root of an aligned sub-region (§4.5). Whoever keeps those nodes on disk **holds** the region: the per-axis roots of every aligned sub-region inside it, at every height, are on hand, so any location-based key inside the holding costs one pairing step (§4.7, §7.2) instead of a tree. Holding is §7.5 carried to its limit.
+
+What holding buys is latency, and only latency:
+
+- reading content published anywhere in the region at any height without per-item work, where a passerby's interactive scan reaches roughly h16 (§7.3);
+- writing at any height in the region at once;
+- deriving a two-factor key at once, `KDF(location_decryption_key || owner_secret)`, for content that must be both found by presence and unlocked by the holder.
+
+What holding does not buy: exclusivity (anyone who does the work holds identical keys), any advantage in observing chains (they are public to everyone), or any effect on anyone else. It is a keyring, not a claim.
+
+What holding costs is disk. Each level of a per-axis tree is about as large as its root (§9.9), so the full trees for three axes are about `3 × (h + 1)` roots: roughly 19 TB at h34, 1.5 PB at h40, 107 PB at h46. Keeping only the nested cubes that contain one position costs about two roots per axis, roughly 1.1 TB at h34. Stop paying and the keys are a recomputation away again; nothing else happens.
+
+There are no domains in the base protocol. Holding is the whole of what the protocol offers toward territory. Claims, exclusion and governance are left to applications and games; see `RATIONALE.md` §6 and `docs/territory-conflict-game-layer.md`.
+
 ---
 
 ## 8. Nostr Integration: The Movement Chain
@@ -1234,7 +1251,7 @@ The Cantor Height 34 scale was chosen through rigorous testing to balance severa
 
 **For consumers:** At this scale, consumer hardware can traverse human-centric distances and derive useful location-based secrets with significant but achievable effort. Moderate cloud compute expenditure ($200–$1,000) extends range substantially.
 
-**Against nation-states:** Cantor root cost scales with the side length of the aligned cube, per axis (about 86 × 2^h bits): a person (h34) is 185 GB, a 7 km city (h46) is 756 TB, a 262 km country (h51) is 24 PB, an Earth octant (h57) is 1.5 EB, and the GEO cube (h60) is 12 EB, against roughly 10 to 20 ZB of installed world storage. A country-scale root is within reach of a well-funded organization today and an Earth-scale root is within reach of a hyperscaler or a state. This is structural rather than a calibration choice: a country is only 2^17 times wider than a person, while the storage gap between a consumer and a state is about 2^20, so any scale that keeps human-scale hops feasible for consumers keeps country-scale roots feasible for states. The scale therefore does not deliver a century-long guarantee against large territorial claims; that has to come from maintenance economics and social layers defined in extensions.
+**Against nation-states:** Cantor root cost scales with the side length of the aligned cube, per axis (about 86 × 2^h bits): a person (h34) is 185 GB, a 7 km city (h46) is 756 TB, a 262 km country (h51) is 24 PB, an Earth octant (h57) is 1.5 EB, and the GEO cube (h60) is 12 EB, against roughly 10 to 20 ZB of installed world storage. A country-scale root is within reach of a well-funded organization today and an Earth-scale root is within reach of a hyperscaler or a state. This is structural rather than a calibration choice: a country is only 2^17 times wider than a person, while the storage gap between a consumer and a state is about 2^20, so any scale that keeps human-scale hops feasible for consumers keeps country-scale roots feasible for states. The scale therefore does not deliver a century-long guarantee against large regions being held. Holding a region costs disk for as long as it is held (§7.8), which is the protocol's whole maintenance economics; claims, exclusion and governance are not protocol matters and are left to applications and games.
 
 **Aesthetics:**
 - 2 meters is a metaphor for the human scale of the universe
@@ -1475,7 +1492,7 @@ Bitcoin's proof-of-work operates by grinding random nonces through SHA-256 until
 
 Cantor pairing tree computation is a fundamentally different kind of work. The output is not arbitrary. When you compute a Cantor tree over a set of coordinates, the root you produce uniquely identifies that spatial region. It is a bijection. The root can be unpaired to reconstruct the entire tree. The proof of your movement is the mathematical fabric of the space itself.
 
-Every Cantor root you compute becomes a stable region identifier that persists as useful infrastructure. It can be used for encrypting localized secrets, discovering nearby content, and establishing spatial authority. The work product is meaningful, not disposable.
+Every Cantor root you compute becomes a stable region identifier that persists as useful infrastructure. It can be used for encrypting localized secrets, discovering nearby content, and holding a region (§7.8). The work product is meaningful, not disposable.
 
 ### 13.2 Storage-bound, not compute-bound
 

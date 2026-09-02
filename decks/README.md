@@ -37,5 +37,23 @@ Each DECK MUST include:
 - `Last updated:` YYYY-MM-DD
 - `Requires:` base spec and (optionally) minimum versions
 
+## Game mechanics
+Some DECKs are game rules rather than protocol extensions: they define what a game's clients do with chains, not what the base protocol says about them. The base protocol has exactly one verdict on a chain, **validity**. A game owns a second, **liveness**. The two never consult each other.
+
+| | Game-alive | Game-dead |
+|---|---|---|
+| **Protocol-valid** | ordinary play | a derezzed avatar: chain valid, the game says respawn |
+| **Protocol-invalid** | a virtual spawn: chain invalid, the game recognises it | an ordinary invalid chain (fork, bad proof) |
+
+A game-mechanic DECK MUST, in addition to the rules above:
+- never alter the validity of any `kind 3333` chain under the base spec, and never require anything of clients that do not run the game;
+- be verifiable from a bounded set of events plus, if it needs a clock, Bitcoin block headers; `created_at` MUST NOT decide any game verdict;
+- if it resolves conflict, resolve it by work, with the unit of work stated and the cost of verification bounded;
+- specify its effects as a fixed point over the reference graph where events can void one another, and state how verdicts behave under partial views.
+
+The design record for this category, and for why the base protocol defines holding (`CYBERSPACE_V2.md` §7.6) but not domains, is `../docs/territory-conflict-game-layer.md`.
+
 ## Registry
 - `DECK-0001-hyperspace.md`: Hyperspace, Bitcoin block transit (ports, landfalls, stations, rides)
+- `DECK-0002`: reserved for Virtual Spawn (game mechanic; draft in PR #15)
+- `DECK-0003`: reserved for the derezz attack (game mechanic; the draft in PR #8 is superseded by the design record and awaits a test-first rewrite)

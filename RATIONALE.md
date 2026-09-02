@@ -139,6 +139,8 @@ This is acceptable. The protocol constrains identities, not people. Applications
 
 This is by design. The work is identical either way—observers have no computational advantage over travelers. What traversal provides is **verifiable commitment**: a movement chain proves you were on a specific path, at specific times, in a specific order.
 
+**Exclusive territory.** A region's Cantor root is a public function of its coordinates. Anyone who does the work gets the same value, so nothing in the mathematics can make a region belong to one party. The protocol offers holding (§6 below), which is a capability; it does not offer claims, title or exclusion, because those require a registry, and the protocol has none by design.
+
 ### Why These Limitations Are Acceptable
 
 The goal is not to create a perfect simulation of physical space. It is to create a thermodynamically meaningful spatial substrate where:
@@ -194,8 +196,18 @@ Cyberspace provides a form of digital embodiment:
 ### Location-Based Secrets Without Infrastructure
 Cyberspace does not require GPS trust, cell towers, or secure enclaves—only the mathematical work.
 
-### Territory and Presence Verification
-Continuous presence in a region establishes verifiable history.
+### Territory: Holding, Not Owning
+Computing a region's root leaves every sub-region's root in your hands; keeping them on disk is **holding** the region (spec §7.6). Holding buys latency on keys and nothing else. You read the whole wall at every height while a passerby reads the small print at eye level; you write at any height at once; and you can lock content to `KDF(region_key || your_secret)` so that reading it requires both presence and your permission. Anyone who does the work holds identical keys, chains are public to everyone, and nothing you hold affects anyone else.
+
+Holding is not ownership, and the analogy to physical property breaks in an instructive place. Physical territory is rival: two bodies cannot share a point. Cyberspace territory is not: two avatars can share a coordinate, and two holders hold the same keys. Conflict over land follows from rivalry, so in cyberspace it does not follow from anything. It can only be chosen, as a game; see `docs/territory-conflict-game-layer.md`.
+
+What holding costs is disk for as long as it is held (about 19 TB for the full trees of a 2 m cube, about 1.1 TB for the nested cubes around one position). That is the whole of the protocol's maintenance economics: stop paying and your keys are a recomputation away again.
+
+One privacy consequence is worth stating plainly: the holder can read everything location-encrypted inside the holding. Visitors who want privacy inside a held region layer their own end-to-end encryption on top. The landlord can bug the room.
+
+Location is a privacy dial for holdings as for everything else (DECK-0001 §9.5): a region near a stop is reachable by anyone for a few GPU-hours; a region h60 inland is reachable by no one.
+
+Continuous presence in a region still establishes verifiable history, which is the part applications build reputation on.
 
 ### Ephemeral Regional Communication
 Local, temporary messages (“blips”) are an example of higher-layer use, not a protocol requirement.

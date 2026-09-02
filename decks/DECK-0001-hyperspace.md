@@ -313,7 +313,7 @@ Per block the expected work is about `2^6 * (3/2)^16 ≈ 42,000` Cantor pairs, w
 
 An identity leaves the line by publishing a `hop` or `sidestep` whose `c` tag is the stop coordinate it is located at. No new rule applies: the exit is validated by the base protocol. A landfall exit begins in dataspace on the ellipsoid surface; a port exit begins in ideaspace at the merkle root. The stop coordinate is the bridge between the line and the space.
 
-Because exits are pinned to stops, hyperspace cannot be used to arrive at an arbitrary coordinate. The last mile from a stop is ordinary movement, and any region root (a discovery key or a domain) still costs its full Cantor computation. Entering is not claiming.
+Because exits are pinned to stops, hyperspace cannot be used to arrive at an arbitrary coordinate. The last mile from a stop is ordinary movement, and any region root (a discovery key, or holding the region per `CYBERSPACE_V2.md` §7.6) still costs its full Cantor computation. Entering is not claiming.
 
 ---
 
