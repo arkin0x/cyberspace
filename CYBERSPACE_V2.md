@@ -85,14 +85,15 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [7.3 Discovery radius (non-normative)](#73-discovery-radius-non-normative)
   - [7.4 Discovery scanning (recommended)](#74-discovery-scanning-recommended)
   - [7.5 Caching optimization (non-normative)](#75-caching-optimization-non-normative)
-  - [7.6 Hints (optional)](#76-hints-optional)
+  - [7.6 The bag (normative)](#76-the-bag-normative)
+  - [7.7 Hints (optional)](#77-hints-optional)
 - [8. Nostr Integration: The Movement Chain](#8-nostr-integration-the-movement-chain)
   - [8.1 Event kind](#81-event-kind)
   - [8.2 Canonical event id (NIP-01)](#82-canonical-event-id-nip-01)
   - [8.3 Spawn event (first event)](#83-spawn-event-first-event)
   - [8.4 Hop event](#84-hop-event)
   - [8.5 Sidestep event](#85-sidestep-event)
-  - [8.6 Encrypted content event (the bag)](#86-encrypted-content-event-the-bag)
+  - [8.6 Encrypted content event (bag)](#86-encrypted-content-event-bag)
   - [8.7 Verification summary](#87-verification-summary)
     - [8.7.1 Hop verification](#871-hop-verification)
     - [8.7.2 Sidestep verification (Level 1: inclusion path)](#872-sidestep-verification-level-1-inclusion-path)
@@ -863,7 +864,7 @@ At the Cantor Height 34 scale (2 meters per height-34 subtree), approximate phys
 
 A local secret at height 34 is discoverable within ~2 meters. At height 50, from anywhere in a city.
 
-**Important caveat:** Discovery requires *equivalent computation* to secret creation. Typical scanning range is between height 0 and 16 for sub-second continuous scanning on average consumer hardware. Secrets at larger regions may be unattainable without some hint to help users scan up to their height. §7.6 defines hints: the hider MAY publish the aligned box a bag lies in, one height per axis, so a seeker sweeps the box instead of the space. As hardware improves, passive scanning range will grow and larger secret regions will become attainable.
+**Important caveat:** Discovery requires *equivalent computation* to secret creation. Typical scanning range is between height 0 and 16 for sub-second continuous scanning on average consumer hardware. Secrets at larger regions may be unattainable without some hint to help users scan up to their height. §7.7 defines hints: the hider MAY publish the aligned box a bag lies in, one height per axis, so a seeker sweeps the box instead of the space. As hardware improves, passive scanning range will grow and larger secret regions will become attainable.
 
 The discovery radius grows exponentially with height, enabling a natural hierarchy of public, neighborhood, and intimate spatial messages.
 
@@ -942,9 +943,44 @@ def get_region_key(x, y, z, h):
 
 Note: this caching optimization applies to spatial region computations for discovery. Hop proofs still require computing the temporal axis root per §5 on every hop.
 
-### 7.6 Hints (optional)
+### 7.6 The bag (normative)
 
-A bag is a cache of data encrypted by a region key at a height (§8.6) and it reveals nothing about where it is. Its `lookup_id` is a hash of a hash (§7.2), and discovery scanning (§7.4) reaches only a few heights around the scanner. Without more information, a bag is found only by intentionally deep scanning and/or wandering. With no additional information, any given bag is equally likely to be at any point in the full 2^256 coordinate space: an impossibly hardened secret.
+Content hidden at a place is published as a **bag**: one Nostr event (kind 33330, event format in §8.6) holding everything its author has hidden in one region at one height. Anyone can fetch a bag from a relay. Only someone who has computed the region's key (§7.2) can open it. The bag is addressable by its `lookup_id`, so relays keep only the newest bag per author and region.
+
+**Cipher (normative):**
+- key: the `location_decryption_key` of §7.2 (32 bytes)
+- cipher: AES-256-GCM with a 12-byte nonce and a 16-byte tag, no additional authenticated data
+- the nonce MUST be fresh for every encryption
+- `payload = nonce || ciphertext || tag`, encoded as base64 (standard alphabet, padded)
+
+A reader without the region key cannot decrypt the payload and learns nothing from trying. A failed decryption MUST NOT be treated as an error in the bag.
+
+**Plaintext (normative):**
+
+The plaintext is arbitrary bytes. Two shapes are defined:
+- A **list of items**: a JSON array whose elements are nostr events. Readers MUST try this shape first.
+- **Opaque**: anything else. A text note, a file. Interpretation is application-defined.
+
+**Items (normative):**
+- An item is a nostr event. It MAY be signed. If it carries a `sig`, its `id` MUST be the canonical id (§8.2) and the signature MUST verify; a reader MUST drop an item that fails either check, and only that item. An item without a `sig` is allowed; its `pubkey` is then a claim, and readers MUST NOT present it as verified.
+- The bag's `pubkey` placed the items. Readers MUST attribute placement to the bag's author, and authorship of an item's content to the item's `pubkey` only when the item is signed.
+- An item MAY carry a `C` tag: `["C", "<coord_hex>"]`, its exact coordinate (§2). If present, the coordinate MUST lie inside the region the bag is encrypted to: same plane, and equal to the region's base above height `h`. Readers MAY drop an item whose `C` lies outside. Without a `C` tag, an item is located no more precisely than the region.
+- A reader that does not understand an item's `kind` skips it.
+
+Note (non-normative): kinds in use. ONOSENDAI hides two kinds: `3330`, a shard (geometry in `content`, the kind carried over from v1), and `1`, a message (text in `content`). Both carry a `C` tag. New kinds need no change to this section.
+
+**Why one bag per region (non-normative):** `d` is the lookup id, so there is exactly one bag per author, region and height, and it is addressable. A region accumulates content by rewriting its bag. A relay sees one ciphertext per region. It never learns how many items the bag holds or what kinds they are.
+
+**Lifecycle (normative):**
+- To add or remove an item, the author republishes the bag with the new list and a `created_at` strictly greater than the previous bag's. Relays and readers keep the newest.
+- To remove the last item, the author publishes a NIP-09 deletion (`kind = 5`) with `["e", "<bag_event_id>"]` and `["k", "33330"]`. A bag holding a list of zero items MUST NOT be published.
+
+Note (non-normative): the reference CLI's `encrypt` writes opaque plaintext (a text or a file); ONOSENDAI writes a list of items. Both conform.
+
+
+### 7.7 Hints (optional)
+
+A bag is a cache of data encrypted by a region key at a height (§7.6) and it reveals nothing about where it is. Its `lookup_id` is a hash of a hash (§7.2), and discovery scanning (§7.4) reaches only a few heights around the scanner. Without more information, a bag is found only by intentionally deep scanning and/or wandering. With no additional information, any given bag is equally likely to be at any point in the full 2^256 coordinate space: an impossibly hardened secret.
 
 A **hint** is the hider's clue as to where the bag is. It is optional, public, and as coarse as the hider wants: the aligned box the bag's region lies in, one height per axis, on one plane. The hint box is scalable along each axis; the bag is somewhere within the box. A seeker simply sweeps the box to find the secret, and the hider scales the hint to achieve the desired difficulty.
 
@@ -973,7 +1009,7 @@ A hint fixes the sector on every axis with `H <= 30`. For each such axis the bag
 
 **Malformed hints (normative):**
 
-A `hint` tag that breaks any rule above MUST be treated as absent: wrong arity, bad hex, a base that is not aligned, a height outside `[0, 85]`, a non-canonical integer, a height below `h`. Sector tags that disagree with the hint MUST be ignored. A bad hint never invalidates the bag. Hints are advisory; validity is §7.2 and §8.6.
+A `hint` tag that breaks any rule above MUST be treated as absent: wrong arity, bad hex, a base that is not aligned, a height outside `[0, 85]`, a non-canonical integer, a height below `h`. Sector tags that disagree with the hint MUST be ignored. A bad hint never invalidates the bag. Hints are advisory; validity is §7.2 and §7.6.
 
 **Why the hint is a knob (non-normative):**
 
@@ -1083,55 +1119,25 @@ Required tags:
 
 **Height tags:** The `hx`, `hy`, `hz` tags enable verifiers to determine expected proof lengths without re-deriving LCA heights from coordinates.
 
-### 8.6 Encrypted content event (the bag)
+### 8.6 Encrypted content event (bag)
 
-An encrypted content event hides content at a place. It is called a **bag**: one event holding everything its author has hidden in one region at one height. Anyone can fetch a bag. Only someone who has computed the region's key (§7.2) can open it.
+A bag publishes content encrypted to a region (§7.6). Its cipher, plaintext, items and lifecycle are defined there; this section is the event format.
 
 - Encrypted content events: `kind = 33330`
 - `kind 33330` is addressable: relays keep the newest event per `(pubkey, kind, d)`
 
 Required tags:
 - `d` tag: `["d", "<lookup_id_hex>"]` (32-byte lowercase hex string, the `lookup_id` of §7.2)
-- `encrypted` tag: `["encrypted", "aes-256-gcm", "<payload_base64>"]`
+- `encrypted` tag: `["encrypted", "aes-256-gcm", "<payload_base64>"]` (the payload of §7.6)
 - `version` tag: `["version", "2"]`
-  - `version` names the rules of this section. A reader MUST ignore a bag whose version it does not know.
+  - `version` names the rules of §7.6. A reader MUST ignore a bag whose version it does not know.
 
 Optional tags:
 - `h` tag: `["h", "<height>"]` (decimal string): the height of the region whose key encrypts the content, which is the discovery radius of §7.3
-- `hint` tag: `["hint", "<coord_hex>", "<Hx>", "<Hy>", "<Hz>"]`: the hider's coarse statement of where the bag can be found (§7.6)
-- Sector tags `X`, `Y`, `Z`, `S`: required on a bag that carries a `hint` tag, for each axis whose hint height is at most 30 (§7.6, §10); MUST NOT appear otherwise
+- `hint` tag: `["hint", "<coord_hex>", "<Hx>", "<Hy>", "<Hz>"]`: the hider's coarse statement of where the bag can be found (§7.7)
+- Sector tags `X`, `Y`, `Z`, `S`: required on a bag that carries a `hint` tag, for each axis whose hint height is at most 30 (§7.7, §10); MUST NOT appear otherwise
 
-Content: MAY carry plaintext meant for humans, a riddle (§7.6). The protocol does not interpret it.
-
-**Cipher (normative):**
-- key: the `location_decryption_key` of §7.2 (32 bytes)
-- cipher: AES-256-GCM with a 12-byte nonce and a 16-byte tag, no additional authenticated data
-- the nonce MUST be fresh for every encryption
-- `payload = nonce || ciphertext || tag`, encoded as base64 (standard alphabet, padded)
-
-A reader without the region key cannot decrypt the payload and learns nothing from trying. A failed decryption MUST NOT be treated as an error in the bag.
-
-**Plaintext (normative):**
-
-The plaintext is arbitrary bytes. Two shapes are defined:
-- A **list of items**: a JSON array whose elements are nostr events. Readers MUST try this shape first.
-- **Opaque**: anything else. A text note, a file. Interpretation is application-defined.
-
-**Items (normative):**
-- An item is a nostr event. It MAY be signed. If it carries a `sig`, its `id` MUST be the canonical id (§8.2) and the signature MUST verify; a reader MUST drop an item that fails either check, and only that item. An item without a `sig` is allowed; its `pubkey` is then a claim, and readers MUST NOT present it as verified.
-- The bag's `pubkey` placed the items. Readers MUST attribute placement to the bag's author, and authorship of an item's content to the item's `pubkey` only when the item is signed.
-- An item MAY carry a `C` tag: `["C", "<coord_hex>"]`, its exact coordinate (§2). If present, the coordinate MUST lie inside the region the bag is encrypted to: same plane, and equal to the region's base above height `h`. Readers MAY drop an item whose `C` lies outside. Without a `C` tag, an item is located no more precisely than the region.
-- A reader that does not understand an item's `kind` skips it.
-
-Note (non-normative): kinds in use. ONOSENDAI hides two kinds: `3330`, a shard (geometry in `content`, the kind carried over from v1), and `1`, a message (text in `content`). Both carry a `C` tag. New kinds need no change to this section.
-
-**Why one bag per region (non-normative):** `d` is the lookup id, so there is exactly one bag per author, region and height, and it is addressable. A region accumulates content by rewriting its bag. A relay sees one ciphertext per region. It never learns how many items the bag holds or what kinds they are.
-
-**Lifecycle (normative):**
-- To add or remove an item, the author republishes the bag with the new list and a `created_at` strictly greater than the previous bag's. Relays and readers keep the newest.
-- To remove the last item, the author publishes a NIP-09 deletion (`kind = 5`) with `["e", "<bag_event_id>"]` and `["k", "33330"]`. A bag holding a list of zero items MUST NOT be published.
-
-Note (non-normative): the reference CLI's `encrypt` writes opaque plaintext (a text or a file); ONOSENDAI writes a list of items. Both conform.
+Content: MAY carry plaintext meant for humans, a riddle (§7.7). The protocol does not interpret it.
 
 ### 8.7 Verification summary
 
@@ -1363,7 +1369,7 @@ Tag formatting rules (normative):
 - `sx`, `sy`, `sz` MUST be encoded as base-10 integers (strings), with no leading `+` and no leading zeros (except `"0"`).
 - `S` MUST be exactly `"<sx>-<sy>-<sz>"`.
 
-**Encrypted content events (kind 33330):** a bag without a hint claims no coordinate and carries no sector tags. A bag with a hint (§7.6) claims a box. It MUST carry the sector tag of each axis whose hint height is at most 30, computed from the box's base, and `S` when all three are fixed. A relay query on `#S`, or on one axis tag, returns the hinted bags in a sector or a slice the same way it returns movement.
+**Encrypted content events (kind 33330):** a bag without a hint claims no coordinate and carries no sector tags. A bag with a hint (§7.7) claims a box. It MUST carry the sector tag of each axis whose hint height is at most 30, computed from the box's base, and `S` when all three are fixed. A relay query on `#S`, or on one axis tag, returns the hinted bags in a sector or a slice the same way it returns movement.
 
 ---
 
@@ -1495,4 +1501,4 @@ Implementers should treat that repo as the reference for:
 - Movement proof computation
 - Canonical GPS→dataspace mapping (`CANONICAL_GPS_TO_DATASPACE_SPEC_VERSION` and golden vectors)
 
-`hint-reference.py` in this repository is a stdlib-only executable statement of §7.6 and the §10 rule for bags. Running it checks canonical form, containment, sector tags, seeker work, malformed hints and plane preservation, and locks the golden vectors of §7.6.
+`hint-reference.py` in this repository is a stdlib-only executable statement of §7.7 and the §10 rule for bags. Running it checks canonical form, containment, sector tags, seeker work, malformed hints and plane preservation, and locks the golden vectors of §7.7.

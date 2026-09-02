@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""CYBERSPACE_V2 section 7.6: reference hint construction (stdlib only).
+"""CYBERSPACE_V2 section 7.7: reference hint construction (stdlib only).
 
 A hint is the hider's optional, coarse statement of where an encrypted content
 event (kind 33330, section 8.6) can be found: an aligned box, one height per
-axis, on one plane. This file is the executable statement of section 7.6 and
+axis, on one plane. This file is the executable statement of section 7.7 and
 the sector rule it adds to section 10. Running it checks the properties those
 sections claim:
 
@@ -55,7 +55,7 @@ def coord_hex(coord: int) -> str:
     return format(coord, "064x")
 
 
-# --- section 7.6: building a hint -----------------------------------------------
+# --- section 7.7: building a hint -----------------------------------------------
 
 def aligned_base(v: int, height: int) -> int:
     """The base of the aligned region of side 2^height containing v (sections 4.5, 7.4)."""
@@ -80,16 +80,16 @@ def hint_tags(x: int, y: int, z: int, plane: int, heights: tuple) -> list:
 
 
 def candidates(bag_height: int, heights: tuple) -> int:
-    """Region-key derivations at bag_height needed to sweep the box (section 7.6)."""
+    """Region-key derivations at bag_height needed to sweep the box (section 7.7)."""
     return 1 << sum(h - bag_height for h in heights)
 
 
-# --- section 7.6: reading a hint ------------------------------------------------
+# --- section 7.7: reading a hint ------------------------------------------------
 
 def parse_hint(tags: list, bag_height: int):
     """The hinted box as (bx, by, bz, plane, (Hx, Hy, Hz)), or None when the bag
     carries no well-formed hint. A malformed hint is absent, not an error: the
-    bag itself stays valid (section 7.6)."""
+    bag itself stays valid (section 7.7)."""
     hint = next((t for t in tags if t and t[0] == HINT_TAG), None)
     if hint is None or len(hint) != 5:
         return None
