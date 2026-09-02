@@ -945,7 +945,7 @@ Note: this caching optimization applies to spatial region computations for disco
 
 ### 7.6 The bag (normative)
 
-Content hidden at a place is published as a **bag**: one Nostr event (kind 33330, event format in §8.6) holding everything its author has hidden in one region at one height. Anyone can fetch a bag from a relay. Only someone who has computed the region's key (§7.2) can open it. The bag is addressable by its `lookup_id`, so relays keep only the newest bag per author and region.
+Content hidden at a place is published as a **bag**. A bag is one Nostr event of kind 33330 (event format in §8.6) whose payload is encrypted with the key of one region at one height (§7.2), and it holds everything its author has hidden in that region at that height. Anyone can fetch a bag from a relay, because the ciphertext is public. Only someone who has computed the region's key can open it, whether they computed it by moving into the region or by deriving it for the coordinate directly (§7.1). The bag is addressable by its `lookup_id`, so a relay keeps only the newest bag per author and region, and the author changes what is hidden there by publishing a newer bag.
 
 **Cipher (normative):**
 - key: the `location_decryption_key` of §7.2 (32 bytes)
@@ -953,29 +953,29 @@ Content hidden at a place is published as a **bag**: one Nostr event (kind 33330
 - the nonce MUST be fresh for every encryption
 - `payload = nonce || ciphertext || tag`, encoded as base64 (standard alphabet, padded)
 
-A reader without the region key cannot decrypt the payload and learns nothing from trying. A failed decryption MUST NOT be treated as an error in the bag.
+A reader without the region key cannot decrypt the payload. An attempt with the wrong key fails at the GCM tag check and reveals nothing about the plaintext. A failed decryption therefore means only that the reader does not hold this region's key; it MUST NOT be treated as an error in the bag.
 
 **Plaintext (normative):**
 
-The plaintext is arbitrary bytes. Two shapes are defined:
-- A **list of items**: a JSON array whose elements are nostr events. Readers MUST try this shape first.
-- **Opaque**: anything else. A text note, a file. Interpretation is application-defined.
+The plaintext is arbitrary bytes. The protocol places no requirement on it beyond the two shapes below, which tell a reader how to interpret what it has decrypted:
+- A **list of items**: a JSON array whose elements are nostr events, signed or unsigned. Readers MUST try this shape first, because a list of items is the shape clients render item by item.
+- **Opaque**: anything that is not a list of items, such as a text note or a file. Its interpretation is application-defined; a client may show it as text or offer it as a download.
 
 **Items (normative):**
-- An item is a nostr event. It MAY be signed. If it carries a `sig`, its `id` MUST be the canonical id (§8.2) and the signature MUST verify; a reader MUST drop an item that fails either check, and only that item. An item without a `sig` is allowed; its `pubkey` is then a claim, and readers MUST NOT present it as verified.
-- The bag's `pubkey` placed the items. Readers MUST attribute placement to the bag's author, and authorship of an item's content to the item's `pubkey` only when the item is signed.
-- An item MAY carry a `C` tag: `["C", "<coord_hex>"]`, its exact coordinate (§2). If present, the coordinate MUST lie inside the region the bag is encrypted to: same plane, and equal to the region's base above height `h`. Readers MAY drop an item whose `C` lies outside. Without a `C` tag, an item is located no more precisely than the region.
-- A reader that does not understand an item's `kind` skips it.
+- An item is a nostr event. It MAY be signed. If it carries a `sig`, its `id` MUST be the canonical id (§8.2) and the signature MUST verify; a reader MUST drop an item that fails either check, and only that item, because one corrupt or forged item says nothing about the others. An item without a `sig` is allowed, because some content is deliberately left unsigned; its `pubkey` is then a claim, and readers MUST NOT present it as verified.
+- The bag's `pubkey` is the key that placed the items in the region. Readers MUST attribute placement to the bag's author, and MUST attribute authorship of an item's content to the item's `pubkey` only when the item is signed. A signed item written by one key and hidden by another is therefore shown as that author's content, placed here by the hider.
+- An item MAY carry a `C` tag: `["C", "<coord_hex>"]`, its exact coordinate (§2), which lets a client render it at a point rather than somewhere in the region. If present, the coordinate MUST lie inside the region the bag is encrypted to: the same plane, and equal to the region's base above height `h`. Readers MAY drop an item whose `C` lies outside, because such an item claims a place its key does not cover. Without a `C` tag, an item is located no more precisely than the region.
+- A reader that does not understand an item's `kind` skips it and renders the rest.
 
-Note (non-normative): kinds in use. ONOSENDAI hides two kinds: `3330`, a shard (geometry in `content`, the kind carried over from v1), and `1`, a message (text in `content`). Both carry a `C` tag. New kinds need no change to this section.
+Note (non-normative): kinds in use. ONOSENDAI hides two kinds: `3330`, a shard (geometry in `content`, the kind carried over from v1), and `1`, a message (text in `content`). Both carry a `C` tag. New kinds need no change to this section: the container is the same, and a client that does not know a kind skips it.
 
-**Why one bag per region (non-normative):** `d` is the lookup id, so there is exactly one bag per author, region and height, and it is addressable. A region accumulates content by rewriting its bag. A relay sees one ciphertext per region. It never learns how many items the bag holds or what kinds they are.
+**Why one bag per region (non-normative):** `d` is the lookup id, so there is exactly one bag per author, region and height, and it is addressable. A region accumulates content by rewriting its bag: the author decrypts the current bag, adds or removes items, and publishes the whole list again. This costs one event per change instead of one event per item, and it keeps the relay ignorant: a relay sees one ciphertext per region and never learns how many items the bag holds or what kinds they are.
 
 **Lifecycle (normative):**
-- To add or remove an item, the author republishes the bag with the new list and a `created_at` strictly greater than the previous bag's. Relays and readers keep the newest.
-- To remove the last item, the author publishes a NIP-09 deletion (`kind = 5`) with `["e", "<bag_event_id>"]` and `["k", "33330"]`. A bag holding a list of zero items MUST NOT be published.
+- To add or remove an item, the author republishes the bag with the new list and a `created_at` strictly greater than the previous bag's, because relays keep the newest addressable event and readers MUST do the same.
+- To remove the last item, the author publishes a NIP-09 deletion (`kind = 5`) with `["e", "<bag_event_id>"]` and `["k", "33330"]`. An empty bag would still occupy the region's slot on the relay, so a bag holding a list of zero items MUST NOT be published.
 
-Note (non-normative): the reference CLI's `encrypt` writes opaque plaintext (a text or a file); ONOSENDAI writes a list of items. Both conform.
+Note (non-normative): the reference CLI's `encrypt` writes opaque plaintext (a text or a file); ONOSENDAI writes a list of items. Both conform to this section, and each can open what the other publishes.
 
 
 ### 7.7 Hints (optional)
@@ -989,31 +989,31 @@ A **hint** is the hider's clue as to where the bag is. It is optional, public, a
 - `bx = (x >> Hx) << Hx`, `by = (y >> Hy) << Hy`, `bz = (z >> Hz) << Hz`: the aligned bases
 - the box is `[bx, bx + 2^Hx) × [by, by + 2^Hy) × [bz, bz + 2^Hz)` on plane `P`
 
-A height of `85` leaves an axis open (base `0`). Equal heights make a cube. Unequal heights make a slab or a column. Heights of `30` on all three axes are one sector (§10).
+A height of `85` leaves an axis open: the base is `0`, the box spans the whole axis, and the hint says nothing about that coordinate. Equal heights make a cube. Unequal heights make a slab or a column; an exact axis (height equal to the bag's) with two coarse axes turns the search into two dimensions. Heights of `30` on all three axes name exactly one sector (§10).
 
 **The `hint` tag (normative):**
 
 `["hint", "<coord_hex>", "<Hx>", "<Hy>", "<Hz>"]`
 
-- `coord_hex`: the 256-bit coordinate of the box's base `(bx, by, bz, P)`, encoded per §2.2, 32-byte lowercase hex. It MUST be the aligned base: the low `H` bits of each axis MUST be zero, and an axis with `H = 85` MUST be `0`.
+- `coord_hex`: the 256-bit coordinate of the box's base `(bx, by, bz, P)`, encoded per §2.2, 32-byte lowercase hex. It MUST be the aligned base: the low `H` bits of each axis MUST be zero, and an axis with `H = 85` MUST be `0`. Requiring the base means every hider who hints the same box publishes the same tag, so readers can compare hints by equality.
 - `Hx`, `Hy`, `Hz`: decimal strings, no sign, no leading zeros except `"0"` (the rules of §10).
 - A bag MUST carry at most one `hint` tag.
 
 **What a hint claims (normative):**
 
-The bag's region (height `h`, the `h` tag of §8.6) lies inside the box, on plane `P`. Both are aligned, so this is two checks per axis: `H >= h`, and the region's base equals the box's base above height `H`. When the bag carries an `h` tag, each hint height MUST be at least `h`. Three heights equal to `h` name the region itself. That hint is a destination, not a search.
+The bag's region (the aligned cube of height `h`, where `h` is the `h` tag of §8.6) lies inside the box, on plane `P`. Because both the region and the box are aligned, containment is two checks per axis: `H >= h`, and the region's base equals the box's base after both are shifted right by `H`. When the bag carries an `h` tag, each hint height MUST therefore be at least `h`; a box smaller than the region could not contain it. Three heights equal to `h` name the region itself: the hint is then a destination the seeker can compute or walk to directly, not a search.
 
 **Sector tags (normative):**
 
-A hint fixes the sector on every axis with `H <= 30`. For each such axis the bag MUST carry that axis's sector tag (`X`, `Y` or `Z`), computed from the box's base (§10). When all three are fixed, the bag MUST carry `S`. An axis with `H > 30` gets no sector tag. A bag without a hint MUST NOT carry sector tags.
+A hint fixes the sector on every axis with `H <= 30`, because the sector index is the axis value shifted right by 30 (§10) and the hint fixes every bit above `H`. For each such axis the bag MUST carry that axis's sector tag (`X`, `Y` or `Z`), computed from the box's base. When all three are fixed, the bag MUST carry `S`. An axis with `H > 30` gets no sector tag, because its sector is not determined. A bag without a hint MUST NOT carry sector tags, because on a bag they are derived from the hint and would otherwise leak a location the hider did not choose to publish.
 
 **Malformed hints (normative):**
 
-A `hint` tag that breaks any rule above MUST be treated as absent: wrong arity, bad hex, a base that is not aligned, a height outside `[0, 85]`, a non-canonical integer, a height below `h`. Sector tags that disagree with the hint MUST be ignored. A bad hint never invalidates the bag. Hints are advisory; validity is §7.2 and §7.6.
+A `hint` tag that breaks any rule above MUST be treated as absent, meaning the bag is read as if it carried no hint: wrong arity, bad hex, a base that is not aligned, a height outside `[0, 85]`, a non-canonical integer, or a height below `h`. Sector tags that disagree with the hint MUST be ignored. A bad hint never invalidates the bag, because hints are advisory metadata about where to look; whether a bag is valid is decided by §7.2 and §7.6 alone.
 
 **Why the hint is a knob (non-normative):**
 
-A seeker who trusts a hint derives keys at the bag's height for every candidate region in the box: `2^((Hx - h) + (Hy - h) + (Hz - h))` of them, then looks each `lookup_id` up on a relay (one batched query works). Position never enters this cost. §7.1 already says so: looking and walking cost the same, and a key can be computed for any coordinate. So the gap between hint height and bag height, summed over axes, is the price of the search, and the hider sets it.
+A seeker who trusts a hint sweeps the box: for every candidate region of height `h` inside it, derive the region key (§7.2), compute its `lookup_id`, and check the relay for a bag with that `d` tag (one batched query can carry many lookup ids). The number of candidates is `2^((Hx - h) + (Hy - h) + (Hz - h))`, the product of the choices on each axis. The seeker's own position never enters this cost, because §7.1 makes looking and walking equivalent: a region key can be computed for any coordinate without traveling there. The gap between hint height and bag height, summed over the three axes, is therefore the price of the search, and the hider sets it when publishing the hint.
 
 | Total gap | Candidates | Single core, bag at height 8 or below |
 |---:|---:|---|
@@ -1023,19 +1023,19 @@ A seeker who trusts a hint derives keys at the bag's height for every candidate 
 | 24 | 16.7 million | hours |
 | 30 or more | a billion or more | days to never |
 
-Measured 2026-09-01 on one desktop core: about 0.05 ms per key at heights 0 to 4, 1.3 ms at height 8, 30 ms at height 12, 816 ms at height 16. The same gap costs more for a bag hidden at a greater height. A sector-only hint (`H = 30`) on a bag at height 5 is a gap of 75. Nobody sweeps that. It says where to travel, not where to search.
+The times in the table assume the key cost measured on 2026-09-01 on one desktop core: about 0.05 ms per key at heights 0 to 4, 1.3 ms at height 8, 30 ms at height 12 and 816 ms at height 16. Because a key at a greater height costs more to derive, the same gap takes longer for a bag hidden at a greater height. A sector-only hint (`H = 30` on every axis) on a bag at height 5 is a gap of 75, about 2^75 candidates, which no one will sweep; such a hint tells a seeker where to travel, not where to search.
 
 **Reading is not reaching (non-normative):**
 
-Anyone who does the work can read the bag from anywhere. Being inside the region is a separate fact, and only a movement chain whose head is inside proves it (§8). An application that rewards a find has to say which one it means. How a find is proven in public is left to applications and DECKs (§8.9).
+Anyone who does the work of deriving the key can read the bag from anywhere; reading has no distance term. Being inside the region is a separate fact: it costs the movement work of §4 to §6 to get there, and only a movement chain whose head lies inside the region proves it (§8). An application that rewards finding a bag has to say which of the two it rewards, reading or reaching. How a find is proven in public is left to applications and DECKs (§8.9).
 
 **A hint is a claim (non-normative):**
 
-Nothing verifies a hint until the bag is found. A false hint wastes the seeker's work, and the protocol does not punish it. Weigh hints by who published them.
+Nothing in the protocol verifies a hint until the bag is found and its region is compared with the box. A false hint wastes the seeker's work, and the protocol does not punish it. Applications should weigh a hint by the reputation of the key that published it, as they would any other unverified claim.
 
 **Riddles (non-normative):**
 
-The bag's `content` field MAY hold a plaintext hint for humans (§8.6), alone or with a geometric hint. The protocol does not read it.
+The bag's `content` field MAY hold a plaintext hint written for humans, a riddle (§8.6). A riddle can stand alone or accompany a geometric hint. The protocol does not read it; it is for the seeker to interpret.
 
 **Golden vectors:**
 
@@ -1047,7 +1047,7 @@ Produced and checked by `hint-reference.py`. Points are 256-bit coordinates per 
 | `london_h5_x_exact` | `london` (0) | 5 | 5, 14, 14 | `c492492492492492492492edf5bee7267451c787d95ba4d7840c749041240000` | same as above | 2^18 |
 | `ideaspace_h8_y_open` | `a4b64924924924924924924924924924924924924924924924924d84b60d9c8f` (1) | 8 | 12, 40, 12 | `a4b64924924924924924924924924924924924924924924924924d8000000001` | `X` `18014398509481984`, `Z` `36028797018963967`, no `Y`, no `S` | 2^40 |
 
-The ideaspace point is `x = 2^84 + 12345`, `y = 3 · 2^80 + 777`, `z = 2^85 - 1 - 4242` on plane 1. The second vector is a two-dimensional hunt: X is exact, so the seeker sweeps a 2^9 by 2^9 slab of height-5 regions. The third has an open axis: `Hy = 40` leaves the Y sector undetermined, so the bag carries `X` and `Z` but neither `Y` nor `S`, and the sweep is 2^40 candidates. That hint says where to travel.
+The ideaspace point is `x = 2^84 + 12345`, `y = 3 · 2^80 + 777`, `z = 2^85 - 1 - 4242` on plane 1. The second vector is a two-dimensional hunt: X is exact, so the seeker sweeps a 2^9 by 2^9 slab of height-5 regions. The third has an open axis: `Hy = 40` leaves the Y sector undetermined, so the bag carries `X` and `Z` but neither `Y` nor `S`, and the sweep is 2^40 candidates, far beyond any search; that hint tells the seeker where to travel.
 
 ---
 
@@ -1121,7 +1121,7 @@ Required tags:
 
 ### 8.6 Encrypted content event (bag)
 
-A bag publishes content encrypted to a region (§7.6). Its cipher, plaintext, items and lifecycle are defined there; this section is the event format.
+A bag publishes content encrypted to one region at one height (§7.6). Its cipher, plaintext, items and lifecycle are defined in §7.6; this section gives the event format, as §8.3 to §8.5 do for movement.
 
 - Encrypted content events: `kind = 33330`
 - `kind 33330` is addressable: relays keep the newest event per `(pubkey, kind, d)`
