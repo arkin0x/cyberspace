@@ -1,7 +1,7 @@
 # Cyberspace v2: Protocol Specification
 
 **Date:** February 10, 2026
-**Last updated:** August 24, 2026
+**Last updated:** September 2, 2026
 **Status:** Design complete (spec); reference implementation in progress
 
 ---
@@ -85,6 +85,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [7.3 Discovery radius (non-normative)](#73-discovery-radius-non-normative)
   - [7.4 Discovery scanning (recommended)](#74-discovery-scanning-recommended)
   - [7.5 Caching optimization (non-normative)](#75-caching-optimization-non-normative)
+  - [7.6 Hints (optional)](#76-hints-optional)
 - [8. Nostr Integration: The Movement Chain](#8-nostr-integration-the-movement-chain)
   - [8.1 Event kind](#81-event-kind)
   - [8.2 Canonical event id (NIP-01)](#82-canonical-event-id-nip-01)
@@ -862,7 +863,7 @@ At the Cantor Height 34 scale (2 meters per height-34 subtree), approximate phys
 
 A local secret at height 34 is discoverable within ~2 meters. At height 50, from anywhere in a city.
 
-**Important caveat:** Discovery requires *equivalent computation* to secret creation. Typical scanning range is between height 0 and 16 for sub-second continuous scanning on average consumer hardware. Secrets at larger regions may be unattainable without some hint to help users scan up to their height. As hardware improves, passive scanning range will grow and larger secret regions will become attainable.
+**Important caveat:** Discovery requires *equivalent computation* to secret creation. Typical scanning range is between height 0 and 16 for sub-second continuous scanning on average consumer hardware. Secrets at larger regions may be unattainable without some hint to help users scan up to their height. §7.6 defines hints: the hider MAY publish the aligned box a bag lies in, one height per axis, so a seeker sweeps the box instead of the space. As hardware improves, passive scanning range will grow and larger secret regions will become attainable.
 
 The discovery radius grows exponentially with height, enabling a natural hierarchy of public, neighborhood, and intimate spatial messages.
 
@@ -940,6 +941,77 @@ def get_region_key(x, y, z, h):
 - Continuous scanning: avoid recomputing all 50+ region keys on every position update
 
 Note: this caching optimization applies to spatial region computations for discovery. Hop proofs still require computing the temporal axis root per §5 on every hop.
+
+### 7.6 Hints (optional)
+
+A bag (§8.6) publishes nothing about where it is. Its `lookup_id` is a hash of a hash (§7.2), and discovery scanning (§7.4) reaches only a few heights around the scanner. Without more, a bag is found by walking into it.
+
+A **hint** is the hider's answer. It is optional, public, and as coarse as the hider wants: the aligned box the bag's region lies in, one height per axis, on one plane. A seeker sweeps the box instead of the space.
+
+**The hinted box (normative):**
+- `Hx`, `Hy`, `Hz`: integers in `[0, 85]`, the hint heights
+- `bx = (x >> Hx) << Hx`, `by = (y >> Hy) << Hy`, `bz = (z >> Hz) << Hz`: the aligned bases
+- the box is `[bx, bx + 2^Hx) × [by, by + 2^Hy) × [bz, bz + 2^Hz)` on plane `P`
+
+A height of `85` leaves an axis open (base `0`). Equal heights make a cube. Unequal heights make a slab or a column. Heights of `30` on all three axes are one sector (§10).
+
+**The `hint` tag (normative):**
+
+`["hint", "<coord_hex>", "<Hx>", "<Hy>", "<Hz>"]`
+
+- `coord_hex`: the 256-bit coordinate of the box's base `(bx, by, bz, P)`, encoded per §2.2, 32-byte lowercase hex. It MUST be the aligned base: the low `H` bits of each axis MUST be zero, and an axis with `H = 85` MUST be `0`.
+- `Hx`, `Hy`, `Hz`: decimal strings, no sign, no leading zeros except `"0"` (the rules of §10).
+- A bag MUST carry at most one `hint` tag.
+
+**What a hint claims (normative):**
+
+The bag's region (height `h`, the `h` tag of §8.6) lies inside the box, on plane `P`. Both are aligned, so this is two checks per axis: `H >= h`, and the region's base equals the box's base above height `H`. When the bag carries an `h` tag, each hint height MUST be at least `h`. Three heights equal to `h` name the region itself. That hint is a destination, not a search.
+
+**Sector tags (normative):**
+
+A hint fixes the sector on every axis with `H <= 30`. For each such axis the bag MUST carry that axis's sector tag (`X`, `Y` or `Z`), computed from the box's base (§10). When all three are fixed, the bag MUST carry `S`. An axis with `H > 30` gets no sector tag. A bag without a hint MUST NOT carry sector tags.
+
+**Malformed hints (normative):**
+
+A `hint` tag that breaks any rule above MUST be treated as absent: wrong arity, bad hex, a base that is not aligned, a height outside `[0, 85]`, a non-canonical integer, a height below `h`. Sector tags that disagree with the hint MUST be ignored. A bad hint never invalidates the bag. Hints are advisory; validity is §7.2 and §8.6.
+
+**Why the hint is a knob (non-normative):**
+
+A seeker who trusts a hint derives keys at the bag's height for every candidate region in the box: `2^((Hx - h) + (Hy - h) + (Hz - h))` of them, then looks each `lookup_id` up on a relay (one batched query works). Position never enters this cost. §7.1 already says so: looking and walking cost the same, and a key can be computed for any coordinate. So the gap between hint height and bag height, summed over axes, is the price of the search, and the hider sets it.
+
+| Total gap | Candidates | Single core, bag at height 8 or below |
+|---:|---:|---|
+| 0 | 1 | a destination |
+| 12 | 4,096 | seconds |
+| 18 | 262,144 | minutes |
+| 24 | 16.7 million | hours |
+| 30 or more | a billion or more | days to never |
+
+Measured 2026-09-01 on one desktop core: about 0.05 ms per key at heights 0 to 4, 1.3 ms at height 8, 30 ms at height 12, 816 ms at height 16. The same gap costs more for a bag hidden at a greater height. A sector-only hint (`H = 30`) on a bag at height 5 is a gap of 75. Nobody sweeps that. It says where to travel, not where to search.
+
+**Reading is not reaching (non-normative):**
+
+Anyone who does the work can read the bag from anywhere. Being inside the region is a separate fact, and only a movement chain whose head is inside proves it (§8). An application that rewards a find has to say which one it means. How a find is proven in public is left to applications and DECKs (§8.9).
+
+**A hint is a claim (non-normative):**
+
+Nothing verifies a hint until the bag is found. A false hint wastes the seeker's work, and the protocol does not punish it. Weigh hints by who published them.
+
+**Riddles (non-normative):**
+
+The bag's `content` field MAY hold a plaintext hint for humans (§8.6), alone or with a geometric hint. The protocol does not read it.
+
+**Golden vectors:**
+
+Produced and checked by `hint-reference.py`. Points are 256-bit coordinates per §2.2 (32 bytes of hex). `london` is the §9.8 golden vector.
+
+| Vector | Point (plane) | Bag `h` | Heights | `hint` coordinate | Sector tags | Candidates |
+|---|---|---:|---|---|---|---:|
+| `london_h5_box11` | `london` (0) | 5 | 11, 11, 11 | `c492492492492492492492edf5bee7267451c787d95ba4d7840c76d000000000` | `X` `18014398541305938`, `Y` `18014398549232983`, `Z` `18014398509410999`, `S` `18014398541305938-18014398549232983-18014398509410999` | 2^18 |
+| `london_h5_x_exact` | `london` (0) | 5 | 5, 14, 14 | `c492492492492492492492edf5bee7267451c787d95ba4d7840c749041240000` | same as above | 2^18 |
+| `ideaspace_h8_y_open` | `a4b64924924924924924924924924924924924924924924924924d84b60d9c8f` (1) | 8 | 12, 40, 12 | `a4b64924924924924924924924924924924924924924924924924d8000000001` | `X` `18014398509481984`, `Z` `36028797018963967`, no `Y`, no `S` | 2^40 |
+
+The ideaspace point is `x = 2^84 + 12345`, `y = 3 · 2^80 + 777`, `z = 2^85 - 1 - 4242` on plane 1. The second vector is a two-dimensional hunt: X is exact, so the seeker sweeps a 2^9 by 2^9 slab of height-5 regions. The third has an open axis: `Hy = 40` leaves the Y sector undetermined, so the bag carries `X` and `Z` but neither `Y` nor `S`, and the sweep is 2^40 candidates. That hint says where to travel.
 
 ---
 
@@ -1026,8 +1098,10 @@ Required tags:
 
 Optional tags:
 - `h` tag: `["h", "<height>"]` (decimal string): the height of the region whose key encrypts the content, which is the discovery radius of §7.3
+- `hint` tag: `["hint", "<coord_hex>", "<Hx>", "<Hy>", "<Hz>"]`: the hider's coarse statement of where the bag can be found (§7.6)
+- Sector tags `X`, `Y`, `Z`, `S`: required on a bag that carries a `hint` tag, for each axis whose hint height is at most 30 (§7.6, §10); MUST NOT appear otherwise
 
-Content: MAY carry plaintext meant for humans. The protocol does not interpret it.
+Content: MAY carry plaintext meant for humans, a riddle (§7.6). The protocol does not interpret it.
 
 **Cipher (normative):**
 - key: the `location_decryption_key` of §7.2 (32 bytes)
@@ -1289,6 +1363,8 @@ Tag formatting rules (normative):
 - `sx`, `sy`, `sz` MUST be encoded as base-10 integers (strings), with no leading `+` and no leading zeros (except `"0"`).
 - `S` MUST be exactly `"<sx>-<sy>-<sz>"`.
 
+**Encrypted content events (kind 33330):** a bag without a hint claims no coordinate and carries no sector tags. A bag with a hint (§7.6) claims a box. It MUST carry the sector tag of each axis whose hint height is at most 30, computed from the box's base, and `S` when all three are fixed. A relay query on `#S`, or on one axis tag, returns the hinted bags in a sector or a slice the same way it returns movement.
+
 ---
 
 ## 11. Visualization Conventions
@@ -1418,3 +1494,5 @@ Implementers should treat that repo as the reference for:
 - Integer→bytes canonicalization for hashing
 - Movement proof computation
 - Canonical GPS→dataspace mapping (`CANONICAL_GPS_TO_DATASPACE_SPEC_VERSION` and golden vectors)
+
+`hint-reference.py` in this repository is a stdlib-only executable statement of §7.6 and the §10 rule for bags. Running it checks canonical form, containment, sector tags, seeker work, malformed hints and plane preservation, and locks the golden vectors of §7.6.
