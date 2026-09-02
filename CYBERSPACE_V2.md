@@ -623,11 +623,25 @@ At heights above roughly h16 a sidestep is cheaper in wall-clock time than the e
 
 ### 6.3 Sidestep geometry (normative)
 
-A sidestep crosses exactly **1 Gibson** past an LCA boundary. Given source axis value `v1` and destination axis value `v2`:
+A sidestep is the smallest possible move across a wall. The **wall** is the boundary between the two children of the LCA subtree: the two aligned halves that an axis value must cross between when its high bit at height `h - 1` flips. A sidestep starts on the leaf touching the wall on the source side, and ends on the leaf touching the wall on the destination side. The two leaves are neighbours: they differ by exactly 1 Gibson, and the wall runs between them. Everything else the avatar wants to do (reaching the wall, and continuing past it) is done with hops, which are the primitive that produces a region root (§4, §5); the sidestep only crosses.
 
-- The LCA height `h = find_lca_height(v1, v2)` identifies the boundary.
-- The destination MUST be the coordinate that differs from the source only at bit position `h - 1` (the bit that distinguishes the two children of the LCA), with all lower bits on the destination side set to zero. That is: the destination is the first leaf of the adjacent aligned subtree.
-- Non-crossing axes MUST have `v1 == v2` (a sidestep moves on exactly one axis per action) OR the sidestep crosses multiple axes simultaneously (see §6.9).
+Given source axis value `v1` and destination axis value `v2` on an axis where movement occurs:
+
+- The LCA height `h = find_lca_height(v1, v2)` identifies the wall. `base = (v1 >> h) << h` is the first leaf of the LCA subtree, and `half = 2^(h - 1)` is the number of leaves in each of its two children. The wall lies between leaf `base + half - 1` (the last leaf of the lower child) and leaf `base + half` (the first leaf of the upper child).
+- The source MUST be the leaf touching the wall on its side. Crossing upward (`v2 > v1`) the source is `base + half - 1`: every bit below `h - 1` is one. Crossing downward (`v2 < v1`) the source is `base + half`: every bit below `h - 1` is zero.
+- The destination MUST be the neighbouring leaf on the other side of the wall: `v2 = v1 + 1` crossing upward, `v2 = v1 - 1` crossing downward. In both directions `|v2 - v1| = 1`, and `v1` and `v2` are in different children of the LCA subtree.
+- Non-crossing axes MUST have `v1 == v2`. A sidestep that crosses walls on more than one axis at once is described in §6.9; each crossing axis obeys the rules above independently.
+
+Worked examples on one axis (values written in binary, most significant bit first):
+
+- `v1 = 0b0111` and `v2 = 0b1000`. Here `h = 4`, `base = 0`, `half = 8`. The wall is between leaves 7 and 8. The source 7 is `base + half - 1` (all lower bits one) and the destination 8 is `base + half` (all lower bits zero): a valid upward sidestep.
+- `v1 = 0b1000` and `v2 = 0b0111`. The same wall crossed downward: the source 8 is `base + half` and the destination 7 is `base + half - 1`: a valid downward sidestep.
+- `v1 = 0b0101` and `v2 = 0b1000`. Still `h = 4`, but the source 5 is not touching the wall (leaf 7 is). This is NOT a valid sidestep. The mover first hops from 5 to 7 (a hop with `h = 2`), then sidesteps from 7 to 8.
+- `v1 = 0b0111` and `v2 = 0b1011`. Not a valid sidestep either: the destination 11 is 3 Gibsons past the wall. The mover sidesteps from 7 to 8, then hops from 8 to 11 (a hop with `h = 2`).
+
+Why the source constraint exists: the Merkle root (§6.4) is computed over every leaf of the whole LCA subtree, `2^h` leaves, whichever leaf the avatar starts from. If the source could be anywhere inside its half, a single sidestep event would carry the avatar up to `half - 1` Gibsons to the wall and then across, with no hop and therefore no region root along the way. Pinning the source to the wall keeps a sidestep to its one job, crossing, and keeps every other Gibson of travel inside hops. It also removes an ambiguity: with the source at the wall, "the first leaf of the adjacent aligned subtree" and "exactly 1 Gibson past the boundary" describe the same leaf in both directions.
+
+A verifier at Level 1 (§6.11) checks this geometry directly from the event's coordinates before it looks at any hash: `h` from the two values, the source touching the wall on its side, the destination exactly one Gibson beyond it. An event that fails the geometry check is invalid regardless of its proof.
 
 ### 6.4 Per-axis Merkle root (normative)
 
@@ -732,7 +746,7 @@ When used in Nostr tags, `proof_hash` MUST be encoded as lowercase hex.
 
 ### 6.9 Multi-axis sidestep
 
-A single sidestep event MAY cross boundaries on multiple axes simultaneously (if source and destination differ on more than one axis). The proof is constructed independently per axis:
+A single sidestep event MAY cross boundaries on multiple axes simultaneously (if source and destination differ on more than one axis). Each crossing axis obeys the geometry of §6.3 on its own: its source touches its wall and its destination is 1 Gibson past it, so the event moves the avatar by exactly 1 Gibson on every crossing axis and by nothing on the others. The proof is constructed independently per axis:
 
 - Each axis computes its own Merkle root (or trivial single-leaf hash for axes where `h = 0`).
 - The three roots are combined into `region_m` via Cantor pairing (§6.6).
@@ -762,7 +776,7 @@ Sidestep verification has two levels, reflecting a trade-off between verificatio
 A verifier checks that the claimed destination leaf is consistent with the claimed Merkle root:
 
 1. Validate coordinates: source and destination are valid 256-bit Cyberspace coordinates.
-2. Validate crossing geometry: LCA height matches; destination is exactly 1 Gibson past boundary.
+2. Validate crossing geometry per §6.3: on every axis where movement occurs, `h = find_lca_height(v1, v2)`, the source touches the wall on its side (`base + half - 1` going up, `base + half` going down), and the destination is exactly 1 Gibson past it; axes without movement have `v1 == v2`.
 3. Recompute destination leaf hash: `H_dest = SHA256(SIDESTEP_DOMAIN || int_to_bytes_be_min(v_dest))`
 4. Verify Merkle path from `H_dest` to claimed root `M_axis` using inclusion proof.
 5. Recompute `region_m`, temporal axis, and `proof_hash`. Compare against claimed value.
