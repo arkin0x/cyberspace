@@ -1,7 +1,7 @@
 # Cyberspace v2: Protocol Specification
 
 **Date:** February 10, 2026
-**Last updated:** August 24, 2026
+**Last updated:** September 2, 2026
 **Status:** Design complete (spec); reference implementation in progress
 
 ---
@@ -85,14 +85,16 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [7.3 Discovery radius (non-normative)](#73-discovery-radius-non-normative)
   - [7.4 Discovery scanning (recommended)](#74-discovery-scanning-recommended)
   - [7.5 Caching optimization (non-normative)](#75-caching-optimization-non-normative)
-  - [7.6 Holding a region (non-normative)](#76-holding-a-region-non-normative)
+  - [7.6 The bag (normative)](#76-the-bag-normative)
+  - [7.7 Hints (optional)](#77-hints-optional)
+  - [7.8 Holding a region (non-normative)](#78-holding-a-region-non-normative)
 - [8. Nostr Integration: The Movement Chain](#8-nostr-integration-the-movement-chain)
   - [8.1 Event kind](#81-event-kind)
   - [8.2 Canonical event id (NIP-01)](#82-canonical-event-id-nip-01)
   - [8.3 Spawn event (first event)](#83-spawn-event-first-event)
   - [8.4 Hop event](#84-hop-event)
   - [8.5 Sidestep event](#85-sidestep-event)
-  - [8.6 Encrypted content event](#86-encrypted-content-event)
+  - [8.6 Encrypted content event (bag)](#86-encrypted-content-event-bag)
   - [8.7 Verification summary](#87-verification-summary)
     - [8.7.1 Hop verification](#871-hop-verification)
     - [8.7.2 Sidestep verification (Level 1: inclusion path)](#872-sidestep-verification-level-1-inclusion-path)
@@ -780,7 +782,7 @@ The sidestep Merkle tree is built over SHA-256 hashes of leaf coordinates. The C
 
 This preserves a critical separation: **sidestepping into a region does not yield the region's keys.** The region's Cantor root, and with it every location-based key inside the region (§7), still requires the full Cantor computation. A visitor who sidesteps through a wall has proven they spent the computational time to cross it, but they hold none of the keys to the space. You can walk into a building without having the keys.
 
-This is desirable: it creates a natural asymmetry between those who hold a region (who have invested in Cantor computation and keep its keys, §7.6) and visitors (who have done the minimum work to cross the boundary). Holding is a capability, not a title: anyone who does the work holds the same keys, and no one is excluded. There are no domains in the base protocol; `RATIONALE.md` §6 says what holding does and does not buy, and `docs/territory-conflict-game-layer.md` records the design decision.
+This is desirable: it creates a natural asymmetry between those who hold a region (who have invested in Cantor computation and keep its keys, §7.8) and visitors (who have done the minimum work to cross the boundary). Holding is a capability, not a title: anyone who does the work holds the same keys, and no one is excluded. There are no domains in the base protocol; `RATIONALE.md` §6 says what holding does and does not buy, and `docs/territory-conflict-game-layer.md` records the design decision.
 
 ### 6.13 Natural continents (non-normative)
 
@@ -863,7 +865,7 @@ At the Cantor Height 34 scale (2 meters per height-34 subtree), approximate phys
 
 A local secret at height 34 is discoverable within ~2 meters. At height 50, from anywhere in a city.
 
-**Important caveat:** Discovery requires *equivalent computation* to secret creation. Typical scanning range is between height 0 and 16 for sub-second continuous scanning on average consumer hardware. Secrets at larger regions may be unattainable without some hint to help users scan up to their height. As hardware improves, passive scanning range will grow and larger secret regions will become attainable.
+**Important caveat:** Discovery requires *equivalent computation* to secret creation. Typical scanning range is between height 0 and 16 for sub-second continuous scanning on average consumer hardware. Secrets at larger regions may be unattainable without some hint to help users scan up to their height. §7.7 defines hints: the hider MAY publish the aligned box a bag lies in, one height per axis, so a seeker sweeps the box instead of the space. As hardware improves, passive scanning range will grow and larger secret regions will become attainable.
 
 The discovery radius grows exponentially with height, enabling a natural hierarchy of public, neighborhood, and intimate spatial messages.
 
@@ -942,7 +944,113 @@ def get_region_key(x, y, z, h):
 
 Note: this caching optimization applies to spatial region computations for discovery. Hop proofs still require computing the temporal axis root per §5 on every hop.
 
-### 7.6 Holding a region (non-normative)
+### 7.6 The bag (normative)
+
+Content hidden at a place is published as a **bag**. A bag is one Nostr event of kind 33330 (event format in §8.6) whose payload is encrypted with the key of one region at one height (§7.2), and it holds everything its author has hidden in that region at that height. Anyone can fetch a bag from a relay, because the ciphertext is public. Only someone who has computed the region's key can open it, whether they computed it by moving into the region or by deriving it for the coordinate directly (§7.1). The bag is addressable by its `lookup_id`, so a relay keeps only the newest bag per author and region, and the author changes what is hidden there by publishing a newer bag.
+
+**Cipher (normative):**
+- key: the `location_decryption_key` of §7.2 (32 bytes)
+- cipher: AES-256-GCM with a 12-byte nonce and a 16-byte tag, no additional authenticated data
+- the nonce MUST be fresh for every encryption
+- `payload = nonce || ciphertext || tag`, encoded as base64 (standard alphabet, padded)
+
+A reader without the region key cannot decrypt the payload. An attempt with the wrong key fails at the GCM tag check and reveals nothing about the plaintext. A failed decryption therefore means only that the reader does not hold this region's key; it MUST NOT be treated as an error in the bag.
+
+**Plaintext (normative):**
+
+The plaintext is arbitrary bytes. The protocol places no requirement on it beyond the two shapes below, which tell a reader how to interpret what it has decrypted:
+- A **list of items**: a JSON array whose elements are nostr events, signed or unsigned. Readers MUST try this shape first, because a list of items is the shape clients render item by item.
+- **Opaque**: anything that is not a list of items, such as a text note or a file. Its interpretation is application-defined; a client may show it as text or offer it as a download.
+
+**Items (normative):**
+- An item is a nostr event. It MAY be signed. If it carries a `sig`, its `id` MUST be the canonical id (§8.2) and the signature MUST verify; a reader MUST drop an item that fails either check, and only that item, because one corrupt or forged item says nothing about the others. An item without a `sig` is allowed, because some content is deliberately left unsigned; its `pubkey` is then a claim, and readers MUST NOT present it as verified.
+- The bag's `pubkey` is the key that placed the items in the region. Readers MUST attribute placement to the bag's author, and MUST attribute authorship of an item's content to the item's `pubkey` only when the item is signed. A signed item written by one key and hidden by another is therefore shown as that author's content, placed here by the hider.
+- An item MAY carry a `C` tag: `["C", "<coord_hex>"]`, its exact coordinate (§2), which lets a client render it at a point rather than somewhere in the region. If present, the coordinate MUST lie inside the region the bag is encrypted to: the same plane, and equal to the region's base above height `h`. Readers MAY drop an item whose `C` lies outside, because such an item claims a place its key does not cover. Without a `C` tag, an item is located no more precisely than the region.
+- A reader that does not understand an item's `kind` skips it and renders the rest.
+
+Note (non-normative): kinds in use. ONOSENDAI hides two kinds: `3330`, a shard (geometry in `content`, the kind carried over from v1), and `1`, a message (text in `content`). Both carry a `C` tag. New kinds need no change to this section: the container is the same, and a client that does not know a kind skips it.
+
+**Why one bag per region (non-normative):** `d` is the lookup id, so there is exactly one bag per author, region and height, and it is addressable. A region accumulates content by rewriting its bag: the author decrypts the current bag, adds or removes items, and publishes the whole list again. This costs one event per change instead of one event per item, and it keeps the relay ignorant: a relay sees one ciphertext per region and never learns how many items the bag holds or what kinds they are.
+
+**Lifecycle (normative):**
+- To add or remove an item, the author republishes the bag with the new list and a `created_at` strictly greater than the previous bag's, because relays keep the newest addressable event and readers MUST do the same.
+- To remove the last item, the author publishes a NIP-09 deletion (`kind = 5`) with `["e", "<bag_event_id>"]` and `["k", "33330"]`. An empty bag would still occupy the region's slot on the relay, so a bag holding a list of zero items MUST NOT be published.
+
+Note (non-normative): the reference CLI's `encrypt` writes opaque plaintext (a text or a file); ONOSENDAI writes a list of items. Both conform to this section, and each can open what the other publishes.
+
+
+### 7.7 Hints (optional)
+
+A bag is a cache of data encrypted by a region key at a height (§7.6) and it reveals nothing about where it is. Its `lookup_id` is a hash of a hash (§7.2), and discovery scanning (§7.4) reaches only a few heights around the scanner. Without more information, a bag is found only by intentionally deep scanning and/or wandering. With no additional information, any given bag is equally likely to be at any point in the full 2^256 coordinate space: an impossibly hardened secret.
+
+A **hint** is the hider's clue as to where the bag is. It is optional, public, and as coarse as the hider wants: the aligned box the bag's region lies in, one height per axis, on one plane. The hint box is scalable along each axis; the bag is somewhere within the box. A seeker simply sweeps the box to find the secret, and the hider scales the hint to achieve the desired difficulty.
+
+**The hinted box (normative):**
+- `Hx`, `Hy`, `Hz`: integers in `[0, 85]`, the hint heights
+- `bx = (x >> Hx) << Hx`, `by = (y >> Hy) << Hy`, `bz = (z >> Hz) << Hz`: the aligned bases
+- the box is `[bx, bx + 2^Hx) × [by, by + 2^Hy) × [bz, bz + 2^Hz)` on plane `P`
+
+A height of `85` leaves an axis open: the base is `0`, the box spans the whole axis, and the hint says nothing about that coordinate. Equal heights make a cube. Unequal heights make a slab or a column; an exact axis (height equal to the bag's) with two coarse axes turns the search into two dimensions. Heights of `30` on all three axes name exactly one sector (§10).
+
+**The `hint` tag (normative):**
+
+`["hint", "<coord_hex>", "<Hx>", "<Hy>", "<Hz>"]`
+
+- `coord_hex`: the 256-bit coordinate of the box's base `(bx, by, bz, P)`, encoded per §2.2, 32-byte lowercase hex. It MUST be the aligned base: the low `H` bits of each axis MUST be zero, and an axis with `H = 85` MUST be `0`. Requiring the base means every hider who hints the same box publishes the same tag, so readers can compare hints by equality.
+- `Hx`, `Hy`, `Hz`: decimal strings, no sign, no leading zeros except `"0"` (the rules of §10).
+- A bag MUST carry at most one `hint` tag.
+
+**What a hint claims (normative):**
+
+The bag's region (the aligned cube of height `h`, where `h` is the `h` tag of §8.6) lies inside the box, on plane `P`. Because both the region and the box are aligned, containment is two checks per axis: `H >= h`, and the region's base equals the box's base after both are shifted right by `H`. When the bag carries an `h` tag, each hint height MUST therefore be at least `h`; a box smaller than the region could not contain it. Three heights equal to `h` name the region itself: the hint is then a destination the seeker can compute or walk to directly, not a search.
+
+**Sector tags (normative):**
+
+A hint fixes the sector on every axis with `H <= 30`, because the sector index is the axis value shifted right by 30 (§10) and the hint fixes every bit above `H`. For each such axis the bag MUST carry that axis's sector tag (`X`, `Y` or `Z`), computed from the box's base. When all three are fixed, the bag MUST carry `S`. An axis with `H > 30` gets no sector tag, because its sector is not determined. A bag without a hint MUST NOT carry sector tags, because on a bag they are derived from the hint and would otherwise leak a location the hider did not choose to publish.
+
+**Malformed hints (normative):**
+
+A `hint` tag that breaks any rule above MUST be treated as absent, meaning the bag is read as if it carried no hint: wrong arity, bad hex, a base that is not aligned, a height outside `[0, 85]`, a non-canonical integer, or a height below `h`. Sector tags that disagree with the hint MUST be ignored. A bad hint never invalidates the bag, because hints are advisory metadata about where to look; whether a bag is valid is decided by §7.2 and §7.6 alone.
+
+**Why the hint is a knob (non-normative):**
+
+A seeker who trusts a hint sweeps the box: for every candidate region of height `h` inside it, derive the region key (§7.2), compute its `lookup_id`, and check the relay for a bag with that `d` tag (one batched query can carry many lookup ids). The number of candidates is `2^((Hx - h) + (Hy - h) + (Hz - h))`, the product of the choices on each axis. The seeker's own position never enters this cost, because §7.1 makes looking and walking equivalent: a region key can be computed for any coordinate without traveling there. The gap between hint height and bag height, summed over the three axes, is therefore the price of the search, and the hider sets it when publishing the hint.
+
+| Total gap | Candidates | Single core, bag at height 8 or below |
+|---:|---:|---|
+| 0 | 1 | a destination |
+| 12 | 4,096 | seconds |
+| 18 | 262,144 | minutes |
+| 24 | 16.7 million | hours |
+| 30 or more | a billion or more | days to never |
+
+The times in the table assume the key cost measured on 2026-09-01 on one desktop core: about 0.05 ms per key at heights 0 to 4, 1.3 ms at height 8, 30 ms at height 12 and 816 ms at height 16. Because a key at a greater height costs more to derive, the same gap takes longer for a bag hidden at a greater height. A sector-only hint (`H = 30` on every axis) on a bag at height 5 is a gap of 75, about 2^75 candidates, which no one will sweep; such a hint tells a seeker where to travel, not where to search.
+
+**Reading is not reaching (non-normative):**
+
+Anyone who does the work of deriving the key can read the bag from anywhere; reading has no distance term. Being inside the region is a separate fact: it costs the movement work of §4 to §6 to get there, and only a movement chain whose head lies inside the region proves it (§8). An application that rewards finding a bag has to say which of the two it rewards, reading or reaching. How a find is proven in public is left to applications and DECKs (§8.9).
+
+**A hint is a claim (non-normative):**
+
+Nothing in the protocol verifies a hint until the bag is found and its region is compared with the box. A false hint wastes the seeker's work, and the protocol does not punish it. Applications should weigh a hint by the reputation of the key that published it, as they would any other unverified claim.
+
+**Riddles (non-normative):**
+
+The bag's `content` field MAY hold a plaintext hint written for humans, a riddle (§8.6). A riddle can stand alone or accompany a geometric hint. The protocol does not read it; it is for the seeker to interpret.
+
+**Golden vectors:**
+
+Produced and checked by `hint-reference.py`. Points are 256-bit coordinates per §2.2 (32 bytes of hex). `london` is the §9.8 golden vector.
+
+| Vector | Point (plane) | Bag `h` | Heights | `hint` coordinate | Sector tags | Candidates |
+|---|---|---:|---|---|---|---:|
+| `london_h5_box11` | `london` (0) | 5 | 11, 11, 11 | `c492492492492492492492edf5bee7267451c787d95ba4d7840c76d000000000` | `X` `18014398541305938`, `Y` `18014398549232983`, `Z` `18014398509410999`, `S` `18014398541305938-18014398549232983-18014398509410999` | 2^18 |
+| `london_h5_x_exact` | `london` (0) | 5 | 5, 14, 14 | `c492492492492492492492edf5bee7267451c787d95ba4d7840c749041240000` | same as above | 2^18 |
+| `ideaspace_h8_y_open` | `a4b64924924924924924924924924924924924924924924924924d84b60d9c8f` (1) | 8 | 12, 40, 12 | `a4b64924924924924924924924924924924924924924924924924d8000000001` | `X` `18014398509481984`, `Z` `36028797018963967`, no `Y`, no `S` | 2^40 |
+
+The ideaspace point is `x = 2^84 + 12345`, `y = 3 · 2^80 + 777`, `z = 2^85 - 1 - 4242` on plane 1. The second vector is a two-dimensional hunt: X is exact, so the seeker sweeps a 2^9 by 2^9 slab of height-5 regions. The third has an open axis: `Hy = 40` leaves the Y sector undetermined, so the bag carries `X` and `Z` but neither `Y` nor `S`, and the sweep is 2^40 candidates, far beyond any search; that hint tells the seeker where to travel.
+
+### 7.8 Holding a region (non-normative)
 
 Computing a region's Cantor root produces every intermediate node of the per-axis trees on the way up, and every intermediate node is itself the root of an aligned sub-region (§4.5). Whoever keeps those nodes on disk **holds** the region: the per-axis roots of every aligned sub-region inside it, at every height, are on hand, so any location-based key inside the holding costs one pairing step (§4.7, §7.2) instead of a tree. Holding is §7.5 carried to its limit.
 
@@ -1028,17 +1136,25 @@ Required tags:
 
 **Height tags:** The `hx`, `hy`, `hz` tags enable verifiers to determine expected proof lengths without re-deriving LCA heights from coordinates.
 
-### 8.6 Encrypted content event
+### 8.6 Encrypted content event (bag)
+
+A bag publishes content encrypted to one region at one height (§7.6). Its cipher, plaintext, items and lifecycle are defined in §7.6; this section gives the event format, as §8.3 to §8.5 do for movement.
 
 - Encrypted content events: `kind = 33330`
+- `kind 33330` is addressable: relays keep the newest event per `(pubkey, kind, d)`
 
 Required tags:
-- `d` tag: `["d", "<lookup_id_hex>"]` (32-byte lowercase hex string)
+- `d` tag: `["d", "<lookup_id_hex>"]` (32-byte lowercase hex string, the `lookup_id` of §7.2)
+- `encrypted` tag: `["encrypted", "aes-256-gcm", "<payload_base64>"]` (the payload of §7.6)
+- `version` tag: `["version", "2"]`
+  - `version` names the rules of §7.6. A reader MUST ignore a bag whose version it does not know.
 
 Optional tags:
-- `h` tag: `["h", "<height_hint>"]` (string integer)
+- `h` tag: `["h", "<height>"]` (decimal string): the height of the region whose key encrypts the content, which is the discovery radius of §7.3
+- `hint` tag: `["hint", "<coord_hex>", "<Hx>", "<Hy>", "<Hz>"]`: the hider's coarse statement of where the bag can be found (§7.7)
+- Sector tags `X`, `Y`, `Z`, `S`: required on a bag that carries a `hint` tag, for each axis whose hint height is at most 30 (§7.7, §10); MUST NOT appear otherwise
 
-The encryption algorithm and ciphertext encoding (base64 vs hex) are out of scope for this spec; only lookup and key derivation are specified.
+Content: MAY carry plaintext meant for humans, a riddle (§7.7). The protocol does not interpret it.
 
 ### 8.7 Verification summary
 
@@ -1121,7 +1237,7 @@ The Cantor Height 34 scale was chosen through rigorous testing to balance severa
 
 **For consumers:** At this scale, consumer hardware can traverse human-centric distances and derive useful location-based secrets with significant but achievable effort. Moderate cloud compute expenditure ($200–$1,000) extends range substantially.
 
-**Against nation-states:** Cantor root cost scales with the side length of the aligned cube, per axis (about 86 × 2^h bits): a person (h34) is 185 GB, a 7 km city (h46) is 756 TB, a 262 km country (h51) is 24 PB, an Earth octant (h57) is 1.5 EB, and the GEO cube (h60) is 12 EB, against roughly 10 to 20 ZB of installed world storage. A country-scale root is within reach of a well-funded organization today and an Earth-scale root is within reach of a hyperscaler or a state. This is structural rather than a calibration choice: a country is only 2^17 times wider than a person, while the storage gap between a consumer and a state is about 2^20, so any scale that keeps human-scale hops feasible for consumers keeps country-scale roots feasible for states. The scale therefore does not deliver a century-long guarantee against large regions being held. Holding a region costs disk for as long as it is held (§7.6), which is the protocol's whole maintenance economics; claims, exclusion and governance are not protocol matters and are left to applications and games.
+**Against nation-states:** Cantor root cost scales with the side length of the aligned cube, per axis (about 86 × 2^h bits): a person (h34) is 185 GB, a 7 km city (h46) is 756 TB, a 262 km country (h51) is 24 PB, an Earth octant (h57) is 1.5 EB, and the GEO cube (h60) is 12 EB, against roughly 10 to 20 ZB of installed world storage. A country-scale root is within reach of a well-funded organization today and an Earth-scale root is within reach of a hyperscaler or a state. This is structural rather than a calibration choice: a country is only 2^17 times wider than a person, while the storage gap between a consumer and a state is about 2^20, so any scale that keeps human-scale hops feasible for consumers keeps country-scale roots feasible for states. The scale therefore does not deliver a century-long guarantee against large regions being held. Holding a region costs disk for as long as it is held (§7.8), which is the protocol's whole maintenance economics; claims, exclusion and governance are not protocol matters and are left to applications and games.
 
 **Aesthetics:**
 - 2 meters is a metaphor for the human scale of the universe
@@ -1270,6 +1386,8 @@ Tag formatting rules (normative):
 - `sx`, `sy`, `sz` MUST be encoded as base-10 integers (strings), with no leading `+` and no leading zeros (except `"0"`).
 - `S` MUST be exactly `"<sx>-<sy>-<sz>"`.
 
+**Encrypted content events (kind 33330):** a bag without a hint claims no coordinate and carries no sector tags. A bag with a hint (§7.7) claims a box. It MUST carry the sector tag of each axis whose hint height is at most 30, computed from the box's base, and `S` when all three are fixed. A relay query on `#S`, or on one axis tag, returns the hinted bags in a sector or a slice the same way it returns movement.
+
 ---
 
 ## 11. Visualization Conventions
@@ -1295,9 +1413,11 @@ The "black sun" is a reference to the hacker haven in Neal Stephenson's *Snow Cr
 
 If a visualizer renders the black sun, it MUST place it on the `+Z_cs` boundary of the Cyberspace cube.
 
-At u85 position `2^84` (the half-axis extent):
-- `black_sun_u85 = (x=0, y=0, z=2^84)` in u85 coordinates
-- In physical units: `black_sun = (x_km=0, y_km=0, z_km=+2.25×10^12 km)` (approximately 0.24 light-years from origin)
+The `+Z_cs` boundary is the Z axis maximum, `2^85 - 1` (§2.1). The marker is placed at the center of that face:
+- `black_sun_u85 = (x=2^84, y=2^84, z=2^85 - 1)` in u85 coordinates
+- In physical units: `black_sun = (x_km=0, y_km=0, z_km≈+2.25×10^12 km)`, one half-axis (approximately 0.24 light-years) from the cube center along `+Z_cs`
+
+These two forms describe the same point. The physical frame of §9.7 is centered on the cube, so `km=0` on each axis is u85 `2^84`, whereas u85 values are measured from the cube corner. Converting the km figures above with the §9.7 formula lands on the u85 coordinate above, up to the rounding in the km figure (the exact half-axis is `2251799813685.248` km).
 
 The black sun is a directional guidepost for east (`+Z_cs`). Marker color SHOULD be purple. Marker shape (point/sphere/circle/disk) is implementation-defined.
 
@@ -1358,7 +1478,7 @@ Bitcoin's proof-of-work operates by grinding random nonces through SHA-256 until
 
 Cantor pairing tree computation is a fundamentally different kind of work. The output is not arbitrary. When you compute a Cantor tree over a set of coordinates, the root you produce uniquely identifies that spatial region. It is a bijection. The root can be unpaired to reconstruct the entire tree. The proof of your movement is the mathematical fabric of the space itself.
 
-Every Cantor root you compute becomes a stable region identifier that persists as useful infrastructure. It can be used for encrypting localized secrets, discovering nearby content, and holding a region (§7.6). The work product is meaningful, not disposable.
+Every Cantor root you compute becomes a stable region identifier that persists as useful infrastructure. It can be used for encrypting localized secrets, discovering nearby content, and holding a region (§7.8). The work product is meaningful, not disposable.
 
 ### 13.2 Storage-bound, not compute-bound
 
@@ -1399,3 +1519,5 @@ Implementers should treat that repo as the reference for:
 - Integer→bytes canonicalization for hashing
 - Movement proof computation
 - Canonical GPS→dataspace mapping (`CANONICAL_GPS_TO_DATASPACE_SPEC_VERSION` and golden vectors)
+
+`hint-reference.py` in this repository is a stdlib-only executable statement of §7.7 and the §10 rule for bags. Running it checks canonical form, containment, sector tags, seeker work, malformed hints and plane preservation, and locks the golden vectors of §7.7.
