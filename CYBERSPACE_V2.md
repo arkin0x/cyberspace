@@ -1278,9 +1278,11 @@ The "black sun" is a reference to the hacker haven in Neal Stephenson's *Snow Cr
 
 If a visualizer renders the black sun, it MUST place it on the `+Z_cs` boundary of the Cyberspace cube.
 
-At u85 position `2^84` (the half-axis extent):
-- `black_sun_u85 = (x=0, y=0, z=2^84)` in u85 coordinates
-- In physical units: `black_sun = (x_km=0, y_km=0, z_km=+2.25×10^12 km)` (approximately 0.24 light-years from origin)
+The `+Z_cs` boundary is the Z axis maximum, `2^85 - 1` (§2.1). The marker is placed at the center of that face:
+- `black_sun_u85 = (x=2^84, y=2^84, z=2^85 - 1)` in u85 coordinates
+- In physical units: `black_sun = (x_km=0, y_km=0, z_km≈+2.25×10^12 km)`, one half-axis (approximately 0.24 light-years) from the cube center along `+Z_cs`
+
+These two forms describe the same point. The physical frame of §9.7 is centered on the cube, so `km=0` on each axis is u85 `2^84`, whereas u85 values are measured from the cube corner. Converting the km figures above with the §9.7 formula lands on the u85 coordinate above, up to the rounding in the km figure (the exact half-axis is `2251799813685.248` km).
 
 The black sun is a directional guidepost for east (`+Z_cs`). Marker color SHOULD be purple. Marker shape (point/sphere/circle/disk) is implementation-defined.
 
