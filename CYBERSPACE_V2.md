@@ -91,7 +91,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [8.3 Spawn event (first event)](#83-spawn-event-first-event)
   - [8.4 Hop event](#84-hop-event)
   - [8.5 Sidestep event](#85-sidestep-event)
-  - [8.6 Encrypted content event](#86-encrypted-content-event)
+  - [8.6 Encrypted content event (the bag)](#86-encrypted-content-event-the-bag)
   - [8.7 Verification summary](#87-verification-summary)
     - [8.7.1 Hop verification](#871-hop-verification)
     - [8.7.2 Sidestep verification (Level 1: inclusion path)](#872-sidestep-verification-level-1-inclusion-path)
@@ -1011,17 +1011,53 @@ Required tags:
 
 **Height tags:** The `hx`, `hy`, `hz` tags enable verifiers to determine expected proof lengths without re-deriving LCA heights from coordinates.
 
-### 8.6 Encrypted content event
+### 8.6 Encrypted content event (the bag)
+
+An encrypted content event hides content at a place. It is called a **bag**: one event holding everything its author has hidden in one region at one height. Anyone can fetch a bag. Only someone who has computed the region's key (§7.2) can open it.
 
 - Encrypted content events: `kind = 33330`
+- `kind 33330` is addressable: relays keep the newest event per `(pubkey, kind, d)`
 
 Required tags:
-- `d` tag: `["d", "<lookup_id_hex>"]` (32-byte lowercase hex string)
+- `d` tag: `["d", "<lookup_id_hex>"]` (32-byte lowercase hex string, the `lookup_id` of §7.2)
+- `encrypted` tag: `["encrypted", "aes-256-gcm", "<payload_base64>"]`
+- `version` tag: `["version", "2"]`
+  - `version` names the rules of this section. A reader MUST ignore a bag whose version it does not know.
 
 Optional tags:
-- `h` tag: `["h", "<height_hint>"]` (string integer)
+- `h` tag: `["h", "<height>"]` (decimal string): the height of the region whose key encrypts the content, which is the discovery radius of §7.3
 
-The encryption algorithm and ciphertext encoding (base64 vs hex) are out of scope for this spec; only lookup and key derivation are specified.
+Content: MAY carry plaintext meant for humans. The protocol does not interpret it.
+
+**Cipher (normative):**
+- key: the `location_decryption_key` of §7.2 (32 bytes)
+- cipher: AES-256-GCM with a 12-byte nonce and a 16-byte tag, no additional authenticated data
+- the nonce MUST be fresh for every encryption
+- `payload = nonce || ciphertext || tag`, encoded as base64 (standard alphabet, padded)
+
+A reader without the region key cannot decrypt the payload and learns nothing from trying. A failed decryption MUST NOT be treated as an error in the bag.
+
+**Plaintext (normative):**
+
+The plaintext is arbitrary bytes. Two shapes are defined:
+- A **list of items**: a JSON array whose elements are nostr events. Readers MUST try this shape first.
+- **Opaque**: anything else. A text note, a file. Interpretation is application-defined.
+
+**Items (normative):**
+- An item is a nostr event. It MAY be signed. If it carries a `sig`, its `id` MUST be the canonical id (§8.2) and the signature MUST verify; a reader MUST drop an item that fails either check, and only that item. An item without a `sig` is allowed; its `pubkey` is then a claim, and readers MUST NOT present it as verified.
+- The bag's `pubkey` placed the items. Readers MUST attribute placement to the bag's author, and authorship of an item's content to the item's `pubkey` only when the item is signed.
+- An item MAY carry a `C` tag: `["C", "<coord_hex>"]`, its exact coordinate (§2). If present, the coordinate MUST lie inside the region the bag is encrypted to: same plane, and equal to the region's base above height `h`. Readers MAY drop an item whose `C` lies outside. Without a `C` tag, an item is located no more precisely than the region.
+- A reader that does not understand an item's `kind` skips it.
+
+Note (non-normative): kinds in use. ONOSENDAI hides two kinds: `3330`, a shard (geometry in `content`, the kind carried over from v1), and `1`, a message (text in `content`). Both carry a `C` tag. New kinds need no change to this section.
+
+**Why one bag per region (non-normative):** `d` is the lookup id, so there is exactly one bag per author, region and height, and it is addressable. A region accumulates content by rewriting its bag. A relay sees one ciphertext per region. It never learns how many items the bag holds or what kinds they are.
+
+**Lifecycle (normative):**
+- To add or remove an item, the author republishes the bag with the new list and a `created_at` strictly greater than the previous bag's. Relays and readers keep the newest.
+- To remove the last item, the author publishes a NIP-09 deletion (`kind = 5`) with `["e", "<bag_event_id>"]` and `["k", "33330"]`. A bag holding a list of zero items MUST NOT be published.
+
+Note (non-normative): the reference CLI's `encrypt` writes opaque plaintext (a text or a file); ONOSENDAI writes a list of items. Both conform.
 
 ### 8.7 Verification summary
 
