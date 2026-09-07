@@ -100,8 +100,8 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
     - [8.7.1 Hop verification](#871-hop-verification)
     - [8.7.2 Sidestep verification (Level 1: inclusion path)](#872-sidestep-verification-level-1-inclusion-path)
   - [8.8 Core action types summary](#88-core-action-types-summary)
-  - [8.9 Avatar event](#89-avatar-event)
   - [8.9 Protocol extensions (DECKs)](#89-protocol-extensions-decks)
+  - [8.10 Avatar event](#810-avatar-event)
 - [9. Mapping to Physical Reality: GPS and Dataspace](#9-mapping-to-physical-reality-gps-and-dataspace)
   - [9.1 Why a physical mapping exists](#91-why-a-physical-mapping-exists)
   - [9.2 Dataspace cube size (Cantor Height 34 scale)](#92-dataspace-cube-size-cantor-height-34-scale)
@@ -1309,7 +1309,7 @@ Optional extensions MAY introduce new event kinds, new movement action types (`A
 Extensions are specified as **Design Extension and Compatibility Kits (DECKs)** in the `decks/` directory.
 - Hyperspace extension (DECK-0001): `decks/DECK-0001-hyperspace.md`
 
-### 8.9 Avatar event
+### 8.10 Avatar event
 
 An avatar is the shape an identity is drawn as. It is the one thing in cyberspace that lands on other people's screens whether they asked for it or not: everyone near its owner sees it, at every zoom. Its size and its detail are therefore paid for in work, on the event that publishes it, and a client draws nothing it cannot verify has paid.
 
