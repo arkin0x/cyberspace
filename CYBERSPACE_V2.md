@@ -101,6 +101,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
     - [8.7.2 Sidestep verification (Level 1: inclusion path)](#872-sidestep-verification-level-1-inclusion-path)
   - [8.8 Core action types summary](#88-core-action-types-summary)
   - [8.9 Protocol extensions (DECKs)](#89-protocol-extensions-decks)
+  - [8.10 Avatar event](#810-avatar-event)
 - [9. Mapping to Physical Reality: GPS and Dataspace](#9-mapping-to-physical-reality-gps-and-dataspace)
   - [9.1 Why a physical mapping exists](#91-why-a-physical-mapping-exists)
   - [9.2 Dataspace cube size (Cantor Height 34 scale)](#92-dataspace-cube-size-cantor-height-34-scale)
@@ -1307,6 +1308,48 @@ Optional extensions MAY introduce new event kinds, new movement action types (`A
 
 Extensions are specified as **Design Extension and Compatibility Kits (DECKs)** in the `decks/` directory.
 - Hyperspace extension (DECK-0001): `decks/DECK-0001-hyperspace.md`
+
+### 8.10 Avatar event
+
+An avatar is the shape an identity is drawn as. It is the one thing in cyberspace that lands on other people's screens whether they asked for it or not: everyone near its owner sees it, at every zoom. Its size and its detail are therefore paid for in work, on the event that publishes it, and a client draws nothing it cannot verify has paid.
+
+- Avatar events: `kind = 33331`
+- `kind 33331` is addressable: relays keep the newest event per `(pubkey, kind, d)`
+
+Required tags:
+- `d` tag: `["d", "avatar"]`, so an identity has exactly one avatar and the newest replaces it
+- `nonce` tag: `["nonce", "<nonce>", "<target>"]` per NIP-13, where `target` is the leading zero bits the publisher committed to before mining
+
+Optional tags:
+- `name` tag: `["name", "<name>"]`, the shape's name for humans
+
+Content: a shard payload as bags carry them, or empty. The work reads these fields of it: `unit` (a model unit is `2^unit` gibsons), `vertices` (whole units per vertex), `ticks` (the fraction of a unit per vertex, in 120ths, packed so that `-N` stands for `N` zero triples) and `faces`. Empty content means the default avatar and owes no work.
+
+**The work (normative):**
+
+```python
+AVATAR_FLOOR_BITS  = 16   # every avatar
+AVATAR_SIZE_BITS   = 2    # per doubling of reach
+AVATAR_DETAIL_BITS = 3    # per doubling of detail beyond the free thirty-two
+AVATAR_DETAIL_FREE = 32
+
+def avatar_work(payload) -> int:
+    # reach: the farthest any vertex lies from the build origin, on any axis,
+    # in gibsons at true scale; never below one gibson
+    reach  = max(1.0, max(abs(v + t / 120) for every vertex coordinate) * 2 ** payload.unit)
+    detail = max(AVATAR_DETAIL_FREE, len(payload.vertices) + len(payload.faces))
+    return ceil(AVATAR_FLOOR_BITS + AVATAR_SIZE_BITS * log2(reach) + AVATAR_DETAIL_BITS * log2(detail / AVATAR_DETAIL_FREE))
+```
+
+An avatar event is **paid** when its `nonce` tag's committed `target` is at least `avatar_work(content)` and its `id` carries at least `target` leading zero bits. Both conditions are required: committing the target before mining is what stops a lucky id from being claimed against a lower bar than it was mined for (NIP-13).
+
+**Verification:** parse the content, compute `avatar_work`, read the `nonce` tag, count the id's leading zero bits, apply the two conditions. One hash and a walk over the vertices, on any device.
+
+**Drawing (normative):** a client MUST NOT draw an avatar event that is not paid, or that carries content it cannot read; it draws its default avatar for that identity instead. A client SHOULD draw a paid avatar at true scale, one model unit as `2^unit` gibsons, wherever it would draw the default.
+
+**Why the price is shaped this way (non-normative).** Reach is priced at two bits per doubling, so a shape twice as far across costs four times the work, and the ladder it makes is: one gibson 16 bits, two gibsons 18, four 20, sixteen 24, a thousand 36, and one the size of cyberspace about 190, which is to say never. Reach is the term that matters to other people, since a large avatar is the one that gets in everyone's way, and the slope is set so that a modest shape of a few gibsons costs minutes on a phone while a sector-sized one is out of reach of any hash power. Detail is priced at three bits per doubling beyond thirty-two vertices and faces, because a busy small avatar troubles nobody much, and because bytes are charged already without a term: every nonce hashes the whole serialized event, so an avatar at the vertex and face caps runs about thirty times more slowly per try than a plain one. The sixteen-bit floor is seconds on a phone today and is set with a hundred-year horizon of growing hash power in mind; it is the one constant this section expects to be revisited. Reach is measured from the build origin, not from the shape's own centre, so a shape is priced as its builder placed it against the reference avatar on the bench.
+
+Reference implementations: `avatar.ts` in cyberspace-core and `cyberspace_core/avatar.py` in cyberspace-cli, pinned to one set of golden vectors.
 
 ---
 
