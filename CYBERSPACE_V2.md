@@ -1329,7 +1329,7 @@ Content: a shard payload as bags carry them, or empty. The work reads these fiel
 
 ```python
 AVATAR_FLOOR_BITS  = 16   # every avatar
-AVATAR_SIZE_BITS   = 6    # per doubling of reach
+AVATAR_SIZE_BITS   = 3    # per doubling of reach
 AVATAR_DETAIL_BITS = 3    # per doubling of detail beyond the free thirty-two
 AVATAR_DETAIL_FREE = 32
 
@@ -1347,7 +1347,7 @@ An avatar event is **paid** when its `nonce` tag's committed `target` is at leas
 
 **Drawing (normative):** a client MUST NOT draw an avatar event that is not paid, or that carries content it cannot read; it draws its default avatar for that identity instead. A client SHOULD draw a paid avatar at true scale, one model unit as `2^unit` gibsons, wherever it would draw the default.
 
-**Why the price is shaped this way (non-normative).** Reach is priced hardest, six bits per doubling, because a large avatar is the one that gets in everyone's way: two gibsons costs 22 bits, sixteen costs 40, a thousand costs 76, and one the size of cyberspace costs over five hundred, which is to say never. Detail is priced lightly, three bits per doubling beyond thirty-two vertices and faces, because a busy small avatar troubles nobody much, and because bytes are charged already without a term: every nonce hashes the whole serialized event, so an avatar at the vertex and face caps runs about thirty times more slowly per try than a plain one. The sixteen-bit floor is seconds on a phone today and is set with a hundred-year horizon of growing hash power in mind; it is the one constant this section expects to be revisited. Reach is measured from the build origin, not from the shape's own centre, so a shape is priced as its builder placed it against the reference avatar on the bench.
+**Why the price is shaped this way (non-normative).** Reach and detail are each priced at three bits per doubling, so every doubling of either costs eight times the work. Reach is the term that matters to other people, since a large avatar is the one that gets in everyone's way, and the ladder it makes is: one gibson 16 bits, two gibsons 19, four 22, sixteen 28, a thousand 46, and one the size of cyberspace about 270, which is to say never. Detail is priced beyond thirty-two vertices and faces, because a busy small avatar troubles nobody much, and because bytes are charged already without a term: every nonce hashes the whole serialized event, so an avatar at the vertex and face caps runs about thirty times more slowly per try than a plain one. The sixteen-bit floor is seconds on a phone today and is set with a hundred-year horizon of growing hash power in mind; it is the one constant this section expects to be revisited. Reach is measured from the build origin, not from the shape's own centre, so a shape is priced as its builder placed it against the reference avatar on the bench.
 
 Reference implementations: `avatar.ts` in cyberspace-core and `cyberspace_core/avatar.py` in cyberspace-cli, pinned to one set of golden vectors.
 
