@@ -79,6 +79,10 @@ A position is an exact rational, never a float. It is carried in two parts.
 
 **Why integers at all.** A vertex is at a coordinate, not near one. Two objects built to meet at a shared edge meet exactly, on every implementation, forever, with no dependence on floating point rounding or on the order the file was written in.
 
+**The float hazard (normative).** One 120th is not exactly representable in binary floating point. Two readers that compute `whole + remainder / 120.0`, one in 32-bit and one in 64-bit, will disagree in the last bits. Therefore any operation that depends on exact coincidence, which is at least welding, deduplication, equality, sorting and hashing, MUST be performed on the integer pair before any conversion to a float. A reader that welds on derived floats has given away the one guarantee the lattice makes.
+
+**Canonical form (normative).** There is exactly one way to write a given object, because a format that allows three spellings of the same thing gets three incompatible readers. A publisher MUST omit `ticks` entirely when every remainder is zero, MUST write a run of two or more zero remainders as a single negative integer rather than as repeated triples, and MUST omit `extent` when it is `8`. A reader MUST accept all equivalent spellings anyway, because it will meet them.
+
 ### 1.3 Colors
 
 `colors[i]` is `[r, g, b]`, each a number from `0` to `1` inclusive. A reader MUST clamp values outside that range and MUST treat a non-finite value as `0`.
@@ -91,7 +95,9 @@ Publishers SHOULD round color channels to at most three decimal places. The diff
 
 `faces[i]` is `[a, b, c]`, three integers indexing `vertices`. Every index MUST be at least `0` and less than the vertex count, and the three MUST be distinct. A reader MUST reject a payload containing any face that fails either test, because a face pointing at a vertex that does not exist is a crash in most renderers, far from anything that could explain it.
 
-Winding order is not normative. An object may be drawn with backface culling off, or its faces wound consistently outward by the renderer.
+**Winding order carries no meaning, and this is a decision rather than an omission.** A face has no front and no back: a reader MUST draw both sides of every triangle, and MUST NOT cull a face on the basis of its winding. An author therefore never has to think about winding, and an exporter never has to fix it.
+
+This is stated because leaving it unsaid is the most common way a small format fails. STL left color unspecified and two vendors filled the hole incompatibly; PLY never registered its property names and cost the ecosystem years of colors that did not import; Niantic's SPZ shipped in 2024 without saying which axis is up and someone had to file an issue to ask. A reader that wants single-sided rendering is free to want it, but it is not this format.
 
 `faces` MAY be empty. An object with no faces is a point cloud or a polyline, depending on `mode`.
 
@@ -209,9 +215,15 @@ A client MUST NOT render an object that fails §1.9.
 
 A client SHOULD render all three modes; a client that renders only `points` still shows every object, which is why the vertex list is the one required part of the format.
 
-A client MAY apply its own lighting, or none. SNO carries no normals and no material, so a solid object is either flat-shaded from face normals the renderer computes, or drawn unlit at its vertex colors. Both are correct readings of the format, and an object author should expect either.
+**Shading is decided here rather than left to taste**, because per-vertex color forces the question and implementers who are not told will answer it differently, which makes the same object look like two objects.
+
+The default reading of an SNO is **unlit**: a face takes its color by interpolating its three vertices, and no light in the scene changes it. This is not an absence of a material, it is a named one: it is what glTF ratified as `KHR_materials_unlit` with a `COLOR_0` attribute, for exactly this kind of content.
+
+A client MAY light an object instead, and many will, because a lit object sits better in a lit scene. A client that lights an object MUST derive its normals per face, flat, from the triangle's own vertices. A client MUST NOT synthesize smooth normals by averaging across shared vertices: an object with no normals is faceted, an author who wanted a smooth surface has no way to say so today (§7.2), and a reader that smooths one anyway is deciding for them.
 
 A client MUST NOT invent geometry: no subdivision, no smoothing that moves a vertex, no hole filling. The lattice is exact and a renderer that moves a vertex has broken the one guarantee the format makes.
+
+A client MUST perform welding, deduplication and any equality test on the integer lattice rather than on floats derived from it (§1.2).
 
 ---
 
@@ -254,7 +266,11 @@ A tool that writes SNO from a modeling package performs four conversions, and ea
 | **Quantization to the lattice.** Float positions become integers on a 1/120 lattice. | Real precision. See below. |
 | **Decimation to 512 vertices.** | The largest loss, and the only one that changes the art rather than the numbers. |
 
-**The precision budget, stated plainly.** A grid is at most 64 units half-width and each unit is 120 ticks, so the full grid is 15,360 ticks across: about 13.9 bits of resolution per axis, and only for an object that fills the grid. On the default extent of 8 it is about 10.9 bits. For comparison, glTF's quantization extension normally uses 16 bits per axis, and float32 carries 24 bits of mantissa. SNO buys exactness, which is that two objects authored to share an edge share it forever on every implementation, at the cost of dynamic range. That is the trade, and it suits blocky and low-poly work while showing plainly on a scanned or sculpted surface.
+**The precision budget, stated plainly, and it is better than it looks.** One unit is 120 ticks, which is log2(120) = 6.91 bits. A grid at the maximum extent of 64 is 15,360 ticks across, about 13.9 bits of resolution per axis; at the default extent of 8 it is about 10.9 bits.
+
+The instinct is to call that low precision. It is not. Draco's encoder defaults to 11 bits for positions and 14 is the common production setting; gltfpack also defaults to 14. SNO's 13.9 bits sits directly on top of the number the rest of the industry ships. SNO is not a low-precision format. It is a **fixed-window** format at industry-standard precision, and what it gives up is dynamic range rather than accuracy, which is exactly what the `unit` exponent exists to recover.
+
+The lattice also buys something the float formats cannot have at any bit depth: exactness. Two objects authored to share an edge share it forever, on every implementation, and welding, deduplication and hashing are integer tuple comparisons rather than an epsilon that is always wrong somewhere.
 
 **Where the vertex ceiling sits.** The budget is not abstract:
 
@@ -275,11 +291,13 @@ None of these needs a version bump, because each is an optional field whose abse
 |---|---|---|---|
 | **Smooth shading** | With no normals every surface is faceted, so a sphere reads as a golf ball | one object-wide boolean telling the renderer to average face normals at shared vertices | one field, no per-vertex data |
 | **Per-face color** | A flat-colored triangle must give its three vertices the same color, so a flat-shaded 500-triangle object spends 1,500 vertices to express 500 colors, three times over budget | an optional array of colors indexed by face, with vertex colors as the fallback | one array, and it *saves* space on exactly the style SNO suits best |
-| **Emission** | The one thing a glowing object needs, and Cyberspace is made of glowing objects | an optional material block with an emissive and an unlit flag | one small object |
+| **Emission** | The one thing a glowing object needs, and Cyberspace is made of glowing objects | an optional material block with an emissive flag and a strength | one small object |
 | **Roughness, metalness, alpha** | The sliders every modeler reaches for after base color | three numbers in the same block | included above |
 | **Double-sided** | An open shell shows its inside or does not, and the author has no say | one boolean | one field |
 
 Of these, smooth shading and per-face color are the two that change what is possible rather than what is pretty, and per-face color is the only one that makes the budget go further rather than less far.
+
+One apparent gap is not one. SNO has per-vertex color and no material, which is precisely the shading model glTF ratified as `KHR_materials_unlit` used with a `COLOR_0` attribute: do not light this, take the color from the vertices. That model exists for mobile, photogrammetry and stylized art, and it is named, specified and widely implemented. **SNO is `KHR_materials_unlit` with `COLOR_0`** is the one-sentence bridge to anyone who thinks in glTF.
 
 ### 7.3 What is out of scope
 
@@ -338,4 +356,59 @@ The same object one meter across rather than four gibsons is the same document w
 
 ## Appendix B: relationship to existing formats (non-normative)
 
-_This section is completed in the companion analysis; see the pull request discussion._
+The question any reviewer asks first is why this is not glTF. The honest answer has three parts: at this size the measurement favors text, the data model SNO wants already exists elsewhere and is called PLY, and the formats that succeed at this scale are the ones emitted by software rather than the ones specified well.
+
+### B.1 What SNO is, in one line each
+
+| To someone who thinks in | SNO is |
+|---|---|
+| glTF | `KHR_materials_unlit` with a `COLOR_0` attribute, quantized, with the scene graph and the buffers removed |
+| PLY | an ASCII PLY with vertex colors, with the grammar replaced by fixed field names and the positions moved onto an integer lattice |
+| MagicaVoxel | the same idea one level up: triangles rather than voxels, and RGB per vertex rather than a 255-color palette |
+| nostr | NIP-64 for geometry: a small domain payload in `content`, clients SHOULD render it, relays MAY validate it |
+
+### B.2 The size argument, measured rather than asserted
+
+A colored cube of 8 vertices and 12 triangles, and a 162-vertex sphere, in the formats that can carry per-vertex color:
+
+| Format | Cube, raw | Cube, gzip | Sphere, raw | Sphere, gzip |
+|---|---|---|---|---|
+| SNO-shaped JSON | 341 | 189 | 8,280 | 2,657 |
+| PLY ASCII | 434 | 226 | 10,381 | 2,755 |
+| PLY binary | 506 | 249 | 6,823 | 2,602 |
+| GLB | 1,044 | 508 | 5,292 | 2,429 |
+| glTF with a base64 buffer | 1,129 | 541 | 6,813 | 3,222 |
+
+Raw, the binary formats win at the larger size, as they should. The number that decides the question is what happens inside a nostr event, where a binary payload has to be base64 encoded:
+
+| Inside an event envelope | Raw | gzip |
+|---|---|---|
+| SNO as `content` | 8,955 | **2,778** |
+| a base64 GLB as `content` | 7,393 | 3,495 |
+
+Base64 costs 33% and produces high-entropy output that compresses badly, while decimal JSON compresses well. Once the transport is counted, and relays commonly negotiate WebSocket deflate, the text format is about 20% smaller than the binary one **and** is readable in a terminal. This is the single measurement worth keeping: nobody should be talked into base64 on a raw byte count without measuring after compression.
+
+The corollary is that SNO must never acquire a compression extension. Draco's WASM decoder is roughly 100 KB gzipped, against a payload of two to ten kilobytes. Any scheme needing a dedicated decoder is a net loss here by an order of magnitude, and deflate is already in the socket for free.
+
+### B.3 What the neighbors got wrong, and the rule each one teaches
+
+| Format | What happened | Rule for SNO |
+|---|---|---|
+| **PLY** | Its data model is SNO's, but property names were never registered, so `red`, `green`, `blue` are conventions. Years of colors that silently failed to import across MeshLab, Blender and VTK | Freeze the field names. SNO has fixed keys and no grammar |
+| **STL** | Color was left unspecified, so VisCAM packed 15-bit RGB into the attribute bytes and Materialise put `COLOR=` in the header. Mutually incompatible, both widely ignored | A hole in a popular format gets filled by vendors, incompatibly. This is why §1.4 decides winding and §4 decides shading rather than leaving either open |
+| **SPZ** (Niantic, 2024) | Shipped MIT, roughly ten times smaller than PLY splats, real adoption, and **without stating its up axis or handedness**. Someone had to open an issue to ask | A brand-new format in 2024 still made the oldest mistake. §2 states the axes in normative language |
+| **glTF** | Left "forward" undefined for years while Maya, 3ds Max and Blender each assumed differently, and is an ISO standard | Being a standard does not save you from silence |
+| **USD** | `metersPerUnit` falls back to 0.01, and the fallback up axis is configurable per installation, so the same file can read differently on two machines | Conventions belong in the file, never in the environment |
+| **COLLADA** | Aimed at full interchange, underspecified, many ways to say one thing, divergent implementations, and **removed from Blender entirely in 5.0** | "No more than one way of doing the same thing", which is also the NIPs repository's fourth acceptance criterion. §1.2 states a canonical form for that reason |
+| **OpenCTM** | Technically excellent, one release in January 2010, nothing since | A format is an ecosystem, not a document |
+| **Draco on small meshes** | A decoder larger than the data | Measure the decoder, not just the payload |
+
+There is a useful taxonomy from the USD side that classifies glTF and FBX as entirely "last mile" formats, which impose an opinion and conform the data to it, against interchange formats that try to preserve everything and fail. SNO is unapologetically last mile, and that is the side of the split that succeeds.
+
+### B.4 How small formats actually win
+
+Every small format in the survey that succeeded had exactly one thing in common, and it was not a good specification. MagicaVoxel's `.vox` won because MagicaVoxel is a beloved free editor. Litematica's format won because it is what the mod builders use. PGN won because every chess program reads it. SPZ won because Niantic shipped an MIT library with real data in it.
+
+The lesson for SNO is that the deliverable is not this document. It is software that emits the format: the shard workshop that already exists, and an exporter from a tool modelers already use. The specification is what makes the second implementation possible, not what makes the first one matter.
+
+One practical consequence: the first converter worth writing is **to and from PLY with vertex colors**, not glTF. PLY is the format whose data model already matches this one, and it is what Blender, MeshLab and every scanner already speak.
