@@ -137,7 +137,7 @@ A reader that does not implement `up` draws the object in the application's axes
 
 | Limit | Value | Why |
 |---|---|---|
-| `MAX_VERTICES` | 512 | an object must fit in an event beside everything else the event carries |
+| `MAX_VERTICES` | 512 | keeps the worst case inside every relay's limits without the author having to think about it. See below |
 | `MAX_FACES` | 1024 | the same |
 | `extent` | 1 to 64 model units | a hint at the lattice size, so a reader can size a grid before it reads the data |
 | `unit` | 0 to 84 | the Cyberspace address space is `2^85` gibsons on a side |
@@ -149,7 +149,20 @@ A reader MUST reject a payload whose vertex or face count exceeds these limits.
 
 The position bound is stated as an obligation on publishers rather than readers: a publisher MUST NOT write a vertex further than `64` model units (`7680` ticks) from the origin on any axis. A reader MAY reject such a payload and MAY instead repair it by growing the extent. ONOSENDAI currently repairs. §8 records the consequence.
 
-These numbers are deliberately small. 512 vertices is roughly the budget of Blender's Suzanne, and a filled cube is eight. An object that does not fit is not an SNO.
+These numbers are deliberately small, and the vertex ceiling earns its place by keeping the format inside the band that every relay accepts.
+
+| Object | Full event, serialized |
+|---|---|
+| a colored cube, 8 vertices | about 600 bytes |
+| 64 vertices | about 3.2 KB |
+| 256 vertices | about 13 KB |
+| **512 vertices, the ceiling** | **about 26.7 KB** |
+
+For comparison, strfry's stock `events.maxEventSize` is 65,536 bytes, and strfry is the most deployed relay software in the network. The worst case an SNO can produce is therefore about 2.4 times under the tightest common cap, and smaller than the median long-form article. A publisher never has to think about relay limits, which is the point of having a ceiling at all.
+
+Two facts make this margin more comfortable than it looks. Escaping the payload into a JSON string costs 12 bytes, under 0.05%, because the content is almost entirely integers, so the fear that nesting JSON inside JSON is wasteful does not apply here. And the geometry belongs in `content` rather than tags: strfry caps a tag value at 1,024 bytes and the tag count at 2,000, while content is roomy everywhere.
+
+One trap worth knowing, since it cannot be discovered at runtime: strfry populates NIP-11's advertised `max_message_length` from its WebSocket frame cap, not from `events.maxEventSize`, and never advertises the latter. A relay advertising a one megabyte limit may still reject a 70 KB event. Do not design against advertised numbers; stay under the ceiling and handle the rejection message.
 
 ### 1.9 Validation
 
@@ -399,6 +412,8 @@ Raw, the binary formats win at the larger size, as they should. The number that 
 | a base64 GLB as `content` | 7,393 | 3,495 |
 
 Base64 costs 33% and produces high-entropy output that compresses badly, while decimal JSON compresses well. Once the transport is counted, and relays commonly negotiate WebSocket deflate, the text format is about 20% smaller than the binary one **and** is readable in a terminal. This is the single measurement worth keeping: nobody should be talked into base64 on a raw byte count without measuring after compression.
+
+There is a second, blunter reason to stay out of base64. Khatru's `ApplySaneDefaults` installs a policy that rejects any event whose content contains `data:image/` or `data:video/`. A base64 asset embedded in content trips it; an integer JSON payload does not even come close.
 
 The corollary is that SNO must never acquire a compression extension. Draco's WASM decoder is roughly 100 KB gzipped, against a payload of two to ten kilobytes. Any scheme needing a dedicated decoder is a net loss here by an order of magnitude, and deflate is already in the socket for free.
 
