@@ -195,7 +195,18 @@ An object stands alone as a `kind 3330` event whose `content` is the payload of 
 | `C` | no | `["C", "<coord_hex>"]`, the object's exact coordinate (`CYBERSPACE_V2.md` §2). Present when the object has a place. |
 | `name` | no | `["name", "<name>"]`, duplicating the payload's `name` so a relay query can filter on it without parsing the content |
 
-`kind 3330` is a regular kind: an event is one object, immutable, and publishing a changed object publishes a new event. This is the right default for an object that may have been hidden inside a bag, referenced by others, or handed around; an object that wants to be edited in place belongs in an addressable kind, which §8 leaves open.
+`3330` falls in `1000..9999`, which NIP-01 defines as **regular**: relays store every event and none replaces another. That is the right class here, and the reasons are worth stating because the alternative looks attractive until it does not.
+
+| Why regular rather than addressable | |
+|---|---|
+| The object is its id | A regular event's id is the hash of its content, so an object can be embedded by `nevent`, cached forever, verified by anyone, and never changes under a viewer. An addressable coordinate resolves to whatever its author last published. |
+| Payments and reactions bind to ids | Zaps (NIP-57), reactions (NIP-25) and comments (NIP-22) reference an `e` tag. If someone pays for an object and the author then edits it, an addressable design leaves the payment pointing at content that silently changed. |
+| It matches every comparable kind | The "post an object" kinds are regular: picture 20, video 21, code snippet 1337, chess 64. The addressable kinds are documents: long-form 30023, wiki 30818. An object is a post. |
+| One way to do one thing | NIP-71 shipped both regular and addressable video and it is widely regarded as a mistake. An editable companion, if it is ever wanted, is a separate proposal rather than a second spelling of this one. |
+
+An author who wants to retract or supersede an object publishes a new one and a NIP-09 deletion request for the old, which is how `kind 20` pictures already work.
+
+`3330` is also unclaimed outside Cyberspace: it appears in neither the NIPs repository, nor the registry of kinds, nor any open proposal. Cyberspace's other kinds (321, 331, 333, 3333, 10085, 10087, 20333, 33330 to 33332) are equally unregistered, which is a separate piece of housekeeping.
 
 A client that receives a `kind 3330` event whose content fails §1.9 MUST NOT render it and SHOULD say why rather than failing silently.
 
@@ -325,7 +336,8 @@ One apparent gap is not one. SNO has per-vertex color and no material, which is 
 3. **An addressable kind for editable objects.** `kind 3330` is immutable by design. An object a person iterates on in a modeling tool wants replacement semantics and a `d` tag. Whether that is a second kind or a convention is unsettled.
 4. **Per-face color.** Flat-shaded objects currently pay three vertices per triangle, which spends the 512-vertex budget quickly on exactly the low-poly style the format suits best.
 5. **Whether the limits are the right numbers.** 512 and 1024 were chosen to fit an event. They are not derived from anything.
-6. **There is no hard bound on how far a vertex may lie from the origin.** §1.8 puts the 64-unit bound on publishers and lets readers repair instead of reject, which is what ONOSENDAI does today: it grows the extent to fit, without a ceiling. That is safe for a client rendering its own author's work and unsafe as a general rule, since a payload of 512 vertices at 2^50 units is valid under this text and will produce a grid no renderer wants. Making the bound a reader obligation is a one-line change and would make the current client non-conformant until it is updated, which is why it is a question rather than a rule.
+6. **Whether a general nostr audience should get `3330` or a fresh kind.** This document claims the kind ONOSENDAI already publishes, which has the considerable advantage that a working implementation exists on it today. If the wider ecosystem would rather a 3D object kind not sit inside a range a single protocol uses for everything else, `4242` and `3434` are unclaimed and in the same regular range. This is a question for whoever reviews a NIP, not one to settle here.
+7. **There is no hard bound on how far a vertex may lie from the origin.** §1.8 puts the 64-unit bound on publishers and lets readers repair instead of reject, which is what ONOSENDAI does today: it grows the extent to fit, without a ceiling. That is safe for a client rendering its own author's work and unsafe as a general rule, since a payload of 512 vertices at 2^50 units is valid under this text and will produce a grid no renderer wants. Making the bound a reader obligation is a one-line change and would make the current client non-conformant until it is updated, which is why it is a question rather than a rule.
 
 ---
 
