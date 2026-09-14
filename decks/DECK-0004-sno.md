@@ -241,7 +241,62 @@ An extension that changes how an existing field is interpreted MUST bump `v`. An
 
 ## 7. What SNO leaves out, and why (non-normative)
 
-_This section is completed in the companion analysis; see the pull request discussion._
+Every omission here is deliberate, and each one has a reader who will miss it. This section exists so that a person deciding whether to implement SNO knows what they are not getting, and so that a future extension has somewhere to start.
+
+### 7.1 The conversions an exporter must perform
+
+A tool that writes SNO from a modeling package performs four conversions, and each loses something. An exporter author should know all four before starting.
+
+| Conversion | What is lost |
+|---|---|
+| **Triangulation.** SNO has only triangles; modeling packages work in quads and n-gons. | The authored topology. A round trip returns triangles, so the model is no longer editable the way it was built. |
+| **Axis change.** Blender is Z-up and right-handed (X right, Y into the screen, Z up); SNO is Y-up with `+Z` into the screen. The map is Blender `(x, y, z)` to SNO `(x, z, y)`. | Nothing numerically, but it is a reflection: swapping two axes flips handedness, which is why SNO is left-handed (§2). An exporter that forgets publishes every object mirrored, and the mistake is invisible on a symmetric object. |
+| **Quantization to the lattice.** Float positions become integers on a 1/120 lattice. | Real precision. See below. |
+| **Decimation to 512 vertices.** | The largest loss, and the only one that changes the art rather than the numbers. |
+
+**The precision budget, stated plainly.** A grid is at most 64 units half-width and each unit is 120 ticks, so the full grid is 15,360 ticks across: about 13.9 bits of resolution per axis, and only for an object that fills the grid. On the default extent of 8 it is about 10.9 bits. For comparison, glTF's quantization extension normally uses 16 bits per axis, and float32 carries 24 bits of mantissa. SNO buys exactness, which is that two objects authored to share an edge share it forever on every implementation, at the cost of dynamic range. That is the trade, and it suits blocky and low-poly work while showing plainly on a scanned or sculpted surface.
+
+**Where the vertex ceiling sits.** The budget is not abstract:
+
+| Object | Vertices | Triangles | Fits |
+|---|---|---|---|
+| a cube | 8 | 12 | easily |
+| a UV sphere at 32 by 16 segments | 482 | 960 | barely |
+| one subdivision more | thousands | thousands | no |
+| a scanned or sculpted asset | 10^4 to 10^7 | | no |
+
+512 vertices is one recognizable object at low poly, not a scene. An exporter should show a live vertex count while modeling rather than let the budget be discovered at export.
+
+### 7.2 What is genuinely absent, and what each would cost
+
+None of these needs a version bump, because each is an optional field whose absence already has a defined meaning (§5).
+
+| Missing | Why it hurts | Cheapest fix | Cost |
+|---|---|---|---|
+| **Smooth shading** | With no normals every surface is faceted, so a sphere reads as a golf ball | one object-wide boolean telling the renderer to average face normals at shared vertices | one field, no per-vertex data |
+| **Per-face color** | A flat-colored triangle must give its three vertices the same color, so a flat-shaded 500-triangle object spends 1,500 vertices to express 500 colors, three times over budget | an optional array of colors indexed by face, with vertex colors as the fallback | one array, and it *saves* space on exactly the style SNO suits best |
+| **Emission** | The one thing a glowing object needs, and Cyberspace is made of glowing objects | an optional material block with an emissive and an unlit flag | one small object |
+| **Roughness, metalness, alpha** | The sliders every modeler reaches for after base color | three numbers in the same block | included above |
+| **Double-sided** | An open shell shows its inside or does not, and the author has no say | one boolean | one field |
+
+Of these, smooth shading and per-face color are the two that change what is possible rather than what is pretty, and per-face color is the only one that makes the budget go further rather than less far.
+
+### 7.3 What is out of scope
+
+| Missing | Why it does not belong |
+|---|---|
+| **UVs and textures** | A texture is kilobytes to megabytes, so it must live outside the event as a URL or a hash. That ends the property that an SNO renders with no network access and no external attack surface, which is most of what makes it simple. |
+| **Multiple objects, hierarchy, transforms** | SNO is one object by definition. A scene is a list of objects with placements, which is a different document and probably a different kind. |
+| **Animation, armatures, shape keys** | Each needs a time model and per-frame or per-bone data that dwarfs the geometry. |
+| **Instancing and level of detail** | Real needs at scene scale, meaningless for one 512-vertex object. |
+
+### 7.4 What SNO has that the large formats do not
+
+1. **Exact positions.** Integer lattice coordinates mean two objects authored to meet actually meet, on every implementation, forever. Float formats only approximately do, and the error depends on the order the exporter wrote the file in.
+2. **It is the event.** No file to fetch, no hash to resolve, no second protocol, no host to go down. A relay that has the note has the object.
+3. **No parser dependency.** `JSON.parse` and thirty lines of rendering, against a specification of a few pages.
+4. **Readable and diffable.** An object can be reviewed in a pull request, hand-edited, and generated by a shell script.
+5. **Per-vertex color is first class.** It is the only coloring mechanism, so every reader supports it, where in the large formats vertex color is an option that half the pipeline ignores.
 
 ---
 
