@@ -79,6 +79,39 @@ def expand_ticks(ticks: Any, count: int) -> list[list[int]]:
     return out
 
 
+def expand_face_colors(entries: Any, count: int) -> list[list[float]]:
+    """§1.4a: the run-length encoded face colours, one triple per face.
+
+    Each entry is either an [r, g, b] triple or a negative integer -N standing
+    for N further faces of the triple before it, so a solid cube is
+    [[1, 0, 0], -11]. The first entry must be a triple: a run has nothing to
+    repeat before one. Absent face colours mean every face interpolates its
+    vertices, which is a different thing from every face being black, so the
+    caller distinguishes None from a list.
+    """
+    if entries is None:
+        return []
+    if not isinstance(entries, list):
+        raise SnoError("rule 8a: facecolors is not an array")
+    out: list[list[float]] = []
+    for entry in entries:
+        if _is_int(entry):
+            if entry >= 0:
+                raise SnoError("rule 8a: a run-length entry must be negative")
+            if not out:
+                raise SnoError("rule 8a: the first entry must be a colour, not a run")
+            out.extend(list(out[-1]) for _ in range(-entry))
+        elif isinstance(entry, list) and len(entry) == 3:
+            if not all(_is_num(c) for c in entry):
+                raise SnoError("rule 8a: a face colour is not three numbers")
+            out.append(clamp_color(entry))
+        else:
+            raise SnoError("rule 8a: a facecolors entry is neither a triple nor a negative integer")
+    if len(out) != count:
+        raise SnoError(f"rule 8a: facecolors expand to {len(out)} colours for {count} faces")
+    return out
+
+
 def validate(payload: Any) -> dict:
     """§1.9, in order. Returns the payload on success, raises SnoError on failure.
 
@@ -138,6 +171,10 @@ def validate(payload: Any) -> dict:
             raise SnoError(f"rule 8: a face indexes a vertex outside 0..{n - 1}")
         if len(set(f)) != 3:
             raise SnoError("rule 8: a face repeats a vertex")
+
+    # 8a. face colours, when the object carries any
+    if "facecolors" in payload:
+        expand_face_colors(payload["facecolors"], len(faces))
 
     # 9. extent is repaired, never validated (§1.8). Out of range becomes the
     # default, then it grows until it contains the data, so an object is never
@@ -247,6 +284,11 @@ def _rejections() -> list[tuple[str, dict]]:
         ("rule 7", variant(ticks=[4])),
         ("rule 8", variant(faces=[[0, 1, 9]])),
         ("rule 8", variant(faces=[[0, 1, 1]])),
+        ("rule 8a", variant(facecolors=[[1, 0, 0]])),              # too few for four faces
+        ("rule 8a", variant(facecolors=[[1, 0, 0], -4])),          # too many
+        ("rule 8a", variant(facecolors=[-4])),                     # a run with nothing before it
+        ("rule 8a", variant(facecolors=[[1, 0, 0], 3])),           # a positive run
+        ("rule 8a", variant(facecolors=[[1, 0, 0], ["a", 0, 0], -2])),
         ("rule 10", variant(up="yes")),
         ("rule 10", variant(up=True, spin=360)),
         ("rule 10", variant(spin=360)),
@@ -304,6 +346,14 @@ def _self_test() -> None:
 
     assert clamp_color([2.0, -1.0, float("nan")]) == [1.0, 0.0, 0.0]
     print("colors clamp to 0..1 and a non-finite channel is 0")
+
+    # §1.4a: a solid cube is one colour and a run, not twelve copies.
+    solid = validate({**APPENDIX_A, "facecolors": [[1, 0, 0], -3]})
+    assert expand_face_colors(solid["facecolors"], 4) == [[1.0, 0.0, 0.0]] * 4
+    mixed = validate({**APPENDIX_A, "facecolors": [[1, 0, 0], [0, 1, 0], -1, [0, 0, 1]]})
+    assert expand_face_colors(mixed["facecolors"], 4) == [[1.0, 0, 0], [0, 1.0, 0], [0, 1.0, 0], [0, 0, 1.0]]
+    assert expand_face_colors(None, 4) == []
+    print("face colours: a run repeats the colour before it, and absent is not black")
 
     if failures:
         raise SystemExit(1)
