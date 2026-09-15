@@ -1,6 +1,6 @@
-"""Reference implementation of DECK-0004: SNO (Simple Nostr Objects).
+"""Reference implementation of DECK-0003: SNO (Simple Nostr Objects).
 
-This is the normative validation of DECK-0004 §1.9 written out as code, plus
+This is the normative validation of DECK-0003 §1.9 written out as code, plus
 the position expansion of §1.2, with no dependencies beyond the standard
 library. It is meant to be read, ported, and used as a conformance oracle: a
 client that disagrees with this file about whether a payload is valid has a
@@ -21,7 +21,7 @@ import json
 from fractions import Fraction
 from typing import Any, Iterator
 
-# DECK-0004 §1.8. These are the whole of the size policy.
+# DECK-0003 §1.8. These are the whole of the size policy.
 MAX_VERTICES = 512
 MAX_FACES = 1024
 MIN_EXTENT = 1
@@ -39,7 +39,7 @@ MODES = ("solid", "points", "lines")
 
 
 class SnoError(ValueError):
-    """A payload that DECK-0004 §1.9 rejects. The message names the rule."""
+    """A payload that DECK-0003 §1.9 rejects. The message names the rule."""
 
 
 def _is_int(x: Any) -> bool:
@@ -181,7 +181,7 @@ def positions(payload: dict) -> Iterator[tuple[Fraction, Fraction, Fraction]]:
     """Exact positions in model units, as Fractions, with the version applied.
 
     A v1 object was written when +Z pointed away from the viewer, so its Z is
-    negated here and it renders exactly as its author built it (DECK-0004 §2).
+    negated here and it renders exactly as its author built it (DECK-0003 §2).
     A v2 object is read as written. This is the whole of the difference between
     the two versions.
 

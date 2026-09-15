@@ -56,5 +56,4 @@ The design record for this category, and for why the base protocol defines holdi
 ## Registry
 - `DECK-0001-hyperspace.md`: Hyperspace, Bitcoin block transit (ports, landfalls, stations, rides)
 - `DECK-0002`: reserved for Virtual Spawn (game mechanic; draft in PR #15)
-- `DECK-0003`: reserved for the derezz attack (game mechanic; the draft in PR #8 is superseded by the design record and awaits a test-first rewrite)
-- `DECK-0004-sno.md`: SNO (Simple Nostr Objects), the small 3D object format. Defines `kind 33331`, a standalone editable object; `kind 3330` bag items and `kind 11333` avatars carry the same payload
+- `DECK-0003-sno.md`: SNO (Simple Nostr Objects), the small 3D object format. Defines `kind 33331`, a standalone editable object; `kind 3330` bag items and `kind 11333` avatars carry the same payload

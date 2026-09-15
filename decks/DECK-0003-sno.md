@@ -1,4 +1,4 @@
-# DECK-0004: SNO (Simple Nostr Objects)
+# DECK-0003: SNO (Simple Nostr Objects)
 
 DECK: 0004
 Title: SNO (Simple Nostr Objects)
