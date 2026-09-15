@@ -1313,17 +1313,24 @@ Extensions are specified as **Design Extension and Compatibility Kits (DECKs)** 
 
 An avatar is the shape an identity is drawn as. It is the one thing in cyberspace that lands on other people's screens whether they asked for it or not: everyone near its owner sees it, at every zoom. Its size and its detail are therefore paid for in work, on the event that publishes it, and a client draws nothing it cannot verify has paid.
 
-- Avatar events: `kind = 33331`
-- `kind 33331` is addressable: relays keep the newest event per `(pubkey, kind, d)`
+- Avatar events: `kind = 11333`
+- `kind 11333` is replaceable: relays keep the newest event per `(pubkey, kind)`, so an identity has exactly one avatar and the newest replaces it
+
+An avatar is one per identity, which is what a replaceable event is for. This was `kind 33331`, addressable, with a `d` tag fixed at `"avatar"`: a constant `d` is emulating replaceable semantics with the wrong tool, and it asks every reader to trust a convention where the relay could enforce the rule. Everything in nostr that is one per person is replaceable, including metadata, contacts, relay lists and DM relay lists; addressable is for the other case, many per author told apart by `d`, as long-form articles and wiki pages and classified listings are.
+
+The change is a clean break rather than a migration. At the time it was made, a query for `kind 33331` across twelve relays, including the one this protocol uses, returned nothing, while the same query returned bags and movement events. An identity that had adopted an avatar without publishing it re-mines once, which is the work it paid the first time.
+
+`11333` was chosen by querying for it rather than by reading a registry. The registry of kinds and the NIPs index both list only what has been written down, and the replaceable range is full of numbers that are in daily use and appear in neither: `10333` carries Podcasting 2.0 favourites, `10086` a relay indexer's lists across eighty pubkeys, `10088` something Amethyst writes. A kind is free when the relays say so.
 
 Required tags:
-- `d` tag: `["d", "avatar"]`, so an identity has exactly one avatar and the newest replaces it
 - `nonce` tag: `["nonce", "<nonce>", "<target>"]` per NIP-13, where `target` is the leading zero bits the publisher committed to before mining
 
 Optional tags:
 - `name` tag: `["name", "<name>"]`, the shape's name for humans
 
 Content: a shard payload as bags carry them, or empty. The work reads these fields of it: `unit` (a model unit is `2^unit` gibsons), `vertices` (whole units per vertex), `ticks` (the fraction of a unit per vertex, in 120ths, packed so that `-N` stands for `N` zero triples) and `faces`. Empty content means the default avatar and owes no work.
+
+No `d` tag: a replaceable kind has no second key, and writing one would only invite a reader to filter on it.
 
 **The work (normative):**
 
