@@ -237,7 +237,7 @@ An object hidden at a place is an item inside a `kind 33330` bag, exactly as `CY
 
 ### 3.3 As an avatar
 
-An avatar event (`kind 10333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload in its `content`, or empty content for the default avatar. The work an avatar owes is computed from `unit`, `vertices`, `ticks` and `faces` as that section specifies. Nothing in this DECK changes that computation; this document only defines the fields it reads.
+An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload in its `content`, or empty content for the default avatar. The work an avatar owes is computed from `unit`, `vertices`, `ticks` and `faces` as that section specifies. Nothing in this DECK changes that computation; this document only defines the fields it reads.
 
 ---
 
