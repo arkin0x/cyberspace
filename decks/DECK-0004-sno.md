@@ -20,8 +20,9 @@ The design goal is not to compete with glTF or USD. It is to be the three-dimens
 | Thing | Value |
 |---|---|
 | Object payload | JSON, described in §1 |
-| Event kind for a standalone object | `3330` (already in use for shards, §3.1) |
-| Model space | X right, Y up, +Z away from the canonical viewer (§2) |
+| Event kind for a standalone object | `33331`, addressable, one per author per `d` (§3.1) |
+| Event kind for an object hidden in a bag | `3330`, as Cyberspace already uses it (§3.2) |
+| Model space | X right, Y up, +Z toward the viewer: right handed, the glTF convention (§2) |
 | Position lattice | whole units plus 120ths of a unit (§1.2) |
 | Hard limits | 512 vertices, 1024 faces (§1.8) |
 | Reference implementation | `decks/sno-reference.py`, which is §1.9 written as code |
@@ -50,7 +51,7 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 
 | Field | Type | Required | Meaning |
 |---|---|---|---|
-| `v` | integer | yes | Format version. `1` for this document. A reader MUST reject any other value. |
+| `v` | integer | yes | Format version, `1` or `2`. They differ in one sign and nothing else (§2). A reader MUST support both and MUST reject any other value. |
 | `type` | string | yes | `"shard"`. A reader MUST reject any other value. |
 | `name` | string | yes | A name for humans. A reader MUST truncate to 64 characters. |
 | `unit` | integer | yes | Scale exponent, `0` to `84`. One model unit is `2^unit` base units (§1.6). |
@@ -168,7 +169,7 @@ One trap worth knowing, since it cannot be discovered at runtime: strfry populat
 
 A reader MUST perform all of the following before rendering, and MUST reject the whole payload if any fails. A partially valid object is not rendered partially: a face index pointing past the end of the vertex list is not a defect that degrades gracefully.
 
-1. `v` is `1` and `type` is `"shard"`.
+1. `v` is `1` or `2`, and `type` is `"shard"`.
 2. `vertices`, `colors` and `faces` are arrays, and `vertices.length === colors.length`.
 3. `vertices.length <= 512` and `faces.length <= 1024`.
 4. `mode` is one of the three words.
@@ -183,53 +184,60 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 
 ## 2. Model space (normative)
 
-An object is built in a right-handed-looking but viewer-flipped frame, and the exact convention matters more than its elegance, because getting it wrong mirrors every object ever published.
+An object is built in a right-handed frame with Y up, which is the glTF and three.js convention:
 
 | Axis | Direction |
 |---|---|
 | `+X` | right |
 | `+Y` | up |
-| `+Z` | away from the canonical viewer, into the screen |
+| `+Z` | toward the viewer |
 
-This is the mirror of the glTF and three.js convention, where `+Z` points toward the viewer. A renderer built on three.js negates Z when it loads an object, and an exporter that writes SNO from a right-handed Y-up tool MUST negate Z on the way out. Cyberspace's own canonical orientation (`CYBERSPACE_V2.md` §11.3) faces the black sun, which lies along `+Z`, which is why the convention is this way round.
+This is stated first and in normative language because being silent about it is the most common way a small format fails. STL never specified color and two vendors filled the hole incompatibly. PLY never registered its property names. glTF left "forward" undefined for years while being an ISO standard. Niantic's SPZ shipped in 2024 without saying which axis is up, and someone had to open an issue to ask.
 
-Blender is Z-up and right-handed, so a Blender exporter maps Blender `(x, y, z)` to SNO `(x, z, y)`, which handles both the up-axis change and the handedness flip in one step. §7 returns to this.
+**Version 1 and version 2 differ by one sign, and by nothing else.**
+
+| `v` | Z points | A reader |
+|---|---|---|
+| `1` | away from the viewer | MUST negate every Z on read, which renders the object exactly as its author built it |
+| `2` | toward the viewer | reads the positions as written |
+
+Version 1 is the convention this format had while it lived only inside Cyberspace, where `+Z` is the direction of the black sun. Every object published before this document exists under it, and negating Z on read is what keeps those objects looking as they always have. A publisher MUST write `v: 2`; `v: 1` is for reading what already exists.
+
+The flip was made deliberately and once. Carrying Cyberspace's own axis convention into a format meant for anyone would have charged every exporter and importer, forever, for a mirroring that only Cyberspace needs. Cyberspace applies it where it belongs, in the one renderer that places an object into its world, rather than in every tool that ever writes one.
+
+A Blender exporter therefore maps Blender `(x, y, z)` to SNO `(x, z, -y)`: Blender is Z-up and right-handed, SNO is Y-up and right-handed, and the negation is what keeps the frame right-handed rather than mirroring it. §7 returns to this.
 
 ---
 
 ## 3. Carrying an object in a nostr event (normative)
 
-### 3.1 A standalone object: `kind 3330`
+### 3.1 A standalone object: `kind 33331`
 
-An object stands alone as a `kind 3330` event whose `content` is the payload of §1, serialized as JSON.
+An object stands alone as a `kind 33331` event whose `content` is the payload of §1, serialized as JSON.
 
 | Tag | Required | Meaning |
 |---|---|---|
-| `C` | no | `["C", "<coord_hex>"]`, the object's exact coordinate (`CYBERSPACE_V2.md` §2). Present when the object has a place. |
-| `name` | no | `["name", "<name>"]`, duplicating the payload's `name` so a relay query can filter on it without parsing the content |
+| `d` | yes | the object's identifier, chosen by its author and stable across edits. The workshop's own id for the object serves |
+| `name` | no | `["name", "<name>"]`, duplicating the payload's name so a relay query can filter on it without parsing the content |
+| `alt` | no | a description for clients that cannot render an object (NIP-31) |
 
-`3330` falls in `1000..9999`, which NIP-01 defines as **regular**: relays store every event and none replaces another. That is the right class here, and the reasons are worth stating because the alternative looks attractive until it does not.
+`33331` falls in `30000..39999`, which NIP-01 defines as **addressable**: relays keep the newest event per `(pubkey, kind, d)`, so an author edits an object in place by republishing it under the same `d`. That is the right class for a thing someone iterates on in a modeling tool, which is what an object is.
 
-| Why regular rather than addressable | |
-|---|---|
-| The object is its id | A regular event's id is the hash of its content, so an object can be embedded by `nevent`, cached forever, verified by anyone, and never changes under a viewer. An addressable coordinate resolves to whatever its author last published. |
-| Payments and reactions bind to ids | Zaps (NIP-57), reactions (NIP-25) and comments (NIP-22) reference an `e` tag. If someone pays for an object and the author then edits it, an addressable design leaves the payment pointing at content that silently changed. |
-| It matches every comparable kind | The "post an object" kinds are regular: picture 20, video 21, code snippet 1337, chess 64. The addressable kinds are documents: long-form 30023, wiki 30818. An object is a post. |
-| One way to do one thing | NIP-71 shipped both regular and addressable video and it is widely regarded as a mistake. An editable companion, if it is ever wanted, is a separate proposal rather than a second spelling of this one. |
+It costs something, and the cost is worth stating plainly rather than discovering later. Reactions (NIP-25), zaps (NIP-57) and comments (NIP-22) reference an event id, and an address resolves to whatever its author last published, so a payment made against an object can end up pointing at content that changed after it. An application that needs an object to be immutable, because it was paid for or because it was hidden somewhere and must stay as it was found, uses the bag item of §3.2, whose kind is regular.
 
-An author who wants to retract or supersede an object publishes a new one and a NIP-09 deletion request for the old, which is how `kind 20` pictures already work.
+**Exactly one kind, never two.** NIP-71 shipped both a regular and an addressable video kind and it is widely regarded as a mistake. There is no regular twin of `33331` and there should never be one.
 
-`3330` is also unclaimed outside Cyberspace: it appears in neither the NIPs repository, nor the registry of kinds, nor any open proposal. Cyberspace's other kinds (321, 331, 333, 3333, 10085, 10087, 20333, 33330 to 33332) are equally unregistered, which is a separate piece of housekeeping.
-
-A client that receives a `kind 3330` event whose content fails §1.9 MUST NOT render it and SHOULD say why rather than failing silently.
+A client that receives a `kind 33331` event whose content fails §1.9 MUST NOT render it and SHOULD say why rather than failing silently.
 
 ### 3.2 Inside a bag
 
 An object hidden at a place is an item inside a `kind 33330` bag, exactly as `CYBERSPACE_V2.md` §7 describes items. Nothing in this DECK changes that container. The item is a `kind 3330` event, signed or unsigned, and it MAY carry a `C` tag, which then MUST lie inside the bag's region.
 
+`3330` is regular, and deliberately so. An item in a bag is a thing someone hid at a place and someone else found there; it must be exactly what it was when it was found, and its id must keep meaning what it meant. The same payload therefore travels under two kinds according to what is being done with it: `33331` for an object its author is still working on, `3330` for one that has been put somewhere. That is two containers for one format, not two ways of writing the format.
+
 ### 3.3 As an avatar
 
-An avatar event (`kind 33331`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload in its `content`, or empty content for the default avatar. The work an avatar owes is computed from `unit`, `vertices`, `ticks` and `faces` as that section specifies. Nothing in this DECK changes that computation; this document only defines the fields it reads.
+An avatar event (`kind 10333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload in its `content`, or empty content for the default avatar. The work an avatar owes is computed from `unit`, `vertices`, `ticks` and `faces` as that section specifies. Nothing in this DECK changes that computation; this document only defines the fields it reads.
 
 ---
 
@@ -253,7 +261,7 @@ A client MUST perform welding, deduplication and any equality test on the intege
 
 ## 5. Versioning and extension (normative)
 
-`v` is `1`. A reader MUST reject a payload whose `v` it does not know, because a version bump means the meaning of an existing field has changed.
+`v` is `1` or `2`, and a reader MUST support both and reject anything else. A version bump means the meaning of an existing field has changed, which is exactly what happened between the two: `v: 2` reads its Z as written and `v: 1` has it negated (§2). Nothing else differs, and nothing else should ever differ by so little: two versions are a cost, and this one buys a format that every other tool can read without a special case.
 
 A reader MUST ignore fields it does not recognize rather than rejecting them. This is what allows an optional field to be added without a version bump, and it is how `extent`, `ticks`, `up` and `spin` were each added to a format already in use: an older reader sees an object with whole-unit positions on a grid of 8, unoriented, and draws something correct rather than nothing.
 
@@ -286,7 +294,7 @@ A tool that writes SNO from a modeling package performs four conversions, and ea
 | Conversion | What is lost |
 |---|---|
 | **Triangulation.** SNO has only triangles; modeling packages work in quads and n-gons. | The authored topology. A round trip returns triangles, so the model is no longer editable the way it was built. |
-| **Axis change.** Blender is Z-up and right-handed (X right, Y into the screen, Z up); SNO is Y-up with `+Z` into the screen. The map is Blender `(x, y, z)` to SNO `(x, z, y)`. | Nothing numerically, but it is a reflection: swapping two axes flips handedness, which is why SNO is left-handed (§2). An exporter that forgets publishes every object mirrored, and the mistake is invisible on a symmetric object. |
+| **Axis change.** Blender is Z-up and right-handed; SNO is Y-up and right-handed. The map is Blender `(x, y, z)` to SNO `(x, z, -y)`. | Nothing, if the negation is not forgotten. Dropping it turns the map into a reflection and publishes every object mirrored, which is invisible on a symmetric object and obvious on everything else. Both frames are right-handed, so no mirroring is required or wanted (§2). |
 | **Quantization to the lattice.** Float positions become integers on a 1/120 lattice. | Real precision. See below. |
 | **Decimation to 512 vertices.** | The largest loss, and the only one that changes the art rather than the numbers. |
 
@@ -344,13 +352,10 @@ One apparent gap is not one. SNO has per-vertex color and no material, which is 
 
 ## 8. Open questions
 
-1. **Handedness.** SNO's `+Z` points away from the viewer, the mirror of glTF and three.js. It is the right convention inside Cyberspace, where `+Z` is the black sun. It is a wart everywhere else, and every exporter and importer pays for it once. Changing it is free today and impossible after the first objects are published outside ONOSENDAI.
-2. **A base unit outside Cyberspace.** `unit` is an exponent over a base the application defines, which is meaningless to a client with no such base. An optional field giving meters per model unit would make an object's real size portable, at the cost of a field that Cyberspace itself would never write.
-3. **An addressable kind for editable objects.** `kind 3330` is immutable by design. An object a person iterates on in a modeling tool wants replacement semantics and a `d` tag. Whether that is a second kind or a convention is unsettled.
-4. **Per-face color.** Flat-shaded objects currently pay three vertices per triangle, which spends the 512-vertex budget quickly on exactly the low-poly style the format suits best.
-5. **Whether the limits are the right numbers.** 512 and 1024 were chosen to fit an event. They are not derived from anything.
-6. **Whether a general nostr audience should get `3330` or a fresh kind.** This document claims the kind ONOSENDAI already publishes, which has the considerable advantage that a working implementation exists on it today, and `3330` is unclaimed everywhere outside Cyberspace. The argument the other way is that `3330` sits inside the block one protocol uses for everything else, which reads as borrowing rather than registering; `4242` and `3434` are both verified unclaimed in the same regular range. The two considerations pull in opposite directions and the choice is a publication decision rather than a technical one, so it is recorded here rather than settled.
-7. **There is no hard bound on how far a vertex may lie from the origin.** §1.8 puts the 64-unit bound on publishers and lets readers repair instead of reject, which is what ONOSENDAI does today: it grows the extent to fit, without a ceiling. That is safe for a client rendering its own author's work and unsafe as a general rule, since a payload of 512 vertices at 2^50 units is valid under this text and will produce a grid no renderer wants. Making the bound a reader obligation is a one-line change and would make the current client non-conformant until it is updated, which is why it is a question rather than a rule.
+1. **A base unit outside Cyberspace.** `unit` is an exponent over a base the application defines, which is meaningless to a client with no such base. An optional field giving meters per model unit would make an object's real size portable, at the cost of a field that Cyberspace itself would never write.
+2. **Per-face color.** Flat-shaded objects currently pay three vertices per triangle, which spends the 512-vertex budget quickly on exactly the low-poly style the format suits best.
+3. **Whether the limits are the right numbers.** 512 and 1024 were chosen to fit an event. They are not derived from anything.
+4. **There is no hard bound on how far a vertex may lie from the origin.** §1.8 puts the 64-unit bound on publishers and lets readers repair instead of reject, which is what ONOSENDAI does today: it grows the extent to fit, without a ceiling. That is safe for a client rendering its own author's work and unsafe as a general rule, since a payload of 512 vertices at 2^50 units is valid under this text and will produce a grid no renderer wants. Making the bound a reader obligation is a one-line change and would make the current client non-conformant until it is updated, which is why it is a question rather than a rule.
 
 ---
 
@@ -360,7 +365,7 @@ A four-vertex tetrahedron, one color per corner, drawn solid, built on a lattice
 
 ```json
 {
-  "v": 1,
+  "v": 2,
   "type": "shard",
   "name": "tetra",
   "unit": 0,

@@ -90,8 +90,8 @@ def validate(payload: Any) -> dict:
         raise SnoError("rule 1: payload is not a JSON object")
 
     # 1. version and type
-    if payload.get("v") != 1 or isinstance(payload.get("v"), bool):
-        raise SnoError("rule 1: v must be 1")
+    if payload.get("v") not in (1, 2) or isinstance(payload.get("v"), bool):
+        raise SnoError("rule 1: v must be 1 or 2")
     if payload.get("type") != "shard":
         raise SnoError('rule 1: type must be "shard"')
 
@@ -178,17 +178,24 @@ def repaired_extent(declared: Any, vertices: list, ticks: list[list[int]]) -> in
 
 
 def positions(payload: dict) -> Iterator[tuple[Fraction, Fraction, Fraction]]:
-    """Exact positions in model units, as Fractions. Validate first.
+    """Exact positions in model units, as Fractions, with the version applied.
+
+    A v1 object was written when +Z pointed away from the viewer, so its Z is
+    negated here and it renders exactly as its author built it (DECK-0004 §2).
+    A v2 object is read as written. This is the whole of the difference between
+    the two versions.
+
+    Validate first.
 
     Exact rather than float: the whole point of the lattice is that two objects
     authored to meet actually meet, so the reference implementation refuses to
     introduce rounding that a renderer would then have to live with.
     """
     ticks = expand_ticks(payload.get("ticks"), len(payload["vertices"]))
+    flip = -1 if payload.get("v") == 1 else 1
     for v, t in zip(payload["vertices"], ticks):
-        yield tuple(  # type: ignore[misc]
-            Fraction(v[a] * TICKS_PER_UNIT + t[a], TICKS_PER_UNIT) for a in range(3)
-        )
+        x, y, z = (Fraction(v[a] * TICKS_PER_UNIT + t[a], TICKS_PER_UNIT) for a in range(3))
+        yield (x, y, z * flip)
 
 
 def clamp_color(c: list) -> list[float]:
@@ -205,7 +212,7 @@ def clamp_color(c: list) -> list[float]:
 # --------------------------------------------------------------------------
 
 APPENDIX_A = {
-    "v": 1,
+    "v": 2,
     "type": "shard",
     "name": "tetra",
     "unit": 0,
@@ -226,7 +233,8 @@ def _rejections() -> list[tuple[str, dict]]:
         return out
 
     return [
-        ("rule 1", variant(v=2)),
+        ("rule 1", variant(v=3)),
+        ("rule 1", variant(v=0)),
         ("rule 1", variant(type="model")),
         ("rule 2", variant(colors=[[1, 0, 0]])),
         ("rule 3", variant(vertices=[[0, 0, 0]] * 513, colors=[[0, 0, 0]] * 513, ticks=[-513], faces=[])),
@@ -252,6 +260,13 @@ def _self_test() -> None:
 
     pts = list(positions(ok))
     assert pts[3] == (Fraction(1), Fraction(2), Fraction(1)), pts[3]
+
+    # The version is one sign. A v1 object with the same numbers reads mirrored
+    # in Z, which is what keeps everything published before v2 looking right.
+    v1 = validate({**APPENDIX_A, "v": 1})
+    assert [p[2] for p in positions(v1)] == [-p[2] for p in positions(ok)]
+    assert [p[:2] for p in positions(v1)] == [p[:2] for p in positions(ok)]
+    print("v1 and v2 differ in Z alone, which is the whole of the version")
 
     # A sub-unit position is exact, not approximate: a third of a unit is 40
     # ticks and comes back as exactly one third.
