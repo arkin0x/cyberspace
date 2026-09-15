@@ -1313,12 +1313,14 @@ Extensions are specified as **Design Extension and Compatibility Kits (DECKs)** 
 
 An avatar is the shape an identity is drawn as. It is the one thing in cyberspace that lands on other people's screens whether they asked for it or not: everyone near its owner sees it, at every zoom. Its size and its detail are therefore paid for in work, on the event that publishes it, and a client draws nothing it cannot verify has paid.
 
-- Avatar events: `kind = 10333`
-- `kind 10333` is replaceable: relays keep the newest event per `(pubkey, kind)`, so an identity has exactly one avatar and the newest replaces it
+- Avatar events: `kind = 11333`
+- `kind 11333` is replaceable: relays keep the newest event per `(pubkey, kind)`, so an identity has exactly one avatar and the newest replaces it
 
 An avatar is one per identity, which is what a replaceable event is for. This was `kind 33331`, addressable, with a `d` tag fixed at `"avatar"`: a constant `d` is emulating replaceable semantics with the wrong tool, and it asks every reader to trust a convention where the relay could enforce the rule. Everything in nostr that is one per person is replaceable, including metadata, contacts, relay lists and DM relay lists; addressable is for the other case, many per author told apart by `d`, as long-form articles and wiki pages and classified listings are.
 
-The change is a clean break rather than a migration. At the time it was made, a query for `kind 33331` across four relays, including the one this protocol uses, returned nothing while the same query returned bags and movement events, so no published avatar existed to carry forward. An identity that had adopted one re-mines it, which is the same work it paid the first time.
+The change is a clean break rather than a migration. At the time it was made, a query for `kind 33331` across twelve relays, including the one this protocol uses, returned nothing, while the same query returned bags and movement events. An identity that had adopted an avatar without publishing it re-mines once, which is the work it paid the first time.
+
+`11333` was chosen by querying for it rather than by reading a registry. The registry of kinds and the NIPs index both list only what has been written down, and the replaceable range is full of numbers that are in daily use and appear in neither: `10333` carries Podcasting 2.0 favourites, `10086` a relay indexer's lists across eighty pubkeys, `10088` something Amethyst writes. A kind is free when the relays say so.
 
 Required tags:
 - `nonce` tag: `["nonce", "<nonce>", "<target>"]` per NIP-13, where `target` is the leading zero bits the publisher committed to before mining
