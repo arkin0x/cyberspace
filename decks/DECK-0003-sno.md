@@ -52,7 +52,7 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | Field | Type | Required | Meaning |
 |---|---|---|---|
 | `v` | integer | yes | Format version, `1` or `2`. They differ in one sign and nothing else (§2). A reader MUST support both and MUST reject any other value. |
-| `type` | string | yes | `"shard"`. A reader MUST reject any other value. |
+| `type` | string | v1 only | `"shard"` in a `v: 1` payload, where it is required. A `v: 2` payload MUST NOT carry it, and a reader MUST ignore it wherever it appears (§1.1a). |
 | `name` | string | yes | A name for humans. A reader MUST truncate to 64 characters. |
 | `unit` | integer | yes | Scale exponent, `0` to `84`. One model unit is `2^unit` base units (§1.6). |
 | `extent` | integer | no | Grid half-width in model units, `1` to `64`. Advisory and self-repairing (§1.8). Absent or malformed means `8`. |
@@ -66,6 +66,16 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | `spin` | integer | no | With `up`: the compass bearing the object's `+Z` faces, `0` to `359` (§1.7). |
 
 `vertices` and `colors` MUST have the same length. Any field not listed here MUST be ignored by a reader, not rejected (§5).
+
+### 1.1a Why `type` is gone from version 2
+
+A `v: 1` payload carries `type: "shard"`. It is not carried in version 2 and this is worth a paragraph, because removing a required field looks like carelessness and is the opposite.
+
+The field never said anything the container did not already say. A standalone object is `kind 33331` and an object in a bag is a `kind 3330` item; either way the kind is what a reader dispatches on, and Cyberspace's own client derives "this is a shape, not a message" from the kind and has only ever used `type` as a sanity check on a blob it had already decided was a payload.
+
+What the field did do was carry a parochial word into a format meant for anyone. "Shard" is Cyberspace's name for an object hidden at a place. It is a good word there and it means nothing in a format called Simple Nostr Objects, and a required field whose only legal value is another project's vocabulary is exactly what makes a format look like somebody's internal file that escaped.
+
+So: a `v: 2` payload has no `type`, which keeps one spelling per version, and a reader ignores the field wherever it finds one rather than rejecting, which keeps every `v: 1` payload readable and costs nothing.
 
 ### 1.2 Positions: the lattice and the ticks
 
@@ -184,7 +194,7 @@ One trap worth knowing, since it cannot be discovered at runtime: strfry populat
 
 A reader MUST perform all of the following before rendering, and MUST reject the whole payload if any fails. A partially valid object is not rendered partially: a face index pointing past the end of the vertex list is not a defect that degrades gracefully.
 
-1. `v` is `1` or `2`, and `type` is `"shard"`.
+1. `v` is `1` or `2`. In a `v: 1` payload `type` is `"shard"`; in a `v: 2` payload `type` is absent, and a reader ignores it wherever it appears rather than rejecting (§1.1a).
 2. `vertices`, `colors` and `faces` are arrays, and `vertices.length === colors.length`.
 3. `vertices.length <= 512` and `faces.length <= 1024`.
 4. `mode` is one of the three words.
@@ -214,8 +224,8 @@ This is stated first and in normative language because being silent about it is 
 
 | `v` | Z points | A reader |
 |---|---|---|
-| `1` | away from the viewer | MUST negate every Z on read, which renders the object exactly as its author built it |
-| `2` | toward the viewer | reads the positions as written |
+| `1` | away from the viewer | MUST negate every Z on read, which renders the object exactly as its author built it. Carries `type: "shard"` (§1.1a) |
+| `2` | toward the viewer | reads the positions as written. Carries no `type` |
 
 Version 1 is the convention this format had while it lived only inside Cyberspace, where `+Z` is the direction of the black sun. Every object published before this document exists under it, and negating Z on read is what keeps those objects looking as they always have. A publisher MUST write `v: 2`; `v: 1` is for reading what already exists.
 
@@ -383,7 +393,6 @@ A four-vertex tetrahedron, one color per corner, drawn solid, built on a lattice
 ```json
 {
   "v": 2,
-  "type": "shard",
   "name": "tetra",
   "unit": 0,
   "extent": 8,

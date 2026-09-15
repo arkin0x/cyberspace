@@ -125,8 +125,11 @@ def validate(payload: Any) -> dict:
     # 1. version and type
     if payload.get("v") not in (1, 2) or isinstance(payload.get("v"), bool):
         raise SnoError("rule 1: v must be 1 or 2")
-    if payload.get("type") != "shard":
-        raise SnoError('rule 1: type must be "shard"')
+    # §1.1a: v1 carries type "shard"; v2 carries no type, and a reader ignores
+    # the field wherever it appears rather than rejecting, so a v1 payload stays
+    # readable and nothing depends on another project's vocabulary.
+    if payload.get("v") == 1 and payload.get("type") != "shard":
+        raise SnoError('rule 1: a v1 payload must carry type "shard"')
 
     # 2. the three arrays, and vertices parallel to colors
     for key in ("vertices", "colors", "faces"):
@@ -250,7 +253,6 @@ def clamp_color(c: list) -> list[float]:
 
 APPENDIX_A = {
     "v": 2,
-    "type": "shard",
     "name": "tetra",
     "unit": 0,
     "extent": 8,
@@ -272,7 +274,6 @@ def _rejections() -> list[tuple[str, dict]]:
     return [
         ("rule 1", variant(v=3)),
         ("rule 1", variant(v=0)),
-        ("rule 1", variant(type="model")),
         ("rule 2", variant(colors=[[1, 0, 0]])),
         ("rule 3", variant(vertices=[[0, 0, 0]] * 513, colors=[[0, 0, 0]] * 513, ticks=[-513], faces=[])),
         ("rule 4", variant(mode="wireframe")),
@@ -305,10 +306,20 @@ def _self_test() -> None:
 
     # The version is one sign. A v1 object with the same numbers reads mirrored
     # in Z, which is what keeps everything published before v2 looking right.
-    v1 = validate({**APPENDIX_A, "v": 1})
+    v1 = validate({**APPENDIX_A, "v": 1, "type": "shard"})
     assert [p[2] for p in positions(v1)] == [-p[2] for p in positions(ok)]
     assert [p[:2] for p in positions(v1)] == [p[:2] for p in positions(ok)]
     print("v1 and v2 differ in Z alone, which is the whole of the version")
+
+    # §1.1a: v1 needs its type, v2 has none, and a stray one is ignored.
+    try:
+        validate({**APPENDIX_A, "v": 1})
+        raise AssertionError("a v1 payload without type should be rejected")
+    except SnoError as e:
+        assert str(e).startswith("rule 1"), e
+    assert validate({**APPENDIX_A, "type": "shard"})["v"] == 2
+    assert validate({**APPENDIX_A, "type": "anything at all"})["v"] == 2
+    print("type: required at v1, absent at v2, ignored wherever it appears")
 
     # A sub-unit position is exact, not approximate: a third of a unit is 40
     # ticks and comes back as exactly one third.
