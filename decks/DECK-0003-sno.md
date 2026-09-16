@@ -124,30 +124,52 @@ At 32 bytes a vertex only about 4 are the colour, so this is the last large savi
 |---|---|
 | absent | the built-in, `cyberspace-neon-256` (Appendix C) |
 | a registered name | `"cyberspace-neon-256"` is the only one, and is the default |
-| an `naddr1…` | a palette published as its own nostr event, fetched if it can be, with the built-in standing in until it is (§1.3b) |
+| an `nevent1…` or `naddr1…` | a palette published as its own nostr event, fetched if it can be, with the built-in standing in until it is (§1.3b) |
 | an array | a palette carried in the object itself: 2 to 256 entries, each `[r, g, b]` of three integers `0` to `255` |
 
-A reader MUST reject a `palette` that is an array of fewer than 2 or more than 256 entries, or any entry that is not three integers in `0..255`, or a string that is neither a name it knows nor a well-formed `naddr`.
+A reader MUST reject a `palette` that is an array of fewer than 2 or more than 256 entries, or any entry that is not three integers in `0..255`, or a string that is neither a name it knows nor a well-formed `nevent` or `naddr`.
 
 **Why a custom palette may be short.** An object with four colours pays for four, not for 256. Two entries cost 40 bytes, sixteen cost 222, and a full 256 costs 3.3 KB, so the cost lands where it is affordable: 3.3 KB is four times the size of a cube and a sixth of an object at the ceiling, and it is large objects that want a palette of their own.
 
 ### 1.3b A palette published as its own event
 
-A `palette` of `naddr1…` names an addressable event that carries a palette. This is how a group of objects share one set of colours that can be corrected in one place, and how this format meets palettes that already exist on nostr rather than insisting everyone reuse its own.
+A `palette` of `nevent1…` or `naddr1…` names a nostr event that carries a palette. This is how a group of objects share one set of colours, and how this format meets the palettes that already exist on nostr rather than insisting everyone reuse its own.
 
 **The rule that makes this safe is that a reference is never load-bearing.**
 
 1. A reader MUST render the object without waiting for anything. Until the referenced event is in hand, the indices name the built-in.
-2. A reader MAY fetch the event, and SHOULD if it can do so without blocking the first frame. When it arrives and its content parses, the reader re-renders with it.
-3. A reader that cannot fetch, or fetches nothing, MUST keep drawing with the built-in and MUST NOT reject the object.
+2. A reader MAY fetch the event, and SHOULD if it can do so without blocking the first frame. When it arrives and it parses, the reader re-renders with it.
+3. A reader that cannot fetch, or fetches an event that is not a palette, MUST keep drawing with the built-in and MUST NOT reject the object.
 
 So the worst case is an object drawn in the wrong colours, never an object that cannot be drawn. That is a real cost and it is stated here rather than buried: a viewer has no way to tell that the colours it sees are the fallback rather than the author's. A publisher who cannot accept that carries the palette inline, which is what the array form is for, and which is what a small palette should do anyway.
 
-**What counts as a palette event.** Any addressable event whose `content` parses as a JSON array of 2 to 256 entries, where an entry is either `[r, g, b]` of three integers `0..255` or a `"#rrggbb"` string. The kind is deliberately not constrained. This format does not define a palette kind and does not want one: palettes on nostr are somebody else's problem, already partly solved, and a reader that accepts the obvious shape will read whatever convention wins without this document being revised. An event whose content does not parse that way is treated as a failed fetch, which means the built-in.
+**A palette event carries its colours in `c` tags, one tag per colour, and the order of the tags is the index.** A publisher MUST write the colours that way and MUST NOT write a second machine-readable copy of them anywhere else in the event. `c` tag `n`, counting from zero in the order the tags appear in `tags`, is the colour that index `n` names. A value is `#rrggbb`. Two to 256 of them.
 
-**Why not an event id rather than an address.** An `naddr` carries the author, the identifier and relay hints, so a reader has somewhere to look and the author can correct the palette in place without every object that names it going stale. A bare event id has none of that and freezes the palette forever.
+Everything else in the event is for people. `name` is what the author calls the palette, `alt` is NIP-31's line for a client that cannot render it, `client` says what published it, and `content` may hold whatever a colour-moment client would want there, an emoji or a sentence, or nothing at all. None of it is read for colours.
 
-**Why a custom palette may be short.** An object with four colours pays for four, not for 256. Two entries cost 40 bytes, sixteen cost 222, and a full 256 costs 3.3 KB, so the cost lands where it is affordable: 3.3 KB is four times the size of a cube and a sixth of an object at the ceiling, and it is large objects that want a palette of their own.
+**What counts as a palette event (normative).** Given an event it has fetched, a reader MUST take the first of these that succeeds.
+
+1. **The `c` tags**, in the order they appear in `tags`, if there are 2 to 256 of them and every value is a well-formed `#rrggbb`. Their order is the palette's order.
+2. Otherwise, **`content`**, if it parses as a JSON array of 2 to 256 entries where every entry is either `[r, g, b]` of three integers `0..255` or a `"#rrggbb"` string. This is a legacy form and a reader accepts it only because an earlier draft of this section described it; nothing SHOULD write it now.
+3. Otherwise the event is not a palette event, which counts as a failed fetch, which means the built-in.
+
+The kind is deliberately not constrained. This format does not define a palette kind and does not want one: palettes on nostr are somebody else's problem and partly solved already, and a reader that accepts the shape above will read whatever convention wins without this document being revised. `kind 3367`, the colour-moment convention, is what carries them today.
+
+**Why the tags are the encoding and not `content`.** Three reasons, in the order they should be weighed.
+
+1. **A single-letter tag is indexed by relays and `content` is not.** With the colours in `c` tags, `{"#c": ["#FF0000"]}` is a filter that finds every palette containing pure red, on any relay, with no new index and no new kind. A palette in `content` is opaque to every relay that stores it and can only be found by fetching it first. Nothing else in this section buys a capability that did not exist before; this does.
+2. **One spelling.** The canonical form rule of §1.2 exists because a format that allows two spellings of one thing gets two incompatible readers, and colours in both the tags and the content would have been exactly that: the same information twice, with a rule needed to say which copy wins when they disagree.
+3. **It is what the network already publishes,** which means an SNO palette is a colour moment and a colour moment is an SNO palette, with no translation and no second audience to write for.
+
+Size does not decide this and should not be read as if it did. A 256-colour palette is 4,618 bytes as tags with an empty content, against 3,691 for the dual form that was considered and rejected here, six tags as a preview with a JSON copy of the whole palette in the content, and no relay surveyed advertises a tag limit anywhere near 260 tags: of nos.lol, relay.damus.io, relay.primal.net, relay.nostr.band, ditto.pub and cyberspace.nostr1.com, only cyberspace.nostr1.com advertises `max_event_tags` at all, at 10,000.
+
+**What the survey found, and what this section used to say.** Until 2026-09-16 this section said that a palette event's colours were a JSON array in `content`, and that the reference was an `naddr`. Both were guesses, made before anyone had looked at a real one, and both were wrong. A survey of five relays for `kind 3367` returned 205 unique events from 51 pubkeys, and every one of them carries its colours as `c` tags, one tag per colour, in document order, with an emoji or a short note in `content`. All 661 `c` values are well-formed `#rrggbb` and none is malformed. Alongside them are `layout`, `alt` and `client` on all 205, `name` on 152 and `g` on 33. The palettes are small: 178 carry three colours, 14 carry four, 7 carry five, 6 carry six. So the content-only rule would have rejected every palette on the network, which is the opposite of meeting palettes that already exist. Kind 3367 is also in NIP-01's regular range of 1000 to 9999, which is stored and immutable and has no address, so the `naddr` this section asked for could not have named one of these events even in principle.
+
+**Editing a palette publishes a new event.** A regular event cannot be replaced, so a corrected palette is a second event rather than a new version of the first, and the link back is carried in `e` tags. A publisher correcting a palette MUST write `["e", "<previous event id>", "<relay hint>", "previous"]`, and where it knows the first version of the palette SHOULD also write `["e", "<first version id>", "", "genesis"]`. Those two marker words are the ones Cyberspace's own action chain uses, so an implementer who has read anything else in this repository already knows what they mean. Together they make a history a reader MAY walk backward: `previous` gets the step before, `genesis` gets the start without walking at all.
+
+**A reference is pinned to the event it names.** A reader MUST NOT follow the `e` chain forward to a newer version, and MUST render the object with the event the object names. This is the part that is better than the addressable form this section proposed before, and it is worth saying why rather than leaving it as a consequence of the kind. An immutable event means an object renders the same forever, and an author who corrects a palette cannot silently repaint every object that ever named it, including objects belonging to people they have never met. The cost is that an object does not pick up a correction on its own: it picks one up when its own author republishes it pointing at the new event, which is a deliberate act by the one person entitled to change how that object looks.
+
+**Why an event id rather than an address.** An `nevent` carries the id and relay hints, so a reader has somewhere to look, and it names one immutable event, which is what the pinning rule above needs. An `naddr` is still accepted, for a palette somebody publishes as an addressable event of their own; once the event is fetched the shape rules above apply to either, and the pinning rule applies to whatever the reader has in hand. What an `naddr` cannot do is name a `kind 3367`, which is where the palettes are.
 
 **The built-in is not a compromise default.** It is 24 hues of 8 steps, then 32 steels, then 32 signature colours, laid out so that index arithmetic is legible: `hue * 8 + step` for the first 192. The ramps are generated in OKLCH, which spaces them by how different they look rather than by their numbers, and clipped into sRGB by lowering chroma rather than clamping channels, which is what keeps the bright end from turning to mud. Appendix C carries the whole list.
 
@@ -269,7 +291,7 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 6. Every vertex triple is three integers.
 7. `ticks`, if present, expands to exactly one remainder per vertex, and every remainder component is an integer in `0..119`.
 8. Every face is three distinct integers in `0..vertices.length - 1`.
-8a. `palette`, if present, is the name of a known built-in, a well-formed `naddr`, or an array of 2 to 256 entries of three integers `0..255`. A reference that has not been resolved counts as the built-in for the rules below, and is never a reason to reject (§1.3b).
+8a. `palette`, if present, is the name of a known built-in, a well-formed `nevent` or `naddr`, or an array of 2 to 256 entries of three integers `0..255`. A reference that has not been resolved counts as the built-in for the rules below, and is never a reason to reject (§1.3b).
 8b. in a `v: 2` payload, every entry of `colors` is an integer from `0` to one less than the palette's length; in a `v: 1` payload, every entry is three numbers (§1.3).
 8c. `facecolors`, if present, expands to exactly one index per face, its first entry is an index, every run entry is a negative integer, and every index is in range.
 9. `extent`, if present, is repaired rather than validated (§1.8): out of range becomes `8`, then it grows to contain the data.
@@ -370,7 +392,7 @@ The rule applies from that date without exception, because from that date the fo
 
 Anyone implementing this deck should treat `v: 2` as meaning the palette-indexed form. A `v: 2` payload whose `colors` are triples predates this. A reader MAY reject one, and a reader that would rather be generous MAY read the triples literally the way §1.3 reads a `v: 1` payload's; neither is required, because the three that exist belong to the authors and a bag's encrypted shards are readable only by the identity that hid them, whose client is updated in the same release.
 
-**The palette is the extension point that should keep `v` at 2 from now on.** A new set of colours is a new name in the `palette` field, or an `naddr` to one published as its own event (§1.3a, §1.3b), and neither needs a version bump. An older reader meeting a name it does not know rejects rather than drawing wrongly; one meeting a reference it cannot resolve draws in the built-in, which §1.3b makes explicit. That is the shape every future colour change should take, and it is why the colour space is a field rather than a version.
+**The palette is the extension point that should keep `v` at 2 from now on.** A new set of colours is a new name in the `palette` field, or an `nevent` to one published as its own event (§1.3a, §1.3b), and neither needs a version bump. An older reader meeting a name it does not know rejects rather than drawing wrongly; one meeting a reference it cannot resolve draws in the built-in, which §1.3b makes explicit. That is the shape every future colour change should take, and it is why the colour space is a field rather than a version.
 
 ---
 
