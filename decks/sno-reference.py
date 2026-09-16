@@ -18,6 +18,7 @@ table.
 from __future__ import annotations
 
 import json
+import os
 from fractions import Fraction
 from typing import Any, Iterator
 
@@ -79,36 +80,39 @@ def expand_ticks(ticks: Any, count: int) -> list[list[int]]:
     return out
 
 
-def expand_face_colors(entries: Any, count: int) -> list[list[float]]:
-    """§1.4a: the run-length encoded face colours, one triple per face.
+def expand_face_colors(entries: Any, count: int, palette_len: int) -> list[int]:
+    """§1.4a: the run-length encoded face colours, one palette index per face.
 
-    Each entry is either an [r, g, b] triple or a negative integer -N standing
-    for N further faces of the triple before it, so a solid cube is
-    [[1, 0, 0], -11]. The first entry must be a triple: a run has nothing to
-    repeat before one. Absent face colours mean every face interpolates its
-    vertices, which is a different thing from every face being black, so the
-    caller distinguishes None from a list.
+    An entry is either a palette index, a non-negative integer, or a negative
+    integer -N standing for N further faces of the index before it, so a cube
+    coloured with index 7 is [7, -11]. The sign separates the two kinds, which
+    works because an index is never negative, and is the same trick ticks uses.
+    The first entry must be an index: a run has nothing to repeat before one.
+
+    Absent face colours mean every face interpolates its vertices, which is a
+    different thing from every face being colour 0, so the caller distinguishes
+    None from a list.
     """
     if entries is None:
         return []
     if not isinstance(entries, list):
-        raise SnoError("rule 8a: facecolors is not an array")
-    out: list[list[float]] = []
+        raise SnoError("rule 8c: facecolors is not an array")
+    out: list[int] = []
     for entry in entries:
-        if _is_int(entry):
-            if entry >= 0:
-                raise SnoError("rule 8a: a run-length entry must be negative")
+        if not _is_int(entry):
+            raise SnoError("rule 8c: a facecolors entry is not an integer")
+        if entry < 0:
             if not out:
-                raise SnoError("rule 8a: the first entry must be a colour, not a run")
-            out.extend(list(out[-1]) for _ in range(-entry))
-        elif isinstance(entry, list) and len(entry) == 3:
-            if not all(_is_num(c) for c in entry):
-                raise SnoError("rule 8a: a face colour is not three numbers")
-            out.append(clamp_color(entry))
+                raise SnoError("rule 8c: the first entry must be an index, not a run")
+            out.extend(out[-1] for _ in range(-entry))
         else:
-            raise SnoError("rule 8a: a facecolors entry is neither a triple nor a negative integer")
+            if entry >= palette_len:
+                raise SnoError(f"rule 8c: face colour {entry} is outside the palette of {palette_len}")
+            out.append(entry)
+        if len(out) > count:
+            break
     if len(out) != count:
-        raise SnoError(f"rule 8a: facecolors expand to {len(out)} colours for {count} faces")
+        raise SnoError(f"rule 8c: facecolors expand to {len(out)} colours for {count} faces")
     return out
 
 
@@ -157,12 +161,15 @@ def validate(payload: Any) -> dict:
     for v in vertices:
         if not (isinstance(v, list) and len(v) == 3 and all(_is_int(c) for c in v)):
             raise SnoError("rule 6: a vertex is not three integers")
-    for c in colors:
-        if not (isinstance(c, list) and len(c) == 3 and all(_is_num(x) for x in c)):
-            raise SnoError("rule 6: a color is not three numbers")
 
     # 7. ticks
     ticks = expand_ticks(payload.get("ticks"), len(vertices))
+
+    # 8a. the palette, and 8b the indices into it
+    palette = resolve_palette(payload.get("palette"))
+    for c in colors:
+        if not _is_int(c) or c < 0 or c >= len(palette):
+            raise SnoError(f"rule 8b: a colour index is not an integer in 0..{len(palette) - 1}")
 
     # 8. faces
     n = len(vertices)
@@ -176,7 +183,7 @@ def validate(payload: Any) -> dict:
 
     # 8a. face colours, when the object carries any
     if "facecolors" in payload:
-        expand_face_colors(payload["facecolors"], len(faces))
+        expand_face_colors(payload["facecolors"], len(faces), len(palette))
 
     # 9. extent is repaired, never validated (§1.8). Out of range becomes the
     # default, then it grows until it contains the data, so an object is never
@@ -237,31 +244,49 @@ def positions(payload: dict) -> Iterator[tuple[Fraction, Fraction, Fraction]]:
         yield (x, y, z * flip)
 
 
-def clamp_color(c: list) -> list[float]:
-    """§1.3: channels clamp to 0..1, and a non-finite value is 0."""
-    out = []
-    for x in c:
-        f = float(x)
-        out.append(0.0 if f != f or f in (float("inf"), float("-inf")) else min(1.0, max(0.0, f)))
+
+BUILT_IN_PALETTES = {"cyberspace-neon-256"}
+
+
+def _load_built_in() -> list[list[int]]:
+    """The 256 colours of `cyberspace-neon-256` (§1.3a, Appendix C).
+
+    Read from sno-palette.json beside this file, which sno-palette.mjs
+    generates, so there is one copy of the numbers and no chance of the deck
+    and the code disagreeing about a hex value.
+    """
+    here = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(here, "sno-palette.json"), encoding="utf-8") as fh:
+        hexes = json.load(fh)["colors"]
+    return [[int(h[i:i + 2], 16) for i in (1, 3, 5)] for h in hexes]
+
+
+def resolve_palette(field: Any) -> list[list[int]]:
+    """§1.3a: the colours an object's indices name.
+
+    Absent means the built-in. A string names a registered built-in. An array
+    is a palette the object carries itself, 2 to 256 entries. Nothing is ever
+    fetched: an object that needed a second event to be drawable would not be
+    a portable object, which is the whole point of the format.
+    """
+    if field is None:
+        return _load_built_in()
+    if isinstance(field, str):
+        if field not in BUILT_IN_PALETTES:
+            raise SnoError(f"rule 8a: unknown palette {field!r}")
+        return _load_built_in()
+    if not isinstance(field, list):
+        raise SnoError("rule 8a: palette is neither a name nor an array")
+    if not 2 <= len(field) <= 256:
+        raise SnoError(f"rule 8a: a palette carries 2 to 256 colours, not {len(field)}")
+    out: list[list[int]] = []
+    for entry in field:
+        if not (isinstance(entry, list) and len(entry) == 3 and all(_is_int(c) and 0 <= c <= 255 for c in entry)):
+            raise SnoError("rule 8a: a palette entry is not three integers in 0..255")
+        out.append([int(c) for c in entry])
     return out
 
 
-COLOR_PLACES = 4
-
-
-def round_color(c: list) -> list[float]:
-    """§1.3: what a publisher MUST write. Four decimal places per channel.
-
-    This is a writer's obligation, not a reader's, so `validate` never rejects
-    on it: a payload that arrives with more precision is read as it stands.
-    But every publisher owes it, because colour is the largest cost in the
-    format and the precision buys nothing. Four places is 10,000 steps per
-    channel against eight-bit colour's 256, and the difference between
-    0.8039215686274510 and 0.8039 is eighteen bytes against six, three times
-    per vertex and again per face colour. §1.8 works out what that means for
-    how large an object can be.
-    """
-    return [round(x, COLOR_PLACES) for x in clamp_color(c)]
 
 
 # --------------------------------------------------------------------------
@@ -276,7 +301,8 @@ APPENDIX_A = {
     "mode": "solid",
     "vertices": [[0, 0, 0], [2, 0, 0], [1, 0, 2], [1, 2, 1]],
     "ticks": [-4],
-    "colors": [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]],
+    # 238 pure red, 235 pure green, 239 pure blue, 225 white, in the built-in.
+    "colors": [238, 235, 239, 225],
     "faces": [[0, 1, 2], [0, 1, 3], [1, 2, 3], [0, 2, 3]],
 }
 
@@ -291,8 +317,8 @@ def _rejections() -> list[tuple[str, dict]]:
     return [
         ("rule 1", variant(v=3)),
         ("rule 1", variant(v=0)),
-        ("rule 2", variant(colors=[[1, 0, 0]])),
-        ("rule 3", variant(vertices=[[0, 0, 0]] * 513, colors=[[0, 0, 0]] * 513, ticks=[-513], faces=[])),
+        ("rule 2", variant(colors=[238])),
+        ("rule 3", variant(vertices=[[0, 0, 0]] * 513, colors=[0] * 513, ticks=[-513], faces=[])),
         ("rule 4", variant(mode="wireframe")),
         ("rule 5", variant(unit=85)),
         ("rule 5", variant(unit=1.5)),
@@ -302,11 +328,15 @@ def _rejections() -> list[tuple[str, dict]]:
         ("rule 7", variant(ticks=[4])),
         ("rule 8", variant(faces=[[0, 1, 9]])),
         ("rule 8", variant(faces=[[0, 1, 1]])),
-        ("rule 8a", variant(facecolors=[[1, 0, 0]])),              # too few for four faces
-        ("rule 8a", variant(facecolors=[[1, 0, 0], -4])),          # too many
-        ("rule 8a", variant(facecolors=[-4])),                     # a run with nothing before it
-        ("rule 8a", variant(facecolors=[[1, 0, 0], 3])),           # a positive run
-        ("rule 8a", variant(facecolors=[[1, 0, 0], ["a", 0, 0], -2])),
+        ("rule 8a", variant(palette=[[255, 0, 0]])),               # a palette of one
+        ("rule 8a", variant(palette=[[255, 0, 0, 0], [0, 0, 0]])), # an entry of four
+        ("rule 8b", variant(colors=[0, 1, 2, 256])),               # past the built-in
+        ("rule 8b", variant(colors=[0, 1, 2, -1])),                # negative
+        ("rule 8b", variant(colors=[0, 1, 2, 1.5])),               # fractional
+        ("rule 8c", variant(facecolors=[238])),                    # too few for four faces
+        ("rule 8c", variant(facecolors=[238, -4])),                # too many
+        ("rule 8c", variant(facecolors=[-4])),                     # a run with nothing before it
+        ("rule 8c", variant(facecolors=[238, 256, -2])),           # past the palette
         ("rule 10", variant(up="yes")),
         ("rule 10", variant(up=True, spin=360)),
         ("rule 10", variant(spin=360)),
@@ -337,11 +367,31 @@ def _self_test() -> None:
     assert validate({**APPENDIX_A, "type": 17})["v"] == 2
     print("type: no such field, ignored wherever one appears, never required")
 
-    # §1.3: what a publisher owes. A reader still takes whatever arrives.
-    assert round_color([0.8039215686274510, 0.1254901960784314, 2.0]) == [0.8039, 0.1255, 1.0]
-    assert round_color([float("nan"), -5, 0.5]) == [0.0, 0.0, 0.5]
-    assert validate({**APPENDIX_A, "colors": [[0.8039215686274510, 0.1, 0.1]] * len(APPENDIX_A["vertices"])})
-    print("colour: four places from a publisher, any number accepted by a reader")
+    # §1.3a: the palette an index names.
+    built_in = resolve_palette(None)
+    assert len(built_in) == 256
+    assert resolve_palette("cyberspace-neon-256") == built_in
+    assert built_in[238] == [255, 0, 0] and built_in[225] == [255, 255, 255]
+    # The layout is arithmetic: hue h step s is h * 8 + s, and step 7 is the
+    # brightest, so it is lighter than step 0 of the same hue.
+    assert sum(built_in[7]) > sum(built_in[0])
+    # A palette the object carries, which may be short: four colours cost four.
+    four = {**APPENDIX_A, "palette": [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 255]], "colors": [0, 1, 2, 3]}
+    assert len(resolve_palette(validate(four)["palette"])) == 4
+    # An index past the end of a short palette is a defect, not a clamp.
+    for bad_field, rule in (
+        ({**four, "colors": [0, 1, 2, 4]}, "rule 8b"),
+        ({**APPENDIX_A, "palette": [[255, 0, 0]]}, "rule 8a"),
+        ({**APPENDIX_A, "palette": [[255, 0, 0]] * 257}, "rule 8a"),
+        ({**APPENDIX_A, "palette": "no-such-palette"}, "rule 8a"),
+        ({**APPENDIX_A, "palette": [[255, 0, 300], [0, 0, 0]]}, "rule 8a"),
+    ):
+        try:
+            validate(bad_field)
+            raise AssertionError(f"{rule} accepted {bad_field.get('palette')!r}")
+        except SnoError as e:
+            assert str(e).startswith(rule), e
+    print("palette: 256 built in, 2 to 256 carried, indices bounded by whichever applies")
 
     # A sub-unit position is exact, not approximate: a third of a unit is 40
     # ticks and comes back as exactly one third.
@@ -377,16 +427,30 @@ def _self_test() -> None:
     ]
     print("absent ticks means every position is whole")
 
-    assert clamp_color([2.0, -1.0, float("nan")]) == [1.0, 0.0, 0.0]
-    print("colors clamp to 0..1 and a non-finite channel is 0")
+    # A palette entry is an integer 0..255 and is checked on read, so there is
+    # nothing left to clamp: an out-of-range channel is a rejection, not a fix.
+    assert resolve_palette([[0, 0, 0], [255, 255, 255]]) == [[0, 0, 0], [255, 255, 255]]
+    print("palette entries are checked, not clamped")
 
     # §1.4a: a solid cube is one colour and a run, not twelve copies.
-    solid = validate({**APPENDIX_A, "facecolors": [[1, 0, 0], -3]})
-    assert expand_face_colors(solid["facecolors"], 4) == [[1.0, 0.0, 0.0]] * 4
-    mixed = validate({**APPENDIX_A, "facecolors": [[1, 0, 0], [0, 1, 0], -1, [0, 0, 1]]})
-    assert expand_face_colors(mixed["facecolors"], 4) == [[1.0, 0, 0], [0, 1.0, 0], [0, 1.0, 0], [0, 0, 1.0]]
-    assert expand_face_colors(None, 4) == []
-    print("face colours: a run repeats the colour before it, and absent is not black")
+    solid = validate({**APPENDIX_A, "facecolors": [238, -3]})
+    assert expand_face_colors(solid["facecolors"], 4, 256) == [238] * 4
+    mixed = validate({**APPENDIX_A, "facecolors": [238, 235, -1, 239]})
+    assert expand_face_colors(mixed["facecolors"], 4, 256) == [238, 235, 235, 239]
+    assert expand_face_colors(None, 4, 256) == []
+    # The sign is what separates an index from a run, which is why colour had
+    # to become one number before face colours were affordable.
+    for bad_fc, why in (([-1, 238], "a run before there is anything to repeat"),
+                        ([238, -9], "expanding past the face count"),
+                        ([238], "expanding short"),
+                        ([238, 1.5], "a fractional entry"),
+                        ([256, -3], "an index past the palette")):
+        try:
+            validate({**APPENDIX_A, "facecolors": bad_fc})
+            raise AssertionError(f"accepted {why}: {bad_fc}")
+        except SnoError as e:
+            assert str(e).startswith("rule 8c"), (why, e)
+    print("face colours: an index or a run, a run repeats the index before it, absent is not colour 0")
 
     if failures:
         raise SystemExit(1)
