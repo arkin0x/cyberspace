@@ -100,6 +100,8 @@ A position is an exact rational, never a float. It is carried in two parts.
 
 `colors[i]` is a single integer: an index into the object's palette (§1.3a). There is one per vertex, parallel to `vertices`. A reader MUST reject an index that is not an integer, is negative, or is not less than the palette's length.
 
+**In a `v: 1` payload `colors[i]` is a literal `[r, g, b]` triple of numbers from `0` to `1`,** clamped on read, with no palette involved. Version 1 predates the palette and every object written before this document is one of them, so this is not a compatibility shim but what version 1 has always meant, alongside the Z flip of §2. A reader MUST take a `v: 1` colour exactly as written rather than snapping it to the nearest palette entry: snapping on read would change objects nobody asked to change. It snaps when it is next published, which is when it becomes a `v: 2` payload. A publisher MUST NOT write triples.
+
 There is one colour per vertex and, apart from `facecolors` (§1.4a), no other colour anywhere in the format. A face with no colour of its own is painted by interpolating its three vertices; a line is painted by interpolating along its length; a point is its own colour. **Interpolation happens after the lookup**, between the two resolved colours, so indexing costs nothing in smoothness: a gradient across a triangle is as continuous as it ever was, and the index is only how its endpoints are named.
 
 **Why an index and not three numbers.** Colour was the largest cost in this format by a wide margin and it was buying nothing. Three numbers at four decimal places is 21 bytes of the 52 a worst-case vertex costs; an index is 4. Measured over a whole serialized event at the format's ceiling, with a colour on every face, that is 62.6 KB against 33.5 KB, on a wire whose tightest common limit is 65,536 bytes (§1.8). Face colours were unaffordable and are now nearly free.
@@ -268,7 +270,7 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 7. `ticks`, if present, expands to exactly one remainder per vertex, and every remainder component is an integer in `0..119`.
 8. Every face is three distinct integers in `0..vertices.length - 1`.
 8a. `palette`, if present, is the name of a known built-in, a well-formed `naddr`, or an array of 2 to 256 entries of three integers `0..255`. A reference that has not been resolved counts as the built-in for the rules below, and is never a reason to reject (§1.3b).
-8b. every entry of `colors` is an integer from `0` to one less than the palette's length.
+8b. in a `v: 2` payload, every entry of `colors` is an integer from `0` to one less than the palette's length; in a `v: 1` payload, every entry is three numbers (§1.3).
 8c. `facecolors`, if present, expands to exactly one index per face, its first entry is an index, every run entry is a negative integer, and every index is in range.
 9. `extent`, if present, is repaired rather than validated (§1.8): out of range becomes `8`, then it grows to contain the data.
 10. `up`, if present, is a boolean; `spin`, if present, is an integer in `0..359`.
@@ -287,12 +289,12 @@ An object is built in a right-handed frame with Y up, which is the glTF and thre
 
 This is stated first and in normative language because being silent about it is the most common way a small format fails. STL never specified color and two vendors filled the hole incompatibly. PLY never registered its property names. glTF left "forward" undefined for years while being an ISO standard. Niantic's SPZ shipped in 2024 without saying which axis is up, and someone had to open an issue to ask.
 
-**Version 1 and version 2 differ by one sign, and by nothing else.**
+**Version 1 and version 2 differ by one sign and one colour encoding, and by nothing else.**
 
 | `v` | Z points | A reader |
 |---|---|---|
-| `1` | away from the viewer | MUST negate every Z on read, which renders the object exactly as its author built it |
-| `2` | toward the viewer | reads the positions as written |
+| `1` | away from the viewer | MUST negate every Z on read, which renders the object exactly as its author built it. Its colours are literal triples (§1.3) |
+| `2` | toward the viewer | reads the positions as written. Its colours are palette indices (§1.3) |
 
 Version 1 is the convention this format had while it lived only inside Cyberspace, where `+Z` is the direction of the black sun. Every object published before this document exists under it, and negating Z on read is what keeps those objects looking as they always have. A publisher MUST write `v: 2`; `v: 1` is for reading what already exists.
 

@@ -166,11 +166,19 @@ def validate(payload: Any, fetched_palette: str | None = None) -> dict:
     # 7. ticks
     ticks = expand_ticks(payload.get("ticks"), len(vertices))
 
-    # 8a. the palette, and 8b the indices into it
+    # 8a. the palette, and 8b the colours read against it
     palette = resolve_palette(payload.get("palette"), fetched_palette)
-    for c in colors:
-        if not _is_int(c) or c < 0 or c >= len(palette):
-            raise SnoError(f"rule 8b: a colour index is not an integer in 0..{len(palette) - 1}")
+    if payload["v"] == 1:
+        # §1.3: version 1 predates the palette and carries literal triples.
+        # Taken as written, never snapped: snapping on read would change
+        # objects nobody asked to change. They snap when next published.
+        for c in colors:
+            if not (isinstance(c, list) and len(c) == 3 and all(_is_num(x) for x in c)):
+                raise SnoError("rule 8b: a v1 colour is not three numbers")
+    else:
+        for c in colors:
+            if not _is_int(c) or c < 0 or c >= len(palette):
+                raise SnoError(f"rule 8b: a colour index is not an integer in 0..{len(palette) - 1}")
 
     # 8. faces
     n = len(vertices)
@@ -384,19 +392,33 @@ def _self_test() -> None:
 
     # The version is one sign. A v1 object with the same numbers reads mirrored
     # in Z, which is what keeps everything published before v2 looking right.
-    v1 = validate({**APPENDIX_A, "v": 1, "type": "shard"})  # the legacy field is ignored, not required
+    # A genuine v1 payload: the version predates the palette, so its colours
+    # are literal triples, which is what every object written before this
+    # document actually looks like.
+    AS_V1 = {**APPENDIX_A, "v": 1, "colors": [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]}
+    v1 = validate({**AS_V1, "type": "shard"})  # the legacy field is ignored, not required
     assert [p[2] for p in positions(v1)] == [-p[2] for p in positions(ok)]
     assert [p[:2] for p in positions(v1)] == [p[:2] for p in positions(ok)]
-    print("v1 and v2 differ in Z alone, which is the whole of the version")
+    print("v1 and v2 differ in Z and in how a colour is written, and in nothing else")
 
     # §1.1a: there is no `type` in either version. A payload from before this
     # document carries one; it is read, never required, never rejected on.
-    assert validate({**APPENDIX_A, "v": 1})["v"] == 1
-    assert validate({**APPENDIX_A, "v": 1, "type": "shard"})["v"] == 1
+    assert validate(AS_V1)["v"] == 1
+    assert validate({**AS_V1, "type": "shard"})["v"] == 1
     assert validate({**APPENDIX_A, "type": "shard"})["v"] == 2
     assert validate({**APPENDIX_A, "type": "anything at all"})["v"] == 2
     assert validate({**APPENDIX_A, "type": 17})["v"] == 2
     print("type: no such field, ignored wherever one appears, never required")
+
+    # §1.3: a v1 colour is taken as written, and a v1 payload with indices is
+    # not a v1 payload.
+    assert validate(AS_V1)["colors"][0] == [1, 0, 0]
+    try:
+        validate({**AS_V1, "colors": [238, 235, 239, 225]})
+        raise AssertionError("a v1 payload with indices should be rejected")
+    except SnoError as e:
+        assert str(e).startswith("rule 8b"), e
+    print("v1: literal colours, taken as written, never snapped on read")
 
     # §1.3a: the palette an index names.
     built_in = resolve_palette(None)
