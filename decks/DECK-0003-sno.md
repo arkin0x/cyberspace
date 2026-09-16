@@ -1,10 +1,10 @@
 # DECK-0003: SNO (Simple Nostr Objects)
 
-DECK: 0004
+DECK: 0003
 Title: SNO (Simple Nostr Objects)
 Status: Draft
 Created: 2026-09-14
-Last updated: 2026-09-14
+Last updated: 2026-09-16
 Requires: `CYBERSPACE_V2.md` (spec version `2026-03-16-h34-corrected`)
 
 ## Abstract
@@ -59,9 +59,10 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | `mode` | string | yes | `"solid"`, `"points"` or `"lines"` (§1.5). A reader MUST reject any other value. |
 | `vertices` | array | yes | One `[x, y, z]` triple of **whole units** per vertex (§1.2). |
 | `ticks` | array | no | The sub-unit part of each position (§1.2). Absent means every position is whole. |
-| `colors` | array | yes | One `[r, g, b]` triple per vertex, parallel to `vertices` (§1.3). |
+| `colors` | array | yes | One palette index per vertex, parallel to `vertices` (§1.3). |
 | `faces` | array | yes | Triangles as `[a, b, c]` vertex indices (§1.4). MAY be empty. |
-| `facecolors` | array | no | One `[r, g, b]` per face, run-length encoded, for hard colour seams (§1.4a). Absent means every face interpolates its vertices. |
+| `facecolors` | array | no | One palette index per face, run-length encoded, for hard colour seams (§1.4a). Absent means every face interpolates its vertices. |
+| `palette` | string or array | no | Which 256 colours the indices name (§1.3a). Absent means the built-in. |
 | `up` | boolean | no | `true` means the object stands on the Earth's surface where it is placed (§1.7). `false` means the same as absent. |
 | `spin` | integer | no | With `up`: the compass bearing the object's `+Z` faces, `0` to `359` (§1.7). |
 
@@ -97,13 +98,58 @@ A position is an exact rational, never a float. It is carried in two parts.
 
 ### 1.3 Colors
 
-`colors[i]` is `[r, g, b]`, each a number from `0` to `1` inclusive. A reader MUST clamp values outside that range and MUST treat a non-finite value as `0`.
+`colors[i]` is a single integer: an index into the object's palette (§1.3a). There is one per vertex, parallel to `vertices`. A reader MUST reject an index that is not an integer, is negative, or is not less than the palette's length.
 
-There is one color per vertex and no other color anywhere in the format. A face is painted by interpolating its three vertices; a line is painted by interpolating along its length; a point is its own color. A flat-colored triangle is expressed by giving its three vertices the same color, which costs three vertices out of the budget rather than one material.
+**In a `v: 1` payload `colors[i]` is a literal `[r, g, b]` triple of numbers from `0` to `1`,** clamped on read, with no palette involved. Version 1 predates the palette and every object written before this document is one of them, so this is not a compatibility shim but what version 1 has always meant, alongside the Z flip of §2. A reader MUST take a `v: 1` colour exactly as written rather than snapping it to the nearest palette entry: snapping on read would change objects nobody asked to change. It snaps when it is next published, which is when it becomes a `v: 2` payload. A publisher MUST NOT write triples.
 
-**A publisher MUST write at most four decimal places per channel**, and a reader MUST accept any number and clamp it, so nothing breaks if one arrives with more.
+There is one colour per vertex and, apart from `facecolors` (§1.4a), no other colour anywhere in the format. A face with no colour of its own is painted by interpolating its three vertices; a line is painted by interpolating along its length; a point is its own colour. **Interpolation happens after the lookup**, between the two resolved colours, so indexing costs nothing in smoothness: a gradient across a triangle is as continuous as it ever was, and the index is only how its endpoints are named.
 
-This is a normative limit rather than advice because it is the single largest cost in the format and it buys nothing. Four decimal places is 10,000 steps per channel; eight-bit colour, which is what a screen and every common exchange format use, has 256. Nothing anywhere can tell the difference, and the saving is not marginal: a worst-case vertex costs 87 bytes with full double precision and 52 with four places, because `0.8039215686274510` is eighteen characters and `0.8039` is six, three times over per vertex and again per face colour. §1.8 works out what that means for how large an object can be.
+**Why an index and not three numbers.** Colour was the largest cost in this format by a wide margin and it was buying nothing. Three numbers at four decimal places is 21 bytes of the 52 a worst-case vertex costs; an index is 4. Measured over a whole serialized event at the format's ceiling, with a colour on every face, that is 62.6 KB against 33.5 KB, on a wire whose tightest common limit is 65,536 bytes (§1.8). Face colours were unaffordable and are now nearly free.
+
+Nothing is lost visually. A palette entry is eight-bit-per-channel colour, which is what a screen shows and what PLY, PNG and every common exchange format store. What is given up is an object using more than 256 distinct colours at once, and an object that needs more than 256 distinct colours is not the kind of object this format is for.
+
+| | bytes per vertex | 512 vertices, 1024 faces | with a colour on every face |
+|---|---|---|---|
+| three numbers at full precision | 87 | 57.1 KB | 115.1 KB, over every relay |
+| three numbers at four decimals | 52 | 39.6 KB | 62.6 KB |
+| **a palette index** | **32** | **29.9 KB** | **33.5 KB** |
+
+At 32 bytes a vertex only about 4 are the colour, so this is the last large saving available in colour. Anything further would have to change how positions are encoded.
+
+### 1.3a The palette
+
+`palette` says which 256 colours an object's indices refer to.
+
+| `palette` | Meaning |
+|---|---|
+| absent | the built-in, `cyberspace-neon-256` (Appendix C) |
+| a registered name | `"cyberspace-neon-256"` is the only one, and is the default |
+| an `naddr1…` | a palette published as its own nostr event, fetched if it can be, with the built-in standing in until it is (§1.3b) |
+| an array | a palette carried in the object itself: 2 to 256 entries, each `[r, g, b]` of three integers `0` to `255` |
+
+A reader MUST reject a `palette` that is an array of fewer than 2 or more than 256 entries, or any entry that is not three integers in `0..255`, or a string that is neither a name it knows nor a well-formed `naddr`.
+
+**Why a custom palette may be short.** An object with four colours pays for four, not for 256. Two entries cost 40 bytes, sixteen cost 222, and a full 256 costs 3.3 KB, so the cost lands where it is affordable: 3.3 KB is four times the size of a cube and a sixth of an object at the ceiling, and it is large objects that want a palette of their own.
+
+### 1.3b A palette published as its own event
+
+A `palette` of `naddr1…` names an addressable event that carries a palette. This is how a group of objects share one set of colours that can be corrected in one place, and how this format meets palettes that already exist on nostr rather than insisting everyone reuse its own.
+
+**The rule that makes this safe is that a reference is never load-bearing.**
+
+1. A reader MUST render the object without waiting for anything. Until the referenced event is in hand, the indices name the built-in.
+2. A reader MAY fetch the event, and SHOULD if it can do so without blocking the first frame. When it arrives and its content parses, the reader re-renders with it.
+3. A reader that cannot fetch, or fetches nothing, MUST keep drawing with the built-in and MUST NOT reject the object.
+
+So the worst case is an object drawn in the wrong colours, never an object that cannot be drawn. That is a real cost and it is stated here rather than buried: a viewer has no way to tell that the colours it sees are the fallback rather than the author's. A publisher who cannot accept that carries the palette inline, which is what the array form is for, and which is what a small palette should do anyway.
+
+**What counts as a palette event.** Any addressable event whose `content` parses as a JSON array of 2 to 256 entries, where an entry is either `[r, g, b]` of three integers `0..255` or a `"#rrggbb"` string. The kind is deliberately not constrained. This format does not define a palette kind and does not want one: palettes on nostr are somebody else's problem, already partly solved, and a reader that accepts the obvious shape will read whatever convention wins without this document being revised. An event whose content does not parse that way is treated as a failed fetch, which means the built-in.
+
+**Why not an event id rather than an address.** An `naddr` carries the author, the identifier and relay hints, so a reader has somewhere to look and the author can correct the palette in place without every object that names it going stale. A bare event id has none of that and freezes the palette forever.
+
+**Why a custom palette may be short.** An object with four colours pays for four, not for 256. Two entries cost 40 bytes, sixteen cost 222, and a full 256 costs 3.3 KB, so the cost lands where it is affordable: 3.3 KB is four times the size of a cube and a sixth of an object at the ceiling, and it is large objects that want a palette of their own.
+
+**The built-in is not a compromise default.** It is 24 hues of 8 steps, then 32 steels, then 32 signature colours, laid out so that index arithmetic is legible: `hue * 8 + step` for the first 192. The ramps are generated in OKLCH, which spaces them by how different they look rather than by their numbers, and clipped into sRGB by lowering chroma rather than clamping channels, which is what keeps the bright end from turning to mud. Appendix C carries the whole list.
 
 ### 1.4 Faces
 
@@ -123,7 +169,9 @@ A face with no colour of its own takes one by interpolating its three vertices, 
 
 **When a face has a colour, that colour fills the whole triangle** and its vertices contribute nothing to the fill. Vertex colours are untouched and still colour the points and the lines (§1.5), so an object may carry both without contradiction and `points` and `lines` mode behave exactly as they always did.
 
-**Run-length, as `ticks` does it (§1.2), because the common case is a run.** A stamped block is twelve triangles of one colour. An entry is either an `[r, g, b]` triple or a **negative integer** `-N`, standing for N further faces of the triple before it, so a solid cube is `[[1, 0, 0], -11]`. The first entry MUST be a triple, since a run has nothing to repeat before one. The entries, expanded, MUST produce exactly one colour per face; a reader MUST reject a `facecolors` array that expands to any other length. `0` and positive integers are not valid entries. Channels clamp exactly as §1.3 says.
+**Run-length, as `ticks` does it (§1.2), because the common case is a run.** A stamped block is twelve triangles of one colour. An entry is either a **palette index**, a non-negative integer read exactly as §1.3 reads one, or a **negative integer** `-N` standing for N further faces of the index before it. A solid cube whose colour is index 7 is therefore `[7, -11]`. The first entry MUST be an index, since a run has nothing to repeat before one. The entries, expanded, MUST produce exactly one colour per face; a reader MUST reject a `facecolors` array that expands to any other length.
+
+The sign is what separates the two kinds of entry, and it works because an index is never negative. This is the same trick `ticks` uses and it is why colour had to become a single number before face colours could be affordable: a list of triples interleaved with run markers cost more than it saved.
 
 The canonical form of §1.2 extends unchanged: a publisher MUST write a run of two or more as the shorthand, so there is still exactly one way to write a given object.
 
@@ -165,7 +213,7 @@ A reader that does not implement `up` draws the object in the application's axes
 
 | Limit | Value | Why |
 |---|---|---|
-| `MAX_VERTICES` | 512 | with §1.3's four decimal places, keeps the worst case inside every relay's limits without the author having to think about it. See below |
+| `MAX_VERTICES` | 512 | keeps the worst case inside every relay's limits without the author having to think about it. See below |
 | `MAX_FACES` | 1024 | the same |
 | `extent` | 1 to 64 model units | a hint at the lattice size, so a reader can size a grid before it reads the data |
 | `unit` | 0 to 84 | the Cyberspace address space is `2^85` gibsons on a side |
@@ -183,27 +231,29 @@ strfry's stock `events.maxEventSize` is 65,536 bytes, and strfry is the most dep
 
 | At 512 vertices and 1024 faces | No `facecolors` | With `facecolors` |
 |---|---|---|
-| colour channels at full double precision | 57.1 KB | 115.1 KB, **over the cap** |
-| colour channels at four decimal places (§1.3) | 39.6 KB | 62.6 KB |
+| **palette indices, the built-in (§1.3)** | **29.9 KB** | **33.5 KB** |
+| plus a full 256-entry custom palette | 33.1 KB | 36.7 KB |
 
-The four-decimal rule in §1.3 is what makes these limits publishable, and it is the reason that rule is a MUST. Without it the ceiling permits objects no relay will take, which is precisely the situation a ceiling exists to prevent.
+Both fit with room to spare, and face colours now cost 3.6 KB rather than doubling the object. Two earlier drafts of this section did not: three numbers per colour at four decimal places reached 62.6 KB with face colours, and at full double precision 115.1 KB, which is over every relay in the network. §1.3 carries that comparison, because it is the whole reason colour is an index.
 
-The cost is dominated by colour, not by geometry. Worst case, at four decimal places, a vertex costs 52 bytes, a face 13, and a face that carries its own colour 36. A publisher that wants the largest possible object spends its budget on vertices and lets faces interpolate.
+The cost is now dominated by geometry rather than colour. Worst case, a vertex costs 32 bytes, of which about 4 are its colour; a face costs 13, and a face that carries its own colour 17. A publisher that wants the largest possible object spends its budget on vertices.
 
 A real object is far below that, because the worst case above assumes every position needs its sub-unit part written out and every face carries a colour of its own. An object built on whole units, which is what the lattice is for, compresses its `ticks` to a single number and its `facecolors` to one run:
 
-| A typical object, whole units, four decimals | Full event, serialized |
+| A typical object, whole units, the built-in palette | Full event, serialized |
 |---|---|
-| a coloured cube, 8 vertices | about 900 bytes |
-| 64 vertices, 128 faces | 3.8 KB |
-| 256 vertices, 512 faces | 14.6 KB |
-| **512 vertices and 1024 faces, the ceiling** | **29.4 KB** |
+| a coloured cube, 8 vertices | about 730 bytes |
+| 64 vertices, 128 faces | 2.5 KB |
+| 256 vertices, 512 faces | 9.4 KB |
+| **512 vertices and 1024 faces, the ceiling** | **18.9 KB** |
 
 One colour per face adds almost nothing to these, because a run of identical faces is two numbers whatever its length.
 
+These numbers are the whole argument for the change in §1.3: the same object that cost 29.4 KB with three numbers per colour costs 18.9 KB with an index, and the ceiling that fits a 56 KB budget with a colour on every face moved from 448 vertices to 832.
+
 Two facts make this margin more comfortable than it looks. Escaping the payload into a JSON string costs about 12 bytes, under 0.05%, because the content is almost entirely integers, so the fear that nesting JSON inside JSON is wasteful does not apply here. And the geometry belongs in `content` rather than tags: strfry caps a tag value at 1,024 bytes and the tag count at 2,000, while content is roomy everywhere.
 
-**On raising the limits.** The counts are not where the headroom is. At full precision the format is already at the cap, and the four-decimal rule is what buys the room `facecolors` needs; doubling the vertex count would put every face-coloured object over every relay. The change that would actually buy headroom is storing colour as three integers `0` to `255`, which costs 42 bytes a vertex instead of 52 and matches PLY's native form, and it is a different version of this format rather than a limit raised inside this one.
+**On raising the limits.** These counts could go higher now: at 32 bytes a vertex the ceiling that fits a 56 KB budget with face colours is about 832 vertices rather than 512. They are left where they are because the limit a reader enforces should also bound what it has to hold in memory and draw, and because a format is easier to raise a limit in later than to lower one. The headroom that indexing bought is spent on making face colours affordable, which changes what the format can express, rather than on a larger number of vertices, which does not.
 
 One trap worth knowing, since it cannot be discovered at runtime: strfry populates NIP-11's advertised `max_message_length` from its WebSocket frame cap, not from `events.maxEventSize`, and never advertises the latter. A relay advertising a one megabyte limit may still reject a 70 KB event. Do not design against advertised numbers; stay under the ceiling and handle the rejection message.
 
@@ -216,10 +266,12 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 3. `vertices.length <= 512` and `faces.length <= 1024`.
 4. `mode` is one of the three words.
 5. `unit` is an integer in `0..84`.
-6. Every vertex triple is three integers; every color triple is three numbers.
+6. Every vertex triple is three integers.
 7. `ticks`, if present, expands to exactly one remainder per vertex, and every remainder component is an integer in `0..119`.
 8. Every face is three distinct integers in `0..vertices.length - 1`.
-8a. `facecolors`, if present, expands to exactly one colour per face, its first entry is a triple, every run entry is a negative integer, and every triple is three numbers.
+8a. `palette`, if present, is the name of a known built-in, a well-formed `naddr`, or an array of 2 to 256 entries of three integers `0..255`. A reference that has not been resolved counts as the built-in for the rules below, and is never a reason to reject (§1.3b).
+8b. in a `v: 2` payload, every entry of `colors` is an integer from `0` to one less than the palette's length; in a `v: 1` payload, every entry is three numbers (§1.3).
+8c. `facecolors`, if present, expands to exactly one index per face, its first entry is an index, every run entry is a negative integer, and every index is in range.
 9. `extent`, if present, is repaired rather than validated (§1.8): out of range becomes `8`, then it grows to contain the data.
 10. `up`, if present, is a boolean; `spin`, if present, is an integer in `0..359`.
 
@@ -237,12 +289,12 @@ An object is built in a right-handed frame with Y up, which is the glTF and thre
 
 This is stated first and in normative language because being silent about it is the most common way a small format fails. STL never specified color and two vendors filled the hole incompatibly. PLY never registered its property names. glTF left "forward" undefined for years while being an ISO standard. Niantic's SPZ shipped in 2024 without saying which axis is up, and someone had to open an issue to ask.
 
-**Version 1 and version 2 differ by one sign, and by nothing else.**
+**Version 1 and version 2 differ by one sign and one colour encoding, and by nothing else.**
 
 | `v` | Z points | A reader |
 |---|---|---|
-| `1` | away from the viewer | MUST negate every Z on read, which renders the object exactly as its author built it |
-| `2` | toward the viewer | reads the positions as written |
+| `1` | away from the viewer | MUST negate every Z on read, which renders the object exactly as its author built it. Its colours are literal triples (§1.3) |
+| `2` | toward the viewer | reads the positions as written. Its colours are palette indices (§1.3) |
 
 Version 1 is the convention this format had while it lived only inside Cyberspace, where `+Z` is the direction of the black sun. Every object published before this document exists under it, and negating Z on read is what keeps those objects looking as they always have. A publisher MUST write `v: 2`; `v: 1` is for reading what already exists.
 
@@ -312,6 +364,14 @@ A reader MUST ignore fields it does not recognize rather than rejecting them. Th
 
 An extension that changes how an existing field is interpreted MUST bump `v`. An extension that adds a field whose absence has a well-defined meaning MUST NOT.
 
+**`colors` changed meaning inside `v: 2`, once, and that will not happen again.** On 2026-09-16 `colors` went from three numbers per vertex to one palette index (§1.3), which by the rule above should have made a `v: 3`. It did not, and the reason is stated here rather than hidden. Three objects carrying this format existed in the world at that moment, counted by querying five relays for `kind 33331`, and all three were published by the authors of this document. An addressable event is replaced in place by its author, so all three can be reissued by the people who wrote them. The rule protects readers, and there were none but us. A third encoding would have cost every implementer forever to spare two people an afternoon.
+
+The rule applies from that date without exception, because from that date the format has readers who are not its authors.
+
+Anyone implementing this deck should treat `v: 2` as meaning the palette-indexed form. A `v: 2` payload whose `colors` are triples predates this. A reader MAY reject one, and a reader that would rather be generous MAY read the triples literally the way §1.3 reads a `v: 1` payload's; neither is required, because the three that exist belong to the authors and a bag's encrypted shards are readable only by the identity that hid them, whose client is updated in the same release.
+
+**The palette is the extension point that should keep `v` at 2 from now on.** A new set of colours is a new name in the `palette` field, or an `naddr` to one published as its own event (§1.3a, §1.3b), and neither needs a version bump. An older reader meeting a name it does not know rejects rather than drawing wrongly; one meeting a reference it cannot resolve draws in the built-in, which §1.3b makes explicit. That is the shape every future colour change should take, and it is why the colour space is a field rather than a version.
+
 ---
 
 ## 6. Security considerations
@@ -367,7 +427,7 @@ None of these needs a version bump, because each is an optional field whose abse
 | Missing | Why it hurts | Cheapest fix | Cost |
 |---|---|---|---|
 | **Smooth shading** | With no normals every surface is faceted, so a sphere reads as a golf ball | one object-wide boolean telling the renderer to average face normals at shared vertices | one field, no per-vertex data |
-| ~~Per-face color~~ | **Added in §1.4a.** It was the one absence that made the format's own best style its most expensive | | |
+| ~~Per-face color~~ | **Added in §1.4a**, and made affordable by §1.3's palette index, which took a colour from 21 bytes to 4. It was the one absence that made the format's own best style its most expensive | | |
 | **Emission** | The one thing a glowing object needs, and Cyberspace is made of glowing objects | an optional material block with an emissive flag and a strength | one small object |
 | **Roughness, metalness, alpha** | The sliders every modeler reaches for after base color | three numbers in the same block | included above |
 | **Double-sided** | An open shell shows its inside or does not, and the author has no say | one boolean | one field |
@@ -391,7 +451,7 @@ One apparent gap is not one. SNO has per-vertex color and no material, which is 
 2. **It is the event.** No file to fetch, no hash to resolve, no second protocol, no host to go down. A relay that has the note has the object.
 3. **No parser dependency.** `JSON.parse` and thirty lines of rendering, against a specification of a few pages.
 4. **Readable and diffable.** An object can be reviewed in a pull request, hand-edited, and generated by a shell script.
-5. **Per-vertex color is first class.** It is the only coloring mechanism, so every reader supports it, where in the large formats vertex color is an option that half the pipeline ignores.
+5. **Per-vertex color is first class.** With per-face color it is the only coloring mechanism, so every reader supports both, where in the large formats vertex color is an option that half the pipeline ignores. Indexing it through a palette is what PLY does with `uchar` channels and what every indexed image format has always done, and it is why a colour here costs four bytes rather than twenty-one.
 
 ---
 
@@ -405,7 +465,7 @@ One apparent gap is not one. SNO has per-vertex color and no material, which is 
 
 ## Appendix A: a worked example (non-normative)
 
-A four-vertex tetrahedron, one color per corner, drawn solid, built on a lattice of gibsons.
+A four-vertex tetrahedron, one colour per corner, drawn solid, built on a lattice of gibsons.
 
 ```json
 {
@@ -416,12 +476,27 @@ A four-vertex tetrahedron, one color per corner, drawn solid, built on a lattice
   "mode": "solid",
   "vertices": [[0, 0, 0], [2, 0, 0], [1, 0, 2], [1, 2, 1]],
   "ticks": [-4],
-  "colors": [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]],
+  "colors": [238, 235, 239, 225],
   "faces": [[0, 1, 2], [0, 1, 3], [1, 2, 3], [0, 2, 3]]
 }
 ```
 
-The whole object is 215 bytes of JSON with the whitespace removed, and 289 as printed above. `"ticks": [-4]` is the run-length encoding of four whole-unit vertices; omitting `ticks` entirely would mean the same thing.
+There is no `palette`, so the indices name the built-in (Appendix C): 238 is pure red, 235 pure green, 239 pure blue and 225 white. `"ticks": [-4]` is the run-length encoding of four whole-unit vertices; omitting `ticks` entirely would mean the same thing.
+
+The same object with a palette of its own, which for four colours costs less than writing them out did:
+
+```json
+{
+  "v": 2, "name": "tetra", "unit": 0, "extent": 8, "mode": "solid",
+  "vertices": [[0, 0, 0], [2, 0, 0], [1, 0, 2], [1, 2, 1]],
+  "ticks": [-4],
+  "palette": [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 255]],
+  "colors": [0, 1, 2, 3],
+  "faces": [[0, 1, 2], [0, 1, 3], [1, 2, 3], [0, 2, 3]]
+}
+```
+
+And the same object again with all four faces one colour, which is what `facecolors` is for: adding `"facecolors": [238, -3]` gives four flat red triangles with hard edges between them, for eleven more bytes.
 
 The same object one meter across rather than four gibsons is the same document with `"unit": 32`.
 
@@ -487,3 +562,58 @@ Every small format in the survey that succeeded had exactly one thing in common,
 The lesson for SNO is that the deliverable is not this document. It is software that emits the format: the shard workshop that already exists, and an exporter from a tool modelers already use. The specification is what makes the second implementation possible, not what makes the first one matter.
 
 One practical consequence: the first converter worth writing is **to and from PLY with vertex colors**, not glTF. PLY is the format whose data model already matches this one, and it is what Blender, MeshLab and every scanner already speak.
+
+---
+
+## Appendix C: the built-in palette, `cyberspace-neon-256` (normative)
+
+The 256 colours an index names when an object carries no `palette` of its own (§1.3a). Each is sRGB, eight bits a channel.
+
+**The layout is arithmetic, not a list to memorise.**
+
+| Index | What |
+|---|---|
+| `0` to `191` | 24 hues of 8 steps. Hue `h` step `s` is index `h * 8 + s`. Step 0 is the darkest, step 7 the brightest |
+| `192` to `223` | 32 steels, black to white, faintly cyan so they belong to the same world rather than looking dead |
+| `224` to `255` | 32 signatures: the client's own instrument colours exactly, the six sRGB gamut corners that evenly spaced ramps cannot reach, six neon staples, and six deep grounds for a scene that is mostly dark |
+
+The ramps are generated in OKLCH rather than HSV, so a step looks like one step rather than measuring as one, and clipped into sRGB by lowering chroma rather than clamping channels, which is what stops the bright end of a saturated hue turning to mud. Shadows drift a little toward the blue that lights this world and highlights drift a little warm, which is what makes a ramp read as lit rather than as a tint. Lightness runs from 0.30 to 0.85 and chroma stays near the gamut edge throughout: an earlier draft ran 0.20 to 0.94 and spent about seventy of its entries on near-blacks and pastels nobody would pick.
+
+The generator is `decks/sno-palette.mjs` and the values are also carried as `decks/sno-palette.json` for implementers who would rather not retype them. The sheet below is `decks/sno-palette.png`.
+
+![The cyberspace-neon-256 palette](sno-palette.png)
+
+| From | +0 | +1 | +2 | +3 | +4 | +5 | +6 | +7 |
+|---|---|---|---|---|---|---|---|---|
+|   0 | #003632 | #004d49 | #006562 | #007e7d | #009799 | #00b2b8 | #00cdd7 | #00e8f9 |
+|   8 | #003538 | #004c51 | #00636d | #007c8a | #0095a9 | #00afca | #00c9ed | #6fdfff |
+|  16 | #00343f | #004a5a | #006178 | #007998 | #0092ba | #00abdf | #34c4ff | #93d8ff |
+|  24 | #003346 | #004865 | #005e86 | #0075ab | #008dd2 | #00a4fd | #6ebcff | #a7d3ff |
+|  32 | #003052 | #004476 | #00589e | #006ccc | #017fff | #5a9bff | #8bb5ff | #b5ceff |
+|  40 | #00266d | #002cac | #1902ff | #374fff | #5a73ff | #7e92ff | #a1aeff | #c3c9ff |
+|  48 | #220088 | #3700b7 | #5000e7 | #6837ff | #8064ff | #9b86ff | #b6a5ff | #d0c4ff |
+|  56 | #350079 | #4f00a3 | #6b00cd | #8b00f8 | #a24bff | #b875ff | #cd9aff | #e1bcff |
+|  64 | #420069 | #5f008d | #7f00b1 | #a200d5 | #c600f8 | #dd53ff | #ed84ff | #f9afff |
+|  72 | #4b0058 | #6b0076 | #8e0094 | #b200b1 | #d900cd | #ff1ae7 | #ff7de2 | #ffb1e6 |
+|  80 | #520046 | #74005f | #980077 | #be008e | #e600a4 | #ff45b4 | #ff87c0 | #ffb5d2 |
+|  88 | #570035 | #7a0048 | #9f005a | #c6006b | #ee007b | #ff538d | #ff8ca6 | #ffb7c2 |
+|  96 | #5a0024 | #7e0031 | #a3003d | #cb0047 | #f4004e | #ff5b6a | #ff908e | #ffb9b4 |
+| 104 | #5c0010 | #800014 | #a60013 | #ce0006 | #f22400 | #ff613e | #ff9375 | #ffbba5 |
+| 112 | #561200 | #752200 | #943300 | #b44600 | #d45a00 | #f47000 | #ff9652 | #ffbd93 |
+| 120 | #4b1f00 | #683100 | #854300 | #a25700 | #c06d00 | #de8300 | #fc9b00 | #ffc077 |
+| 128 | #442600 | #5e3800 | #794c00 | #946100 | #b07800 | #cc8f00 | #e7a800 | #ffc333 |
+| 136 | #3e2a00 | #563d00 | #6e5300 | #876900 | #a08100 | #b99900 | #d2b300 | #ebce00 |
+| 144 | #372d00 | #4d4200 | #635800 | #797000 | #8f8800 | #a5a300 | #b9be00 | #cdda00 |
+| 152 | #2f3000 | #424600 | #555e00 | #677700 | #779100 | #87ad00 | #94ca00 | #9fe800 |
+| 160 | #243400 | #314b00 | #3d6400 | #457f00 | #499b00 | #45b900 | #2cd900 | #00f837 |
+| 168 | #073900 | #005108 | #006a1f | #008436 | #009f4e | #00ba67 | #00d682 | #00f39e |
+| 176 | #00381e | #005030 | #006844 | #00825b | #009c73 | #00b78d | #00d3a9 | #00efc6 |
+| 184 | #00372a | #004e3f | #006656 | #00806e | #009a89 | #00b4a5 | #00d0c2 | #00ece1 |
+| 192 | #010101 | #020203 | #050606 | #090b0c | #0f1213 | #15191a | #1b2021 | #222728 |
+| 200 | #282e30 | #2f3638 | #373e40 | #3e4648 | #454e50 | #4d5658 | #555e60 | #5d6769 |
+| 208 | #666f71 | #6e787a | #778083 | #80898c | #899294 | #939b9d | #9ca4a6 | #a6adaf |
+| 216 | #b0b6b8 | #babfc1 | #c4c9ca | #ced2d3 | #d8dcdc | #e3e5e6 | #eeefef | #f8f8f8 |
+| 224 | #000000 | #ffffff | #00e5ff | #ff3b6b | #f7931a | #52e39f | #c8f5ff | #6f8ea0 |
+| 232 | #1d3547 | #05070d | #ff00ff | #00ff00 | #00ffff | #ffff00 | #ff0000 | #0000ff |
+| 240 | #39ff14 | #ff6ec7 | #7df9ff | #b026ff | #fffb00 | #ff3300 | #00ff9f | #ff007f |
+| 248 | #4d4dff | #ffd300 | #0a0f1a | #12182a | #1a0f24 | #0f1f1c | #241016 | #1c1c0f |
