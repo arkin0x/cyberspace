@@ -121,12 +121,29 @@ At 32 bytes a vertex only about 4 are the colour, so this is the last large savi
 | `palette` | Meaning |
 |---|---|
 | absent | the built-in, `cyberspace-neon-256` (Appendix C) |
-| a string | the name of a registered built-in. `"cyberspace-neon-256"` is the only one, and is the default |
+| a registered name | `"cyberspace-neon-256"` is the only one, and is the default |
+| an `naddr1…` | a palette published as its own nostr event, fetched if it can be, with the built-in standing in until it is (§1.3b) |
 | an array | a palette carried in the object itself: 2 to 256 entries, each `[r, g, b]` of three integers `0` to `255` |
 
-A reader MUST reject a `palette` that is an array of fewer than 2 or more than 256 entries, or any entry that is not three integers in `0..255`, or a string naming a palette it does not know. A reader MUST NOT fetch anything to resolve a palette.
+A reader MUST reject a `palette` that is an array of fewer than 2 or more than 256 entries, or any entry that is not three integers in `0..255`, or a string that is neither a name it knows nor a well-formed `naddr`.
 
-**Why the palette travels with the object and never by reference.** A nostr event id pointing at a palette event would cost seventy bytes instead of a few hundred, and it would cost the one property this format exists for: an object is one event, readable by anyone who has that event, forever. An object that cannot be drawn because a second event is unreachable is not a portable object. So a palette is either one everybody already has, or it is in the payload.
+**Why a custom palette may be short.** An object with four colours pays for four, not for 256. Two entries cost 40 bytes, sixteen cost 222, and a full 256 costs 3.3 KB, so the cost lands where it is affordable: 3.3 KB is four times the size of a cube and a sixth of an object at the ceiling, and it is large objects that want a palette of their own.
+
+### 1.3b A palette published as its own event
+
+A `palette` of `naddr1…` names an addressable event that carries a palette. This is how a group of objects share one set of colours that can be corrected in one place, and how this format meets palettes that already exist on nostr rather than insisting everyone reuse its own.
+
+**The rule that makes this safe is that a reference is never load-bearing.**
+
+1. A reader MUST render the object without waiting for anything. Until the referenced event is in hand, the indices name the built-in.
+2. A reader MAY fetch the event, and SHOULD if it can do so without blocking the first frame. When it arrives and its content parses, the reader re-renders with it.
+3. A reader that cannot fetch, or fetches nothing, MUST keep drawing with the built-in and MUST NOT reject the object.
+
+So the worst case is an object drawn in the wrong colours, never an object that cannot be drawn. That is a real cost and it is stated here rather than buried: a viewer has no way to tell that the colours it sees are the fallback rather than the author's. A publisher who cannot accept that carries the palette inline, which is what the array form is for, and which is what a small palette should do anyway.
+
+**What counts as a palette event.** Any addressable event whose `content` parses as a JSON array of 2 to 256 entries, where an entry is either `[r, g, b]` of three integers `0..255` or a `"#rrggbb"` string. The kind is deliberately not constrained. This format does not define a palette kind and does not want one: palettes on nostr are somebody else's problem, already partly solved, and a reader that accepts the obvious shape will read whatever convention wins without this document being revised. An event whose content does not parse that way is treated as a failed fetch, which means the built-in.
+
+**Why not an event id rather than an address.** An `naddr` carries the author, the identifier and relay hints, so a reader has somewhere to look and the author can correct the palette in place without every object that names it going stale. A bare event id has none of that and freezes the palette forever.
 
 **Why a custom palette may be short.** An object with four colours pays for four, not for 256. Two entries cost 40 bytes, sixteen cost 222, and a full 256 costs 3.3 KB, so the cost lands where it is affordable: 3.3 KB is four times the size of a cube and a sixth of an object at the ceiling, and it is large objects that want a palette of their own.
 
@@ -250,7 +267,7 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 6. Every vertex triple is three integers.
 7. `ticks`, if present, expands to exactly one remainder per vertex, and every remainder component is an integer in `0..119`.
 8. Every face is three distinct integers in `0..vertices.length - 1`.
-8a. `palette`, if present, is either the name of a known built-in or an array of 2 to 256 entries of three integers `0..255`.
+8a. `palette`, if present, is the name of a known built-in, a well-formed `naddr`, or an array of 2 to 256 entries of three integers `0..255`. A reference that has not been resolved counts as the built-in for the rules below, and is never a reason to reject (§1.3b).
 8b. every entry of `colors` is an integer from `0` to one less than the palette's length.
 8c. `facecolors`, if present, expands to exactly one index per face, its first entry is an index, every run entry is a negative integer, and every index is in range.
 9. `extent`, if present, is repaired rather than validated (§1.8): out of range becomes `8`, then it grows to contain the data.
@@ -349,7 +366,7 @@ An extension that changes how an existing field is interpreted MUST bump `v`. An
 
 The rule applies from that date without exception, because from that date the format has readers who are not its authors. Anyone implementing this deck should treat `v: 2` as meaning the palette-indexed form; a `v: 2` payload whose `colors` are triples predates this and is not in circulation.
 
-**The palette is the extension point that should keep `v` at 2 from now on.** A new set of built-in colours is a new name in the `palette` field (§1.3a), which an older reader rejects as an unknown palette rather than drawing wrongly, and which needs no version bump. That is the shape every future colour change should take.
+**The palette is the extension point that should keep `v` at 2 from now on.** A new set of colours is a new name in the `palette` field, or an `naddr` to one published as its own event (§1.3a, §1.3b), and neither needs a version bump. An older reader meeting a name it does not know rejects rather than drawing wrongly; one meeting a reference it cannot resolve draws in the built-in, which §1.3b makes explicit. That is the shape every future colour change should take, and it is why the colour space is a field rather than a version.
 
 ---
 

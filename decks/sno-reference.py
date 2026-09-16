@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from fractions import Fraction
 from typing import Any, Iterator
 
@@ -116,7 +117,7 @@ def expand_face_colors(entries: Any, count: int, palette_len: int) -> list[int]:
     return out
 
 
-def validate(payload: Any) -> dict:
+def validate(payload: Any, fetched_palette: str | None = None) -> dict:
     """§1.9, in order. Returns the payload on success, raises SnoError on failure.
 
     A payload is accepted whole or not at all: a face index past the end of the
@@ -166,7 +167,7 @@ def validate(payload: Any) -> dict:
     ticks = expand_ticks(payload.get("ticks"), len(vertices))
 
     # 8a. the palette, and 8b the indices into it
-    palette = resolve_palette(payload.get("palette"))
+    palette = resolve_palette(payload.get("palette"), fetched_palette)
     for c in colors:
         if not _is_int(c) or c < 0 or c >= len(palette):
             raise SnoError(f"rule 8b: a colour index is not an integer in 0..{len(palette) - 1}")
@@ -261,22 +262,52 @@ def _load_built_in() -> list[list[int]]:
     return [[int(h[i:i + 2], 16) for i in (1, 3, 5)] for h in hexes]
 
 
-def resolve_palette(field: Any) -> list[list[int]]:
-    """§1.3a: the colours an object's indices name.
+def parse_palette_content(text: str) -> list[list[int]] | None:
+    """§1.3b: a palette event's content, or None when it is not one.
 
-    Absent means the built-in. A string names a registered built-in. An array
-    is a palette the object carries itself, 2 to 256 entries. Nothing is ever
-    fetched: an object that needed a second event to be drawable would not be
-    a portable object, which is the whole point of the format.
+    Deliberately generous about shape and silent about kind. Palettes on nostr
+    are somebody else's problem and partly solved already; a reader that
+    accepts the obvious form will read whatever convention wins without this
+    document being revised. Entries are [r, g, b] integers or "#rrggbb".
+    """
+    try:
+        raw = json.loads(text)
+    except Exception:
+        return None
+    if not isinstance(raw, list) or not 2 <= len(raw) <= 256:
+        return None
+    out: list[list[int]] = []
+    for entry in raw:
+        if isinstance(entry, str) and re.fullmatch(r"#[0-9a-fA-F]{6}", entry):
+            out.append([int(entry[i:i + 2], 16) for i in (1, 3, 5)])
+        elif isinstance(entry, list) and len(entry) == 3 and all(_is_int(c) and 0 <= c <= 255 for c in entry):
+            out.append([int(c) for c in entry])
+        else:
+            return None
+    return out
+
+
+def resolve_palette(field: Any, fetched: str | None = None) -> list[list[int]]:
+    """§1.3a and §1.3b: the colours an object's indices name.
+
+    Absent means the built-in. A registered name means the built-in. An naddr
+    means a palette published as its own event, and `fetched` is that event's
+    content if the caller managed to get it: a reference is never load-bearing,
+    so an unresolved one is the built-in and never a rejection. An array is a
+    palette the object carries itself, 2 to 256 entries.
     """
     if field is None:
         return _load_built_in()
     if isinstance(field, str):
-        if field not in BUILT_IN_PALETTES:
-            raise SnoError(f"rule 8a: unknown palette {field!r}")
-        return _load_built_in()
+        if field in BUILT_IN_PALETTES:
+            return _load_built_in()
+        if field.startswith("naddr1") and len(field) > 12:
+            if fetched is None:
+                return _load_built_in()
+            return parse_palette_content(fetched) or _load_built_in()
+        raise SnoError(f"rule 8a: unknown palette {field!r}")
     if not isinstance(field, list):
-        raise SnoError("rule 8a: palette is neither a name nor an array")
+        raise SnoError("rule 8a: palette is neither a name, an naddr, nor an array")
     if not 2 <= len(field) <= 256:
         raise SnoError(f"rule 8a: a palette carries 2 to 256 colours, not {len(field)}")
     out: list[list[int]] = []
@@ -391,7 +422,24 @@ def _self_test() -> None:
             raise AssertionError(f"{rule} accepted {bad_field.get('palette')!r}")
         except SnoError as e:
             assert str(e).startswith(rule), e
-    print("palette: 256 built in, 2 to 256 carried, indices bounded by whichever applies")
+    # §1.3b: a reference is never load-bearing. Unresolved is the built-in,
+    # never a rejection, so the worst case is wrong colours and never no object.
+    NADDR = "naddr1qqxnzdenxvmnxdfhxg6rwwfjqy88wumn8ghj7mn0wvhxcmmv"
+    assert resolve_palette(NADDR) == built_in
+    assert validate({**APPENDIX_A, "palette": NADDR})["v"] == 2
+    assert resolve_palette(NADDR, '["#ff0000","#00ff00"]') == [[255, 0, 0], [0, 255, 0]]
+    assert resolve_palette(NADDR, "[[255,0,0],[0,255,0]]") == [[255, 0, 0], [0, 255, 0]]
+    # A fetch that returns something that is not a palette is a failed fetch.
+    for junk in ("not json", "{}", "[]", '["#ff00"]', "[[300,0,0],[0,0,0]]", json.dumps([[0, 0, 0]] * 257)):
+        assert resolve_palette(NADDR, junk) == built_in, junk
+    # An index valid against the built-in but past a shorter fetched palette is
+    # still a rejection: whichever palette applies is the one that bounds it.
+    try:
+        validate({**APPENDIX_A, "palette": NADDR}, '["#ff0000","#00ff00"]')
+        raise AssertionError("an index past a fetched palette should be rejected")
+    except SnoError as e:
+        assert str(e).startswith("rule 8b"), e
+    print("palette: 256 built in, 2 to 256 carried, a reference falls back and never rejects")
 
     # A sub-unit position is exact, not approximate: a third of a unit is 40
     # ticks and comes back as exactly one third.
