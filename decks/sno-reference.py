@@ -1,6 +1,6 @@
-"""Reference implementation of DECK-0004: SNO (Simple Nostr Objects).
+"""Reference implementation of DECK-0003: SNO (Simple Nostr Objects).
 
-This is the normative validation of DECK-0004 §1.9 written out as code, plus
+This is the normative validation of DECK-0003 §1.9 written out as code, plus
 the position expansion of §1.2, with no dependencies beyond the standard
 library. It is meant to be read, ported, and used as a conformance oracle: a
 client that disagrees with this file about whether a payload is valid has a
@@ -21,7 +21,7 @@ import json
 from fractions import Fraction
 from typing import Any, Iterator
 
-# DECK-0004 §1.8. These are the whole of the size policy.
+# DECK-0003 §1.8. These are the whole of the size policy.
 MAX_VERTICES = 512
 MAX_FACES = 1024
 MIN_EXTENT = 1
@@ -39,7 +39,7 @@ MODES = ("solid", "points", "lines")
 
 
 class SnoError(ValueError):
-    """A payload that DECK-0004 §1.9 rejects. The message names the rule."""
+    """A payload that DECK-0003 §1.9 rejects. The message names the rule."""
 
 
 def _is_int(x: Any) -> bool:
@@ -79,6 +79,39 @@ def expand_ticks(ticks: Any, count: int) -> list[list[int]]:
     return out
 
 
+def expand_face_colors(entries: Any, count: int) -> list[list[float]]:
+    """§1.4a: the run-length encoded face colours, one triple per face.
+
+    Each entry is either an [r, g, b] triple or a negative integer -N standing
+    for N further faces of the triple before it, so a solid cube is
+    [[1, 0, 0], -11]. The first entry must be a triple: a run has nothing to
+    repeat before one. Absent face colours mean every face interpolates its
+    vertices, which is a different thing from every face being black, so the
+    caller distinguishes None from a list.
+    """
+    if entries is None:
+        return []
+    if not isinstance(entries, list):
+        raise SnoError("rule 8a: facecolors is not an array")
+    out: list[list[float]] = []
+    for entry in entries:
+        if _is_int(entry):
+            if entry >= 0:
+                raise SnoError("rule 8a: a run-length entry must be negative")
+            if not out:
+                raise SnoError("rule 8a: the first entry must be a colour, not a run")
+            out.extend(list(out[-1]) for _ in range(-entry))
+        elif isinstance(entry, list) and len(entry) == 3:
+            if not all(_is_num(c) for c in entry):
+                raise SnoError("rule 8a: a face colour is not three numbers")
+            out.append(clamp_color(entry))
+        else:
+            raise SnoError("rule 8a: a facecolors entry is neither a triple nor a negative integer")
+    if len(out) != count:
+        raise SnoError(f"rule 8a: facecolors expand to {len(out)} colours for {count} faces")
+    return out
+
+
 def validate(payload: Any) -> dict:
     """§1.9, in order. Returns the payload on success, raises SnoError on failure.
 
@@ -89,11 +122,13 @@ def validate(payload: Any) -> dict:
     if not isinstance(payload, dict):
         raise SnoError("rule 1: payload is not a JSON object")
 
-    # 1. version and type
+    # 1. version
     if payload.get("v") not in (1, 2) or isinstance(payload.get("v"), bool):
         raise SnoError("rule 1: v must be 1 or 2")
-    if payload.get("type") != "shard":
-        raise SnoError('rule 1: type must be "shard"')
+    # §1.1a: there is no `type` field in either version. Payloads written before
+    # this document carry type "shard"; it is ignored here and never rejected
+    # on, because the field is noise and rejecting on noise would break every
+    # object already published.
 
     # 2. the three arrays, and vertices parallel to colors
     for key in ("vertices", "colors", "faces"):
@@ -139,6 +174,10 @@ def validate(payload: Any) -> dict:
         if len(set(f)) != 3:
             raise SnoError("rule 8: a face repeats a vertex")
 
+    # 8a. face colours, when the object carries any
+    if "facecolors" in payload:
+        expand_face_colors(payload["facecolors"], len(faces))
+
     # 9. extent is repaired, never validated (§1.8). Out of range becomes the
     # default, then it grows until it contains the data, so an object is never
     # rejected for disagreeing with its own bounding hint.
@@ -181,7 +220,7 @@ def positions(payload: dict) -> Iterator[tuple[Fraction, Fraction, Fraction]]:
     """Exact positions in model units, as Fractions, with the version applied.
 
     A v1 object was written when +Z pointed away from the viewer, so its Z is
-    negated here and it renders exactly as its author built it (DECK-0004 §2).
+    negated here and it renders exactly as its author built it (DECK-0003 §2).
     A v2 object is read as written. This is the whole of the difference between
     the two versions.
 
@@ -207,13 +246,30 @@ def clamp_color(c: list) -> list[float]:
     return out
 
 
+COLOR_PLACES = 4
+
+
+def round_color(c: list) -> list[float]:
+    """§1.3: what a publisher MUST write. Four decimal places per channel.
+
+    This is a writer's obligation, not a reader's, so `validate` never rejects
+    on it: a payload that arrives with more precision is read as it stands.
+    But every publisher owes it, because colour is the largest cost in the
+    format and the precision buys nothing. Four places is 10,000 steps per
+    channel against eight-bit colour's 256, and the difference between
+    0.8039215686274510 and 0.8039 is eighteen bytes against six, three times
+    per vertex and again per face colour. §1.8 works out what that means for
+    how large an object can be.
+    """
+    return [round(x, COLOR_PLACES) for x in clamp_color(c)]
+
+
 # --------------------------------------------------------------------------
 # Self-test
 # --------------------------------------------------------------------------
 
 APPENDIX_A = {
     "v": 2,
-    "type": "shard",
     "name": "tetra",
     "unit": 0,
     "extent": 8,
@@ -235,7 +291,6 @@ def _rejections() -> list[tuple[str, dict]]:
     return [
         ("rule 1", variant(v=3)),
         ("rule 1", variant(v=0)),
-        ("rule 1", variant(type="model")),
         ("rule 2", variant(colors=[[1, 0, 0]])),
         ("rule 3", variant(vertices=[[0, 0, 0]] * 513, colors=[[0, 0, 0]] * 513, ticks=[-513], faces=[])),
         ("rule 4", variant(mode="wireframe")),
@@ -247,6 +302,11 @@ def _rejections() -> list[tuple[str, dict]]:
         ("rule 7", variant(ticks=[4])),
         ("rule 8", variant(faces=[[0, 1, 9]])),
         ("rule 8", variant(faces=[[0, 1, 1]])),
+        ("rule 8a", variant(facecolors=[[1, 0, 0]])),              # too few for four faces
+        ("rule 8a", variant(facecolors=[[1, 0, 0], -4])),          # too many
+        ("rule 8a", variant(facecolors=[-4])),                     # a run with nothing before it
+        ("rule 8a", variant(facecolors=[[1, 0, 0], 3])),           # a positive run
+        ("rule 8a", variant(facecolors=[[1, 0, 0], ["a", 0, 0], -2])),
         ("rule 10", variant(up="yes")),
         ("rule 10", variant(up=True, spin=360)),
         ("rule 10", variant(spin=360)),
@@ -263,10 +323,25 @@ def _self_test() -> None:
 
     # The version is one sign. A v1 object with the same numbers reads mirrored
     # in Z, which is what keeps everything published before v2 looking right.
-    v1 = validate({**APPENDIX_A, "v": 1})
+    v1 = validate({**APPENDIX_A, "v": 1, "type": "shard"})  # the legacy field is ignored, not required
     assert [p[2] for p in positions(v1)] == [-p[2] for p in positions(ok)]
     assert [p[:2] for p in positions(v1)] == [p[:2] for p in positions(ok)]
     print("v1 and v2 differ in Z alone, which is the whole of the version")
+
+    # §1.1a: there is no `type` in either version. A payload from before this
+    # document carries one; it is read, never required, never rejected on.
+    assert validate({**APPENDIX_A, "v": 1})["v"] == 1
+    assert validate({**APPENDIX_A, "v": 1, "type": "shard"})["v"] == 1
+    assert validate({**APPENDIX_A, "type": "shard"})["v"] == 2
+    assert validate({**APPENDIX_A, "type": "anything at all"})["v"] == 2
+    assert validate({**APPENDIX_A, "type": 17})["v"] == 2
+    print("type: no such field, ignored wherever one appears, never required")
+
+    # §1.3: what a publisher owes. A reader still takes whatever arrives.
+    assert round_color([0.8039215686274510, 0.1254901960784314, 2.0]) == [0.8039, 0.1255, 1.0]
+    assert round_color([float("nan"), -5, 0.5]) == [0.0, 0.0, 0.5]
+    assert validate({**APPENDIX_A, "colors": [[0.8039215686274510, 0.1, 0.1]] * len(APPENDIX_A["vertices"])})
+    print("colour: four places from a publisher, any number accepted by a reader")
 
     # A sub-unit position is exact, not approximate: a third of a unit is 40
     # ticks and comes back as exactly one third.
@@ -304,6 +379,14 @@ def _self_test() -> None:
 
     assert clamp_color([2.0, -1.0, float("nan")]) == [1.0, 0.0, 0.0]
     print("colors clamp to 0..1 and a non-finite channel is 0")
+
+    # §1.4a: a solid cube is one colour and a run, not twelve copies.
+    solid = validate({**APPENDIX_A, "facecolors": [[1, 0, 0], -3]})
+    assert expand_face_colors(solid["facecolors"], 4) == [[1.0, 0.0, 0.0]] * 4
+    mixed = validate({**APPENDIX_A, "facecolors": [[1, 0, 0], [0, 1, 0], -1, [0, 0, 1]]})
+    assert expand_face_colors(mixed["facecolors"], 4) == [[1.0, 0, 0], [0, 1.0, 0], [0, 1.0, 0], [0, 0, 1.0]]
+    assert expand_face_colors(None, 4) == []
+    print("face colours: a run repeats the colour before it, and absent is not black")
 
     if failures:
         raise SystemExit(1)

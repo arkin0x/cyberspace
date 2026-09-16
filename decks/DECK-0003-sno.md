@@ -1,4 +1,4 @@
-# DECK-0004: SNO (Simple Nostr Objects)
+# DECK-0003: SNO (Simple Nostr Objects)
 
 DECK: 0004
 Title: SNO (Simple Nostr Objects)
@@ -52,7 +52,7 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | Field | Type | Required | Meaning |
 |---|---|---|---|
 | `v` | integer | yes | Format version, `1` or `2`. They differ in one sign and nothing else (§2). A reader MUST support both and MUST reject any other value. |
-| `type` | string | yes | `"shard"`. A reader MUST reject any other value. |
+| `type` | string | no | A legacy field. A reader MUST ignore it wherever it appears, and MUST NOT require it or reject on its value. A publisher SHOULD NOT write it (§1.1a). |
 | `name` | string | yes | A name for humans. A reader MUST truncate to 64 characters. |
 | `unit` | integer | yes | Scale exponent, `0` to `84`. One model unit is `2^unit` base units (§1.6). |
 | `extent` | integer | no | Grid half-width in model units, `1` to `64`. Advisory and self-repairing (§1.8). Absent or malformed means `8`. |
@@ -61,10 +61,21 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | `ticks` | array | no | The sub-unit part of each position (§1.2). Absent means every position is whole. |
 | `colors` | array | yes | One `[r, g, b]` triple per vertex, parallel to `vertices` (§1.3). |
 | `faces` | array | yes | Triangles as `[a, b, c]` vertex indices (§1.4). MAY be empty. |
+| `facecolors` | array | no | One `[r, g, b]` per face, run-length encoded, for hard colour seams (§1.4a). Absent means every face interpolates its vertices. |
 | `up` | boolean | no | `true` means the object stands on the Earth's surface where it is placed (§1.7). `false` means the same as absent. |
 | `spin` | integer | no | With `up`: the compass bearing the object's `+Z` faces, `0` to `359` (§1.7). |
 
 `vertices` and `colors` MUST have the same length. Any field not listed here MUST be ignored by a reader, not rejected (§5).
+
+### 1.1a Why there is no `type`
+
+Payloads written before this document carry `type: "shard"`. This format has no such field, and that is worth a paragraph, because dropping a field that existing writers emit looks like carelessness and is the opposite.
+
+The field never said anything the container did not already say. A standalone object is `kind 33331` and an object in a bag is a `kind 3330` item; either way the kind is what a reader dispatches on, and Cyberspace's own client derives "this is a shape, not a message" from the kind and has only ever used `type` as a sanity check on a blob it had already decided was a payload.
+
+What the field did do was carry a parochial word into a format meant for anyone. "Shard" is Cyberspace's name for an object hidden at a place. It is a good word there and it means nothing in a format called Simple Nostr Objects, and a field whose only legal value is another project's vocabulary is exactly what makes a format look like somebody's internal file that escaped.
+
+So there is no `type` in either version, no reader may require one, and no reader may reject on its value. A publisher should not write it. Nothing rejects a payload that carries one, because the field is noise and rejecting on noise would break every object already published.
 
 ### 1.2 Positions: the lattice and the ticks
 
@@ -90,7 +101,9 @@ A position is an exact rational, never a float. It is carried in two parts.
 
 There is one color per vertex and no other color anywhere in the format. A face is painted by interpolating its three vertices; a line is painted by interpolating along its length; a point is its own color. A flat-colored triangle is expressed by giving its three vertices the same color, which costs three vertices out of the budget rather than one material.
 
-Publishers SHOULD round color channels to at most three decimal places. The difference is invisible and the saving is real: `0.7333333333333333` is eighteen bytes and `0.733` is five, repeated three times per vertex.
+**A publisher MUST write at most four decimal places per channel**, and a reader MUST accept any number and clamp it, so nothing breaks if one arrives with more.
+
+This is a normative limit rather than advice because it is the single largest cost in the format and it buys nothing. Four decimal places is 10,000 steps per channel; eight-bit colour, which is what a screen and every common exchange format use, has 256. Nothing anywhere can tell the difference, and the saving is not marginal: a worst-case vertex costs 87 bytes with full double precision and 52 with four places, because `0.8039215686274510` is eighteen characters and `0.8039` is six, three times over per vertex and again per face colour. §1.8 works out what that means for how large an object can be.
 
 ### 1.4 Faces
 
@@ -101,6 +114,20 @@ Publishers SHOULD round color channels to at most three decimal places. The diff
 This is stated because leaving it unsaid is the most common way a small format fails. STL left color unspecified and two vendors filled the hole incompatibly; PLY never registered its property names and cost the ecosystem years of colors that did not import; Niantic's SPZ shipped in 2024 without saying which axis is up and someone had to file an issue to ask. A reader that wants single-sided rendering is free to want it, but it is not this format.
 
 `faces` MAY be empty. An object with no faces is a point cloud or a polyline, depending on `mode`.
+
+### 1.4a Face colours, and hard seams
+
+A face with no colour of its own takes one by interpolating its three vertices, which is a gradient across the triangle. That is the right default for a lit, rounded object and the wrong one for the blocky work this format suits best, and until now the only way to get a flat triangle was to give all three of its vertices the same colour. Two flat triangles meeting at an edge then need six vertices where the geometry needs four, and a flat-shaded 500-triangle object spends 1,500 vertices to express 500 colours: three times over the budget of §1.8. The format made its own best style its most expensive.
+
+`facecolors` is one entry per face, in the order `faces` gives them.
+
+**When a face has a colour, that colour fills the whole triangle** and its vertices contribute nothing to the fill. Vertex colours are untouched and still colour the points and the lines (§1.5), so an object may carry both without contradiction and `points` and `lines` mode behave exactly as they always did.
+
+**Run-length, as `ticks` does it (§1.2), because the common case is a run.** A stamped block is twelve triangles of one colour. An entry is either an `[r, g, b]` triple or a **negative integer** `-N`, standing for N further faces of the triple before it, so a solid cube is `[[1, 0, 0], -11]`. The first entry MUST be a triple, since a run has nothing to repeat before one. The entries, expanded, MUST produce exactly one colour per face; a reader MUST reject a `facecolors` array that expands to any other length. `0` and positive integers are not valid entries. Channels clamp exactly as §1.3 says.
+
+The canonical form of §1.2 extends unchanged: a publisher MUST write a run of two or more as the shorthand, so there is still exactly one way to write a given object.
+
+**What this does not do, deliberately.** It gives a hard seam between faces, not a gradient inside a face with a hard edge along one of its sides. That would need a colour per face corner, three per face, which triples the colour data to buy a case this format's audience does not have. Lines keep interpolating along their length; per-edge colour would be a third mechanism and is not worth one.
 
 ### 1.5 Mode
 
@@ -138,7 +165,7 @@ A reader that does not implement `up` draws the object in the application's axes
 
 | Limit | Value | Why |
 |---|---|---|
-| `MAX_VERTICES` | 512 | keeps the worst case inside every relay's limits without the author having to think about it. See below |
+| `MAX_VERTICES` | 512 | with §1.3's four decimal places, keeps the worst case inside every relay's limits without the author having to think about it. See below |
 | `MAX_FACES` | 1024 | the same |
 | `extent` | 1 to 64 model units | a hint at the lattice size, so a reader can size a grid before it reads the data |
 | `unit` | 0 to 84 | the Cyberspace address space is `2^85` gibsons on a side |
@@ -150,18 +177,33 @@ A reader MUST reject a payload whose vertex or face count exceeds these limits.
 
 The position bound is stated as an obligation on publishers rather than readers: a publisher MUST NOT write a vertex further than `64` model units (`7680` ticks) from the origin on any axis. A reader MAY reject such a payload and MAY instead repair it by growing the extent. ONOSENDAI currently repairs. §8 records the consequence.
 
-These numbers are deliberately small, and the vertex ceiling earns its place by keeping the format inside the band that every relay accepts.
+These numbers are small on purpose. The point of having a ceiling at all is that a publisher never has to think about relay limits, and the ceiling only earns its place if the **worst** object it permits still fits.
 
-| Object | Full event, serialized |
+strfry's stock `events.maxEventSize` is 65,536 bytes, and strfry is the most deployed relay software in the network. That is the number to stay under. What a full serialized event costs at the ceiling, worst case throughout, with coordinates at the extent bound and every field at its most expensive:
+
+| At 512 vertices and 1024 faces | No `facecolors` | With `facecolors` |
+|---|---|---|
+| colour channels at full double precision | 57.1 KB | 115.1 KB, **over the cap** |
+| colour channels at four decimal places (§1.3) | 39.6 KB | 62.6 KB |
+
+The four-decimal rule in §1.3 is what makes these limits publishable, and it is the reason that rule is a MUST. Without it the ceiling permits objects no relay will take, which is precisely the situation a ceiling exists to prevent.
+
+The cost is dominated by colour, not by geometry. Worst case, at four decimal places, a vertex costs 52 bytes, a face 13, and a face that carries its own colour 36. A publisher that wants the largest possible object spends its budget on vertices and lets faces interpolate.
+
+A real object is far below that, because the worst case above assumes every position needs its sub-unit part written out and every face carries a colour of its own. An object built on whole units, which is what the lattice is for, compresses its `ticks` to a single number and its `facecolors` to one run:
+
+| A typical object, whole units, four decimals | Full event, serialized |
 |---|---|
-| a colored cube, 8 vertices | about 600 bytes |
-| 64 vertices | about 3.2 KB |
-| 256 vertices | about 13 KB |
-| **512 vertices, the ceiling** | **about 26.7 KB** |
+| a coloured cube, 8 vertices | about 900 bytes |
+| 64 vertices, 128 faces | 3.8 KB |
+| 256 vertices, 512 faces | 14.6 KB |
+| **512 vertices and 1024 faces, the ceiling** | **29.4 KB** |
 
-For comparison, strfry's stock `events.maxEventSize` is 65,536 bytes, and strfry is the most deployed relay software in the network. The worst case an SNO can produce is therefore about 2.4 times under the tightest common cap, and smaller than the median long-form article. A publisher never has to think about relay limits, which is the point of having a ceiling at all.
+One colour per face adds almost nothing to these, because a run of identical faces is two numbers whatever its length.
 
-Two facts make this margin more comfortable than it looks. Escaping the payload into a JSON string costs 12 bytes, under 0.05%, because the content is almost entirely integers, so the fear that nesting JSON inside JSON is wasteful does not apply here. And the geometry belongs in `content` rather than tags: strfry caps a tag value at 1,024 bytes and the tag count at 2,000, while content is roomy everywhere.
+Two facts make this margin more comfortable than it looks. Escaping the payload into a JSON string costs about 12 bytes, under 0.05%, because the content is almost entirely integers, so the fear that nesting JSON inside JSON is wasteful does not apply here. And the geometry belongs in `content` rather than tags: strfry caps a tag value at 1,024 bytes and the tag count at 2,000, while content is roomy everywhere.
+
+**On raising the limits.** The counts are not where the headroom is. At full precision the format is already at the cap, and the four-decimal rule is what buys the room `facecolors` needs; doubling the vertex count would put every face-coloured object over every relay. The change that would actually buy headroom is storing colour as three integers `0` to `255`, which costs 42 bytes a vertex instead of 52 and matches PLY's native form, and it is a different version of this format rather than a limit raised inside this one.
 
 One trap worth knowing, since it cannot be discovered at runtime: strfry populates NIP-11's advertised `max_message_length` from its WebSocket frame cap, not from `events.maxEventSize`, and never advertises the latter. A relay advertising a one megabyte limit may still reject a 70 KB event. Do not design against advertised numbers; stay under the ceiling and handle the rejection message.
 
@@ -169,7 +211,7 @@ One trap worth knowing, since it cannot be discovered at runtime: strfry populat
 
 A reader MUST perform all of the following before rendering, and MUST reject the whole payload if any fails. A partially valid object is not rendered partially: a face index pointing past the end of the vertex list is not a defect that degrades gracefully.
 
-1. `v` is `1` or `2`, and `type` is `"shard"`.
+1. `v` is `1` or `2`. A `type` field, if present, is ignored and never rejected on (§1.1a).
 2. `vertices`, `colors` and `faces` are arrays, and `vertices.length === colors.length`.
 3. `vertices.length <= 512` and `faces.length <= 1024`.
 4. `mode` is one of the three words.
@@ -177,6 +219,7 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 6. Every vertex triple is three integers; every color triple is three numbers.
 7. `ticks`, if present, expands to exactly one remainder per vertex, and every remainder component is an integer in `0..119`.
 8. Every face is three distinct integers in `0..vertices.length - 1`.
+8a. `facecolors`, if present, expands to exactly one colour per face, its first entry is a triple, every run entry is a negative integer, and every triple is three numbers.
 9. `extent`, if present, is repaired rather than validated (§1.8): out of range becomes `8`, then it grows to contain the data.
 10. `up`, if present, is a boolean; `spin`, if present, is an integer in `0..359`.
 
@@ -251,6 +294,8 @@ A client SHOULD render all three modes; a client that renders only `points` stil
 
 The default reading of an SNO is **unlit**: a face takes its color by interpolating its three vertices, and no light in the scene changes it. This is not an absence of a material, it is a named one: it is what glTF ratified as `KHR_materials_unlit` with a `COLOR_0` attribute, for exactly this kind of content.
 
+A face that carries its own colour (§1.4a) is filled with it flatly, and there is nothing to interpolate or average: the seam between two such faces is exact, which is the whole purpose of the field.
+
 A client MAY light an object instead, and many will, because a lit object sits better in a lit scene. A client that lights an object MUST derive its normals per face, flat, from the triangle's own vertices. A client MUST NOT synthesize smooth normals by averaging across shared vertices: an object with no normals is faceted, an author who wanted a smooth surface has no way to say so today (§7.2), and a reader that smooths one anyway is deciding for them.
 
 A client MUST NOT invent geometry: no subdivision, no smoothing that moves a vertex, no hole filling. The lattice is exact and a renderer that moves a vertex has broken the one guarantee the format makes.
@@ -322,7 +367,7 @@ None of these needs a version bump, because each is an optional field whose abse
 | Missing | Why it hurts | Cheapest fix | Cost |
 |---|---|---|---|
 | **Smooth shading** | With no normals every surface is faceted, so a sphere reads as a golf ball | one object-wide boolean telling the renderer to average face normals at shared vertices | one field, no per-vertex data |
-| **Per-face color** | A flat-colored triangle must give its three vertices the same color, so a flat-shaded 500-triangle object spends 1,500 vertices to express 500 colors, three times over budget | an optional array of colors indexed by face, with vertex colors as the fallback | one array, and it *saves* space on exactly the style SNO suits best |
+| ~~Per-face color~~ | **Added in §1.4a.** It was the one absence that made the format's own best style its most expensive | | |
 | **Emission** | The one thing a glowing object needs, and Cyberspace is made of glowing objects | an optional material block with an emissive flag and a strength | one small object |
 | **Roughness, metalness, alpha** | The sliders every modeler reaches for after base color | three numbers in the same block | included above |
 | **Double-sided** | An open shell shows its inside or does not, and the author has no say | one boolean | one field |
@@ -353,9 +398,8 @@ One apparent gap is not one. SNO has per-vertex color and no material, which is 
 ## 8. Open questions
 
 1. **A base unit outside Cyberspace.** `unit` is an exponent over a base the application defines, which is meaningless to a client with no such base. An optional field giving meters per model unit would make an object's real size portable, at the cost of a field that Cyberspace itself would never write.
-2. **Per-face color.** Flat-shaded objects currently pay three vertices per triangle, which spends the 512-vertex budget quickly on exactly the low-poly style the format suits best.
-3. **Whether the limits are the right numbers.** 512 and 1024 were chosen to fit an event. They are not derived from anything.
-4. **There is no hard bound on how far a vertex may lie from the origin.** §1.8 puts the 64-unit bound on publishers and lets readers repair instead of reject, which is what ONOSENDAI does today: it grows the extent to fit, without a ceiling. That is safe for a client rendering its own author's work and unsafe as a general rule, since a payload of 512 vertices at 2^50 units is valid under this text and will produce a grid no renderer wants. Making the bound a reader obligation is a one-line change and would make the current client non-conformant until it is updated, which is why it is a question rather than a rule.
+2. **Whether the limits are the right numbers.** 512 and 1024 were chosen to fit an event. They are not derived from anything.
+3. **There is no hard bound on how far a vertex may lie from the origin.** §1.8 puts the 64-unit bound on publishers and lets readers repair instead of reject, which is what ONOSENDAI does today: it grows the extent to fit, without a ceiling. That is safe for a client rendering its own author's work and unsafe as a general rule, since a payload of 512 vertices at 2^50 units is valid under this text and will produce a grid no renderer wants. Making the bound a reader obligation is a one-line change and would make the current client non-conformant until it is updated, which is why it is a question rather than a rule.
 
 ---
 
@@ -366,7 +410,6 @@ A four-vertex tetrahedron, one color per corner, drawn solid, built on a lattice
 ```json
 {
   "v": 2,
-  "type": "shard",
   "name": "tetra",
   "unit": 0,
   "extent": 8,

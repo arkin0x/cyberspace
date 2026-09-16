@@ -249,6 +249,8 @@ After spawning, a keypair can begin moving through Cyberspace by publishing hop 
 
 A keypair may also **respawn** at any time by simply publishing a new spawn event. Because the new spawn event has a newer timestamp, it invalidates all prior movement events in the old chain. The keypair returns to its original spawn coordinate and starts fresh. Prior movement history remains on relays but is no longer part of the active chain.
 
+**Derezz** is the common name for this: an identity whose chain has ended and which is back at its spawn coordinate is said to have derezzed, whether it got there by respawning deliberately or by having its chain go invalid. The word is a description of a state, not a mechanism. No event, action or tag in this specification performs a derezz, nothing any other identity publishes can cause one, and §1.1's promise that there is no administrator who can move you or delete you means there never can be at this layer. A game may define anything it likes about liveness inside its own box (`decks/README.md`, Game mechanics), and the protocol will not consult it.
+
 ---
 
 ## 4. Movement: Cantor Pairing Trees

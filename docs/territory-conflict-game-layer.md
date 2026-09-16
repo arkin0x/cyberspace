@@ -2,11 +2,10 @@
 
 **Status:** Design record, 2026-08-27
 **Decided by:** arkinox, in review with Claude
-**Inputs:** `CYBERSPACE_V2.md` at 919494a (post DECK-0001 v3), DECK-0001 v3 (merged, #18), the DECK-0002 Domains draft (PR #7), the DECK-0003 Derezz draft (PR #8), the Virtual Spawn draft (PR #15), `RATIONALE.md`, the v1 archive (derezz, armour, stealth, echo resistance), and a revision guide circulated privately by XOR in August 2026.
+**Inputs:** `CYBERSPACE_V2.md` at 919494a (post DECK-0001 v3), DECK-0001 v3 (merged, #18), the DECK-0002 Domains draft (PR #7), the Derezz draft (PR #8, since abandoned), the Virtual Spawn draft (PR #15), `RATIONALE.md`, the v1 archive (derezz, armour, stealth, echo resistance), and a revision guide circulated privately by XOR in August 2026.
 **Supporting analyses** (working notes; this record is the decision):
 - `analysis/deck-domains-ground-up-analysis.md`: domains taken apart claim by claim
-- `analysis/deck-derezz-ground-up-analysis.md`: the derezz draft's defects, including the sitter-wins proof, and a 12-scenario test plan
-- `analysis/deck-derezz-d2-work-clock.md`: the work-as-clock design and the honest pass on the theory behind it
+- ~~`analysis/deck-derezz-ground-up-analysis.md`~~ and ~~`analysis/deck-derezz-d2-work-clock.md`~~: the derezz draft's defects, including the sitter-wins proof, the 12-scenario test plan, and the work-as-clock rebuild. Removed 2026-09-15 when derezz was ruled unworkable; git keeps them, and §4 below still carries the argument that killed it.
 
 ---
 
@@ -42,7 +41,7 @@ The theory behind derezz survives the draft. Chains and cross-chain references a
 
 **Readiness, precisely.** Inside a game running D2, holding gains a second consequence: the holder can engage anyone in the holding without first computing the box between them, so the holder's time-to-engage is shorter. That engagement-latency edge is what *readiness* means, and it exists only inside such a game. In the base protocol there is nothing to engage, and holding is a keyring.
 
-**Actions for the maintainers:** rewrite DECK-0003 as a game DECK per D2, test-first (§3); until the simulator and scenario suite exist and pass, it stays Draft with a note that the old text is known unsound. Remove the domain-policy dependency and owner exemption entirely. Keep "derezz" as the client's respawn verb (ONOSENDAI's panel already means that); the game action is a derezz attack.
+**Superseded, 2026-09-15.** Derezz was ruled unworkable as a mechanism and is not a forthcoming DECK. No number is reserved for it, the working papers are gone from the repository (git keeps them), and the recommendation below to rewrite it test-first stands only as a record of what was considered. "Derezz" survives as the client's respawn verb, which is what ONOSENDAI's panel has always meant by it.
 
 ### 1.3 Virtual spawn: game box.
 
