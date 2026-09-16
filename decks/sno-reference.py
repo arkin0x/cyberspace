@@ -503,8 +503,8 @@ def _self_test() -> None:
         assert resolve_palette(ref, '["#ff0000","#00ff00"]') == [[255, 0, 0], [0, 255, 0]]
         assert resolve_palette(ref, "[[255,0,0],[0,255,0]]") == [[255, 0, 0], [0, 255, 0]]
 
-    # A real kind 3367 event, published by espy.you and read off wss://nos.lol
-    # on 2026-09-16. Its colours are in `c` tags, which is where all 205 events
+    # A real kind 3367 event, published by espy.you and recorded by the survey
+    # of 2026-09-16. Its colours are in `c` tags, which is where all 205 events
     # the survey found keep them, and its content is an emoji. The rule this
     # section carried before today read content only and would have refused it.
     ESPY = {
