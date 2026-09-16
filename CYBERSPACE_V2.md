@@ -431,11 +431,21 @@ The Cantor pairing tree produces five properties that, to our knowledge, no othe
 
 **2. Hierarchical spatial encryption.** Because each region has a unique Cantor root, that root can serve as a cryptographic key. Content encrypted with a region's root can only be decrypted by someone who computes that root (see §7). This is the digital equivalent of writing a message in chalk on a sidewalk: you can only read it by being there.
 
-**3. Work equivalence.** In most digital systems, observing is free and doing costs. In Cyberspace, observation and action cost the same. To discover what's in a region, you must compute the region's root, the same work a traveler would do to cross it. There is no free surveillance.
+**3. Work equivalence.** In most digital systems, observing is free and doing costs. In Cyberspace, observation and action cost nearly the same. To discover what's in a region, you must compute the region's root, the same work a traveler would do to cross it. There is no free surveillance.
+
+**Where the equivalence is not exact, and it favors the observer (non-normative).** Two differences, neither of which the earlier wording admitted. First, a traveler additionally pays the temporal axis, which §7.2 deliberately excludes from key derivation, so observing one region is strictly cheaper than crossing into it by that term. Second, and without bound at scale, **a traveler's work is sequential and an observer's is not**: each chain event commits to the previous one, so a thousand moves are a thousand moves in order, while a thousand regions to observe is an embarrassingly parallel job for a cluster. The equivalence is therefore a good description of one region and a poor one of a million. §7.2's key derivation is where that gap would be closed if it is to be closed.
 
 **4. Deterministic regions.** Any two people computing the Cantor root of the same aligned subtree will get the same answer. Regions don't need to be assigned, registered, or coordinated. They exist as mathematical facts. Spatial consensus happens automatically, without communication.
 
 **5. Decomposition invariance.** As proven in §4.8, sequential decomposition doesn't reduce cost. There are no shortcuts through space.
+
+**Checking a root is cheap; producing one is not (non-normative).** These are different operations and only the second is protected. The low bits of a Cantor pairing depend only on the low bits of its operands, because carries propagate upward, and the one right shift in `(s(s+1))/2` pulls down exactly one bit per level. So carrying a window of `k + h` low bits through the same `2^h` pairings reproduces the true root's low `k` bits **exactly**, in a few machine words instead of the root's full width. Measured against real roots, a 64-bit answer is exact at every height tested, and the saving is 116 times at h18 and grows with height.
+
+This does not weaken anything above. The operation count is unchanged, so §4.8 is untouched: the window performs the same `2^h` pairings in the same order and merely carries fewer bits through each. And **the window never yields the root**. At h34 it returns 64 bits of a number 1.46 trillion bits wide, so it cannot produce `region_bytes`, cannot derive a key under §7.2, and cannot forge a proof.
+
+**It detects error, not fraud, and the difference matters.** The window is cheap for everyone symmetrically, so an adversary runs it too, learns the same low bits, and appends whatever they like above them. A prefix that matches is therefore evidence of an honest mistake not having happened, and no evidence at all against somebody trying. Use it to confirm that a transfer arrived intact, that a disclosed root is for the region you asked for rather than a neighbouring one, or that a long computation on your own hardware did not corrupt. Do not use it as a proof of anything.
+
+The load-bearing consequence is the negative one: **a root prefix is not evidence of possession.** Anyone can compute one in seconds without holding the region, so no protocol, market or game may treat a prefix as attestation. Possession is demonstrated by using the root, which is to say by deriving a key that actually decrypts, and a wrong root simply fails to open anything.
 
 These five properties together create something unprecedented: digital space with the structural integrity of physical space, enforced by mathematics rather than by any authority.
 
@@ -1401,6 +1411,12 @@ The Cantor Height 34 scale was chosen through rigorous testing to balance severa
 
 **Against nation-states:** Cantor root cost scales with the side length of the aligned cube, per axis (about 86 × 2^h bits): a person (h34) is 185 GB, a 7 km city (h46) is 756 TB, a 262 km country (h51) is 24 PB, an Earth octant (h57) is 1.5 EB, and the GEO cube (h60) is 12 EB, against roughly 10 to 20 ZB of installed world storage. A country-scale root is within reach of a well-funded organization today and an Earth-scale root is within reach of a hyperscaler or a state. This is structural rather than a calibration choice: a country is only 2^17 times wider than a person, while the storage gap between a consumer and a state is about 2^20, so any scale that keeps human-scale hops feasible for consumers keeps country-scale roots feasible for states. The scale therefore does not deliver a century-long guarantee against large regions being held. Holding a region costs disk for as long as it is held (§7.8), which is the protocol's whole maintenance economics; claims, exclusion and governance are not protocol matters and are left to applications and games.
 
+**The gap is fixed, and the calibration cannot widen it (non-normative).** The argument above is right and can be made exact. A root is `85 × 2^h` bits per axis, so the highest height a storage budget `B` reaches is `h_max ≈ log2(B) − 6.018`. The calibration term does not appear in that equation and cannot: the calibration maps heights to meters, the cost function maps heights to bytes, and the two compose without interacting. **The distance between what an individual reaches and what a state reaches is therefore `log2(B_state / B_consumer)` whatever the calibration.** Measured at 16.7 heights for a mainstream desktop, 13.0 for an enthusiast rig and 22.0 for a phone. Changing the calibration slides a window of fixed width; it never widens it, and which consumer you mean moves the answer by 9 heights, which is more than any calibration change ever proposed here.
+
+**The shelf life, with a number (non-normative).** On central storage-growth assumptions a one billion dollar budget reaches the root of the whole Earth around **2045**, or 2036 optimistic, or never if the 2025 to 2026 storage price reversal proves permanent. Every ceiling past about one day of patience is capacity-bound, so compute growth barely moves these dates and storage price is the only sensitive input. No calibration changes them meaningfully, because the window is rigid.
+
+**Changing the calibration is not a hard fork (non-normative).** It is one constant in §9.7 step 9. No chain is invalidated, no proof breaks, nobody respawns; it is a smaller break than the sidestep v2 change already shipped. The reason not to change it is therefore not difficulty but **consensus**: two incompatible Earths is worse than either Earth, and that reason does not expire. Anyone proposing a change should be answered with the paragraph above rather than with the cost of making it.
+
 **Aesthetics:**
 - 2 meters is a metaphor for the human scale of the universe
 - Cantor Height 34 / 85-bit axis = 34/85 = 0.4 = 2/5, a rational and memorable relationship
@@ -1514,13 +1530,13 @@ Cantor root cost scales with the side length of the aligned cube, per axis, not 
 | GEO cube (134,000 km) | h60 | 12 EB | about 0.1% of installed world storage |
 | h70 | h70 | 12.7 ZB | roughly all installed storage today |
 
-The limiting factor for Cantor roots is **data storage and I/O bandwidth**, not raw compute, and the protocol's work equivalence property ensures that storing and processing this data cannot be optimized away. There is no ASIC advantage for Cantor roots because the bottleneck is data movement. Sidestep travel (§6) is plain hash work and has no such protection; see §12.3.
+The limiting factor on **how high a party can go** is storage capacity, and the protocol's work equivalence property ensures the data cannot be optimized away. There is no ASIC advantage, because no chip removes the need to hold the intermediates. The limiting factor on **how long it takes beneath that ceiling** is arithmetic rather than I/O bandwidth: multiplying two `n`-bit numbers costs far more than one operation per byte, and the work is measured at about 28 times compute-bound. §13.2 says more. Sidestep travel (§6) is plain hash work and has no such protection; see §12.3.
 
 ### 9.11 Storage as the primary constraint (non-normative)
 
 Cantor tree computation is memory-bound. At Cantor Height 34, a single subtree contains 2³⁴ ≈ 17 billion leaf nodes. The intermediate values cannot fit in RAM and must be streamed to disk.
 
-**This is intentional.** Storage is the equalizer:
+**This is intentional.** Capacity is the equalizer (and see §13.2 on why the wait beneath the ceiling is arithmetic rather than bandwidth):
 - Consumer SSDs provide enough I/O for small roots
 - Nation-states have faster storage, but exponential growth limits scaling
 - There is no "ASIC advantage" because the bottleneck is data movement, not hash rate
