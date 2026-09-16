@@ -1,0 +1,9 @@
+# Python leaves these beside the reference validators whenever one is run or
+# imported. They are build output of a machine that happened to run them, they
+# differ per interpreter version, and three of them were committed before this
+# file existed.
+__pycache__/
+*.py[cod]
+
+# Editors and operating systems
+.DS_Store
