@@ -42,7 +42,7 @@ Some DECKs are game rules rather than protocol extensions: they define what a ga
 
 | | Game-alive | Game-dead |
 |---|---|---|
-| **Protocol-valid** | ordinary play | a derezzed avatar: chain valid, the game says respawn |
+| **Protocol-valid** | ordinary play | a chain the game has ruled out of play, while the protocol still counts it valid |
 | **Protocol-invalid** | a virtual spawn: chain invalid, the game recognises it | an ordinary invalid chain (fork, bad proof) |
 
 A game-mechanic DECK MUST, in addition to the rules above:

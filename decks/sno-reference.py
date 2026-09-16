@@ -122,14 +122,13 @@ def validate(payload: Any) -> dict:
     if not isinstance(payload, dict):
         raise SnoError("rule 1: payload is not a JSON object")
 
-    # 1. version and type
+    # 1. version
     if payload.get("v") not in (1, 2) or isinstance(payload.get("v"), bool):
         raise SnoError("rule 1: v must be 1 or 2")
-    # §1.1a: v1 carries type "shard"; v2 carries no type, and a reader ignores
-    # the field wherever it appears rather than rejecting, so a v1 payload stays
-    # readable and nothing depends on another project's vocabulary.
-    if payload.get("v") == 1 and payload.get("type") != "shard":
-        raise SnoError('rule 1: a v1 payload must carry type "shard"')
+    # §1.1a: there is no `type` field in either version. Payloads written before
+    # this document carry type "shard"; it is ignored here and never rejected
+    # on, because the field is noise and rejecting on noise would break every
+    # object already published.
 
     # 2. the three arrays, and vertices parallel to colors
     for key in ("vertices", "colors", "faces"):
@@ -247,6 +246,24 @@ def clamp_color(c: list) -> list[float]:
     return out
 
 
+COLOR_PLACES = 4
+
+
+def round_color(c: list) -> list[float]:
+    """§1.3: what a publisher MUST write. Four decimal places per channel.
+
+    This is a writer's obligation, not a reader's, so `validate` never rejects
+    on it: a payload that arrives with more precision is read as it stands.
+    But every publisher owes it, because colour is the largest cost in the
+    format and the precision buys nothing. Four places is 10,000 steps per
+    channel against eight-bit colour's 256, and the difference between
+    0.8039215686274510 and 0.8039 is eighteen bytes against six, three times
+    per vertex and again per face colour. §1.8 works out what that means for
+    how large an object can be.
+    """
+    return [round(x, COLOR_PLACES) for x in clamp_color(c)]
+
+
 # --------------------------------------------------------------------------
 # Self-test
 # --------------------------------------------------------------------------
@@ -306,20 +323,25 @@ def _self_test() -> None:
 
     # The version is one sign. A v1 object with the same numbers reads mirrored
     # in Z, which is what keeps everything published before v2 looking right.
-    v1 = validate({**APPENDIX_A, "v": 1, "type": "shard"})
+    v1 = validate({**APPENDIX_A, "v": 1, "type": "shard"})  # the legacy field is ignored, not required
     assert [p[2] for p in positions(v1)] == [-p[2] for p in positions(ok)]
     assert [p[:2] for p in positions(v1)] == [p[:2] for p in positions(ok)]
     print("v1 and v2 differ in Z alone, which is the whole of the version")
 
-    # §1.1a: v1 needs its type, v2 has none, and a stray one is ignored.
-    try:
-        validate({**APPENDIX_A, "v": 1})
-        raise AssertionError("a v1 payload without type should be rejected")
-    except SnoError as e:
-        assert str(e).startswith("rule 1"), e
+    # §1.1a: there is no `type` in either version. A payload from before this
+    # document carries one; it is read, never required, never rejected on.
+    assert validate({**APPENDIX_A, "v": 1})["v"] == 1
+    assert validate({**APPENDIX_A, "v": 1, "type": "shard"})["v"] == 1
     assert validate({**APPENDIX_A, "type": "shard"})["v"] == 2
     assert validate({**APPENDIX_A, "type": "anything at all"})["v"] == 2
-    print("type: required at v1, absent at v2, ignored wherever it appears")
+    assert validate({**APPENDIX_A, "type": 17})["v"] == 2
+    print("type: no such field, ignored wherever one appears, never required")
+
+    # §1.3: what a publisher owes. A reader still takes whatever arrives.
+    assert round_color([0.8039215686274510, 0.1254901960784314, 2.0]) == [0.8039, 0.1255, 1.0]
+    assert round_color([float("nan"), -5, 0.5]) == [0.0, 0.0, 0.5]
+    assert validate({**APPENDIX_A, "colors": [[0.8039215686274510, 0.1, 0.1]] * len(APPENDIX_A["vertices"])})
+    print("colour: four places from a publisher, any number accepted by a reader")
 
     # A sub-unit position is exact, not approximate: a third of a unit is 40
     # ticks and comes back as exactly one third.

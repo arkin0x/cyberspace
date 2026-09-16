@@ -52,7 +52,7 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | Field | Type | Required | Meaning |
 |---|---|---|---|
 | `v` | integer | yes | Format version, `1` or `2`. They differ in one sign and nothing else (§2). A reader MUST support both and MUST reject any other value. |
-| `type` | string | v1 only | `"shard"` in a `v: 1` payload, where it is required. A `v: 2` payload MUST NOT carry it, and a reader MUST ignore it wherever it appears (§1.1a). |
+| `type` | string | no | A legacy field. A reader MUST ignore it wherever it appears, and MUST NOT require it or reject on its value. A publisher SHOULD NOT write it (§1.1a). |
 | `name` | string | yes | A name for humans. A reader MUST truncate to 64 characters. |
 | `unit` | integer | yes | Scale exponent, `0` to `84`. One model unit is `2^unit` base units (§1.6). |
 | `extent` | integer | no | Grid half-width in model units, `1` to `64`. Advisory and self-repairing (§1.8). Absent or malformed means `8`. |
@@ -67,15 +67,15 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 
 `vertices` and `colors` MUST have the same length. Any field not listed here MUST be ignored by a reader, not rejected (§5).
 
-### 1.1a Why `type` is gone from version 2
+### 1.1a Why there is no `type`
 
-A `v: 1` payload carries `type: "shard"`. It is not carried in version 2 and this is worth a paragraph, because removing a required field looks like carelessness and is the opposite.
+Payloads written before this document carry `type: "shard"`. This format has no such field, and that is worth a paragraph, because dropping a field that existing writers emit looks like carelessness and is the opposite.
 
 The field never said anything the container did not already say. A standalone object is `kind 33331` and an object in a bag is a `kind 3330` item; either way the kind is what a reader dispatches on, and Cyberspace's own client derives "this is a shape, not a message" from the kind and has only ever used `type` as a sanity check on a blob it had already decided was a payload.
 
-What the field did do was carry a parochial word into a format meant for anyone. "Shard" is Cyberspace's name for an object hidden at a place. It is a good word there and it means nothing in a format called Simple Nostr Objects, and a required field whose only legal value is another project's vocabulary is exactly what makes a format look like somebody's internal file that escaped.
+What the field did do was carry a parochial word into a format meant for anyone. "Shard" is Cyberspace's name for an object hidden at a place. It is a good word there and it means nothing in a format called Simple Nostr Objects, and a field whose only legal value is another project's vocabulary is exactly what makes a format look like somebody's internal file that escaped.
 
-So: a `v: 2` payload has no `type`, which keeps one spelling per version, and a reader ignores the field wherever it finds one rather than rejecting, which keeps every `v: 1` payload readable and costs nothing.
+So there is no `type` in either version, no reader may require one, and no reader may reject on its value. A publisher should not write it. Nothing rejects a payload that carries one, because the field is noise and rejecting on noise would break every object already published.
 
 ### 1.2 Positions: the lattice and the ticks
 
@@ -101,7 +101,9 @@ A position is an exact rational, never a float. It is carried in two parts.
 
 There is one color per vertex and no other color anywhere in the format. A face is painted by interpolating its three vertices; a line is painted by interpolating along its length; a point is its own color. A flat-colored triangle is expressed by giving its three vertices the same color, which costs three vertices out of the budget rather than one material.
 
-Publishers SHOULD round color channels to at most three decimal places. The difference is invisible and the saving is real: `0.7333333333333333` is eighteen bytes and `0.733` is five, repeated three times per vertex.
+**A publisher MUST write at most four decimal places per channel**, and a reader MUST accept any number and clamp it, so nothing breaks if one arrives with more.
+
+This is a normative limit rather than advice because it is the single largest cost in the format and it buys nothing. Four decimal places is 10,000 steps per channel; eight-bit colour, which is what a screen and every common exchange format use, has 256. Nothing anywhere can tell the difference, and the saving is not marginal: a worst-case vertex costs 87 bytes with full double precision and 52 with four places, because `0.8039215686274510` is eighteen characters and `0.8039` is six, three times over per vertex and again per face colour. §1.8 works out what that means for how large an object can be.
 
 ### 1.4 Faces
 
@@ -163,7 +165,7 @@ A reader that does not implement `up` draws the object in the application's axes
 
 | Limit | Value | Why |
 |---|---|---|
-| `MAX_VERTICES` | 512 | keeps the worst case inside every relay's limits without the author having to think about it. See below |
+| `MAX_VERTICES` | 512 | with §1.3's four decimal places, keeps the worst case inside every relay's limits without the author having to think about it. See below |
 | `MAX_FACES` | 1024 | the same |
 | `extent` | 1 to 64 model units | a hint at the lattice size, so a reader can size a grid before it reads the data |
 | `unit` | 0 to 84 | the Cyberspace address space is `2^85` gibsons on a side |
@@ -175,18 +177,33 @@ A reader MUST reject a payload whose vertex or face count exceeds these limits.
 
 The position bound is stated as an obligation on publishers rather than readers: a publisher MUST NOT write a vertex further than `64` model units (`7680` ticks) from the origin on any axis. A reader MAY reject such a payload and MAY instead repair it by growing the extent. ONOSENDAI currently repairs. §8 records the consequence.
 
-These numbers are deliberately small, and the vertex ceiling earns its place by keeping the format inside the band that every relay accepts.
+These numbers are small on purpose. The point of having a ceiling at all is that a publisher never has to think about relay limits, and the ceiling only earns its place if the **worst** object it permits still fits.
 
-| Object | Full event, serialized |
+strfry's stock `events.maxEventSize` is 65,536 bytes, and strfry is the most deployed relay software in the network. That is the number to stay under. What a full serialized event costs at the ceiling, worst case throughout, with coordinates at the extent bound and every field at its most expensive:
+
+| At 512 vertices and 1024 faces | No `facecolors` | With `facecolors` |
+|---|---|---|
+| colour channels at full double precision | 57.1 KB | 115.1 KB, **over the cap** |
+| colour channels at four decimal places (§1.3) | 39.6 KB | 62.6 KB |
+
+The four-decimal rule in §1.3 is what makes these limits publishable, and it is the reason that rule is a MUST. Without it the ceiling permits objects no relay will take, which is precisely the situation a ceiling exists to prevent.
+
+The cost is dominated by colour, not by geometry. Worst case, at four decimal places, a vertex costs 52 bytes, a face 13, and a face that carries its own colour 36. A publisher that wants the largest possible object spends its budget on vertices and lets faces interpolate.
+
+A real object is far below that, because the worst case above assumes every position needs its sub-unit part written out and every face carries a colour of its own. An object built on whole units, which is what the lattice is for, compresses its `ticks` to a single number and its `facecolors` to one run:
+
+| A typical object, whole units, four decimals | Full event, serialized |
 |---|---|
-| a colored cube, 8 vertices | about 600 bytes |
-| 64 vertices | about 3.2 KB |
-| 256 vertices | about 13 KB |
-| **512 vertices, the ceiling** | **about 26.7 KB** |
+| a coloured cube, 8 vertices | about 900 bytes |
+| 64 vertices, 128 faces | 3.8 KB |
+| 256 vertices, 512 faces | 14.6 KB |
+| **512 vertices and 1024 faces, the ceiling** | **29.4 KB** |
 
-For comparison, strfry's stock `events.maxEventSize` is 65,536 bytes, and strfry is the most deployed relay software in the network. The worst case an SNO can produce is therefore about 2.4 times under the tightest common cap, and smaller than the median long-form article. A publisher never has to think about relay limits, which is the point of having a ceiling at all.
+One colour per face adds almost nothing to these, because a run of identical faces is two numbers whatever its length.
 
-Two facts make this margin more comfortable than it looks. Escaping the payload into a JSON string costs 12 bytes, under 0.05%, because the content is almost entirely integers, so the fear that nesting JSON inside JSON is wasteful does not apply here. And the geometry belongs in `content` rather than tags: strfry caps a tag value at 1,024 bytes and the tag count at 2,000, while content is roomy everywhere.
+Two facts make this margin more comfortable than it looks. Escaping the payload into a JSON string costs about 12 bytes, under 0.05%, because the content is almost entirely integers, so the fear that nesting JSON inside JSON is wasteful does not apply here. And the geometry belongs in `content` rather than tags: strfry caps a tag value at 1,024 bytes and the tag count at 2,000, while content is roomy everywhere.
+
+**On raising the limits.** The counts are not where the headroom is. At full precision the format is already at the cap, and the four-decimal rule is what buys the room `facecolors` needs; doubling the vertex count would put every face-coloured object over every relay. The change that would actually buy headroom is storing colour as three integers `0` to `255`, which costs 42 bytes a vertex instead of 52 and matches PLY's native form, and it is a different version of this format rather than a limit raised inside this one.
 
 One trap worth knowing, since it cannot be discovered at runtime: strfry populates NIP-11's advertised `max_message_length` from its WebSocket frame cap, not from `events.maxEventSize`, and never advertises the latter. A relay advertising a one megabyte limit may still reject a 70 KB event. Do not design against advertised numbers; stay under the ceiling and handle the rejection message.
 
@@ -194,7 +211,7 @@ One trap worth knowing, since it cannot be discovered at runtime: strfry populat
 
 A reader MUST perform all of the following before rendering, and MUST reject the whole payload if any fails. A partially valid object is not rendered partially: a face index pointing past the end of the vertex list is not a defect that degrades gracefully.
 
-1. `v` is `1` or `2`. In a `v: 1` payload `type` is `"shard"`; in a `v: 2` payload `type` is absent, and a reader ignores it wherever it appears rather than rejecting (§1.1a).
+1. `v` is `1` or `2`. A `type` field, if present, is ignored and never rejected on (§1.1a).
 2. `vertices`, `colors` and `faces` are arrays, and `vertices.length === colors.length`.
 3. `vertices.length <= 512` and `faces.length <= 1024`.
 4. `mode` is one of the three words.
@@ -224,8 +241,8 @@ This is stated first and in normative language because being silent about it is 
 
 | `v` | Z points | A reader |
 |---|---|---|
-| `1` | away from the viewer | MUST negate every Z on read, which renders the object exactly as its author built it. Carries `type: "shard"` (§1.1a) |
-| `2` | toward the viewer | reads the positions as written. Carries no `type` |
+| `1` | away from the viewer | MUST negate every Z on read, which renders the object exactly as its author built it |
+| `2` | toward the viewer | reads the positions as written |
 
 Version 1 is the convention this format had while it lived only inside Cyberspace, where `+Z` is the direction of the black sun. Every object published before this document exists under it, and negating Z on read is what keeps those objects looking as they always have. A publisher MUST write `v: 2`; `v: 1` is for reading what already exists.
 
