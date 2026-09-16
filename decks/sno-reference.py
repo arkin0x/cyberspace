@@ -117,7 +117,7 @@ def expand_face_colors(entries: Any, count: int, palette_len: int) -> list[int]:
     return out
 
 
-def validate(payload: Any, fetched_palette: str | None = None) -> dict:
+def validate(payload: Any, fetched_palette: Any = None) -> dict:
     """§1.9, in order. Returns the payload on success, raises SnoError on failure.
 
     A payload is accepted whole or not at all: a face index past the end of the
@@ -270,13 +270,22 @@ def _load_built_in() -> list[list[int]]:
     return [[int(h[i:i + 2], 16) for i in (1, 3, 5)] for h in hexes]
 
 
-def parse_palette_content(text: str) -> list[list[int]] | None:
-    """§1.3b: a palette event's content, or None when it is not one.
+#: §1.3b. A colour as the `c` tag convention writes one.
+HEX = re.compile(r"#[0-9a-fA-F]{6}")
 
-    Deliberately generous about shape and silent about kind. Palettes on nostr
-    are somebody else's problem and partly solved already; a reader that
-    accepts the obvious form will read whatever convention wins without this
-    document being revised. Entries are [r, g, b] integers or "#rrggbb".
+#: §1.3a. A palette carried by an event rather than by the object. `nevent`
+#: names one immutable event, which is what pins an object's colours; `naddr`
+#: is accepted for a palette somebody publishes as an addressable event.
+PALETTE_REF = re.compile(r"(nevent1|naddr1)[023456789acdefghjklmnpqrstuvwxyz]{20,}")
+
+
+def parse_palette_content(text: str) -> list[list[int]] | None:
+    """§1.3b step 2: the legacy palette in an event's `content`, or None.
+
+    Entries are [r, g, b] integers or "#rrggbb". This form is read and never
+    written: an earlier draft of §1.3b described it, so somebody may have
+    implemented it, and five lines of generosity costs nothing. The tags are
+    the encoding.
     """
     try:
         raw = json.loads(text)
@@ -295,27 +304,67 @@ def parse_palette_content(text: str) -> list[list[int]] | None:
     return out
 
 
-def resolve_palette(field: Any, fetched: str | None = None) -> list[list[int]]:
+def parse_palette_event(event: Any) -> list[list[int]] | None:
+    """§1.3b: the palette an event carries, or None when it carries none.
+
+    The `c` tags are the encoding and their order is the index. They are read
+    first because a single-letter tag is indexed by relays, so `{"#c": [...]}`
+    finds every palette containing a colour, which is a capability that exists
+    only while the colours are tags. `content` is read after them and only
+    because an earlier draft of this section described that form.
+
+    `event` is the event as a dict, or its `content` alone as a string for a
+    caller that has nothing else.
+    """
+    if isinstance(event, str):
+        return parse_palette_content(event)
+    if not isinstance(event, dict):
+        return None
+
+    tags = event.get("tags")
+    marked = [t for t in tags if isinstance(t, list) and t and t[0] == "c"] if isinstance(tags, list) else []
+    if 2 <= len(marked) <= 256:
+        out: list[list[int]] = []
+        for tag in marked:
+            # One malformed value fails the whole tag path rather than being
+            # skipped: a palette with a hole in it is not the palette the
+            # author published, and every index after the hole would shift.
+            if len(tag) < 2 or not isinstance(tag[1], str) or not HEX.fullmatch(tag[1]):
+                out = []
+                break
+            out.append([int(tag[1][i:i + 2], 16) for i in (1, 3, 5)])
+        if out:
+            return out
+
+    content = event.get("content")
+    return parse_palette_content(content) if isinstance(content, str) else None
+
+
+def resolve_palette(field: Any, fetched: Any = None) -> list[list[int]]:
     """§1.3a and §1.3b: the colours an object's indices name.
 
-    Absent means the built-in. A registered name means the built-in. An naddr
-    means a palette published as its own event, and `fetched` is that event's
-    content if the caller managed to get it: a reference is never load-bearing,
-    so an unresolved one is the built-in and never a rejection. An array is a
-    palette the object carries itself, 2 to 256 entries.
+    Absent means the built-in. A registered name means the built-in. An nevent
+    or an naddr means a palette published as its own event, and `fetched` is
+    that event if the caller managed to get it: a reference is never
+    load-bearing, so an unresolved one is the built-in and never a rejection.
+    An array is a palette the object carries itself, 2 to 256 entries.
+
+    A reader resolves the reference to the event it names and stops there. It
+    MUST NOT follow an edit chain forward to a newer palette, which is what
+    keeps an object looking the way its author published it.
     """
     if field is None:
         return _load_built_in()
     if isinstance(field, str):
         if field in BUILT_IN_PALETTES:
             return _load_built_in()
-        if field.startswith("naddr1") and len(field) > 12:
+        if PALETTE_REF.fullmatch(field):
             if fetched is None:
                 return _load_built_in()
-            return parse_palette_content(fetched) or _load_built_in()
+            return parse_palette_event(fetched) or _load_built_in()
         raise SnoError(f"rule 8a: unknown palette {field!r}")
     if not isinstance(field, list):
-        raise SnoError("rule 8a: palette is neither a name, an naddr, nor an array")
+        raise SnoError("rule 8a: palette is neither a name, a reference, nor an array")
     if not 2 <= len(field) <= 256:
         raise SnoError(f"rule 8a: a palette carries 2 to 256 colours, not {len(field)}")
     out: list[list[int]] = []
@@ -446,22 +495,76 @@ def _self_test() -> None:
             assert str(e).startswith(rule), e
     # §1.3b: a reference is never load-bearing. Unresolved is the built-in,
     # never a rejection, so the worst case is wrong colours and never no object.
+    NEVENT = "nevent1qqsfktxwwrls0r3e465nl47z7x3p9zsj8gqye7w5lhpakewwzw9r44cpp4mhxue69uhkummn9ekx7mqwz8u63"
     NADDR = "naddr1qqxnzdenxvmnxdfhxg6rwwfjqy88wumn8ghj7mn0wvhxcmmv"
-    assert resolve_palette(NADDR) == built_in
-    assert validate({**APPENDIX_A, "palette": NADDR})["v"] == 2
-    assert resolve_palette(NADDR, '["#ff0000","#00ff00"]') == [[255, 0, 0], [0, 255, 0]]
-    assert resolve_palette(NADDR, "[[255,0,0],[0,255,0]]") == [[255, 0, 0], [0, 255, 0]]
+    for ref in (NEVENT, NADDR):
+        assert resolve_palette(ref) == built_in
+        assert validate({**APPENDIX_A, "palette": ref})["v"] == 2
+        assert resolve_palette(ref, '["#ff0000","#00ff00"]') == [[255, 0, 0], [0, 255, 0]]
+        assert resolve_palette(ref, "[[255,0,0],[0,255,0]]") == [[255, 0, 0], [0, 255, 0]]
+
+    # A real kind 3367 event, published by espy.you and recorded by the survey
+    # of 2026-09-16. Its colours are in `c` tags, which is where all 205 events
+    # the survey found keep them, and its content is an emoji. The rule this
+    # section carried before today read content only and would have refused it.
+    ESPY = {
+        "kind": 3367,
+        "id": "9b2cce70ff078e39aea93fd7c2f1a2128a123a004cf9d4fdc3db65ce138a3ad7",
+        "pubkey": "765c2fe92035657774080c87426f8dd8b4c8bbbadca702c93247efccf69d8618",
+        "created_at": 1789310239,
+        "tags": [
+            ["c", "#B4B4AF"], ["c", "#FC4755"], ["c", "#D1242B"],
+            ["c", "#694F34"], ["c", "#A1785D"], ["c", "#01AE85"],
+            ["layout", "horizontal"],
+            ["alt", "Color moment: #B4B4AF, #FC4755, #D1242B, #694F34, #A1785D, #01AE85"],
+            ["client", "3cbg51pm00nms2dp8rm9xiswj8i6n4sfp0mlc8obmum6dd31hjespy.nsite.localhost"],
+        ],
+        "content": "\N{EUROPEAN CASTLE}",
+    }
+    assert parse_palette_event(ESPY) == [
+        [180, 180, 175], [252, 71, 85], [209, 36, 43],
+        [105, 79, 52], [161, 120, 93], [1, 174, 133],
+    ]
+    assert resolve_palette(NEVENT, ESPY) == parse_palette_event(ESPY)
+    # Order is document order, and the order is the index: not sorted, not
+    # deduplicated, and not reordered by anything else in the event.
+    assert parse_palette_event({"content": "", "tags": [["c", "#00ff00"], ["c", "#ff0000"]]}) == [[0, 255, 0], [255, 0, 0]]
+    # The tags win over a content that also parses, because they are the
+    # encoding and the content form is only read for the draft that described it.
+    both = {**ESPY, "content": json.dumps(["#000000", "#111111", "#222222"])}
+    assert parse_palette_event(both) == parse_palette_event(ESPY)
+    # The legacy content form, read on an event whose tags carry no palette.
+    legacy = {"content": json.dumps(["#000000", "#111111", "#222222"]), "tags": [["name", "three greys"]]}
+    assert parse_palette_event(legacy) == [[n, n, n] for n in (0, 17, 34)]
+    # Tags that do not parse fall through to the content rather than failing
+    # the event: the reader takes the first rule that succeeds, in order.
+    assert parse_palette_event({**legacy, "tags": [["c", "not a colour"]]}) == [[n, n, n] for n in (0, 17, 34)]
+    # An event with neither is a failed fetch, not an error.
+    for empty in (
+        {"content": "\N{ARTIST PALETTE}", "tags": []},
+        {"content": "", "tags": [["c", "#ff0000"]]},                    # one colour is not a palette
+        {"content": "", "tags": [["c", "#ff0000"], ["c", "ff0000"]]},   # one malformed fails the path
+        {"content": "", "tags": [["c", "#ff0000"], ["c"]]},             # a c tag with no value
+        {"content": "", "tags": [["c", "#ff0000"]] * 257},
+        {"content": "not json", "tags": "not tags"},
+        {},
+        [],
+        None,
+    ):
+        assert parse_palette_event(empty) is None, empty
+        assert resolve_palette(NEVENT, empty) == built_in if empty is not None else True
     # A fetch that returns something that is not a palette is a failed fetch.
     for junk in ("not json", "{}", "[]", '["#ff00"]', "[[300,0,0],[0,0,0]]", json.dumps([[0, 0, 0]] * 257)):
-        assert resolve_palette(NADDR, junk) == built_in, junk
+        assert resolve_palette(NEVENT, junk) == built_in, junk
     # An index valid against the built-in but past a shorter fetched palette is
     # still a rejection: whichever palette applies is the one that bounds it.
     try:
-        validate({**APPENDIX_A, "palette": NADDR}, '["#ff0000","#00ff00"]')
+        validate({**APPENDIX_A, "palette": NEVENT}, '["#ff0000","#00ff00"]')
         raise AssertionError("an index past a fetched palette should be rejected")
     except SnoError as e:
         assert str(e).startswith("rule 8b"), e
     print("palette: 256 built in, 2 to 256 carried, a reference falls back and never rejects")
+    print("palette event: c tags are the palette and their order is the index; a live kind 3367 reads as its six colours")
 
     # A sub-unit position is exact, not approximate: a third of a unit is 40
     # ticks and comes back as exactly one third.
