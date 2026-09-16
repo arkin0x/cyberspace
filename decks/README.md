@@ -56,4 +56,4 @@ The design record for this category, and for why the base protocol defines holdi
 ## Registry
 - `DECK-0001-hyperspace.md`: Hyperspace, Bitcoin block transit (ports, landfalls, stations, rides)
 - `DECK-0002`: reserved for Virtual Spawn (game mechanic; draft in PR #15)
-- `DECK-0003-sno.md`: SNO (Simple Nostr Objects), the small 3D object format. Defines `kind 33331`, a standalone editable object; `kind 3330` bag items and `kind 11333` avatars carry the same payload
+- `DECK-0003-sno.md`: SNO (Simple Nostr Objects), the small 3D object format. Defines `kind 33331`, a standalone editable object; `kind 3330` bag items and `kind 11333` avatars carry the same payload. Beside it: `sno-reference.py`, a conformance implementation that runs its own rejection table; `sno-palette.json` and `sno-palette.mjs`, the built-in 256-colour palette and the generator that produces it; `sno-palette.png`, the sheet
