@@ -126,7 +126,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [12.3 Acknowledged attack vectors](#123-acknowledged-attack-vectors)
 - [13. Structured Proof-of-Work (non-normative)](#13-structured-proof-of-work-non-normative)
   - [13.1 A new class of proof-of-work](#131-a-new-class-of-proof-of-work)
-  - [13.2 Storage-bound, not compute-bound](#132-storage-bound-not-compute-bound)
+  - [13.2 Capacity-bound, and compute-bound within it](#132-capacity-bound-and-compute-bound-within-it)
   - [13.3 Fixed difficulty](#133-fixed-difficulty)
   - [13.4 Where the energy goes](#134-where-the-energy-goes)
   - [13.5 The sidestep as traditional proof-of-work](#135-the-sidestep-as-traditional-proof-of-work)
@@ -864,6 +864,14 @@ A hop is a **canonical price on a cell**. Its work product is the region root of
 
 This is not an oversight and it is not a road in the sense §6.4 forbids. A region root is disclosed only when a holder chooses to disclose it, one recipient at a time, and that disclosure is exactly the act the protocol is built to support: handing someone the key to a place. The v1 sidestep published the equivalent to the whole world automatically, as a side effect of one traveller moving, with nobody choosing anything. Movement is priced; disclosure is a social act.
 
+**How much a handed root is worth, measured (non-normative).** Less than it sounds, and the reason is worth stating because it decides what businesses are possible here (`docs/what-can-be-sold.md`).
+
+A hop is four stages: build three axis trees, combine them into `region_n`, compute the temporal axis `cantor_t`, then bind and hash. A recipient skips only the first. What remains is not cheap, because a root at height `h` is a number of `85 × 2^h` bits, and the combine multiplies numbers of that size: `region_n` is about four times an axis root and `hop_n` about eight times. The three pairings that remain are the three largest operations in the whole computation, and the millions of tiny pairings at the bottom of a tree, which are what the recipient was spared, are nearly free.
+
+Measured, building a tree and then combining: a recipient handed all three axis roots saves **about 19% of the work**, stable across heights (19.7% at h12, 19.2% at h14, 19.0% at h16), and less than that with faster multiplication. The remainder is `Θ(2^h)` and includes `cantor_t`, which is derived from the recipient's own `previous_event_id` (§5.3) and is therefore **per traveller**: it cannot be precomputed by a discloser, shared between recipients, or reused on a second hop.
+
+So a handed root is a real saving on a real cost, not a bypass. A recipient still needs hardware of the discloser's class to use one at all, since `region_n` at h47 is on the order of petabytes. **This does not close the market in computation, only the market in reusable answers.** Anyone may be paid to perform a traveller's own work for them, and §6.4's seeding is what keeps that market honest: because nothing can be resold, no operator can compute the world once and rent the archive forever.
+
 ### 6.13 Natural continents (non-normative)
 
 The combination of Cantor hops and Merkle sidesteps creates emergent geography in the coordinate space:
@@ -1155,8 +1163,10 @@ Computing a region's Cantor root produces every intermediate node of the per-axi
 What holding buys is latency, and only latency:
 
 - reading content published anywhere in the region at any height without per-item work, where a passerby's interactive scan reaches roughly h16 (§7.3);
-- writing at any height in the region at once;
-- deriving a two-factor key at once, `KDF(location_decryption_key || owner_secret)`, for content that must be both found by presence and unlocked by the holder.
+- writing at any height in the region without rebuilding a tree;
+- deriving a two-factor key, `KDF(location_decryption_key || owner_secret)`, for content that must be both found by presence and unlocked by the holder.
+
+**"Without rebuilding a tree" is not "at once", and earlier drafts of this section said "at once" (non-normative).** A holder skips the tree build and still pays the combine, which operates on numbers of `85 × 2^h` bits and is measured at 0.76 to 1.03 times a full axis build. Holding therefore buys about **4.9 times**, roughly two heights, not an instant answer: a held key at h34 is still on the order of hours on a desktop. That is a large and real advantage over not holding, and it is a latency advantage rather than a capability one, exactly as the rest of this section says. §6.12 works the same arithmetic from the other side, and `docs/what-can-be-sold.md` works through what both mean for anyone building on this.
 
 What holding does not buy: exclusivity (anyone who does the work holds identical keys), any advantage in observing chains (they are public to everyone), or any effect on anyone else. It is a keyring, not a claim.
 
@@ -1478,7 +1488,9 @@ Golden vectors assume `altitude_m = 0` with clamp-to-surface behavior enabled:
 
 ### 9.9 Consumer benchmarks (non-normative)
 
-Cantor root cost scales with the side length of the aligned cube, per axis, not with its volume: a region twice as wide costs twice as much storage and somewhat more than twice the time. The root of a height-h subtree over 85-bit leaves is about 86 × 2^h bits, and construction needs roughly two levels live at once.
+Cantor root cost scales with the side length of the aligned cube, per axis, not with its volume: a region twice as wide costs twice as much storage and somewhat more than twice the time. The root of a height-h subtree over 85-bit leaves is **exactly `85 × 2^h` bits**, which is checkable at any small height and holds without rounding: each level of pairing doubles the operand width and halves the count.
+
+**On peak memory, corrected (non-normative).** An earlier draft said construction needs "roughly two levels live at once", which would make the peak about twice a root. Measured, the peak is about **6.1 times** a root. Two levels live is the floor a perfect implementation would reach, not what a real one does: producing a level allocates the new values before the old ones can be released, the multiply itself needs working space of the same order as its operands, and a garbage-collected runtime holds both longer still. Size a machine against 6.1 roots, not 2.
 
 | Region | Aligned height | Root per axis | Consumer feasibility |
 |---|---:|---:|---|
@@ -1519,7 +1531,11 @@ The storage constraint ensures that territorial roots remain bounded by physical
 
 ## 10. Sectors and Spatial Querying
 
-A **sector** is a cube of `2^30` Gibsons per axis. Sectors exist to divide Cyberspace into manageable pieces that fit into u32 systems and, critically, to allow proximal querying of public Cyberspace objects on Nostr relays.
+A **sector** is a cube of `2^30` Gibsons per axis. Sectors exist to divide Cyberspace into manageable pieces and, critically, to allow proximal querying of public Cyberspace objects on Nostr relays.
+
+**On the index's width.** An axis runs to `2^85` Gibsons and a sector is `2^30` of them, so a sector index is `2^55` values wide and needs **55 bits per axis**, not 32. An earlier draft of this paragraph said sectors "fit into u32 systems", which is wrong by 23 bits; a u32 would cover only the first `2^32` sectors of `2^55` on each axis. The tag values in §10 are decimal strings and are unaffected, but an implementation storing a sector index in a 32-bit integer will silently wrap. Use 64-bit integers, or the strings themselves.
+
+**On what a sector is useful for.** At the calibration of §9 a sector is `2^30` Gibsons, which is about 12.5 cm. A single-sector query therefore asks what is inside a box the size of a shoebox, and a single-axis query asks about a 12.5 cm slab through the whole universe. Proximal querying at a scale a person perceives, a room or a street, is not expressible as a sector query and needs a tag ladder at several heights, which this document does not define.
 
 Because Nostr cannot query "prefix ranges" on tag values, per-axis sector tags make it possible to query slices along a single axis.
 
@@ -1632,13 +1648,15 @@ Cantor pairing tree computation is a fundamentally different kind of work. The o
 
 Every Cantor root you compute becomes a stable region identifier that persists as useful infrastructure. It can be used for encrypting localized secrets, discovering nearby content, and holding a region (§7.8). The work product is meaningful, not disposable.
 
-### 13.2 Storage-bound, not compute-bound
+### 13.2 Capacity-bound, and compute-bound within it
 
 Bitcoin's proof-of-work is compute-bound. Faster chips produce more hashes per second, and specialized hardware (ASICs) can be built to optimize SHA-256 throughput. The bottleneck is hash rate.
 
 Cantor work is storage-bound. The Cantor pairing function produces intermediate values that grow exponentially in bit size. At height 34, the intermediates require approximately 170 GB of storage. At height 40, approximately 11 TB. At height 50, approximately 11 PB. These intermediates must physically exist on disk during computation because parent nodes require both children during bottom-up tree construction.
 
-This means the limiting resource is not how fast you can compute, but how much data you can store and move. Disk I/O bandwidth, drive capacity, and storage infrastructure become the binding constraints. You cannot build an ASIC that optimizes around the need to store terabytes of intermediate values.
+This means the limiting resource on **how high you can go** is capacity: you cannot compute a root you cannot hold, and no ASIC optimizes around needing terabytes of intermediates. That part is right and it is the reason §13.3's fixed difficulty behaves the way it does.
+
+**The limiting resource on how long it takes, at a height you can hold, is arithmetic rather than bandwidth, and an earlier draft of this section said otherwise.** Multiplying two `n`-bit numbers costs far more than one operation per byte, so the work per byte read from disk is high and the computation is measured at about 28 times compute-bound rather than I/O-bound. Both statements matter and they are about different limits: capacity decides the ceiling, arithmetic decides the wait beneath it. §6.12 and §7.8 work the same arithmetic in the context of disclosure and holding, and `docs/what-can-be-sold.md` collects all of it.
 
 ### 13.3 Fixed difficulty
 
