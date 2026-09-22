@@ -66,7 +66,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [5.8 Performance expectations (non-normative)](#58-performance-expectations-non-normative)
 - [6. The Wall and the Sidestep](#6-the-wall-and-the-sidestep)
   - [6.1 The storage bottleneck (non-normative)](#61-the-storage-bottleneck-non-normative)
-  - [6.2 How the sidestep works](#62-how-the-sidestep-works)
+  - [6.2 How the sidestep action works](#62-how-the-sidestep-action-works)
   - [6.3 Sidestep geometry (normative)](#63-sidestep-geometry-normative)
   - [6.4 Per-axis Merkle root (normative)](#64-per-axis-merkle-root-normative)
   - [6.5 Streaming computation (normative)](#65-streaming-computation-normative)
@@ -98,7 +98,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [8.6 Encrypted content event (bag)](#86-encrypted-content-event-bag)
   - [8.7 Verification summary](#87-verification-summary)
     - [8.7.1 Hop verification](#871-hop-verification)
-    - [8.7.2 Sidestep verification (Level 1: inclusion path)](#872-sidestep-verification-level-1-inclusion-path)
+    - [8.7.2 Sidestep verification (Level 1: sampled openings)](#872-sidestep-verification-level-1-sampled-openings)
   - [8.8 Core action types summary](#88-core-action-types-summary)
   - [8.9 Protocol extensions (DECKs)](#89-protocol-extensions-decks)
   - [8.10 Avatar event](#810-avatar-event)
@@ -312,7 +312,7 @@ Consider two single-Gibson moves that have very different costs:
 - Moving from position 4 to position 5: `4 ^ 5 = 1`, bit_length = 1, so `h = 1`. This is cheap. You are staying within a small aligned block.
 - Moving from position 7 to position 8: `7 ^ 8 = 15`, bit_length = 4, so `h = 4`. This costs 16 times as many Cantor pairs, even though you only moved 1 Gibson. The reason is that position 8 sits on the boundary of a height-4 aligned subtree, and crossing that boundary requires computing the entire subtree.
 
-At the extreme: moving from position `2^34 - 1` to position `2^34` is a single-Gibson step, but the LCA height is 34. That one step requires computing a Cantor tree with over 17 billion leaves, because you are crossing the largest binary boundary in that region of the axis.
+At the extreme: moving from position `2^34 - 1` to position `2^34` is a single-Gibson step, but the LCA height is 35: the two positions differ in every one of their lowest 35 bits, so `bit_length(v1 ^ v2) = 35`. That one step requires computing a Cantor tree with over 34 billion leaves, because you are crossing the largest binary boundary in that region of the axis. (The step from `2^33 - 1` to `2^33` is the height-34 case, with over 17 billion leaves.)
 
 This is not a quirk. It is the core mechanism by which Cyberspace imposes locality. Boundaries in the binary structure of the coordinate space act as natural walls, and crossing them costs real work regardless of how small the step is. This property is formalized as decomposition invariance in §4.8.
 
@@ -377,7 +377,9 @@ The axis root for movement `(v1 → v2)` is:
 
 (Implementations MAY compute this with any equivalent algorithm; the result MUST match this definition.)
 
-Each axis Cantor root is a unique identifier for a specific region of that axis. Because the Cantor pairing function is a bijection, different regions always produce different roots, and the same region always produces the same root.
+**A root names a region at a height.** The same region always produces the same root, and at one height different regions always produce different roots, because every pairing step is a bijection. Across heights the root alone is not always enough: at height 0 there is nothing to pair, so a position's root is the position itself, and a small region at a positive height can share its root with a single position. `compute_subtree_cantor(2, 1)` is `π(2, 3) = 18`, and so is `compute_subtree_cantor(18, 0)`. For every height of 1 and above, roots are distinct across heights as well as within them, so the identifier of a region is the pair `(root, height)` in general, and the root alone identifies both the region and its height whenever the height is at least 1.
+
+**Why roots at heights 1 and above never collide (non-normative).** Suppose two regions of different heights `h1 < h2`, both at least 1, had the same root. Every pairing step is a bijection, so peeling one level off both trees gives equal left-child roots and equal right-child roots, and peeling `h1` levels gives that the `2^h1` consecutive positions of the lower region equal the roots of `2^h1` adjacent aligned regions of height `d = h2 - h1`, which is at least 1. Adjacent aligned regions at any height of 1 or more have roots that differ by at least 16 (`compute_subtree_cantor(2, 1) - compute_subtree_cantor(0, 1) = 18 - 2 = 16`, the smallest case), so two consecutive integers cannot both be such roots. The lower region therefore has a single position, which is height 0. The height-0 case never reaches a bag: a bag's height is at least 1 (§7.6) and discovery scans heights from 1 (§7.4).
 
 ### 4.7 Combining into 3D (region_n)
 
@@ -392,7 +394,7 @@ Then they are combined using nested Cantor pairing:
 The resulting `region_n` is the **stable spatial region integer**, a single number that uniquely identifies the 3D region implied by the movement. This number is used for location-based encryption and discovery (§7).
 
 **Region uniqueness (non-normative):**
-Each aligned subtree root corresponds to a unique region (Cantor pairing is a bijection). Many coordinate pairs inside the same aligned subtree share the same root; this is intentional. The Cantor root is a **region identifier**, not a unique coordinate-pair identifier.
+Each aligned subtree root corresponds to a unique region at its height, and for heights of 1 and above to a unique region across heights as well (§4.6). Many coordinate pairs inside the same aligned subtree share the same root; this is intentional. The Cantor root is a **region identifier**, not a unique coordinate-pair identifier.
 
 Example (1D):
 ```
@@ -402,6 +404,8 @@ LCA(0, 2) => subtree [0..3] => root = 228
 ```
 
 This means all these movements "see" the same region, which is exactly what enables location-based discovery.
+
+**Heights need not match across axes (non-normative).** A movement's three axis heights are computed independently (§4.4), and an axis along which the position did not change has height 0, so its root is the position itself. That is ordinary: a move along X alone has heights `(h, 0, 0)`. A movement's `region_n` is verified by recomputing it from the two coordinates, so it does not rely on a root identifying its height. A bag's region is one aligned cube, one height for all three axes and at least 1 (§7.6), so its `region_n`, its key and its `lookup_id` (§7.2) are distinct from those of every other region at every height.
 
 ### 4.8 Why you can't cheat distance (decomposition invariance)
 
@@ -613,13 +617,15 @@ As the Cantor tree gets taller (meaning, as you cross larger regions of space), 
 |---:|---:|---:|
 | h20 | ~11 MB | 640 bytes |
 | h30 | ~11 GB | 960 bytes |
-| h34 | ~170 GB | 1,088 bytes |
+| h34 | ~182 GB | 1,088 bytes |
 | h40 | ~11 TB | 1,280 bytes |
 | h50 | ~11 PB | 1,600 bytes |
 | h60 | ~12 EB (about 0.1% of installed world storage) | 1,920 bytes |
 | h70 | ~12 ZB (roughly all installed storage today) | 2,240 bytes |
 
 This is not a bug. This is the digital equivalent of a mountain range.
+
+Storage figures in this document are `85 × 2^h` bits per axis root in decimal units (1 GB is 10^9 bytes); the h34 root is 182.5 GB, which is 170 GiB.
 
 The storage bottleneck creates natural barriers in Cyberspace: walls that cannot be crossed by direct Cantor computation regardless of how much time you have, because you simply can't store the intermediate values. These walls aren't designed by anyone. They emerge from the mathematics.
 
@@ -906,7 +912,7 @@ Sidestep cost is dominated by SHA-256 leaf hashing and is fixed-size per leaf. H
 | h14 | ~10 ms | 0.3 ms | 1.5 μs | either |
 | h20 | ~6 s | 21 ms | 0.1 ms | sidestep |
 | h30 | ~days (11 GB root) | 21 s | 0.1 s | sidestep |
-| h34 | ~a day (185 GB root) | 6 min | 1.6 s | sidestep; hop only when the region root itself is wanted |
+| h34 | ~a day (182 GB root) | 6 min | 1.6 s | sidestep; hop only when the region root itself is wanted |
 | h40 | not feasible (12 TB) | 6 h | 100 s | sidestep |
 | h50 | not feasible (12 PB) | 261 d | 28 h | sidestep |
 | h55 | not feasible | 23 y | 38 d | sidestep, ~$700 of rented GPU |
@@ -1063,6 +1069,8 @@ Note: this caching optimization applies to spatial region computations for disco
 ### 7.6 The bag (normative)
 
 Content hidden at a place is published as a **bag**. A bag is one Nostr event of kind 33330 (event format in §8.6) whose payload is encrypted with the key of one region at one height (§7.2), and it holds everything its author has hidden in that region at that height. Anyone can fetch a bag from a relay, because the ciphertext is public. Only someone who has computed the region's key can open it, whether they computed it by moving into the region or by deriving it for the coordinate directly (§7.1). The bag is addressable by its `lookup_id`, so a relay keeps only the newest bag per author and region, and the author changes what is hidden there by publishing a newer bag.
+
+**Height (normative):** the region's height MUST be at least 1. A height-0 region is a single Gibson, and height 0 is the one case in which a root does not identify its height (§4.6); discovery scanning starts at height 1 (§7.4). A bag whose `h` tag (§8.6) is `0` MUST be rejected.
 
 **Cipher (normative):**
 - key: the `location_decryption_key` of §7.2 (32 bytes)
@@ -1270,7 +1278,7 @@ Required tags:
   - `version` names the rules of §7.6. A reader MUST ignore a bag whose version it does not know.
 
 Optional tags:
-- `h` tag: `["h", "<height>"]` (decimal string): the height of the region whose key encrypts the content, which is the discovery radius of §7.3
+- `h` tag: `["h", "<height>"]` (decimal string): the height of the region whose key encrypts the content, which is the discovery radius of §7.3; at least 1 (§7.6)
 - `hint` tag: `["hint", "<coord_hex>", "<Hx>", "<Hy>", "<Hz>"]`: the hider's coarse statement of where the bag can be found (§7.7)
 - Sector tags `X`, `Y`, `Z`, `S`: required on a bag that carries a `hint` tag, for each axis whose hint height is at most 30 (§7.7, §10); MUST NOT appear otherwise
 
@@ -1409,7 +1417,7 @@ The Cantor Height 34 scale was chosen through rigorous testing to balance severa
 
 **For consumers:** At this scale, consumer hardware can traverse human-centric distances and derive useful location-based secrets with significant but achievable effort. Moderate cloud compute expenditure ($200–$1,000) extends range substantially.
 
-**Against nation-states:** Cantor root cost scales with the side length of the aligned cube, per axis (about 86 × 2^h bits): a person (h34) is 185 GB, a 7 km city (h46) is 756 TB, a 262 km country (h51) is 24 PB, an Earth octant (h57) is 1.5 EB, and the GEO cube (h60) is 12 EB, against roughly 10 to 20 ZB of installed world storage. A country-scale root is within reach of a well-funded organization today and an Earth-scale root is within reach of a hyperscaler or a state. This is structural rather than a calibration choice: a country is only 2^17 times wider than a person, while the storage gap between a consumer and a state is about 2^20, so any scale that keeps human-scale hops feasible for consumers keeps country-scale roots feasible for states. The scale therefore does not deliver a century-long guarantee against large regions being held. Holding a region costs disk for as long as it is held (§7.8), which is the protocol's whole maintenance economics; claims, exclusion and governance are not protocol matters and are left to applications and games.
+**Against nation-states:** Cantor root cost scales with the side length of the aligned cube, per axis (`85 × 2^h` bits): a person (h34) is 182 GB, a 7 km city (h46) is 748 TB, a 262 km country (h51) is 24 PB, an Earth octant (h57) is 1.5 EB, and the GEO cube (h60) is 12 EB, against roughly 10 to 20 ZB of installed world storage. A country-scale root is within reach of a well-funded organization today and an Earth-scale root is within reach of a hyperscaler or a state. This is structural rather than a calibration choice: a country is only 2^17 times wider than a person, while the storage gap between a consumer and a state is about 2^20, so any scale that keeps human-scale hops feasible for consumers keeps country-scale roots feasible for states. The scale therefore does not deliver a century-long guarantee against large regions being held. Holding a region costs disk for as long as it is held (§7.8), which is the protocol's whole maintenance economics; claims, exclusion and governance are not protocol matters and are left to applications and games.
 
 **The gap is fixed, and the calibration cannot widen it (non-normative).** The argument above is right and can be made exact. A root is `85 × 2^h` bits per axis, so the highest height a storage budget `B` reaches is `h_max ≈ log2(B) − 6.018`. The calibration term does not appear in that equation and cannot: the calibration maps heights to meters, the cost function maps heights to bytes, and the two compose without interacting. **The distance between what an individual reaches and what a state reaches is therefore `log2(B_state / B_consumer)` whatever the calibration.** Measured at 16.7 heights for a mainstream desktop, 13.0 for an enthusiast rig and 22.0 for a phone. Changing the calibration slides a window of fixed width; it never widens it, and which consumer you mean moves the answer by 9 heights, which is more than any calibration change ever proposed here.
 
@@ -1511,7 +1519,7 @@ Cantor root cost scales with the side length of the aligned cube, per axis, not 
 | Region | Aligned height | Root per axis | Consumer feasibility |
 |---|---:|---:|---|
 | 1 m cube | h33 | 92 GB | hours to a day on a desktop with a fast SSD |
-| 2 m cube (canonical) | h34 | 185 GB | about a day |
+| 2 m cube (canonical) | h34 | 182 GB | about a day |
 | 4 m cube | h35 | 370 GB | days |
 | 128 m block | h40 | 12 TB | external storage array, weeks |
 
@@ -1668,7 +1676,7 @@ Every Cantor root you compute becomes a stable region identifier that persists a
 
 Bitcoin's proof-of-work is compute-bound. Faster chips produce more hashes per second, and specialized hardware (ASICs) can be built to optimize SHA-256 throughput. The bottleneck is hash rate.
 
-Cantor work is storage-bound. The Cantor pairing function produces intermediate values that grow exponentially in bit size. At height 34, the intermediates require approximately 170 GB of storage. At height 40, approximately 11 TB. At height 50, approximately 11 PB. These intermediates must physically exist on disk during computation because parent nodes require both children during bottom-up tree construction.
+Cantor work is storage-bound. The Cantor pairing function produces intermediate values that grow exponentially in bit size. At height 34, the intermediates require approximately 182 GB of storage. At height 40, approximately 11 TB. At height 50, approximately 11 PB. These intermediates must physically exist on disk during computation because parent nodes require both children during bottom-up tree construction.
 
 This means the limiting resource on **how high you can go** is capacity: you cannot compute a root you cannot hold, and no ASIC optimizes around needing terabytes of intermediates. That part is right and it is the reason §13.3's fixed difficulty behaves the way it does.
 
