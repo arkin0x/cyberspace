@@ -9,7 +9,7 @@ Requires: `CYBERSPACE_V2.md` (spec version `2026-03-16-h34-corrected`)
 
 ## Abstract
 
-A **Simple Nostr Object** (SNO) is a small three-dimensional object written as JSON, small enough to live inside one nostr event alongside everything else a note carries. It is a list of vertices on an integer lattice, one color per vertex, an optional list of triangles, and a word saying how to draw it. There are no textures, no materials, no normals, no bones, no animation, and no file to fetch. An object is the event.
+A **Simple Nostr Object** (SNO) is a small three-dimensional object written as JSON, small enough to live inside one nostr event alongside everything else a note carries. It is a list of vertices on an integer lattice, one color per vertex, an optional list of triangles, and a word saying how to draw it. There are no textures, no materials, no normals (a face's winding says which way it looks), no bones, no animation, and no file to fetch. An object is the event.
 
 This document codifies a format Cyberspace already depends on but has never written down. The base specification refers to it twice: §7 notes that ONOSENDAI hides `kind 3330` shards whose geometry is in `content`, and §8.10 computes the proof of work an avatar owes from that payload's `unit`, `vertices`, `ticks` and `faces` fields. Both passages assume a format defined nowhere. This DECK is that definition, written so that it stands on its own outside Cyberspace as well as inside it.
 
@@ -179,9 +179,15 @@ Size does not decide this and should not be read as if it did. A 256-color palet
 
 `faces[i]` is `[a, b, c]`, three integers indexing `vertices`. Every index MUST be at least `0` and less than the vertex count, and the three MUST be distinct. A reader MUST reject a payload containing any face that fails either test, because a face pointing at a vertex that does not exist is a crash in most renderers, far from anything that could explain it.
 
-**Winding order carries no meaning, and this is a decision rather than an omission.** A face has no front and no back: a reader MUST draw both sides of every triangle, and MUST NOT cull a face on the basis of its winding. An author therefore never has to think about winding, and an exporter never has to fix it.
+**Winding order is a face's front.** For a face `[a, b, c]` the front is the side that the normal `(b - a) × (c - a)` points to, computed on the positions in the frame of §2 (after the version 1 negation, for a version 1 object). Seen from the front, the corners run counter-clockwise, which is the glTF, three.js, OpenGL and Blender convention, so an exporter from any of them writes its faces in the order it already holds them. This is how an object says which way each face looks, at a cost of zero bytes: the order of three indices is on the wire whatever it means.
 
-This is stated because leaving it unsaid is the most common way a small format fails. STL left color unspecified and two vendors filled the hole incompatibly; PLY never registered its property names and cost the ecosystem years of colors that did not import; Niantic's SPZ shipped in 2024 without saying which axis is up and someone had to file an issue to ask. A reader that wants single-sided rendering is free to want it, but it is not this format.
+A reader MUST take a face's front from its winding and MUST NOT infer it: not from the object's shape, not from where the origin sits, not from the side the viewer is on. Inference cannot be right for an open sheet, which has no inside to point away from, and two readers that infer differently show one object as two.
+
+A reader MUST still draw both sides of every triangle and MUST NOT cull a face on the basis of its winding. It MAY draw a back darker than a front, and a reader that lights an object SHOULD, so that an author can see a face that looks the wrong way. Culling is refused because an object is often an open shell, and culling would make it vanish from behind.
+
+This section was, until 2026-09-24, the opposite rule: winding carried no meaning and a face had no front. That was chosen so that no author would ever have to think about winding. It was reversed because readers that light objects had to guess each face's front, and a guess that is wrong for a flat plate turned half of a published object dark on one reader and not on another. Authoring tools carry the burden instead: they SHOULD wind new faces outward by default and SHOULD give the author a way to turn a face round.
+
+This is stated because leaving it unsaid is the most common way a small format fails. STL left color unspecified and two vendors filled the hole incompatibly; PLY never registered its property names and cost the ecosystem years of colors that did not import; Niantic's SPZ shipped in 2024 without saying which axis is up and someone had to file an issue to ask.
 
 `faces` MAY be empty. An object with no faces is a point cloud or a polyline, depending on `mode`.
 
@@ -377,6 +383,8 @@ Version 1 is the convention this format had while it lived only inside Cyberspac
 
 The flip was made deliberately and once. Carrying Cyberspace's own axis convention into a format meant for anyone would have charged every exporter and importer, forever, for a mirroring that only Cyberspace needs. Cyberspace applies it where it belongs, in the one renderer that places an object into its world, rather than in every tool that ever writes one.
 
+A mirror turns every front into a back (§1.4). A reader or tool that carries an object through one, whether converting into a left-handed frame or placing an object into a world drawn with an axis negated, MUST reverse the order of every face in the same step, or read the front in the frame of §2 before mirroring. A rotation keeps every front a front. The version 1 negation needs no reversal: §1.4 reads the front after it, and version 1 winding was never authored.
+
 A Blender exporter therefore maps Blender `(x, y, z)` to SNO `(x, z, -y)`: Blender is Z-up and right-handed, SNO is Y-up and right-handed, and the negation is what keeps the frame right-handed rather than mirroring it. §7 returns to this.
 
 ---
@@ -449,7 +457,7 @@ The default reading of an SNO is **unlit**: a face takes its color by interpolat
 
 A face that carries its own color (§1.4a) is filled with it flatly, and there is nothing to interpolate or average: the seam between two such faces is exact, which is the whole purpose of the field.
 
-A client MAY light an object instead, and many will, because a lit object sits better in a lit scene. A client that lights an object MUST derive its normals per face, flat, from the triangle's own vertices. A client MUST NOT synthesize smooth normals by averaging across shared vertices: an object with no normals is faceted, an author who wanted a smooth surface has no way to say so today (§7.2), and a reader that smooths one anyway is deciding for them.
+A client MAY light an object instead, and many will, because a lit object sits better in a lit scene. A client that lights an object MUST derive its normals per face, flat, from the triangle's own vertices, pointing out of the face's front as its winding gives it (§1.4); the back is lit as the other side of the same face. A client MUST NOT synthesize smooth normals by averaging across shared vertices: an object with no normals is faceted, an author who wanted a smooth surface has no way to say so today (§7.2), and a reader that smooths one anyway is deciding for them.
 
 A client MUST NOT invent geometry: no subdivision, no smoothing that moves a vertex, no hole filling. The lattice is exact and a renderer that moves a vertex has broken the one guarantee the format makes.
 
@@ -500,7 +508,7 @@ A tool that writes SNO from a modeling package performs four conversions, and ea
 | Conversion | What is lost |
 |---|---|
 | **Triangulation.** SNO has only triangles; modeling packages work in quads and n-gons. | The authored topology. A round trip returns triangles, so the model is no longer editable the way it was built. |
-| **Axis change.** Blender is Z-up and right-handed; SNO is Y-up and right-handed. The map is Blender `(x, y, z)` to SNO `(x, z, -y)`. | Nothing, if the negation is not forgotten. Dropping it turns the map into a reflection and publishes every object mirrored, which is invisible on a symmetric object and obvious on everything else. Both frames are right-handed, so no mirroring is required or wanted (§2). |
+| **Axis change.** Blender is Z-up and right-handed; SNO is Y-up and right-handed. The map is Blender `(x, y, z)` to SNO `(x, z, -y)`. | Nothing, if the negation is not forgotten. Dropping it turns the map into a reflection and publishes every object mirrored, which is invisible on a symmetric object and obvious on everything else, and turns every face inside out (§1.4), which is obvious on everything. Both frames are right-handed, so no mirroring is required or wanted (§2). |
 | **Quantization to the lattice.** Float positions become integers on a 1/120 lattice. | Real precision. See below. |
 | **Decimation, if the exporter chooses it.** | The format sets no ceiling (§1.8); an exporter decimates to what its relays take and its readers draw well. When it does, this is the one loss that changes the art rather than the numbers. |
 
@@ -531,7 +539,6 @@ None of these needs a version bump, because each is an optional field whose abse
 | ~~Per-face color~~ | **Added in §1.4a**, and made affordable by §1.3's palette index, which took a color from 21 bytes to 4. It was the one absence that made the format's own best style its most expensive | | |
 | **Emission** | The one thing a glowing object needs, and Cyberspace is made of glowing objects | an optional material block with an emissive flag and a strength | one small object |
 | **Roughness, metalness, alpha** | The sliders every modeler reaches for after base color | three numbers in the same block | included above |
-| **Double-sided** | An open shell shows its inside or does not, and the author has no say | one boolean | one field |
 
 Of these, smooth shading and per-face color are the two that change what is possible rather than what is pretty, and per-face color is the only one that makes the budget go further rather than less far.
 
