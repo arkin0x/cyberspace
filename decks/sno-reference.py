@@ -23,9 +23,8 @@ import re
 from fractions import Fraction
 from typing import Any, Iterator
 
-# DECK-0003 §1.8. These are the whole of the size policy.
-MAX_VERTICES = 512
-MAX_FACES = 1024
+# DECK-0003 §1.8. There is no ceiling on vertices or faces (removed 2026-09-24):
+# the event's size is the relay's concern, as it is for every other kind.
 MIN_EXTENT = 1
 MAX_EXTENT = 64
 DEFAULT_EXTENT = 8
@@ -143,11 +142,7 @@ def validate(payload: Any, fetched_palette: Any = None) -> dict:
     if len(vertices) != len(colors):
         raise SnoError(f"rule 2: {len(vertices)} vertices but {len(colors)} colors")
 
-    # 3. limits
-    if len(vertices) > MAX_VERTICES:
-        raise SnoError(f"rule 3: {len(vertices)} vertices exceeds {MAX_VERTICES}")
-    if len(faces) > MAX_FACES:
-        raise SnoError(f"rule 3: {len(faces)} faces exceeds {MAX_FACES}")
+    # 3. no bound on the counts (§1.8, 2026-09-24); the number is kept so the rules below keep their names.
 
     # 4. mode
     if payload.get("mode") not in MODES:
@@ -406,7 +401,6 @@ def _rejections() -> list[tuple[str, dict]]:
         ("rule 1", variant(v=3)),
         ("rule 1", variant(v=0)),
         ("rule 2", variant(colors=[238])),
-        ("rule 3", variant(vertices=[[0, 0, 0]] * 513, colors=[0] * 513, ticks=[-513], faces=[])),
         ("rule 4", variant(mode="wireframe")),
         ("rule 5", variant(unit=85)),
         ("rule 5", variant(unit=1.5)),
