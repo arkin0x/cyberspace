@@ -4,7 +4,7 @@ DECK: 0003
 Title: SNO (Simple Nostr Objects)
 Status: Draft
 Created: 2026-09-14
-Last updated: 2026-09-16
+Last updated: 2026-09-24
 Requires: `CYBERSPACE_V2.md` (spec version `2026-03-16-h34-corrected`)
 
 ## Abstract
@@ -24,10 +24,10 @@ The design goal is not to compete with glTF or USD. It is to be the three-dimens
 | Event kind for an object hidden in a bag | `3330`, as Cyberspace already uses it (§3.2) |
 | Model space | X right, Y up, +Z toward the viewer: right handed, the glTF convention (§2) |
 | Position lattice | whole units plus 120ths of a unit (§1.2) |
-| Hard limits | 512 vertices, 1024 faces (§1.8) |
+| Size | no ceiling on vertices or faces; the event's size is the relay's concern, as for every other kind (§1.8) |
 | Reference implementation | `decks/sno-reference.py`, which is §1.9 written as code |
 
-**Conformance.** `decks/sno-reference.py` implements §1.9 with no dependencies and carries a rejection case for every numbered rule. It was checked against ONOSENDAI's independent TypeScript reader, and the two agree on all twenty cases, including the three places where this format is deliberately forgiving rather than strict. A third implementation can be checked against the same table.
+**Conformance.** `decks/sno-reference.py` implements §1.9 with no dependencies and carries a rejection case for every numbered rule that rejects. It was checked against ONOSENDAI's independent TypeScript reader, and the two agree on every case, including the three places where this format is deliberately forgiving rather than strict. A third implementation can be checked against the same table.
 
 ---
 
@@ -65,6 +65,8 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | `palette` | string or array | no | Which 256 colors the indices name (§1.3a). Absent means the built-in. |
 | `up` | boolean | no | `true` means the object stands on the Earth's surface where it is placed (§1.7). `false` means the same as absent. |
 | `spin` | integer | no | With `up`: the compass bearing the object's `+Z` faces, `0` to `359` (§1.7). |
+| `refs` | array | no | Other objects this one places, each named the way a nostr tag names an event (§1.10). Absent means the object places nothing. |
+| `parts` | array | no | Where each placed object stands, turns and scales, one entry per placement (§1.10). Absent means the same. |
 
 `vertices` and `colors` MUST have the same length. Any field not listed here MUST be ignored by a reader, not rejected (§5).
 
@@ -235,21 +237,21 @@ A reader that does not implement `up` draws the object in the application's axes
 
 | Limit | Value | Why |
 |---|---|---|
-| `MAX_VERTICES` | 512 | keeps the worst case inside every relay's limits without the author having to think about it. See below |
-| `MAX_FACES` | 1024 | the same |
+| vertices, faces, refs, parts | **none** | the size of an event is the relay's concern, as it is for every other kind of event; see below |
+| nesting depth | 4 | how far a reader follows placements (§1.10). A bound on the reader's work, not on the object |
 | `extent` | 1 to 64 model units | a hint at the lattice size, so a reader can size a grid before it reads the data |
 | `unit` | 0 to 84 | the Cyberspace address space is `2^85` gibsons on a side |
 | `name` | 64 characters | truncated, not rejected |
 
-A reader MUST reject a payload whose vertex or face count exceeds these limits.
+**There is no ceiling on vertices or faces.** A reader MUST NOT reject a payload for its vertex or face count. Until 2026-09-24 this format set 512 vertices and 1,024 faces, sized so that the worst object it permitted fit a stock relay. It was removed because no other event kind bounds its own content: a long-form article, a file header, a wiki page are as large as their author makes them, and the relay that stores an event decides what it will take. That is a different class of problem from the one a format solves, and a format that solves it anyway puts a number between the author and the thing they were making. The number did that: a 129-square floor pasted square by square reached 516 vertices, deployed, and was opened as nothing by every reader (arkinox, 2026-09-24), and a figure or a vehicle at ordinary low-polygon detail needs 600 to 1,000 and was impossible however well it was built.
+
+What replaces the ceiling is a publisher who knows what things cost and a container that stops multiplying: an object of any size can have an event of its own (§3.1, §3.4), so a bag, which is one event shared by everything hidden at a place, need never grow with the objects it names. The rest of this section is the arithmetic, so a publisher can plan against the relays it uses; none of it is a rule.
 
 `extent` is **advisory and self-repairing**, which is the one place this format is deliberately forgiving. A reader MUST substitute the default of `8` for an `extent` that is absent, not an integer, or outside `1..64`, and MUST then grow it until it contains every vertex. An object is therefore never rejected for disagreeing with its own extent; the data wins and the hint is corrected. This is what lets a modeling tool write geometry first and a bounding hint second without the two ever contradicting.
 
 The position bound is stated as an obligation on publishers rather than readers: a publisher MUST NOT write a vertex further than `64` model units (`7680` ticks) from the origin on any axis. A reader MAY reject such a payload and MAY instead repair it by growing the extent. ONOSENDAI currently repairs. §8 records the consequence.
 
-These numbers are small on purpose. The point of having a ceiling at all is that a publisher never has to think about relay limits, and the ceiling only earns its place if the **worst** object it permits still fits.
-
-strfry's stock `events.maxEventSize` is 65,536 bytes, and strfry is the most deployed relay software in the network. That is the number to stay under. What a full serialized event costs at the ceiling, worst case throughout, with coordinates at the extent bound and every field at its most expensive:
+**What things cost (non-normative).** strfry's stock `events.maxEventSize` is 65,536 bytes, and strfry is the most deployed relay software in the network; a relay's operator may raise it, and the ones this world runs on have (below). What a full serialized event costs at 512 vertices and 1,024 faces, the format's former ceiling and still a useful yardstick, worst case throughout, with coordinates at the extent bound and every field at its most expensive:
 
 | At 512 vertices and 1024 faces | No `facecolors` | With `facecolors` |
 |---|---|---|
@@ -267,7 +269,7 @@ A real object is far below that, because the worst case above assumes every posi
 | a coloured cube, 8 vertices | about 730 bytes |
 | 64 vertices, 128 faces | 2.5 KB |
 | 256 vertices, 512 faces | 9.4 KB |
-| **512 vertices and 1024 faces, the ceiling** | **18.9 KB** |
+| **512 vertices and 1024 faces** | **18.9 KB** |
 
 One color per face adds almost nothing to these, because a run of identical faces is two numbers whatever its length.
 
@@ -275,7 +277,9 @@ These numbers are the whole argument for the change in §1.3: the same object th
 
 Two facts make this margin more comfortable than it looks. Escaping the payload into a JSON string costs about 12 bytes, under 0.05%, because the content is almost entirely integers, so the fear that nesting JSON inside JSON is wasteful does not apply here. And the geometry belongs in `content` rather than tags: strfry caps a tag value at 1,024 bytes and the tag count at 2,000, while content is roomy everywhere.
 
-**On raising the limits.** These counts could go higher now: at 32 bytes a vertex the ceiling that fits a 56 KB budget with face colors is about 832 vertices rather than 512. They are left where they are because the limit a reader enforces should also bound what it has to hold in memory and draw, and because a format is easier to raise a limit in later than to lower one. The headroom that indexing bought is spent on making face colors affordable, which changes what the format can express, rather than on a larger number of vertices, which does not.
+**The relays in use, measured 2026-09-24** (NIP-11 `max_message_length`): cyberspace.nostr1.com **262,200** bytes; nos.lol 131,072; relay.primal.net and relay.damus.io 1,000,000. Worst case a vertex costs 32 bytes and a face 13, or 17 with a color of its own; a typical whole-unit object costs about a third of that. So the world's own relay takes a worst-case object of about 3,500 vertices, or a typical one of about 10,000, standing alone; a stock relay takes about 800 worst case. A publisher who knows its relays can size to them; one who does not should publish and read the refusal, which names the reason.
+
+**A bag is the one place size still multiplies.** Everything hidden at one place by one author travels in one event, encrypted and base64'd, so three large objects inline are three times the size and the bag fails before any object would alone. §3.2 and §3.4 give every object the option of an event of its own; a publisher SHOULD take it for anything large, and the bag then stays small however much stands at the place.
 
 One trap worth knowing, since it cannot be discovered at runtime: strfry populates NIP-11's advertised `max_message_length` from its WebSocket frame cap, not from `events.maxEventSize`, and never advertises the latter. A relay advertising a one megabyte limit may still reject a 70 KB event. Do not design against advertised numbers; stay under the ceiling and handle the rejection message.
 
@@ -285,7 +289,7 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 
 1. `v` is `1` or `2`. A `type` field, if present, is ignored and never rejected on (§1.1a).
 2. `vertices`, `colors` and `faces` are arrays, and `vertices.length === colors.length`.
-3. `vertices.length <= 512` and `faces.length <= 1024`.
+3. There is no bound on `vertices.length` or `faces.length` (§1.8). The number is kept so the rules below keep their names; until 2026-09-24 it read `512` and `1024`.
 4. `mode` is one of the three words.
 5. `unit` is an integer in `0..84`.
 6. Every vertex triple is three integers.
@@ -296,8 +300,59 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 8c. `facecolors`, if present, expands to exactly one index per face, its first entry is an index, every run entry is a negative integer, and every index is in range.
 9. `extent`, if present, is repaired rather than validated (§1.8): out of range becomes `8`, then it grows to contain the data.
 10. `up`, if present, is a boolean; `spin`, if present, is an integer in `0..359`.
+11. `refs`, if present, is an array whose entries are each `["e", <64 lowercase hex>]` or `["a", "33331:<64 lowercase hex>:<d>"]`, optionally followed by one relay URL (§1.10).
+12. `parts`, if present, is an array whose entries are each eight integers: a `refs` index in range, three tick offsets each in `-7680..7680`, three whole degrees each in `0..359`, and a scale step such that the placed object's unit stays in `0..84` (§1.10). `parts` without `refs`, or a `refs` index past the end, is a reason to reject.
+13. A payload with `parts` and no `vertices` of its own is valid: an object may be nothing but the arrangement of others (§1.10).
 
 ---
+
+### 1.10 Parts: one object placing others
+
+**An object MAY place other objects.** `refs` names them; `parts` says where each stands. A reader that supports this section draws the parent's own geometry and then each placed object at its placement; a reader that does not, or that cannot fetch a placed object, draws the parent's own geometry and a placeholder where each part would stand, and MUST NOT reject the parent for it.
+
+**`refs` is a list of nostr references, written the way a tag writes them.**
+
+```json
+"refs": [
+  ["a", "33331:<pubkey hex>:<d>", "wss://relay.example"],
+  ["e", "<event id hex>"]
+]
+```
+
+An `a` reference names an addressable object (§3.1) and follows its author's newest version: fix the tile and every floor built from it changes. An `e` reference names one event and stays on it forever, as a palette reference does (§1.3b). The publisher chooses per reference. The relay URL is a hint, as in NIP-01, and MAY be omitted. `refs` names each object once; a reader MUST reject a payload whose `refs` entry is not one of the two shapes above.
+
+**`parts` is a list of placements, eight integers each.**
+
+```json
+"parts": [
+  [0,  0, 0, 0,   0, 0, 0,   0],
+  [0,  240, 0, 0, 0, 90, 0,  0],
+  [1,  120, 0, 120, 0, 0, 0, -1]
+]
+```
+
+| Position | Meaning |
+|---|---|
+| 0 | index into `refs`: which object |
+| 1, 2, 3 | where its origin stands, in the parent's **ticks** (§1.2), so `120` is one whole unit; each in `-7680..7680`, the 64-unit position bound of §1.8 |
+| 4, 5, 6 | its turn about its own origin, whole degrees `0..359` about the parent's X, then Y, then Z axes, in that order, in the right-handed frame of §2 |
+| 7 | scale step: the placed object is drawn at `2^(its unit + step)` base units per model unit. `0` keeps its own size; `1` doubles it; `-1` halves it. The result MUST stay in `0..84` |
+
+Positions are ticks and turns are whole degrees because everything else in this format is an integer and the canonical form of §1.2 depends on it. Multiples of `90` keep a placed object on the lattice exactly; other angles are permitted and are drawn as the renderer's floating point allows, which is what §4 already says of ticks. The scale is a power of two because `unit` is (§1.6): a step is exact, a free multiplier is not.
+
+**Why the placements are in the payload and not in the event's tags.** A copy of the payload is the whole object, on the clipboard, in a bag, in another client; placements carried as tags would fall off it. Inside a bag the tags are encrypted with everything else, so nothing would be gained there. A publisher of a public `kind 33331` SHOULD also write each `refs` entry as an `e` or `a` tag on the event, unchanged, so a relay can answer "what places this object" (`#a`, `#e`); a reader MUST take the placements from the payload and MUST NOT read them from tags.
+
+**What a placed object keeps and what it loses.** It keeps its own `palette`, `mode`, `facecolors` and geometry: it is drawn as its author drew it. It loses `up` and `spin`, because the parent's placement decides where it stands and which way it faces, and a parent standing on the Earth (§1.7) carries its parts with it. Its `extent` is ignored; the parent's extent is repaired to contain the placed objects' bounds the same way it is repaired to contain vertices (§1.8), which a reader can only do once the parts are fetched, so a parent's advertised extent may be smaller than what is finally drawn.
+
+**Depth and cycles.** A placed object may itself have parts. A reader MUST follow placements no deeper than `4` levels from the object it is rendering, drawing a placeholder in place of anything deeper, and MUST treat a reference to any object already in the chain of parents as missing. Both are bounds a reader can enforce without trusting the author, which is the only kind worth writing down.
+
+**A missing part is a placeholder, never a rejection.** A reference that cannot be fetched, has been deleted, fails §1.9, or is deeper than the bound is drawn as a placeholder at its placement: a wireframe cube one whole unit on a side in the reader's accent is the reference behavior, and a reader MAY do better. The parent is unaffected. This is the same stance §1.3b takes for a palette that cannot be resolved, and for the same reason: another author's event is not this object's to guarantee.
+
+**What this buys, in bytes.** An `a` reference is about 110 bytes and an `e` reference about 78; a placement is 28 at most. Twelve palm trees as twelve inline copies cost 396 vertices; as one tree and twelve placements they cost 33 vertices and about 450 bytes. The 129-square floor that motivated this cost 516 vertices pasted and 291 welded; as one tile and 129 placements it is about 3.7 KB and 4 vertices of its own, and the tile's author can repaint every floor built from it in one edit.
+
+**Groups are objects (non-normative).** A modeling tool wants to select, move and edit a group of vertices as one thing, and every such tool grows a grouping mechanism. This format has none, on purpose: a group is an object, placed. A client is expected to show an object's parts as things a person can pick (a tray of what is on the bench), isolate one, and edit it. A part that belongs to the person editing is edited in place, and because it is addressable every parent that places it follows; a part that belongs to someone else is cloned under the editor's own key and the placement repointed, which is what "editing someone else's tile" honestly is. None of that is protocol, and none of it needs to be.
+
+**Versioning.** `refs` and `parts` are fields whose absence has a meaning, so their addition does not bump `v` (§5). An older reader ignores them and draws the parent alone.
 
 ## 2. Model space (normative)
 
@@ -348,13 +403,37 @@ A client that receives a `kind 33331` event whose content fails §1.9 MUST NOT r
 
 ### 3.2 Inside a bag
 
-An object hidden at a place is an item inside a `kind 33330` bag, exactly as `CYBERSPACE_V2.md` §7 describes items. Nothing in this DECK changes that container. The item is a `kind 3330` event, signed or unsigned, and it MAY carry a `C` tag, which then MUST lie inside the bag's region.
+An object hidden at a place is an item inside a `kind 33330` bag, exactly as `CYBERSPACE_V2.md` §7 describes items. The item is a `kind 3330` event, signed or unsigned, and it MAY carry a `C` tag, which then MUST lie inside the bag's region. The item carries its object in one of two ways:
+
+- **Inline:** the payload of §1 in the item's `content`. This is how every object was carried before 2026-09-24 and it stays the right way for small ones.
+- **By reference:** an empty `content` and exactly one `a` tag, `["a", "33331:<pubkey>:<d>", "<relay hint>"]`, naming the object's own event (§3.4). A `pubkey` in that address that differs from the item's author is not a reason to reject: placing another author's object is a placement, and §3.4 says whose key opens it. A reader MUST fetch the referenced event and read the object from it as §3.4 says; an item whose reference cannot be fetched is a missing item, dropped like one that fails to verify, and a client SHOULD say so rather than say nothing was found.
+
+A publisher SHOULD carry a large object by reference: a bag is one event shared by everything hidden at a place, and by reference it stays small whatever the object costs. What counts as large is the publisher's judgment against the relays it publishes to (§1.8); the format draws no line. A publisher MAY carry a small object by reference too, when it wants the object to have an event of its own.
 
 `3330` is regular, and deliberately so. An item in a bag is a thing someone hid at a place and someone else found there; it must be exactly what it was when it was found, and its id must keep meaning what it meant. The same payload therefore travels under two kinds according to what is being done with it: `33331` for an object its author is still working on, `3330` for one that has been put somewhere. That is two containers for one format, not two ways of writing the format.
 
 ### 3.3 As an avatar
 
 An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload in its `content`, or empty content for the default avatar. The work an avatar owes is computed from `unit`, `vertices`, `ticks` and `faces` as that section specifies. Nothing in this DECK changes that computation; this document only defines the fields it reads.
+
+### 3.4 A hidden object as its own event
+
+**A hidden object carried by reference is a `kind 33331` event whose payload is encrypted to the place.** It is the standalone container of §3.1 with two differences, and it follows the convention for partially encrypted events that Fanfares' NIP FF-1 sets out, so any client that understands that convention understands this event without knowing what Cyberspace is.
+
+| Field | Content |
+|---|---|
+| `content` | a **preview** for clients that cannot open it. It SHOULD say that the object is encrypted to a location in cyberspace and name a client that can find it, for example: `This object is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech` |
+| `["encrypted", "aes-256-gcm", "<ciphertext>", ""]` | exactly one. The ciphertext is the payload of §1, serialized as JSON, encrypted with the bag's region key (`CYBERSPACE_V2.md` §7.2) under the bag's own cipher and byte layout (§7.6: AES-256-GCM, 12-byte nonce, 16-byte tag, `nonce || ciphertext || tag`, base64). The fourth element, a key service URL in FF-1, is empty: the key is computed from the place, not served |
+| `d` | the object's identifier, chosen by its author and stable across edits, as in §3.1. It MUST NOT be derived from the location |
+| `name`, `alt` | MAY be present, as in §3.1, and MUST NOT reveal the location |
+
+**The event MUST carry nothing that says where the object is.** No `C`, no `h`, no hint and no sector tag: those belong to the bag, which is what the region key protects. The event is a locked box in plain view; the bag is the note that says where the box stands and is readable only there.
+
+**One key opens the place and everything referenced from it.** The object is encrypted with the same region key that opens the bag, so a reader that has opened the bag opens every object it references with the key in hand, and a reader that has not can open neither. The cost is that the object is tied to the region: moving it to another place means re-encrypting it. A per-object key carried inside the bag would lift that and let one event be referenced from several places; §8 records it as open.
+
+**Validation is the same.** A reader that decrypts a referenced object and finds it fails §1.9 drops the item, exactly as it drops an inline item that fails, and SHOULD say that the object was found and refused rather than that nothing was found.
+
+**Why a partially encrypted `kind 33331` and not a wrapper kind.** The object keeps its kind, so a query for `kind 33331` returns hidden objects too, as previews; a client that knows nothing of this DECK shows the preview, which is the sentence above pointing at a client that can find the object; and the shape is already implemented in clients that follow FF-1. A wrapper kind (an application-specific event carrying the ciphertext) would hide the object from every one of those.
 
 ---
 
@@ -423,7 +502,7 @@ A tool that writes SNO from a modeling package performs four conversions, and ea
 | **Triangulation.** SNO has only triangles; modeling packages work in quads and n-gons. | The authored topology. A round trip returns triangles, so the model is no longer editable the way it was built. |
 | **Axis change.** Blender is Z-up and right-handed; SNO is Y-up and right-handed. The map is Blender `(x, y, z)` to SNO `(x, z, -y)`. | Nothing, if the negation is not forgotten. Dropping it turns the map into a reflection and publishes every object mirrored, which is invisible on a symmetric object and obvious on everything else. Both frames are right-handed, so no mirroring is required or wanted (§2). |
 | **Quantization to the lattice.** Float positions become integers on a 1/120 lattice. | Real precision. See below. |
-| **Decimation to 512 vertices.** | The largest loss, and the only one that changes the art rather than the numbers. |
+| **Decimation, if the exporter chooses it.** | The format sets no ceiling (§1.8); an exporter decimates to what its relays take and its readers draw well. When it does, this is the one loss that changes the art rather than the numbers. |
 
 **The precision budget, stated plainly, and it is better than it looks.** One unit is 120 ticks, which is log2(120) = 6.91 bits. A grid at the maximum extent of 64 is 15,360 ticks across, about 13.9 bits of resolution per axis; at the default extent of 8 it is about 10.9 bits.
 
@@ -431,16 +510,16 @@ The instinct is to call that low precision. It is not. Draco's encoder defaults 
 
 The lattice also buys something the float formats cannot have at any bit depth: exactness. Two objects authored to share an edge share it forever, on every implementation, and welding, deduplication and hashing are integer tuple comparisons rather than an epsilon that is always wrong somewhere.
 
-**Where the vertex ceiling sits.** The budget is not abstract:
+**What things cost, for a sense of scale.** The budget is the relay's (§1.8), and it is not abstract:
 
-| Object | Vertices | Triangles | Fits |
+| Object | Vertices | Triangles | Event, roughly |
 |---|---|---|---|
-| a cube | 8 | 12 | easily |
-| a UV sphere at 32 by 16 segments | 482 | 960 | barely |
-| one subdivision more | thousands | thousands | no |
-| a scanned or sculpted asset | 10^4 to 10^7 | | no |
+| a cube | 8 | 12 | under 1 KB |
+| a UV sphere at 32 by 16 segments | 482 | 960 | about 18 KB |
+| one subdivision more | thousands | thousands | about 100 KB: the world's relay takes it, a stock relay does not |
+| a scanned or sculpted asset | 10^4 to 10^7 | | megabytes; no relay in use takes it |
 
-512 vertices is one recognizable object at low poly, not a scene. An exporter should show a live vertex count while modeling rather than let the budget be discovered at export.
+A few hundred vertices is one recognizable object at low poly; a few thousand is a detailed one. An exporter should show a live estimate of the event's size while modeling rather than let a relay discover it at publish.
 
 ### 7.2 What is genuinely absent, and what each would cost
 
@@ -463,9 +542,9 @@ One apparent gap is not one. SNO has per-vertex color and no material, which is 
 | Missing | Why it does not belong |
 |---|---|
 | **UVs and textures** | A texture is kilobytes to megabytes, so it must live outside the event as a URL or a hash. That ends the property that an SNO renders with no network access and no external attack surface, which is most of what makes it simple. |
-| **Multiple objects, hierarchy, transforms** | SNO is one object by definition. A scene is a list of objects with placements, which is a different document and probably a different kind. |
+| **Hierarchy and transforms** | Since 2026-09-24 these are `refs` and `parts` (§1.10): an object places others, and a scene is an object whose own geometry may be empty. What stays out is a scene graph richer than placement: constraints, parenting by name, per-instance overrides. |
 | **Animation, armatures, shape keys** | Each needs a time model and per-frame or per-bone data that dwarfs the geometry. |
-| **Instancing and level of detail** | Real needs at scene scale, meaningless for one 512-vertex object. |
+| **Level of detail** | Instancing is §1.10. Level of detail is not: one object is one mesh, and a reader that needs less draws less. |
 
 ### 7.4 What SNO has that the large formats do not
 
@@ -480,10 +559,14 @@ One apparent gap is not one. SNO has per-vertex color and no material, which is 
 ## 8. Open questions
 
 1. **A base unit outside Cyberspace.** `unit` is an exponent over a base the application defines, which is meaningless to a client with no such base. An optional field giving meters per model unit would make an object's real size portable, at the cost of a field that Cyberspace itself would never write.
-2. **Whether a reader's limit is a relay bound or a client bound.** This was once the question of whether 512 and 1024 were derived from anything; §1.8 now measures what fits, and at 32 bytes a vertex about 832 vertices with a color on every face would still clear a 56 KB budget. So the numbers are a deliberate reserve rather than a ceiling the event size forces, and the paragraph there says why the headroom was spent on face colors instead. What is not settled is which bound should set them. The size a relay will accept and the size a client can hold and draw are different limits that happen to be the same number today, and only the first is measured.
+2. **Whether a reader's limit is a relay bound or a client bound.** *Settled 2026-09-24: neither. The format sets no limit (§1.8); the relay bounds the event as it does every kind, and a client that cannot draw an object is a client's problem to solve as it solves it for a long article or a large image. Kept for the record; the earlier text follows.* This was once the question of whether 512 and 1024 were derived from anything; §1.8 now measures what fits, and at 32 bytes a vertex about 832 vertices with a color on every face would still clear a 56 KB budget. So the numbers are a deliberate reserve rather than a ceiling the event size forces, and the paragraph there says why the headroom was spent on face colors instead. What is not settled is which bound should set them. The size a relay will accept and the size a client can hold and draw are different limits that happen to be the same number today, and only the first is measured.
 3. **There is no hard bound on how far a vertex may lie from the origin.** §1.8 puts the 64-unit bound on publishers and lets readers repair instead of reject, which is what ONOSENDAI does today: it grows the extent to fit, without a ceiling. That is safe for a client rendering its own author's work and unsafe as a general rule, since a payload of 512 vertices at 2^50 units is valid under this text and will produce a grid no renderer wants. Making the bound a reader obligation is a one-line change and would make the current client non-conformant until it is updated, which is why it is a question rather than a rule.
 
 ---
+
+4. **A per-object key for a hidden object carried by reference.** §3.4 encrypts the object with the region key, which ties it to the place. A key of its own, carried inside the bag beside the reference, would let one large object be referenced from several places and moved without re-encryption, at the cost of a second key to lose.
+5. **Whether `parts` should also allow a mirror.** Eight integers place and turn and scale; a negative scale step halves, it does not mirror. A left glove from a right glove needs one more flag or a second object. Left out until someone needs it.
+6. **The rotation order.** §1.10 fixes X then Y then Z about the parent's axes. It is a convention, not a derivation; if a modeling tool in common use disagrees, the cost of matching it is one sentence now and every published object later.
 
 ## Appendix A: a worked example (non-normative)
 
