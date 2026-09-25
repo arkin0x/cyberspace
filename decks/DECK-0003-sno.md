@@ -21,7 +21,7 @@ The design goal is not to compete with glTF or USD. It is to be the three-dimens
 |---|---|
 | Object payload | JSON, described in §1 |
 | Event kind for a standalone object | `33331`, addressable, one per author per `d` (§3.1) |
-| Event kind for an object hidden in a bag | `3330`, as Cyberspace already uses it (§3.2) |
+| Event kind for an object hidden in a bag | `3330` inline, as Cyberspace already uses it; by reference, the object's own `33331` event, named by a reference tag (§3.2, §3.4) |
 | Model space | X right, Y up, +Z toward the viewer: right handed, the glTF convention (§2) |
 | Position lattice | whole units plus 120ths of a unit (§1.2) |
 | Size | no ceiling on vertices or faces; the event's size is the relay's concern, as for every other kind (§1.8) |
@@ -403,14 +403,14 @@ A client that receives a `kind 33331` event whose content fails §1.9 MUST NOT r
 
 ### 3.2 Inside a bag
 
-An object hidden at a place is an item inside a `kind 33330` bag, exactly as `CYBERSPACE_V2.md` §7 describes items. The item is a `kind 3330` event, signed or unsigned, and it MAY carry a `C` tag, which then MUST lie inside the bag's region. The item carries its object in one of two ways:
+An object hidden at a place is an entry in a `kind 33330` bag, exactly as `CYBERSPACE_V2.md` §7.6 describes entries. It is carried in one of two ways:
 
-- **Inline:** the payload of §1 in the item's `content`. This is how every object was carried before 2026-09-24 and it stays the right way for small ones.
-- **By reference:** an empty `content` and exactly one `a` tag, `["a", "33331:<pubkey>:<d>", "<relay hint>"]`, naming the object's own event (§3.4). A `pubkey` in that address that differs from the item's author is not a reason to reject: placing another author's object is a placement, and §3.4 says whose key opens it. A reader MUST fetch the referenced event and read the object from it as §3.4 says; an item whose reference cannot be fetched is a missing item, dropped like one that fails to verify, and a client SHOULD say so rather than say nothing was found.
+- **Inline:** an item, a `kind 3330` event, signed or unsigned, with the payload of §1 in its `content`. It MAY carry a `C` tag, which then MUST lie inside the bag's region. This is how every object was carried before 2026-09-24 and it stays the right way for small ones.
+- **By reference:** a reference entry (`CYBERSPACE_V2.md` §7.6) naming the object's own `kind 33331` event (§3.4): `["a", "33331:<pubkey>:<d>", "<relay hint>", "<coord_hex>"]` to follow the object as its author edits it, or `["e", "<event_id>", "<relay hint>", "<coord_hex>"]` to hide exactly one version. No `kind 3330` event is involved. A `pubkey` in the address that differs from the bag's author is not a reason to reject: placing another author's object is a placement. A reader MUST fetch the referenced event and read the object from it as §3.4 says; a reference that cannot be fetched is a missing entry, dropped like an item that fails to verify, and a client SHOULD say so rather than say nothing was found.
 
 A publisher SHOULD carry a large object by reference: a bag is one event shared by everything hidden at a place, and by reference it stays small whatever the object costs. What counts as large is the publisher's judgment against the relays it publishes to (§1.8); the format draws no line. A publisher MAY carry a small object by reference too, when it wants the object to have an event of its own.
 
-`3330` is regular, and deliberately so. An item in a bag is a thing someone hid at a place and someone else found there; it must be exactly what it was when it was found, and its id must keep meaning what it meant. The same payload therefore travels under two kinds according to what is being done with it: `33331` for an object its author is still working on, `3330` for one that has been put somewhere. That is two containers for one format, not two ways of writing the format.
+`3330` is regular, and deliberately so. An item in a bag is a thing someone hid at a place and someone else found there; it must be exactly what it was when it was found, and its id must keep meaning what it meant. The same payload therefore travels under two kinds according to what is being done with it: `33331` for an object its author is still working on, `3330` for one that has been put somewhere. That is two containers for one format, not two ways of writing the format. A reference keeps the same choice open: an `a` reference follows a `kind 33331` object as its author edits it, and an `e` reference holds the one version that was hidden.
 
 ### 3.3 As an avatar
 
@@ -423,7 +423,7 @@ An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload
 | Field | Content |
 |---|---|
 | `content` | a **preview** for clients that cannot open it. It SHOULD say that the object is encrypted to a location in cyberspace and name a client that can find it, for example: `This object is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech` |
-| `["encrypted", "aes-256-gcm", "<ciphertext>", ""]` | exactly one. The ciphertext is the payload of §1, serialized as JSON, encrypted with the bag's region key (`CYBERSPACE_V2.md` §7.2) under the bag's own cipher and byte layout (§7.6: AES-256-GCM, 12-byte nonce, 16-byte tag, `nonce || ciphertext || tag`, base64). The fourth element, a key service URL in FF-1, is empty: the key is computed from the place, not served |
+| `["encrypted", "aes-256-gcm", "<ciphertext>", "cyberspace:region"]` | exactly one. The ciphertext is the payload of §1, serialized as JSON, encrypted with the bag's region key (`CYBERSPACE_V2.md` §7.2) under the bag's own cipher and byte layout (§7.6: AES-256-GCM, 12-byte nonce, 16-byte tag, `nonce || ciphertext || tag`, base64). The fourth element stands where FF-1 puts a key service URL: `cyberspace:region` is FF-1's registered key derivation for a key computed from a place rather than served, and a reader MUST NOT make a network request for it |
 | `d` | the object's identifier, chosen by its author and stable across edits, as in §3.1. It MUST NOT be derived from the location |
 | `name`, `alt` | MAY be present, as in §3.1, and MUST NOT reveal the location |
 
@@ -431,7 +431,7 @@ An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload
 
 **One key opens the place and everything referenced from it.** The object is encrypted with the same region key that opens the bag, so a reader that has opened the bag opens every object it references with the key in hand, and a reader that has not can open neither. The cost is that the object is tied to the region: moving it to another place means re-encrypting it. A per-object key carried inside the bag would lift that and let one event be referenced from several places; §8 records it as open.
 
-**Validation is the same.** A reader that decrypts a referenced object and finds it fails §1.9 drops the item, exactly as it drops an inline item that fails, and SHOULD say that the object was found and refused rather than that nothing was found.
+**Validation is the same.** A reader that decrypts a referenced object and finds it fails §1.9 drops the entry, exactly as it drops an inline item that fails, and SHOULD say that the object was found and refused rather than that nothing was found.
 
 **Why a partially encrypted `kind 33331` and not a wrapper kind.** The object keeps its kind, so a query for `kind 33331` returns hidden objects too, as previews; a client that knows nothing of this DECK shows the preview, which is the sentence above pointing at a client that can find the object; and the shape is already implemented in clients that follow FF-1. A wrapper kind (an application-specific event carrying the ciphertext) would hide the object from every one of those.
 
