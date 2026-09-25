@@ -1097,7 +1097,7 @@ The plaintext is arbitrary bytes. The protocol places no requirement on it beyon
 A reference hides an event that is published on its own, so that the bag stays small and the referenced event has an id and an address of its own. It is one of two tags, in the shape NIP-01 gives them, with the entry's exact coordinate as an optional fourth element:
 
 - `["a", "<kind>:<pubkey>:<d>", "<relay hint>", "<coord_hex>"]` names the event by its coordinate: its own kind, its author and its `d` tag. A reader fetches the newest event at that coordinate, so the reference follows its author's edits.
-- `["e", "<event_id>", "<relay hint>", "<coord_hex>"]` names one event by its id, so the reference always means exactly the version that was hidden.
+- `["e", "<event_id>", "<relay hint>", "<coord_hex>"]` names one event by its id. It is for events of a regular kind, which relays keep. It does not pin a version of an addressable event: NIP-01 lets a relay keep only the newest event at an address and discard the one it replaces, so an `e` reference to an addressable event stops resolving once its author publishes over it. Name an addressable event by its coordinate.
 
 The rules:
 - The referenced event MAY be of any kind. Its kind is the kind in the `a` coordinate, or the kind of the event the `e` id names; nothing in the bag restates it.
