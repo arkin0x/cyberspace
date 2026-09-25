@@ -116,6 +116,12 @@ def expand_face_colors(entries: Any, count: int, palette_len: int) -> list[int]:
     return out
 
 
+# §1.10: the reference shapes, and the position bound of §1.8 in ticks.
+_HEX64 = re.compile(r"[0-9a-f]{64}")
+_ADDRESS = re.compile(r"33331:[0-9a-f]{64}:")
+PART_REACH = 64 * 120
+
+
 def validate(payload: Any, fetched_palette: Any = None) -> dict:
     """§1.9, in order. Returns the payload on success, raises SnoError on failure.
 
@@ -205,6 +211,35 @@ def validate(payload: Any, fetched_palette: Any = None) -> dict:
         if not _is_int(spin) or not 0 <= spin <= 359:
             raise SnoError("rule 10: spin must be an integer in 0..359")
 
+    # 11. refs: each ["e", <64 hex>] or ["a", "33331:<64 hex>:<d>"], and at
+    # most one relay URL after it.
+    refs = payload.get("refs", [])
+    if not isinstance(refs, list):
+        raise SnoError("rule 11: refs is not an array")
+    for r in refs:
+        if not isinstance(r, list) or not 2 <= len(r) <= 3 or not all(isinstance(x, str) for x in r):
+            raise SnoError("rule 11: a refs entry is not a tag of two or three strings")
+        if not ((r[0] == "e" and _HEX64.fullmatch(r[1])) or (r[0] == "a" and _ADDRESS.match(r[1]))):
+            raise SnoError("rule 11: a refs entry is neither an e nor an a reference")
+
+    # 12. parts: eight integers each, a refs index in range, ticks within the
+    # 64-unit bound, whole degrees. The scale bound names the placed object's
+    # unit, which is known only once it is fetched; a reader draws an
+    # out-of-range one as a placeholder (§1.10), so here it is only an integer.
+    parts = payload.get("parts", [])
+    if not isinstance(parts, list):
+        raise SnoError("rule 12: parts is not an array")
+    for p in parts:
+        if not isinstance(p, list) or len(p) != 8 or not all(_is_int(x) for x in p):
+            raise SnoError("rule 12: a placement is not eight integers")
+        if not 0 <= p[0] < len(refs):
+            raise SnoError("rule 12: a placement names no refs entry")
+        if not all(-PART_REACH <= x <= PART_REACH for x in p[1:4]):
+            raise SnoError("rule 12: a placement stands past the 64-unit bound")
+        if not all(0 <= x <= 359 for x in p[4:7]):
+            raise SnoError("rule 12: a turn is not whole degrees 0..359")
+
+    # 13. Nothing to check: an object may be only the arrangement of others.
     return payload
 
 
@@ -422,6 +457,17 @@ def _rejections() -> list[tuple[str, dict]]:
         ("rule 10", variant(up="yes")),
         ("rule 10", variant(up=True, spin=360)),
         ("rule 10", variant(spin=360)),
+        ("rule 11", variant(refs="x")),
+        ("rule 11", variant(refs=[["a", "33331:" + "AB" * 32 + ":d"]])),  # uppercase hex
+        ("rule 11", variant(refs=[["a", "30023:" + "ab" * 32 + ":d"]])),  # not an object's kind
+        ("rule 11", variant(refs=[["e", "cd" * 31]])),                     # short id
+        ("rule 11", variant(refs=[["p", "ab" * 32]])),
+        ("rule 11", variant(refs=[["e", "cd" * 32, "wss://x", "extra"]])),
+        ("rule 12", variant(parts=[[0, 0, 0, 0, 0, 0, 0, 0]])),            # parts without refs
+        ("rule 12", variant(refs=[["e", "cd" * 32]], parts=[[1, 0, 0, 0, 0, 0, 0, 0]])),
+        ("rule 12", variant(refs=[["e", "cd" * 32]], parts=[[0, 7681, 0, 0, 0, 0, 0, 0]])),
+        ("rule 12", variant(refs=[["e", "cd" * 32]], parts=[[0, 0, 0, 0, 360, 0, 0, 0]])),
+        ("rule 12", variant(refs=[["e", "cd" * 32]], parts=[[0, 0, 0, 0, 0, 0, 0]])),
     ]
 
 
@@ -579,6 +625,14 @@ def _self_test() -> None:
         print(f"  MISSED: {rule} accepted a payload it should reject: {bad}")
         failures += 1
     print(f"{len(_rejections())} rejection cases, {failures} wrong")
+
+    # §1.10 and rule 13: an object may be nothing but the arrangement of
+    # others, and a relay hint is optional.
+    floor = {**APPENDIX_A, "vertices": [], "colors": [], "faces": [], "ticks": [],
+             "refs": [["a", "33331:" + "ab" * 32 + ":tile", "wss://relay.example"]],
+             "parts": [[0, x * 120, 0, 0, 0, 90, 0, 0] for x in range(-64, 65)]}
+    assert len(validate(floor)["parts"]) == 129
+    print("an object of 129 placements and no vertices of its own validates")
 
     # §1.8: the extent is a hint, corrected against the data rather than enforced.
     grown = validate(variant_extent := {**APPENDIX_A, "vertices": [[0, 0, 0], [2, 0, 0], [1, 0, 2], [9, 2, 1]]})

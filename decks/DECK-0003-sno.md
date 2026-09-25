@@ -325,7 +325,7 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 ]
 ```
 
-An `a` reference names an addressable object (§3.1) and follows its author's newest version: fix the tile and every floor built from it changes. An `e` reference names one event and stays on it forever, as a palette reference does (§1.3b). The publisher chooses per reference. The relay URL is a hint, as in NIP-01, and MAY be omitted. `refs` names each object once; a reader MUST reject a payload whose `refs` entry is not one of the two shapes above.
+An `a` reference names an addressable object (§3.1) and follows its author's newest version: fix the tile and every floor built from it changes. An `e` reference names one event, as a palette reference does (§1.3b), but an object is addressable, and NIP-01 lets a relay discard every version but the newest; most do. An `e` to a version its author has since replaced may therefore find nothing and be drawn as a placeholder. A publisher SHOULD write `a`. An author who wants a build no one else can change copies the object, publishes the copy under their own key, and places that. A reader MUST still read both shapes. The relay URL is a hint, as in NIP-01, and MAY be omitted. `refs` names each object once; a reader MUST reject a payload whose `refs` entry is not one of the two shapes above.
 
 **`parts` is a list of placements, eight integers each.**
 
