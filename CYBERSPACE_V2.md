@@ -1083,25 +1083,42 @@ A reader without the region key cannot decrypt the payload. An attempt with the 
 **Plaintext (normative):**
 
 The plaintext is arbitrary bytes. The protocol places no requirement on it beyond the two shapes below, which tell a reader how to interpret what it has decrypted:
-- A **list of items**: a JSON array whose elements are nostr events, signed or unsigned. Readers MUST try this shape first, because a list of items is the shape clients render item by item.
-- **Opaque**: anything that is not a list of items, such as a text note or a file. Its interpretation is application-defined; a client may show it as text or offer it as a download.
+- A **list of entries**: a JSON array. Each element is either an **item**, a JSON object that is a nostr event carried inline, signed or unsigned, or a **reference**, a JSON array that is a tag naming an event published elsewhere. The JSON type tells them apart. Readers MUST try this shape first, because a list of entries is the shape clients render entry by entry. An element that is neither an event nor a reference is skipped.
+- **Opaque**: anything that is not a list of entries, such as a text note or a file. Its interpretation is application-defined; a client may show it as text or offer it as a download.
 
 **Items (normative):**
 - An item is a nostr event. It MAY be signed. If it carries a `sig`, its `id` MUST be the canonical id (§8.2) and the signature MUST verify; a reader MUST drop an item that fails either check, and only that item, because one corrupt or forged item says nothing about the others. An item without a `sig` is allowed, because some content is deliberately left unsigned; its `pubkey` is then a claim, and readers MUST NOT present it as verified.
 - The bag's `pubkey` is the key that placed the items in the region. Readers MUST attribute placement to the bag's author, and MUST attribute authorship of an item's content to the item's `pubkey` only when the item is signed. A signed item written by one key and hidden by another is therefore shown as that author's content, placed here by the hider.
-- An item MAY carry its content by reference rather than inline: an empty `content` and one `a` tag naming an event of the item's kind whose payload is encrypted with this bag's region key under the cipher above, so that whoever opened the bag opens the referenced event too. The bag stays small and the object gets an event of its own. DECK-0003 §3.2 and §3.4 define the shape for objects; the referenced event MUST carry nothing that says where it is.
 - An item MAY carry a `C` tag: `["C", "<coord_hex>"]`, its exact coordinate (§2), which lets a client render it at a point rather than somewhere in the region. If present, the coordinate MUST lie inside the region the bag is encrypted to: the same plane, and equal to the region's base above height `h`. Readers MAY drop an item whose `C` lies outside, because such an item claims a place its key does not cover. Without a `C` tag, an item is located no more precisely than the region.
 - A reader that does not understand an item's `kind` skips it and renders the rest.
 
-Note (non-normative): kinds in use. ONOSENDAI hides two kinds: `3330`, a shard (geometry in `content`, the kind carried over from v1), and `1`, a message (text in `content`). Both carry a `C` tag. New kinds need no change to this section: the container is the same, and a client that does not know a kind skips it.
+**References (normative):**
+
+A reference hides an event that is published on its own, so that the bag stays small and the referenced event has an id and an address of its own. It is one of two tags, in the shape NIP-01 gives them, with the entry's exact coordinate as an optional fourth element:
+
+- `["a", "<kind>:<pubkey>:<d>", "<relay hint>", "<coord_hex>"]` names the event by its coordinate: its own kind, its author and its `d` tag. A reader fetches the newest event at that coordinate, so the reference follows its author's edits.
+- `["e", "<event_id>", "<relay hint>", "<coord_hex>"]` names one event by its id, so the reference always means exactly the version that was hidden.
+
+The rules:
+- The referenced event MAY be of any kind. Its kind is the kind in the `a` coordinate, or the kind of the event the `e` id names; nothing in the bag restates it.
+- The relay hint MAY be the empty string. `<coord_hex>` is the entry's exact coordinate and follows the rules of the `C` tag above: it MUST lie inside the bag's region, and a reader MAY drop a reference whose coordinate lies outside. It MAY be omitted, in which case the entry is located no more precisely than the region.
+- The referenced event is a **partially encrypted event** in the shape of Fanfares' NIP FF-1: its `content` is a public **preview** for readers who cannot open it, and it carries exactly one `["encrypted", "aes-256-gcm", "<payload>", "cyberspace:region"]` tag. The payload is the event's hidden content, encrypted with this bag's region key under the cipher above. The fourth element, `cyberspace:region`, stands where FF-1 puts a key service URL and says that the key is derived from a place rather than issued: a reader MUST NOT make a network request for it. The event carries a `d` tag, as FF-1 gives every partially encrypted event whatever its kind, which is what gives every referenced event a coordinate.
+- The referenced event MUST carry nothing that says where it is: no `C`, no `h`, no hint and no sector tag. Those belong to the bag, which is what the region key protects. The event is a locked box in plain view; the bag is the note that says where the box stands.
+- Whoever opened the bag opens every event it references, with the key already in hand, and a reader that has not opened the bag can open none of them. What the decrypted payload means is defined by the referenced event's kind; DECK-0003 §3.2 and §3.4 define it for objects.
+- The referenced event is published, so it is signed like any other event, and a reader MUST verify it as usual. Placement is attributed to the bag's author, and authorship of the referenced content to the referenced event's `pubkey`, which MAY differ from the bag's: placing another author's event is a placement.
+- A reference that cannot be fetched, or whose payload does not open with this bag's key, is a missing entry. A reader drops it and SHOULD say that something was found but could not be retrieved, rather than that nothing was found.
+
+**Why a reference is a tag and not an item (non-normative).** An item that only pointed elsewhere would repeat what the reference already says: its kind is in the coordinate, its author and time are the bag's, and its content would be empty. What must survive is the pointer and the exact coordinate, and a tag carries both. Measured on an object reference, the item form is 304 bytes of JSON and the tag form 162, which matters because size is the reason references exist. NIP-51 lists already encrypt their private entries as a JSON array of tags, so the shape is familiar.
+
+Note (non-normative): kinds in use. ONOSENDAI hides two kinds: `3330`, a shard (geometry in `content`, the kind carried over from v1), and `1`, a message (text in `content`). Both carry a `C` tag. New kinds need no change to this section: the container is the same, and a client that does not know a kind skips it. A large object is hidden by reference instead, as its own `kind 33331` event (DECK-0003 §3.2).
 
 **Why one bag per region (non-normative):** `d` is the lookup id, so there is exactly one bag per author, region and height, and it is addressable. A region accumulates content by rewriting its bag: the author decrypts the current bag, adds or removes items, and publishes the whole list again. This costs one event per change instead of one event per item, and it keeps the relay ignorant: a relay sees one ciphertext per region and never learns how many items the bag holds or what kinds they are.
 
 **Lifecycle (normative):**
-- To add or remove an item, the author republishes the bag with the new list and a `created_at` strictly greater than the previous bag's, because relays keep the newest addressable event and readers MUST do the same.
-- To remove the last item, the author publishes a NIP-09 deletion (`kind = 5`) with `["e", "<bag_event_id>"]` and `["k", "33330"]`. An empty bag would still occupy the region's slot on the relay, so a bag holding a list of zero items MUST NOT be published.
+- To add or remove an entry, the author republishes the bag with the new list and a `created_at` strictly greater than the previous bag's, because relays keep the newest addressable event and readers MUST do the same.
+- To remove the last entry, the author publishes a NIP-09 deletion (`kind = 5`) with `["e", "<bag_event_id>"]` and `["k", "33330"]`. An empty bag would still occupy the region's slot on the relay, so a bag holding a list of zero entries MUST NOT be published.
 
-Note (non-normative): the reference CLI's `encrypt` writes opaque plaintext (a text or a file); ONOSENDAI writes a list of items. Both conform to this section, and each can open what the other publishes.
+Note (non-normative): the reference CLI's `encrypt` writes opaque plaintext (a text or a file); ONOSENDAI writes a list of entries. Both conform to this section, and each can open what the other publishes.
 
 
 ### 7.7 Hints (optional)
@@ -1493,9 +1510,9 @@ The canonical mapping is defined for latitude/longitude plus an optional altitud
 
 ### 9.8 Golden vectors (consensus locks)
 
-Implementations SHOULD include golden-vector tests to detect accidental mapping drift.
+An implementation of §9.7 MUST reproduce every vector below exactly. The mapping is consensus-critical (§9.1): two clients that disagree on a vector disagree on where a place is. Implementations SHOULD include the vectors as tests, to catch accidental drift.
 
-These are required vectors for spec version `2026-03-16-h34-corrected` (hex is 32 bytes, no `0x` prefix).
+These are the required vectors for spec version `2026-03-16-h34-corrected` (hex is 32 bytes, no `0x` prefix).
 
 Golden vectors assume `altitude_m = 0` with clamp-to-surface behavior enabled:
 - `origin_equator_prime` lat=0 lon=0
