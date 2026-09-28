@@ -42,8 +42,8 @@ Some DECKs are game rules rather than protocol extensions: they define what a ga
 
 | | Game-alive | Game-dead |
 |---|---|---|
-| **Protocol-valid** | ordinary play | a chain the game has ruled out of play, while the protocol still counts it valid |
-| **Protocol-invalid** | a virtual spawn: chain invalid, the game recognises it | an ordinary invalid chain (fork, bad proof) |
+| **Protocol-valid** | ordinary play, including play inside a virtual bracket (`../CYBERSPACE_V2.md` §8.11) | a chain the game has ruled out of play, while the protocol still counts it valid |
+| **Protocol-invalid** | a chain the protocol rejects that a game still honors; nothing outside that game sees it | an ordinary invalid chain (a bad proof, a base action inside a bracket) |
 
 A game-mechanic DECK MUST, in addition to the rules above:
 - never alter the validity of any `kind 3333` chain under the base spec, and never require anything of clients that do not run the game;
@@ -55,5 +55,5 @@ The design record for this category, and for why the base protocol defines holdi
 
 ## Registry
 - `DECK-0001-hyperspace.md`: Hyperspace, Bitcoin block transit (ports, landfalls, stations, rides)
-- `DECK-0002`: reserved for Virtual Spawn (game mechanic; draft in PR #15)
+- `DECK-0002-virtual-spawn.md`: Virtual Spawn, games played inside a virtual bracket (game mechanic). Defines `kind 33332`, the game event; the bracket itself is base protocol (`../CYBERSPACE_V2.md` §8.11)
 - `DECK-0003-sno.md`: SNO (Simple Nostr Objects), the small 3D object format. Defines `kind 33331`, a standalone editable object; `kind 3330` bag items and `kind 11333` avatars carry the same payload. Beside it: `sno-reference.py`, a conformance implementation that runs its own rejection table; `sno-palette.json` and `sno-palette.mjs`, the built-in 256-colour palette and the generator that produces it; `sno-palette.png`, the sheet
