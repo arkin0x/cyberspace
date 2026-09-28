@@ -4,7 +4,7 @@ DECK: 0001
 Title: Hyperspace (Bitcoin block transit)
 Status: Draft v3 (supersedes the v2 draft of 2026-04-16 and the v1 draft of 2026-02-28)
 Created: 2026-02-28
-Last updated: 2026-08-24
+Last updated: 2026-09-28
 Requires: `CYBERSPACE_V2.md` (spec version `2026-03-16-h34-corrected`)
 
 ## Abstract
@@ -325,7 +325,7 @@ A boarding toll, fixed work paid by `enter-hyperspace` beyond the temporal-axis 
 
 ## 8. Equivocation and chain integrity (normative)
 
-- Two movement events with the same `previous_event_id` are a fork; both branches are invalid from that point.
+- Two movement events with the same `previous_event_id` are a fork. A fork is resolved by the base fork rule (`CYBERSPACE_V2.md` §8.7.3): the branch signed first continues the chain, and the other branch is not part of it. An earlier version of this section made both branches invalid from that point; that rule is replaced.
 - `enter-hyperspace` MAY follow any movement action.
 - `hyperjump` MUST follow `enter-hyperspace` or `hyperjump` (§4.3).
 - A stop's coordinate MUST be verified against Bitcoin consensus for the selected network; implementations SHOULD treat stops with fewer than six confirmations as provisional and avoid them as destinations.
