@@ -4,7 +4,7 @@ DECK: 0001
 Title: Hyperspace (Bitcoin block transit)
 Status: Draft v3 (supersedes the v2 draft of 2026-04-16 and the v1 draft of 2026-02-28)
 Created: 2026-02-28
-Last updated: 2026-08-24
+Last updated: 2026-09-28
 Requires: `CYBERSPACE_V2.md` (spec version `2026-03-16-h34-corrected`)
 
 ## Abstract
@@ -231,10 +231,12 @@ A `hyperjump` moves an identity from one stop to another along the line, in eith
 ```
 K_LINE                    = 6
 SAMPLES                   = 32
+GRIND_HEIGHT              = 16
 HYPERSPACE_TERRAIN_DOMAIN = b"CYBERSPACE_HYPERSPACE_TERRAIN_V1"
 HYPERSPACE_SEED_DOMAIN    = b"CYBERSPACE_HYPERSPACE_SEED_V1"
 HYPERSPACE_LEAF_DOMAIN    = b"CYBERSPACE_HYPERSPACE_LEAF_V1"
-HYPERSPACE_SAMPLE_DOMAIN  = b"CYBERSPACE_HYPERSPACE_SAMPLE_V1"
+HYPERSPACE_GRIND_DOMAIN   = b"CYBERSPACE_HYPERSPACE_GRIND_V1"
+HYPERSPACE_SAMPLE_DOMAIN  = b"CYBERSPACE_HYPERSPACE_SAMPLE_V2"
 PAD_LEAF                  = 32 zero bytes
 ```
 
@@ -253,6 +255,7 @@ Required tags:
 - `as_of`: `["as_of", "<A>"]` (the station set bound, base-10; REQUIRED on the first ride after boarding, per §4.2; `A ≥ B_to`)
 - `proof`: `["proof", "<merkle_root_hex>"]` per §5.4
 - `mp`: `["mp", "<openings>"]` per §5.5
+- `mn`: `["mn", "<nonce_hex>"]`: the re-roll nonce of §5.5, as exactly 16 lowercase hex characters, big-endian
 - Sector tags from `C`
 
 Optional: `net`; `e` tags with markers `hyperjump_from` / `hyperjump_to` referencing anchor events.
@@ -277,10 +280,23 @@ Order the leaves by ascending `b`. Append `PAD_LEAF` until the count is a power 
 
 Let `n_pad` be the padded leaf count and `depth = log2(n_pad)`.
 
+**The re-roll price.** The sample indices are drawn from a 32-byte value `G` that costs work to obtain. For an unsigned 64-bit `nonce`:
+
+```
+seed_nonce = sha256(HYPERSPACE_GRIND_DOMAIN || previous_event_id || root || be64(nonce))
+g_base     = ((int(seed_nonce) mod 2^85) >> GRIND_HEIGHT) << GRIND_HEIGHT
+cantor_g   = compute_subtree_cantor(g_base, GRIND_HEIGHT)
+G          = sha256(HYPERSPACE_GRIND_DOMAIN || seed_nonce || int_to_bytes_be_min(cantor_g))
+```
+
+`root` is the 32-byte root of §5.4 and `compute_subtree_cantor` is `CYBERSPACE_V2.md` §4.6. Let `A = max(1, ceil(n / SAMPLES))`. The prover MUST publish, in the `mn` tag, a `nonce` for which `G`, read as a 256-bit big-endian integer, satisfies `G × A < 2^256`. Each attempt succeeds with probability `1/A`, so the prover performs `A` attempts on average, and a verifier repeats one.
+
+**Why this price (normative rationale).** An attempt is one Cantor tree at height 16, which costs about as much as one block of the ride. A block's height is `K_b + 6` with `K_b` binomial, and a tree's cost grows faster than its leaf count, so the expected block costs between a height-15 and a height-16 tree (measured with GMP: 28.5 ms, against 16 ms and 38 ms). `A` attempts therefore cost about `1/SAMPLES` of the ride. That is the smallest price at which a prover that skips blocks and retries until the samples avoid the gaps pays more than it saves; `CYBERSPACE_V2.md` §6.11 gives the argument. The attempt height is fixed rather than drawn per nonce, so a prover cannot pass over the expensive attempts. The work is Cantor pairing rather than bare SHA-256, so hash-mining hardware buys nothing.
+
 **Sample indices.** For `i` in `0 .. SAMPLES - 1`:
 
 ```
-idx_i = int(sha256(HYPERSPACE_SAMPLE_DOMAIN || root || be32(i))) mod n
+idx_i = int(sha256(HYPERSPACE_SAMPLE_DOMAIN || G || be32(i))) mod n
 ```
 
 (`be32(i)` is four big-endian bytes; indices are positions among the `n` real leaves, `0` meaning block `lo + 1`.) If `n < SAMPLES`, indices repeat; implementations MAY deduplicate.
@@ -291,21 +307,32 @@ idx_i = int(sha256(HYPERSPACE_SAMPLE_DOMAIN || root || be32(i))) mod n
 
 1. Check chain structure, `c`, and the §4.3 chain rule (recomputing the station from the declared `as_of` bound when the previous event is an `enter-hyperspace`; the bound MUST reference an existing height and be `≥ B_to`).
 2. Check `C` equals the stop coordinate for height `B` per §1 on the selected network.
-3. Recompute the sample indices from `root`.
-4. For each sampled index, recompute `leaf_b` from scratch per §5.3 (this requires the block hash of `b` and repeats the block's Cantor work), and verify its inclusion path to `root`.
-5. Accept iff every path verifies.
+3. Recompute `G` from `previous_event_id`, `root` and the `mn` nonce, and reject unless `G × A < 2^256` (one height-16 tree).
+4. Recompute the sample indices from `G`.
+5. For each sampled index, recompute `leaf_b` from scratch per §5.3 (this requires the block hash of `b` and repeats the block's Cantor work), and verify its inclusion path to `root`.
+6. Accept iff every path verifies.
 
 **Level 2 verification (audit):** recompute every leaf and the root. As with sidesteps, security rests on deterministic fraud detectability: a root that does not correspond to the full work is permanently and objectively detectable by anyone willing to redo the ride, and a detected fraud invalidates the chain from that event forward.
 
-**Why sampling (non-normative).** Level 1 costs `SAMPLES` blocks of work instead of `n`. A prover who skips a fraction of the leaves and grinds fake leaf values to steer the sample indices away from the gaps passes with probability `f^SAMPLES` per attempt, where `f` is the fraction actually done; with `SAMPLES = 32` a prover willing to spend about 2^40 cheap attempts can skip at most roughly half the line, and Level 2 exposes the fraud permanently. The openings are about 40 KB for a full-length ride, within common relay event-size limits.
+**Why sampling, and why the price (non-normative).** Level 1 costs `SAMPLES` blocks of work instead of `n`. A prover can skip blocks: it computes only some leaves, puts fabricated values in the rest, and publishes the root. A sample landing on a fabricated leaf fails, so a prover that did a fraction `f` of the blocks passes one set of samples with probability `f^SAMPLES`. Before §5.8 the samples came from the root alone, and a new set cost a few hashes (change one fabricated leaf, rehash its path). Skipping 10 or 20 percent of a ride then cost almost nothing extra, and about 2^40 cheap attempts bought roughly half of it. The re-roll price closes this: each new set of samples costs about one thirty-second of the ride, and at that price no fraction of skipped blocks lowers the expected cost of an accepted proof. The honest overhead is the same one thirty-second, 3 to 4 percent. The openings are about 40 KB for a full-length ride, within common relay event-size limits.
 
 ### 5.6 Zero-length ride
 
-If `station(C_e, B_to) == B_to` (the identity's nearest stop is its destination), the ride has `n = 0`. The event carries `from_height == B`, `proof` of 64 zero characters, and an empty `mp` value. This relocates the identity from `C_e` to the stop and is the intended meaning of boarding at one's station.
+If `station(C_e, B_to) == B_to` (the identity's nearest stop is its destination), the ride has `n = 0`. The event carries `from_height == B`, `proof` of 64 zero characters, an `mn` of 16 zero characters, and an empty `mp` value; there is no price and nothing to sample. This relocates the identity from `C_e` to the stop and is the intended meaning of boarding at one's station.
 
 ### 5.7 Cost expectations (non-normative)
 
-Per block the expected work is about `2^6 * (3/2)^16 ≈ 42,000` Cantor pairs, with a worst block of 2^22 pairs (a 45 MB root, seconds). A ride between two random stops today averages about 320,000 blocks. Measured in the reference implementations: pure Python at small heights h14 12 ms, h16 100 ms, h18 720 ms, h20 6.6 s; the web client's worker pool averages roughly 190 ms per block in single-threaded JavaScript, which prices a full random ride in hours divided by the pool width, and a compiled bignum library brings it to the order of ten minutes. Implementations SHOULD run rides in a background worker with progress, and SHOULD persist completed leaves keyed by `(previous_event_id, b)` so an interrupted ride resumes instead of restarting; §5.3's seeding makes this safe, because a cached leaf is only ever valid for the boarding it was computed under. The line grows by about 26,000 stops of each kind per year, so the same trip lengthens slowly over time. Level 1 verification is `SAMPLES` blocks of work, seconds.
+Per block the expected work is about `2^6 * (3/2)^16 ≈ 42,000` Cantor pairs, with a worst block of 2^22 pairs (a 45 MB root, seconds). A ride between two random stops today averages about 320,000 blocks. Measured in the reference implementations: pure Python at small heights h14 12 ms, h16 100 ms, h18 720 ms, h20 6.6 s; the web client's worker pool averages roughly 190 ms per block in single-threaded JavaScript, which prices a full random ride in hours divided by the pool width, and a compiled bignum library brings it to the order of ten minutes. Implementations SHOULD run rides in a background worker with progress, and SHOULD persist completed leaves keyed by `(previous_event_id, b)` so an interrupted ride resumes instead of restarting; §5.3's seeding makes this safe, because a cached leaf is only ever valid for the boarding it was computed under. The line grows by about 26,000 stops of each kind per year, so the same trip lengthens slowly over time. Level 1 verification is `SAMPLES` blocks of work plus one height-16 tree, seconds. The re-roll price of §5.5 adds about one thirty-second, 3 to 4 percent, to every ride.
+
+### 5.8 Version 2 of the ride openings (normative)
+
+The re-roll price of §5.5 is a breaking change to ride verification. The per-block work, the leaves and the root of §5.3 and §5.4 are unchanged; only the sample indices move, from the root to `G`.
+
+- `HYPERSPACE_SAMPLE_DOMAIN` is bumped from `CYBERSPACE_HYPERSPACE_SAMPLE_V1` to `CYBERSPACE_HYPERSPACE_SAMPLE_V2`, and `HYPERSPACE_GRIND_DOMAIN` and `GRIND_HEIGHT` are new.
+- A `hyperjump` MUST carry the `mn` tag. Verifiers MUST reject a ride without one, or whose nonce does not meet the price, except the rides listed by event id in `decks/grandfathered-v1-hyperjumps.txt`. There is no grace period for anything not on the list.
+- Every listed ride was published before the reference client began publishing this version, and each was audited at Level 2 before it was listed. A verifier MUST accept a listed ride's root and openings without re-checking them, and MUST check everything else about it exactly as for any other ride (§4.3, §5.2, §8). No chain is invalidated by this revision and no identity has to respawn.
+- The audit found seven listed rides whose roots do not match the block data: the client that published them computed some leaves from incorrect block hashes. They are not forgeries, and they are exempted by decision so that no identity has to respawn; the list marks them.
+- A ride without an `mn` tag that is not on the list is invalid, and so is the chain from that event forward. Event ids cannot be forged, so the list cannot be joined after the fact, as a date cutoff could be by backdating `created_at`. The list's format is that of `grandfathered-v2-sidesteps.txt` (`CYBERSPACE_V2.md` §6.16).
 
 ---
 
@@ -375,6 +402,7 @@ In an ultrametric space, targets become reachable by becoming numerous, never by
 - v1 (2026-02-28): exit at the merkle root; enter by hopping to it. Correct exits, unboardable entry.
 - v2 (2026-04-16): sector-plane entry (units error, see Appendix A); Cantor path tree over block heights as the ride proof (free in practice).
 - v3 (this document): plane-bit rule with landfalls; boarding from anywhere at a deterministic station; seeded per-block ride work with sampled verification; toll reserved.
+- v3 revision (2026-09-28): the re-roll price on ride openings, with samples drawn from `G` (§5.5, §5.8).
 
 ## Appendix C: Reference implementations (non-normative)
 
@@ -387,6 +415,10 @@ In an ultrametric space, targets become reachable by becoming numerous, never by
   the header-blob packer with manifest and checkpoint emission.
 - **`decks/landfall-reference.py`** (this repository): stdlib Python §1.2
   derivation; executing it checks all eight golden vectors.
+- **`decks/hyperjump-reference.py`** (this repository): stdlib Python
+  §5.3 to §5.5 over synthetic block hashes, including the re-roll price;
+  executing it checks the properties those sections claim and prints golden
+  vectors.
 
 ## Example (non-normative)
 
