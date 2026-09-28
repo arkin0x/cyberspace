@@ -964,10 +964,12 @@ The re-roll price of §6.10 is a breaking change to sidestep verification. The t
 
 - `SIDESTEP_SAMPLE_DOMAIN` is bumped from `CYBERSPACE_SIDESTEP_SAMPLE_V1` to `CYBERSPACE_SIDESTEP_SAMPLE_V2`, because its preimage now takes `G` in place of `M_axis`, and `SIDESTEP_GRIND_DOMAIN` is new.
 - Sidestep events MUST carry the `mn` tag of §8.5. Verifiers MUST reject a sidestep without one, or whose nonce does not meet the price.
-- Verifiers implementing this revision MUST reject sidestep events built under version 2. There is no grace period and no dual-acceptance mode: accepting version 2 proofs would keep open the forgery described in §6.11.
-- Chains containing a version 2 sidestep are invalidated from that event forward and must respawn. When this revision was drafted (2026-09-27), a public relay held 35 version 2 sidesteps, published by three identities between 2026-09-08 and 2026-09-11, all at heights 18 to 22, together with 98 version 1 sidesteps already invalid under §6.15.
+- Verifiers implementing this revision MUST reject sidestep events built under version 2, with one exception: the version 2 sidesteps listed in `grandfathered-v2-sidesteps.txt`. There is no grace period and no dual-acceptance mode for anything not on that list, because accepting version 2 proofs would keep open the forgery described in §6.11.
+- The list names, by event id, every version 2 sidestep published before the reference clients began publishing version 3, and each listed event was audited at Level 2 (every tree rebuilt from its seed and compared with its `mr` roots, and its `proof_hash` recomputed) before it was listed. A verifier MUST accept a listed event's Merkle roots and openings without re-checking them, and MUST check everything else about it exactly as for any other sidestep: chain linkage, geometry and `proof_hash`. No chain is invalidated by this revision and no identity has to respawn.
+- A version 2 sidestep that is not on the list is invalid, and so is the chain from that event forward. Event ids cannot be forged, so the list cannot be joined after the fact, as a date cutoff could be by backdating `created_at`.
+- Each non-empty line of `grandfathered-v2-sidesteps.txt` that does not begin with `#` starts with a 64-character lowercase hex event id; anything after the id on the same line is commentary.
 
-Version 2 proofs are recognisable by the absence of the `mn` tag.
+Version 2 proofs are recognisable by the absence of the `mn` tag. Version 1 sidesteps remain invalid under §6.15.
 
 ---
 
@@ -1311,7 +1313,7 @@ Required tags:
 
 **Openings encoding:** Each per-axis segment in the `mp` tag is the concatenation of `SIDESTEP_SAMPLES + 1` inclusion proofs in the order defined by §6.10 (destination first, then samples in ascending `i`). Each proof is `h` sibling hashes from leaf to root, hex-encoded, so an axis with LCA height `h` contributes exactly `64 × h × (SIDESTEP_SAMPLES + 1)` hex characters. For trivial axes (`h = 0`), the segment is an empty string between colons.
 
-Because the segment is fixed-width given `h`, a verifier reads the per-axis `hx`, `hy`, `hz` tags and splits the segment without ambiguity. A segment whose length is not an exact multiple of `64 × h` is malformed and the event MUST be rejected; a segment of exactly `64 × h` characters is a v1 proof and MUST be rejected per §6.15. An event without an `mn` tag is a version 2 proof and MUST be rejected per §6.16.
+Because the segment is fixed-width given `h`, a verifier reads the per-axis `hx`, `hy`, `hz` tags and splits the segment without ambiguity. A segment whose length is not an exact multiple of `64 × h` is malformed and the event MUST be rejected; a segment of exactly `64 × h` characters is a v1 proof and MUST be rejected per §6.15. An event without an `mn` tag is a version 2 proof and MUST be rejected per §6.16 unless its id is listed in `grandfathered-v2-sidesteps.txt`.
 
 **Height tags:** The `hx`, `hy`, `hz` tags enable verifiers to determine expected proof lengths without re-deriving LCA heights from coordinates.
 
@@ -1355,7 +1357,7 @@ To verify a sidestep (Level 1, sampled openings check):
 1. Parse previous and current coords; decode to `(x1,y1,z1,plane)` and `(x2,y2,z2,plane)`.
 2. Validate crossing geometry: for each axis, confirm the destination is exactly 1 Gibson past the LCA boundary (§6.3). Verify the `hx`, `hy`, `hz` tags match the computed LCA heights.
 3. Parse per-axis Merkle roots from the `mr` tag. Read `previous_event_id` from the `e` tag with marker `previous`.
-4. Parse the nonce from the `mn` tag. Compute `G` per §6.10 and `A` from the heights; reject unless `G × A < 2^256`.
+4. Parse the nonce from the `mn` tag. Compute `G` per §6.10 and `A` from the heights; reject unless `G × A < 2^256`. If the event has no `mn` tag, accept steps 4 and 5 only when its id is listed in `grandfathered-v2-sidesteps.txt` (§6.16), and otherwise reject it.
 5. For each axis where movement occurs:
    a. Build `seed_prefix = SIDESTEP_DOMAIN || previous_event_id || axis_byte || SEED_PAD` per §6.4, and the aligned base `base = (v1 >> h) << h`.
    b. Split the axis segment of the `mp` tag into `SIDESTEP_SAMPLES + 1` proofs of `h` siblings each; reject if the length does not match (§8.5).
