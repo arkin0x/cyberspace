@@ -80,6 +80,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [6.13 Natural continents (non-normative)](#613-natural-continents-non-normative)
   - [6.14 Performance expectations (non-normative)](#614-performance-expectations-non-normative)
   - [6.15 Version 2 of the sidestep construction (normative)](#615-version-2-of-the-sidestep-construction-normative)
+  - [6.16 Version 3 of the sidestep construction (normative)](#616-version-3-of-the-sidestep-construction-normative)
 - [7. Location-Based Encryption and Discovery](#7-location-based-encryption-and-discovery)
   - [7.1 The purpose: chalk on the sidewalk (non-normative)](#71-the-purpose-chalk-on-the-sidewalk-non-normative)
   - [7.2 Key derivation (normative)](#72-key-derivation-normative)
@@ -645,7 +646,9 @@ The sidestep is a **toll**: its work is seeded by the mover's chain position, so
 - **Toll:** The property that a sidestep's spatial work is non-transferable. Every traveller crossing a given boundary pays the full price; no published proof reduces the cost for any other traveller.
 - **Openings:** The inclusion paths published with a sidestep: the destination leaf's path plus `SIDESTEP_SAMPLES` paths at pseudorandomly sampled positions (§6.10).
 - **SIDESTEP_DOMAIN:** `b"CYBERSPACE_SIDESTEP_V2"`, the domain separation prefix used for all sidestep leaf hashes.
-- **SIDESTEP_SAMPLE_DOMAIN:** `b"CYBERSPACE_SIDESTEP_SAMPLE_V1"`, the domain separation prefix used to derive sampled opening indices.
+- **Re-roll price:** The work a prover must spend to obtain one set of sample positions: on average one eighth of the crossing's tree. It makes trying again cost as much as the work a retry could save (§6.10, §6.11).
+- **SIDESTEP_GRIND_DOMAIN:** `b"CYBERSPACE_SIDESTEP_GRIND_V1"`, the domain separation prefix of the re-roll price hash `G` (§6.10).
+- **SIDESTEP_SAMPLE_DOMAIN:** `b"CYBERSPACE_SIDESTEP_SAMPLE_V2"`, the domain separation prefix used to derive sampled opening indices from `G`.
 - **SIDESTEP_SAMPLES:** `8`, the number of sampled openings published per non-trivial axis.
 
 ### 6.3 Sidestep geometry (normative)
@@ -801,7 +804,7 @@ A single sidestep event MAY cross boundaries on multiple axes simultaneously (if
 
 ### 6.10 Openings (normative)
 
-In addition to the Merkle root, the prover MUST publish, for each axis where movement occurs, an inclusion proof for the destination leaf **and** `SIDESTEP_SAMPLES` inclusion proofs at pseudorandomly sampled positions.
+In addition to the Merkle roots, the prover MUST publish a re-roll nonce and, for each axis where movement occurs, an inclusion proof for the destination leaf **and** `SIDESTEP_SAMPLES` inclusion proofs at pseudorandomly sampled positions.
 
 Each inclusion proof is a sequence of sibling hashes from leaf to root:
 
@@ -811,17 +814,28 @@ axis_proof = H_sibling_0 || H_sibling_1 || ... || H_sibling_{h-1}
 
 Where `H_sibling_i` is the 32-byte sibling hash at depth `i` (leaf = depth 0). The verifier determines left/right ordering at each level from the leaf's position in the subtree (deterministic from the leaf value).
 
-**Sample indices.** For an axis with root `M_axis`, height `h`, and `axis_byte` as in §6.4, the sampled positions are, for `i` in `0 .. SIDESTEP_SAMPLES - 1`:
+**The re-roll price.** The sample positions are drawn from a 32-byte value `G` that costs work to obtain. With `M_x`, `M_y`, `M_z` the three per-axis roots (for a trivial axis, its single seeded leaf, §6.4) and `nonce` an unsigned 64-bit integer:
 
 ```
-idx_i = int(SHA256(SIDESTEP_SAMPLE_DOMAIN || M_axis || axis_byte || be32(i))) mod 2^h
+G = SHA256(SIDESTEP_GRIND_DOMAIN || be64(nonce) || previous_event_id || M_x || M_y || M_z)
+```
+
+`be64(nonce)` is the nonce as eight big-endian bytes. Let `L` be the total number of leaves over the axes where movement occurs, `L = Σ 2^h` with trivial axes contributing nothing, and let `A = max(1, ceil(L / SIDESTEP_SAMPLES))`. The prover MUST publish a `nonce` for which `G`, read as a 256-bit big-endian integer, satisfies `G × A < 2^256`. Each candidate nonce succeeds with probability `1/A`, so finding one takes `A` attempts on average, and the verifier checks it with one hash.
+
+**Why this price (normative rationale).** The preimage of `G` is 164 bytes, which SHA-256 processes as three 64-byte blocks, and the nonce sits in the first. No intermediate state therefore survives from one attempt to the next, and every attempt costs three compressions. A leaf costs one compression (§6.5) and its share of the internal nodes two more, so one attempt costs exactly one leaf's share of the tree, and `A` attempts cost `1/SIDESTEP_SAMPLES` of it. That is the smallest price at which trying again never pays (§6.11). The threshold is an integer comparison rather than a count of leading zero bits so that the price stays exact for multi-axis crossings, whose total leaf count is not a power of two.
+
+**Sample indices.** For an axis with height `h` and `axis_byte` as in §6.4, the sampled positions are, for `i` in `0 .. SIDESTEP_SAMPLES - 1`:
+
+```
+idx_i = int(SHA256(SIDESTEP_SAMPLE_DOMAIN || G || axis_byte || be32(i))) mod 2^h
 ```
 
 `be32(i)` is `i` as four big-endian bytes. Indices are positions within the aligned subtree, so the sampled leaf value is `base + idx_i`. Indices MAY collide; implementations MUST NOT deduplicate, so that the opening count is fixed and the encoding in §8.5 is fixed-width.
 
 **Constants (normative):**
 ```
-SIDESTEP_SAMPLE_DOMAIN = b"CYBERSPACE_SIDESTEP_SAMPLE_V1"
+SIDESTEP_GRIND_DOMAIN  = b"CYBERSPACE_SIDESTEP_GRIND_V1"
+SIDESTEP_SAMPLE_DOMAIN = b"CYBERSPACE_SIDESTEP_SAMPLE_V2"
 SIDESTEP_SAMPLES       = 8
 ```
 
@@ -844,11 +858,12 @@ A verifier checks that the claimed openings are consistent with the claimed root
 1. Validate coordinates: source and destination are valid 256-bit Cyberspace coordinates.
 2. Validate crossing geometry per §6.3: on every axis where movement occurs, `h = find_lca_height(v1, v2)`, the source touches the wall on its side (`base + half - 1` going up, `base + half` going down), and the destination is exactly 1 Gibson past it; axes without movement have `v1 == v2`.
 3. Reconstruct `seed_prefix` from the event's `e previous` tag and `axis_byte` per §6.4.
-4. Recompute the destination leaf hash `H_dest = SHA256(seed_prefix || int_to_bytes_be_min(v_dest))` and verify its path to the claimed root `M_axis`.
-5. Derive the sample indices from `M_axis` per §6.10. For each, recompute the sampled leaf hash `SHA256(seed_prefix || int_to_bytes_be_min(base + idx_i))` from scratch and verify its path to `M_axis`.
-6. Recompute `region_m`, temporal axis, and `proof_hash`. Compare against claimed value.
+4. Check the re-roll price: recompute `G` from `previous_event_id`, the three claimed roots and the event's nonce per §6.10, and reject unless `G × A < 2^256`.
+5. Recompute the destination leaf hash `H_dest = SHA256(seed_prefix || int_to_bytes_be_min(v_dest))` and verify its path to the claimed root `M_axis`.
+6. Derive the sample indices from `G` per §6.10. For each, recompute the sampled leaf hash `SHA256(seed_prefix || int_to_bytes_be_min(base + idx_i))` from scratch and verify its path to `M_axis`.
+7. Recompute `region_m`, temporal axis, and `proof_hash`. Compare against claimed value.
 
-Level 1 costs `SIDESTEP_SAMPLES + 1` leaf hashes and the same number of paths, seconds at any height.
+Level 1 costs one hash for `G`, `SIDESTEP_SAMPLES + 1` leaf hashes and the same number of paths, seconds at any height.
 
 **Level 2: Full root verification, O(2^h) per axis**
 
@@ -856,9 +871,15 @@ To fully verify that the claimed Merkle root was computed over the correct align
 
 **Security model:** The protocol does NOT require every verifier to perform Level 2. Security relies on **deterministic fraud detectability**: the Merkle root for an aligned subtree is a deterministic function of `(previous_event_id, axis_byte, base, h)`, every one of which is public on the event itself, so a fraudulent root remains permanently and objectively detectable by any party willing to do the work. Seeding changes who bears the audit cost, not whether fraud is detectable. Under v1 an auditor could compute a boundary's root once and check every crossing of it forever; under v2 each event must be audited on its own, which is why Level 1 was strengthened from a single destination path to sampled openings.
 
-**What sampling bounds (non-normative).** A tree over `2^h` leaves requires `2^h` leaf hashes and `2^h - 1` internal hashes, so the internal tree is an irreducible half of the honest work and no prover can avoid it. A prover who honestly computes a fraction `f` of the leaves and fabricates the rest passes Level 1 with probability `f^SIDESTEP_SAMPLES`, because the sampled positions are spread pseudorandomly over the whole subtree and each sampled leaf is recomputed by the verifier from the public seed. Grinding is not an escape: the sample indices are derived from the root, so steering them requires rebuilding the tree, and each rebuild costs at least the `2^h - 1` internal hashes, which is half the honest total.
+**What sampling bounds (non-normative).** A prover can skip work without touching any leaf it will be asked about. It builds only part of the tree honestly, puts 32 fabricated bytes where each missing subtree's root belongs, and publishes the root that results. No sample landing inside a fabricated subtree can produce a valid path, because the verifier recomputes the sampled leaf from the public seed. A prover that honestly built a fraction `f` of the leaves therefore passes one set of samples with probability `f^SIDESTEP_SAMPLES`. What decides whether cheating pays is the price of trying again.
 
-With `SIDESTEP_SAMPLES = 8`, passing half the time requires honestly computing about 92 percent of the leaves. Skipping the other 8 percent saves about 4 percent of the crossing's total work, since the internal tree is untouched, and buys a one-in-two chance of publishing permanently detectable fraud that invalidates the chain from that event forward. A prover willing to accept a one-in-a-thousand pass rate still has to compute 42 percent of the leaves, saving 29 percent. The security margin here comes primarily from the rebuild cost, not from the sample count, which is why 8 suffices where `decks/DECK-0001-hyperspace.md` §5.5 needs 32: a hyperspace leaf is expensive and its tree is cheap, and a sidestep is the reverse.
+Version 2 of this construction drew the samples from `M_axis` alone, so a retry cost about `h + 8` hashes: change one fabricated value, rehash the path above it, and derive new samples. The honest part stays cached and the fabricated part never has to exist, so a retry does not require rebuilding the tree, contrary to what this section said under version 2. Building only the half of the tree that holds the destination and retrying about 256 times passed Level 1 for half the honest work at h20, and fabricating more subtrees brought the cost down to 8.6 percent of the honest work at h40, 6.3 percent at h47 and 3.1 percent at h55.
+
+The re-roll price of §6.10 closes this. Each fresh set of samples now costs `A` attempts, one eighth of the tree. Write `W` for the tree's work and `S` for `SIDESTEP_SAMPLES`. A prover that honestly built a fraction `f` of the leaves needs `f^(−S)` sample sets on average, so its expected cost is `f·W + f^(−S)·W/S`, against the honest `W + W/S`. The difference is `W·u(f)` with `u(f) = (f^(−S) − 1)/S − (1 − f)`. Since `u(1) = 0` and `u′(f) = 1 − f^(−(S+1)) ≤ 0` on `(0, 1]`, `u(f) ≥ 0` for every `f`: no fraction of skipped work lowers the expected cost of an accepted proof. The price is also the smallest that achieves this. With any cheaper retry, skipping a small fraction `ε` of the leaves saves `ε·W` and costs about `ε·S` extra retries, which is a net gain whenever a retry costs less than `W/S`.
+
+The honest prover pays the price once, so a crossing costs one eighth more than its tree. The half-tree forgery above, run against `sidestep-reference.py`, now costs about 29 times the honest crossing on average.
+
+**Why 8 samples (non-normative).** With the price at `W/S`, the sample count no longer decides whether cheating pays. It decides the honest overhead, `1/S` of the tree, and the size of the openings (§6.14). Sixteen samples would halve the overhead to 6.25 percent but double every `mp` tag, which would push three-axis crossings above h47 past common relay event limits. Eight keeps the openings exactly as they were.
 
 In practice, Level 1 is for routine validation. Level 2 is for auditors, competitors, or automated fraud-detection services.
 
@@ -921,7 +942,7 @@ Sidestep cost is dominated by SHA-256 leaf hashing and is fixed-size per leaf. H
 
 The practical consumer sidestep ceiling is about h55 per axis for a thousand dollars of rented GPU time. Sidestep work is plain SHA-256 over short preimages and is therefore subject to ASIC acceleration; the storage bound of §13.2 applies to Cantor roots, not to travel. Beyond consumer reach, hyperspace (DECK-0001) is the route.
 
-Every figure in this table is now what each traveller pays on each crossing, and none of it can be prepared in advance (§6.7). The openings of §6.10 cost `(SIDESTEP_SAMPLES + 1) × h × 32` bytes per non-trivial axis, which the `mp` tag carries as hex and so doubles: about 11 KB of tag text at h20, 23 KB at h40, and 26 KB at h47 for a single-axis crossing. A three-axis crossing at h47 approaches 80 KB and at h55 approaches 93 KB. Implementations SHOULD confirm their relays' event size limits before attempting multi-axis crossings above h40.
+Every figure in this table is now what each traveller pays on each crossing, and none of it can be prepared in advance (§6.7). Each figure is the tree alone; the re-roll price of §6.10 adds one eighth to it. The openings of §6.10 cost `(SIDESTEP_SAMPLES + 1) × h × 32` bytes per non-trivial axis, which the `mp` tag carries as hex and so doubles: about 11 KB of tag text at h20, 23 KB at h40, and 26 KB at h47 for a single-axis crossing. A three-axis crossing at h47 approaches 80 KB and at h55 approaches 93 KB. The `mn` tag of §8.5 adds 16 characters. Implementations SHOULD confirm their relays' event size limits before attempting multi-axis crossings above h40.
 
 ### 6.15 Version 2 of the sidestep construction (normative)
 
@@ -936,6 +957,19 @@ Implementations of the base protocol prior to this revision computed leaves as `
 **Porting hazard: which leaf the path covers.** v1 implementations diverged on this and the spec was not the tie-breaker it should have been. §6.10 and §8.7.2 have always specified the **destination** leaf, and that is what the two TypeScript ports and every sidestep so far published to a public relay actually use. The Python reference implementation named in §14 instead collected the path for leaf 0, the base of the aligned subtree, so its inclusion verifier rejects conforming events and accepts its own. Because the choice never entered `region_m`, it never affected `proof_hash`, which is why the divergence survived: the events verified at the proof level while their `mp` tags were mutually unreadable.
 
 Implementations porting to v2 MUST use destination-leaf semantics for the first opening. The sampled openings make any remaining divergence self-correcting, since a verifier built on the wrong convention fails the sampled paths as well as the destination path, rather than silently ignoring both.
+
+### 6.16 Version 3 of the sidestep construction (normative)
+
+The re-roll price of §6.10 is a breaking change to sidestep verification. The tree, its seeded leaves and its roots are unchanged, so every golden root vector of `sidestep-reference.py` carries over. What changes is where the sample positions come from.
+
+- `SIDESTEP_SAMPLE_DOMAIN` is bumped from `CYBERSPACE_SIDESTEP_SAMPLE_V1` to `CYBERSPACE_SIDESTEP_SAMPLE_V2`, because its preimage now takes `G` in place of `M_axis`, and `SIDESTEP_GRIND_DOMAIN` is new.
+- Sidestep events MUST carry the `mn` tag of §8.5. Verifiers MUST reject a sidestep without one, or whose nonce does not meet the price.
+- Verifiers implementing this revision MUST reject sidestep events built under version 2, with one exception: the version 2 sidesteps listed in `grandfathered-v2-sidesteps.txt`. There is no grace period and no dual-acceptance mode for anything not on that list, because accepting version 2 proofs would keep open the forgery described in §6.11.
+- The list names, by event id, every version 2 sidestep published before the reference clients began publishing version 3, and each listed event was audited at Level 2 (every tree rebuilt from its seed and compared with its `mr` roots, and its `proof_hash` recomputed) before it was listed. A verifier MUST accept a listed event's Merkle roots and openings without re-checking them, and MUST check everything else about it exactly as for any other sidestep: chain linkage, geometry and `proof_hash`. No chain is invalidated by this revision and no identity has to respawn.
+- A version 2 sidestep that is not on the list is invalid, and so is the chain from that event forward. Event ids cannot be forged, so the list cannot be joined after the fact, as a date cutoff could be by backdating `created_at`.
+- Each non-empty line of `grandfathered-v2-sidesteps.txt` that does not begin with `#` starts with a 64-character lowercase hex event id; anything after the id on the same line is commentary.
+
+Version 2 proofs are recognisable by the absence of the `mn` tag. Version 1 sidesteps remain invalid under §6.15.
 
 ---
 
@@ -1271,6 +1305,7 @@ Required tags:
 - `proof` tag: `["proof", "<proof_hash_hex>"]` (32-byte lowercase hex string)
 - `mr` tag: `["mr", "<M_x_hex>:<M_y_hex>:<M_z_hex>"]` (per-axis Merkle roots, colon-separated, each 64 hex chars)
 - `mp` tag: `["mp", "<openings_x_hex>:<openings_y_hex>:<openings_z_hex>"]` (per-axis openings, colon-separated)
+- `mn` tag: `["mn", "<nonce_hex>"]` (the re-roll nonce of §6.10, as exactly 16 lowercase hex characters, big-endian)
 - `hx` tag: `["hx", "<lca_height_x>"]` (LCA height on X axis, decimal string)
 - `hy` tag: `["hy", "<lca_height_y>"]` (LCA height on Y axis, decimal string)
 - `hz` tag: `["hz", "<lca_height_z>"]` (LCA height on Z axis, decimal string)
@@ -1278,7 +1313,7 @@ Required tags:
 
 **Openings encoding:** Each per-axis segment in the `mp` tag is the concatenation of `SIDESTEP_SAMPLES + 1` inclusion proofs in the order defined by §6.10 (destination first, then samples in ascending `i`). Each proof is `h` sibling hashes from leaf to root, hex-encoded, so an axis with LCA height `h` contributes exactly `64 × h × (SIDESTEP_SAMPLES + 1)` hex characters. For trivial axes (`h = 0`), the segment is an empty string between colons.
 
-Because the segment is fixed-width given `h`, a verifier reads the per-axis `hx`, `hy`, `hz` tags and splits the segment without ambiguity. A segment whose length is not an exact multiple of `64 × h` is malformed and the event MUST be rejected; a segment of exactly `64 × h` characters is a v1 proof and MUST be rejected per §6.15.
+Because the segment is fixed-width given `h`, a verifier reads the per-axis `hx`, `hy`, `hz` tags and splits the segment without ambiguity. A segment whose length is not an exact multiple of `64 × h` is malformed and the event MUST be rejected; a segment of exactly `64 × h` characters is a v1 proof and MUST be rejected per §6.15. An event without an `mn` tag is a version 2 proof and MUST be rejected per §6.16 unless its id is listed in `grandfathered-v2-sidesteps.txt`.
 
 **Height tags:** The `hx`, `hy`, `hz` tags enable verifiers to determine expected proof lengths without re-deriving LCA heights from coordinates.
 
@@ -1322,17 +1357,18 @@ To verify a sidestep (Level 1, sampled openings check):
 1. Parse previous and current coords; decode to `(x1,y1,z1,plane)` and `(x2,y2,z2,plane)`.
 2. Validate crossing geometry: for each axis, confirm the destination is exactly 1 Gibson past the LCA boundary (§6.3). Verify the `hx`, `hy`, `hz` tags match the computed LCA heights.
 3. Parse per-axis Merkle roots from the `mr` tag. Read `previous_event_id` from the `e` tag with marker `previous`.
-4. For each axis where movement occurs:
+4. Parse the nonce from the `mn` tag. Compute `G` per §6.10 and `A` from the heights; reject unless `G × A < 2^256`. If the event has no `mn` tag, accept steps 4 and 5 only when its id is listed in `grandfathered-v2-sidesteps.txt` (§6.16), and otherwise reject it.
+5. For each axis where movement occurs:
    a. Build `seed_prefix = SIDESTEP_DOMAIN || previous_event_id || axis_byte || SEED_PAD` per §6.4, and the aligned base `base = (v1 >> h) << h`.
    b. Split the axis segment of the `mp` tag into `SIDESTEP_SAMPLES + 1` proofs of `h` siblings each; reject if the length does not match (§8.5).
    c. Compute the destination leaf hash `H_dest = SHA256(seed_prefix || int_to_bytes_be_min(v_dest))` and verify its path to the claimed root `M_axis`.
-   d. Derive the sample indices from `M_axis` per §6.10. For each `idx_i`, compute `SHA256(seed_prefix || int_to_bytes_be_min(base + idx_i))` and verify its path to `M_axis`.
-5. Compute `region_m = π(π(mx, my), mz)` from the claimed Merkle roots (§6.6).
-6. Derive `K` and `cantor_t` from destination coordinate and `previous_event_id` (§6.7, same as hop).
-7. Compute `sidestep_n = π(region_m, cantor_t)` and `proof_hash` per §6.8.
-8. Accept iff it matches the event's `proof` tag.
+   d. Derive the sample indices from `G` per §6.10. For each `idx_i`, compute `SHA256(seed_prefix || int_to_bytes_be_min(base + idx_i))` and verify its path to `M_axis`.
+6. Compute `region_m = π(π(mx, my), mz)` from the claimed Merkle roots (§6.6).
+7. Derive `K` and `cantor_t` from destination coordinate and `previous_event_id` (§6.7, same as hop).
+8. Compute `sidestep_n = π(region_m, cantor_t)` and `proof_hash` per §6.8.
+9. Accept iff it matches the event's `proof` tag.
 
-A verifier that skips step 4d is performing a strictly weaker check than v1's, not an equivalent one, because after seeding there is no canonical root to compare `M_axis` against (§6.10).
+A verifier that skips step 4 accepts the forgery of §6.11. A verifier that skips step 5d is performing a strictly weaker check than v1's, not an equivalent one, because after seeding there is no canonical root to compare `M_axis` against (§6.10).
 
 Level 2 (full root) verification is described in §6.11.
 
@@ -1735,6 +1771,6 @@ Implementers should treat that repo as the reference for:
 - Canonical GPS→dataspace mapping (`CANONICAL_GPS_TO_DATASPACE_SPEC_VERSION` and golden vectors)
 
 This repository also carries stdlib-only reference scripts that are executable statements of specific sections, each self-checking when run:
-- `sidestep-reference.py`: the v2 sidestep construction (§6.4, §6.5, §6.10, §6.11), with golden vectors and a check that each property those sections claim actually holds
+- `sidestep-reference.py`: the version 3 sidestep construction (§6.4, §6.5, §6.10, §6.11), with golden vectors and a check that each property those sections claim actually holds, including that the half-tree forgery of §6.11 costs more than an honest crossing
 - `hint-reference.py`: §7.7 and the §10 rule for bags: canonical form, containment, sector tags, seeker work, malformed hints and plane preservation, locking the golden vectors of §7.7
 - `decks/landfall-reference.py`: landfall derivation (DECK-0001 §1.2)
