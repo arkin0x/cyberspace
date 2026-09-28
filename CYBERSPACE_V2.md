@@ -1559,8 +1559,8 @@ The chain rules are the rules that decide which movement chains are valid and wh
 
 | Revision | Changes |
 |---|---|
-| (unnamed, before 2026-09-28) | Chains as defined by §3.2 and §8.3 to §8.7.2. Forks were not resolved by the base protocol. |
-| `2026-09-28-virtual-brackets` | The fork rule (§8.7.3). Virtual brackets (§8.11). Actions a verifier does not implement are unverifiable, never invalid (§8.9). |
+| (unnamed, before 2026-09-28) | Chains as defined by §3.2 and §8.3 to §8.7.2, with sidestep proofs of version 2 (§6.15). Forks were not resolved by the base protocol. |
+| `2026-09-28-virtual-brackets` | Sidestep proofs of version 3, with the re-roll price and the grandfathered list (§6.16). Ride openings of version 2, for verifiers that implement DECK-0001 (DECK-0001 §5.8). The fork rule (§8.7.3). Virtual brackets (§8.11). Actions a verifier does not implement are unverifiable, never invalid (§8.9). |
 
 Note (non-normative): the GPS mapping has its own version string (§9.5). The two are independent: a change to the mapping moves places, and a change to the chain rules changes which chains are valid.
 
