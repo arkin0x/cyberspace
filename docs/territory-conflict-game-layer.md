@@ -146,7 +146,7 @@ The encounter primitive and the fraud-proof event are protocol-grade, sound with
 | 5 | Block-commitment tag: base spec or tiny DECK | cyberspace | pending |
 | 6 | DECK-0003 rewrite per D2, Status Draft, known-unsound note on the old text | cyberspace | pending, after 7 |
 | 7 | Simulator and scenario suite | cyberspace-cli | pending |
-| 8 | Fork rule: DECK-0001 §8 (both branches invalid) vs the ONOSENDAI client (older branch wins); make one true | cyberspace, ONOSENDAI | pending |
+| 8 | Fork rule: DECK-0001 §8 (both branches invalid) vs the ONOSENDAI client (older branch wins); make one true | cyberspace, ONOSENDAI | done: the older branch continues, base §8.7.3 (arkinox, 2026-09-14) |
 | 9 | Virtual Spawn: answer open question 3; becomes DECK-0002 | cyberspace PR #15 | pending |
 | 10 | Encounter primitive: mutual-reference contact event with the box proof over both positions (§4.1) | cyberspace | pending, before 7 |
 | 11 | Fraud-proof event: compact evidence for hyperjump leaves; bisection or signed disagreement for sidesteps (§4.2); unifies with item 8 | cyberspace | pending, before 7 |

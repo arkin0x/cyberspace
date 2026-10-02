@@ -1,7 +1,7 @@
 # Cyberspace v2: Protocol Specification
 
 **Date:** February 10, 2026
-**Last updated:** September 2, 2026
+**Last updated:** September 28, 2026
 **Status:** Design complete (spec); reference implementation in progress
 
 ---
@@ -100,6 +100,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [8.7 Verification summary](#87-verification-summary)
     - [8.7.1 Hop verification](#871-hop-verification)
     - [8.7.2 Sidestep verification (Level 1: sampled openings)](#872-sidestep-verification-level-1-sampled-openings)
+    - [8.7.3 Resolving a chain (normative)](#873-resolving-a-chain-normative)
   - [8.8 Core action types summary](#88-core-action-types-summary)
   - [8.9 Protocol extensions (DECKs)](#89-protocol-extensions-decks)
   - [8.10 Avatar event](#810-avatar-event)
@@ -1371,6 +1372,20 @@ To verify a sidestep (Level 1, sampled openings check):
 A verifier that skips step 4 accepts the forgery of §6.11. A verifier that skips step 5d is performing a strictly weaker check than v1's, not an equivalent one, because after seeding there is no canonical root to compare `M_axis` against (§6.10).
 
 Level 2 (full root) verification is described in §6.11.
+
+#### 8.7.3 Resolving a chain (normative)
+
+An identity's **active chain** is the one line of its movement events that says where it is. Relays hand a reader whatever events they hold for a pubkey, in no particular order, and those events can include old chains (before a respawn) and forks. A **fork** is two or more events whose `e` previous tags name the same event; it happens when two devices signed in as one identity act from the same point. Every reader MUST resolve the events it holds into the active chain by the same rule, so that every reader holding the same events arrives at the same chain and the same position:
+
+1. **The spawn.** The active chain starts at the newest spawn event (§3.2): the one with the largest `created_at`. When two spawns share the largest `created_at`, the one with the larger event id is newer.
+2. **The genesis.** Only events whose `e` genesis tag names that spawn can be part of the active chain. Events that name another spawn belong to an older chain; they remain on relays as history and are ignored here, even if their `e` previous tag would fit.
+3. **The links.** From the spawn, the chain is followed forward through `e` previous links: the next event is the one whose `e` previous tag names the current event.
+4. **Forks.** When more than one event names the current event as previous, the one with the smallest `created_at` continues the chain. When they share the smallest `created_at`, the one with the smaller event id continues it. Every other branch, and everything that descends from it, is not part of the active chain.
+5. **The head.** The chain ends at the first event that no event names as previous. That event is the identity's position.
+
+**Why the older branch continues (non-normative):** A fork is a mistake or an attempt to rewrite, and the rule has to pick one branch deterministically so that readers converge without a clock or a vote. Picking the branch that was signed first means a later branch cannot displace what was already there: history that has been published stays the history. An earlier draft of DECK-0001 (§8) instead made both branches invalid, which ended the identity's chain over one duplicated action and punished the identity for a second device that fell out of sync; that rule is replaced by this one.
+
+Note (non-normative): `created_at` is set by the signer, so an identity can sign a branch that claims to be older than one it already published. The rule therefore guarantees that readers agree, not that an identity cannot rewrite its own chain. Both branches stay on relays, signed, so the fork is always detectable (§12.1).
 
 ### 8.8 Core action types summary
 
