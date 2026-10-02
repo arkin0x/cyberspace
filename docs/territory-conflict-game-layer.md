@@ -68,6 +68,8 @@ Recorded because the reasoning is part of the protocol's defensibility.
 
 The base protocol owns exactly one verdict, validity, and nothing in the game box ever changes it. A game owns liveness, and the protocol never consults it. The Virtual Spawn draft already uses "derezzed" for its protocol-invalid state; the table makes the two meanings explicit.
 
+**Update, 2026-09-28:** a virtual spawn is no longer protocol-invalid. arkinox ruled on 2026-09-14 that entering a game must not abandon the identity's chain, so a game is now played inside a virtual bracket on that chain (`CYBERSPACE_V2.md` §8.11), which is protocol-valid; `decks/README.md` carries the current table.
+
 ### 2.2 Invariants (also in `decks/README.md`)
 
 1. A game mechanic MUST NOT alter the validity of any kind 3333 chain under the base spec.
@@ -147,7 +149,7 @@ The encounter primitive and the fraud-proof event are protocol-grade, sound with
 | 6 | DECK-0003 rewrite per D2, Status Draft, known-unsound note on the old text | cyberspace | pending, after 7 |
 | 7 | Simulator and scenario suite | cyberspace-cli | pending |
 | 8 | Fork rule: DECK-0001 §8 (both branches invalid) vs the ONOSENDAI client (older branch wins); make one true | cyberspace, ONOSENDAI | done: the older branch continues, base §8.7.3 (arkinox, 2026-09-14) |
-| 9 | Virtual Spawn: answer open question 3; becomes DECK-0002 | cyberspace PR #15 | pending |
+| 9 | Virtual Spawn: answer open question 3; becomes DECK-0002 | cyberspace PR #15 | done: a virtual spawn is a bracket on the identity's own chain, base `CYBERSPACE_V2.md` §8.11; DECK-0002 rewritten around it (arkinox, 2026-09-14 and 2026-09-28); DECK-0002 then removed, a game is identified by its pubkey and carries no event (arkinox, 2026-10-02) |
 | 10 | Encounter primitive: mutual-reference contact event with the box proof over both positions (§4.1) | cyberspace | pending, before 7 |
 | 11 | Fraud-proof event: compact evidence for hyperjump leaves; bisection or signed disagreement for sidesteps (§4.2); unifies with item 8 | cyberspace | pending, before 7 |
 | 12 | Spec sentence: an avatar is a last-known position; client liveness convention by event age (§4.3) | cyberspace, ONOSENDAI | pending |
