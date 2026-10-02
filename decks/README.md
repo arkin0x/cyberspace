@@ -3,7 +3,7 @@ This directory contains protocol extensions for Cyberspace.
 
 The base Cyberspace v2 protocol is specified in `../CYBERSPACE_V2.md`.
 
-Extensions are specified as **Design Extension and Compatibility Kits (DECKs)**. A DECK is a self-contained document that defines additional, optional behavior layered on top of the base spec.
+Extensions are specified as **Design Extension and Compatibility Kits (DECKs)**. A DECK is a self-contained document that defines additional behavior layered on top of the base spec. Most DECKs are optional. A DECK that defines an action which can change an identity's position is **mandatory**: every verifier implements it, because movement is universal (`../CYBERSPACE_V2.md` §8.9).
 
 ## Goals
 - Keep `CYBERSPACE_V2.md` focused on the base protocol.
@@ -18,7 +18,7 @@ A DECK MAY:
 - Define discovery/indexing conventions for the extension.
 
 A DECK MUST NOT:
-- Change consensus-critical rules of the base protocol unless it explicitly defines a new base-protocol version.
+- Change consensus-critical rules of the base protocol unless it explicitly defines a new base-protocol version. A mandatory DECK enters the chain rules through a chain rules revision (`../CYBERSPACE_V2.md` §8.12).
 
 ## Naming and numbering
 DECKs are named:
@@ -33,6 +33,7 @@ Each DECK MUST include:
 - `DECK:` number
 - `Title:`
 - `Status:` Draft | Proposed | Active | Deprecated
+- `Mandatory:` yes | no (yes when any of its actions can change an identity's position)
 - `Created:` YYYY-MM-DD
 - `Last updated:` YYYY-MM-DD
 - `Requires:` base spec and (optionally) minimum versions
@@ -54,6 +55,9 @@ A game-mechanic DECK MUST, in addition to the rules above:
 The design record for this category, and for why the base protocol defines holding (`CYBERSPACE_V2.md` §7.6) but not domains, is `../docs/territory-conflict-game-layer.md`.
 
 ## Registry
-- `DECK-0001-hyperspace.md`: Hyperspace, Bitcoin block transit (ports, landfalls, stations, rides)
-- `DECK-0002-virtual-spawn.md`: Virtual Spawn, games played inside a virtual bracket (game mechanic). Defines `kind 33332`, the game event; the bracket itself is base protocol (`../CYBERSPACE_V2.md` §8.11)
+- `DECK-0001-hyperspace.md`: Hyperspace, Bitcoin block transit (ports, landfalls, stations, rides). **Mandatory.**
+- DECK-0002: unassigned. The Virtual Spawn draft was removed on 2026-10-02 before it was ratified: games are played inside a virtual bracket, which is base protocol (`../CYBERSPACE_V2.md` §8.11), and a game is identified by its pubkey rather than by an event. The number may be reused.
 - `DECK-0003-sno.md`: SNO (Simple Nostr Objects), the small 3D object format. Defines `kind 33331`, a standalone editable object; `kind 3330` bag items and `kind 11333` avatars carry the same payload. Beside it: `sno-reference.py`, a conformance implementation that runs its own rejection table; `sno-palette.json` and `sno-palette.mjs`, the built-in 256-colour palette and the generator that produces it; `sno-palette.png`, the sheet
+
+## Reserved kinds
+- `kind 33332`: public shards, shards published in the open rather than hidden in a bag. Reserved, not yet specified. (The archived v1 spec used 33332 for v1 shards; those events carry v1 tags and are not this.)

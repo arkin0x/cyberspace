@@ -1403,21 +1403,33 @@ The base Cyberspace v2 protocol defines three movement action types and two brac
 | `enter-virtual` | Opens a virtual bracket: the identity starts playing a game, and its position in cyberspace is held | None | §8.11 |
 | `exit-virtual` | Closes a virtual bracket: the identity leaves the game and is back at the position it entered from | None | §8.11 |
 
-All five use event `kind = 3333`. Inside a virtual bracket, the `A` tag carries the name of an action the game declares instead (§8.11.2).
+All five use event `kind = 3333`. Inside a virtual bracket, the `A` tag carries a name of the game's choosing instead (§8.11.2).
 
 ### 8.9 Protocol extensions (DECKs)
 
 This specification defines the base Cyberspace v2 protocol.
 
-Optional extensions MAY introduce new event kinds, new movement action types (`A` tag values), and/or additional validation rules that are only applied when an extension is in use.
+Extensions MAY introduce new event kinds, new movement action types (`A` tag values), and/or additional validation rules.
 
 Extensions are specified as **Design Extension and Compatibility Kits (DECKs)** in the `decks/` directory.
-- Hyperspace extension (DECK-0001): `decks/DECK-0001-hyperspace.md`
-- Virtual spawn, games played inside a virtual bracket (DECK-0002): `decks/DECK-0002-virtual-spawn.md`
+- Hyperspace extension (DECK-0001, mandatory): `decks/DECK-0001-hyperspace.md`
 
-**Actions a verifier does not implement (normative):** An action whose `A` value a verifier does not implement is unverifiable to that verifier, never invalid. The verifier MUST NOT treat the chain as invalid because of it. It reports the last position it verified and that the chain continues past what it can check. A verifier without DECK-0001, for example, stops at the first `enter-hyperspace` action. Inside a virtual bracket the rules of §8.11 apply instead: every action name there that is not a base action is a virtual action, and base verifies it by §8.11.5 without knowing the game.
+**Movement is universal (normative):** Space is the core primitive of cyberspace, so every way an identity can move is part of the protocol that every reader shares. A DECK that defines an action which can change an identity's position (an action whose `C` may differ from its `c`) is **mandatory**: every verifier MUST implement it, and it becomes part of the chain rules through a new chain rules revision (§8.12). DECK-0001 (hyperspace) is mandatory, because a `hyperjump` moves an identity from one stop to another. A DECK whose actions never change an identity's position is optional, and a verifier MAY leave it unimplemented.
 
-**Why unverifiable and not invalid:** Extensions are optional (this section), so a chain that uses one is not wrong because a particular reader has not implemented it. Treating it as invalid would make every new extension a hard fork for every reader that has not caught up.
+**Actions a verifier does not recognize (normative):** A verifier recognizes the base actions (§8.8) and the actions of every DECK it implements, which always includes every mandatory DECK. An action whose `A` value the verifier does not recognize is **skipped**: the verifier treats it as if it were not on the chain, and goes on verifying every recognized action after it. Skipping works as follows:
+1. **Links are still followed.** The chain is resolved through `e` previous links as always (§8.7.3), including links that name a skipped action, so a skipped action never breaks the chain apart.
+2. **Position is carried across.** The `c` of each recognized action MUST equal the `C` of the nearest recognized action before it, not the `C` of a skipped one. A skipped action that changed the identity's position therefore leaves the next recognized action's `c` mismatched, and the chain is invalid from that recognized action.
+3. **Work is still seeded by the actual previous event.** A hop or sidestep after a skipped action derives its temporal axis from the skipped action's event id (§5.3). The id is only a 32-byte value and needs no understanding of the action, so the hop or sidestep is still fully checked.
+4. **Rules that look back see through skipped actions.** Where a rule depends on the action before an event (for example DECK-0001 §4.3), the nearest recognized action before it stands in, as an `exit-virtual` action stands in for a bracket (§8.11.4, rule 8).
+5. **The head.** When a chain ends on one or more skipped actions, the identity's position is the `C` of the last recognized action.
+
+Inside a virtual bracket the rules of §8.11 apply instead: every action name there that is not a base action is a virtual action, and base verifies it by §8.11.5 without knowing the game.
+
+**Why an unrecognized action is skipped and not a stop:** An optional DECK can then add actions that do not move anyone, such as a gesture or a marker left on the chain, and every verifier that has not implemented it still checks the whole chain around them. Under the earlier rule, a verifier stopped at the first action it did not implement and could say nothing about anything after it.
+
+**Why a position change across a skipped action is invalid:** Every way to move is in a mandatory DECK, so a conforming verifier recognizes every action that can legitimately change a position. An unrecognized action that changes one is a move with no proof that any verifier can check, a teleport, and the chain cannot count it.
+
+**Why a DECK that moves identities is mandatory:** If it were optional, every verifier without it would find a mismatched `c` after every use of it and call valid chains invalid, so readers would split into those that accept a traveler and those that reject the same traveler. A new way to move changes which chains are valid, and the chain rules revision (§8.12) is where such a change is named.
 
 ### 8.10 Avatar event
 
@@ -1470,7 +1482,7 @@ Reference implementations: `avatar.ts` in cyberspace-core and `cyberspace_core/a
 
 ### 8.11 Virtual brackets (normative)
 
-A **virtual bracket** is a stretch of an identity's own movement chain in which the identity plays a game instead of moving through cyberspace. It opens with an `enter-virtual` action and closes with an `exit-virtual` action. Every action between the two belongs to the game, and none of them moves the identity in cyberspace: the identity's position stays where it was when it entered, and the `exit-virtual` action puts it back there. A game is declared by a game event (DECK-0002), which names the actions its players may publish inside a bracket and says what those actions mean.
+A **virtual bracket** is a stretch of an identity's own movement chain in which the identity plays a game instead of moving through cyberspace. It opens with an `enter-virtual` action and closes with an `exit-virtual` action. Every action between the two belongs to the game, and none of them moves the identity in cyberspace: the identity's position stays where it was when it entered, and the `exit-virtual` action puts it back there. The protocol does not define what a game is. A game is identified by a pubkey of its own, which every entry names (§8.11.1). What its actions mean, who has won and what an exit costs are the game's to decide, and the base protocol never consults them (§8.11.7).
 
 **Why a bracket and not a second chain:** An identity has one chain and one position (§3). A second chain for the same pubkey is a fork, and a fork has only one surviving branch (§8.7.3), so a game played on a separate chain would either erase the identity's travel or be erased by it. Entering a game therefore extends the chain the identity already has. Any reader can tell from the chain itself whether the identity was in a game at any point, with no registry and no new cryptography, and the identity keeps every hop, sidestep and ride it made before and after the game.
 
@@ -1483,7 +1495,7 @@ Required tags:
 - `c` tag: `["c", "<prev_coord_hex>"]`: the identity's position in cyberspace when it enters, which is its position for the whole bracket (its **base position**)
 - `C` tag: `["C", "<coord_hex>"]`: where the identity appears inside the game. It MUST lie inside the declared region.
 - `region` tag: `["region", "<coord_hex>", "<H>"]`: the aligned cube the game is played in, declared in the clear (below)
-- `game` tag: `["game", "<kind>:<pubkey>:<d>", "<game_event_id>", "<relay_hint>"]`: the address of the game event and the id of the version of it the identity agrees to play (DECK-0002). `relay_hint` MAY be an empty string.
+- `p` tag marked `game`: `["p", "<game_pubkey>", "<relay_hint>", "game"]`: the game's identity, a 32-byte lowercase hex pubkey. An `enter-virtual` action MUST carry exactly one `p` tag marked `game`. `relay_hint` MAY be an empty string.
 - Sector tags: `X`, `Y`, `Z`, `S` computed from `C` (per §10)
 
 **The region (normative):** The region is an aligned cube of height `H`, in the same terms as a hint box whose three heights are equal (§7.7):
@@ -1494,22 +1506,24 @@ Required tags:
 
 **Why the region is declared in the clear:** A verifier that holds no key must be able to check that every action inside the bracket stays inside the game's box. A `lookup_id` (§7.2) is a hash, and it names a region only to someone who has already computed that region's key, so it cannot serve this purpose. Nothing is lost by publishing the box, because the `C` tags of the actions inside the bracket are public anyway.
 
+**Why a game is named by a pubkey:** A pubkey is unique without a registry, and a name chosen freely is not: two games that both call themselves "chess" would each read the other's players as their own. A pubkey also gives the game a way to act. A game that needs to sign events, to rule as an arbitrator, publish results or admit players, signs them with that key. The pubkey is carried in a `p` tag because relays index only tags whose name is a single letter, so a game finds every entry that names it by asking relays for `kind 3333` events that tag its pubkey, and then follows each player's chain by author. The `game` marker says why the pubkey is tagged.
+
 #### 8.11.2 Virtual actions
 
 Every event on the chain after an `enter-virtual` action, up to and not including the `exit-virtual` action that closes it, is a **virtual action**.
 
 Required tags:
-- `A` tag: `["A", "<action_name>"]`: the name of an action the game declares (DECK-0002). It MUST NOT be a base or DECK-0001 action name: `hop`, `sidestep`, `enter-hyperspace`, `hyperjump` or `enter-virtual` (rule 3 below). An event with `A` = `spawn` is never a virtual action: it is a respawn, wherever it is published (§3.2).
+- `A` tag: `["A", "<action_name>"]`: a name of the game's choosing. It MUST NOT be a base or DECK-0001 action name: `hop`, `sidestep`, `enter-hyperspace`, `hyperjump` or `enter-virtual` (rule 3 below). An event with `A` = `spawn` is never a virtual action: it is a respawn, wherever it is published (§3.2).
 - `e` genesis and `e` previous, as for a hop (§8.4)
 - `c` tag: `["c", "<prev_coord_hex>"]`: the `C` of the previous event
 - `C` tag: `["C", "<coord_hex>"]`: the identity's position inside the game. It MUST lie inside the declared region.
 - Sector tags: `X`, `Y`, `Z`, `S` computed from `C` (per §10)
 
-A virtual action carries no base proof and costs no base work. A game MAY require tags of its own on its actions (DECK-0002).
+A virtual action carries no base proof and costs no base work. A game MAY require tags of its own on its actions.
 
-**Why base actions are invalid inside a bracket:** Base verifiers check a short list of names they already know, the base action names. A game checks the list of names it declared. Neither needs the other's knowledge, and no reader can mistake a move made inside a game for travel through cyberspace. A game that wants to score real travel reads the real chain outside any bracket instead.
+**Why base actions are invalid inside a bracket:** Base verifiers check a short list of names they already know, the base action names. A game reads the names it chose. Neither needs the other's knowledge, and no reader can mistake a move made inside a game for travel through cyberspace. A game that wants to score real travel reads the real chain outside any bracket instead.
 
-**Why every virtual action keeps its `C` tag:** A chain can then be scrubbed continuously from its spawn to its head, and a client that has never heard of a game can still draw it: the identity's avatar moving inside a box. Clients SHOULD draw positions inside a bracket differently from base positions (DECK-0002 §6).
+**Why every virtual action keeps its `C` tag:** A chain can then be scrubbed continuously from its spawn to its head, and a client that has never heard of a game can still draw it: the identity's avatar moving inside a box. Clients SHOULD draw positions inside a bracket differently from base positions (§8.11.7).
 
 #### 8.11.3 Exit-virtual event
 
@@ -1528,12 +1542,12 @@ Required tags:
 2. **The exit restores it.** The `C` of an `exit-virtual` action MUST equal the `c` of its `enter-virtual` action. The next action after the exit names the exit as its `e` previous, and its `c` is that restored position, as for any action.
 3. **No base actions inside.** An event inside a bracket whose `A` tag is `hop`, `sidestep`, `enter-hyperspace`, `hyperjump` or `enter-virtual` is invalid, and the chain is invalid from that event, as with any other invalid event. Brackets therefore do not nest.
 4. **Every coordinate stays in the box.** The `C` of the `enter-virtual` action and of every virtual action MUST lie inside the declared region. An event whose `C` lies outside it is invalid, and the chain is invalid from that event.
-5. **Actions a game did not declare are ignored.** A base verifier does not fetch the game and cannot know its list of actions, so it treats every name inside a bracket that is not a base action as a virtual action and checks only rules 3 and 4 and the links. A game ignores a virtual action whose name it did not declare: that action has no effect in the game, and it does not end the chain or make it invalid.
+5. **Names a game does not use are ignored.** A base verifier does not know the game and cannot know which names it uses, so it treats every name inside a bracket that is not a base action as a virtual action and checks only rules 3 and 4 and the links. A game ignores a virtual action whose name it does not use: that action has no effect in the game, and it does not end the chain or make it invalid.
 6. **An exit closes the open bracket and nothing else.** An `exit-virtual` action is invalid when no bracket is open, or when its `e` entry tag names anything but the open `enter-virtual` action, and the chain is invalid from that event.
 7. **An unclosed bracket is legal.** A chain MAY end inside a bracket. The identity's position in cyberspace is then the `c` of its open `enter-virtual` action.
 8. **A bracket is transparent to rules that look back.** Where a rule depends on the action before an event (for example DECK-0001 §4.3, which says what a `hyperjump` may follow), an `exit-virtual` action stands for the action before its `enter-virtual`. Work is still seeded by the actual previous event: the first hop after a bracket derives its temporal axis from the `exit-virtual` action's id (§5.3).
 
-A respawn is never inside a bracket. A spawn names no previous event, so it starts a new chain wherever it is published, including while a bracket is open (§3.2, §8.7.3), and a bracket left open on the old chain stays in that chain's history.
+A respawn is never inside a bracket. A spawn names no previous event, so it starts a new chain wherever it is published, including while a bracket is open (§3.2, §8.7.3), and a bracket left open on the old chain stays in that chain's history. The identity has then left the game without an exit: no `exit-virtual` action closes the bracket, and what that means is the game's to decide, as for any exit (§8.11.7).
 
 #### 8.11.5 Verifying a bracket (base)
 
@@ -1543,24 +1557,34 @@ To verify a bracket, a base verifier:
 3. Checks the `exit-virtual` action: its `e` entry tag names the open `enter-virtual` action (rule 6), and its `C` equals that action's `c` (rule 2).
 4. Continues ordinary verification from the `exit-virtual` action, whose `C` is the identity's base position.
 
-A base verifier checks the `game` tag only for form. It does not fetch the game event, and it does not check virtual actions against the game's list; that is the game's work (DECK-0002).
+A base verifier checks the game's `p` tag only for form: exactly one `p` tag marked `game`, holding a 32-byte lowercase hex pubkey. It does not contact the game, and it does not check virtual actions against the names the game uses; that is the game's work (§8.11.7).
 
 #### 8.11.6 What a bracket does not do (non-normative)
 
-- **It does not hold stakes.** An `exit-virtual` action is always valid under the base protocol, so an identity can leave a game at any moment, including in the middle of losing it. A game that has stakes decides for itself what an exit means, for example that an exit while contested counts as a loss (DECK-0002 §5). The protocol will not hold anyone in a game.
+- **It does not hold stakes.** An `exit-virtual` action is always valid under the base protocol, so an identity can leave a game at any moment, including in the middle of losing it. A game that has stakes decides for itself what an exit means, for example that an exit while contested counts as a loss (§8.11.7). The protocol will not hold anyone in a game.
 - **It does not claim the region.** Any number of identities, playing any number of games, can hold brackets in the same region at once. Declaring a region is a statement of where the game is played, not a claim on it (§6.12, §7.8).
 - **It cannot be erased by a later branch, as a matter of convergence.** The fork rule keeps the branch that was signed first (§8.7.3), so a later branch cannot remove a bracket that was already published. Because `created_at` is set by the signer, this is agreement between readers, not a guarantee against the identity itself.
+
+#### 8.11.7 Games and clients
+
+The protocol defines the bracket and nothing about the game played inside it. These rules are for games, and for clients that draw brackets.
+- **Advertising (recommended):** A game SHOULD advertise the region it is played in, so that players can find it. The protocol defines no mechanism for this: a game may say so in its own profile, on a web page, or anywhere else.
+- **Liveness (normative for games):** Whether a player is still in play, what they hold and whether they have won is the game's **liveness**, which the game owns and the base protocol never consults (`decks/README.md`, Game mechanics). A game MUST NOT decide any verdict by `created_at`.
+- **Leaving (normative for games):** A game whose outcomes carry stakes MUST say in its rules what an exit means, for example that an exit while contested counts as a loss. A respawn while a bracket is open leaves the game without an `exit-virtual` action (§8.11.4), and the game's rules SHOULD say what that means too.
+- **Drawing (recommended):** Clients SHOULD draw an identity's positions inside a bracket differently from its positions in cyberspace, so that a viewer never mistakes play inside a game for travel, and SHOULD draw the bracket's region while the identity is inside it.
+
+Open (non-normative): meetings between players inside one bracket, such as two players proving they stood in the same place at once, wait for the **encounter** primitive: a contact event in which two chains reference each other's heads. It is a design note and is not yet specified (`docs/territory-conflict-game-layer.md` §4.1, work list item 10).
 
 ### 8.12 Chain rules revision (normative)
 
 - `CHAIN_RULES_REVISION = "2026-09-28-virtual-brackets"`
 
-The chain rules are the rules that decide which movement chains are valid and which event is an identity's position: §3.2, §8.3 to §8.5, §8.7 and §8.11, together with the chain rules of any DECK a verifier implements. A verifier SHOULD state the revision it implements, so that two verifiers that disagree about a chain can see whether they are running the same rules.
+The chain rules are the rules that decide which movement chains are valid and which event is an identity's position: §3.2, §8.3 to §8.5, §8.7, §8.9 and §8.11, together with the chain rules of every mandatory DECK. A DECK is mandatory when its actions can change an identity's position (§8.9); at this revision the only mandatory DECK is DECK-0001. A verifier SHOULD state the revision it implements, so that two verifiers that disagree about a chain can see whether they are running the same rules.
 
 | Revision | Changes |
 |---|---|
 | (unnamed, before 2026-09-28) | Chains as defined by §3.2 and §8.3 to §8.7.2, with sidestep proofs of version 2 (§6.15). Forks were not resolved by the base protocol. |
-| `2026-09-28-virtual-brackets` | Sidestep proofs of version 3, with the re-roll price and the grandfathered list (§6.16). Ride openings of version 2, for verifiers that implement DECK-0001 (DECK-0001 §5.8). The fork rule (§8.7.3). Virtual brackets (§8.11). Actions a verifier does not implement are unverifiable, never invalid (§8.9). |
+| `2026-09-28-virtual-brackets` | Sidestep proofs of version 3, with the re-roll price and the grandfathered list (§6.16). DECK-0001 (hyperspace) made mandatory, with ride openings of version 2 (DECK-0001 §5.8). The fork rule (§8.7.3). Virtual brackets (§8.11). Movement is universal: a DECK whose actions change an identity's position is mandatory, an action a verifier does not recognize is skipped, and a position change across skipped actions makes the chain invalid (§8.9). |
 
 Note (non-normative): the GPS mapping has its own version string (§9.5). The two are independent: a change to the mapping moves places, and a change to the chain rules changes which chains are valid.
 

@@ -3,8 +3,9 @@
 DECK: 0001
 Title: Hyperspace (Bitcoin block transit)
 Status: Draft v3 (supersedes the v2 draft of 2026-04-16 and the v1 draft of 2026-02-28)
+Mandatory: yes. Every verifier implements this DECK, because a `hyperjump` moves an identity (`CYBERSPACE_V2.md` §8.9).
 Created: 2026-02-28
-Last updated: 2026-09-28
+Last updated: 2026-10-02
 Requires: `CYBERSPACE_V2.md` (spec version `2026-03-16-h34-corrected`)
 
 ## Abstract
