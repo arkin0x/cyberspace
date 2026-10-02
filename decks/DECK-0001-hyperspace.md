@@ -331,7 +331,7 @@ The re-roll price of §5.5 is a breaking change to ride verification. The per-bl
 - `HYPERSPACE_SAMPLE_DOMAIN` is bumped from `CYBERSPACE_HYPERSPACE_SAMPLE_V1` to `CYBERSPACE_HYPERSPACE_SAMPLE_V2`, and `HYPERSPACE_GRIND_DOMAIN` and `GRIND_HEIGHT` are new.
 - A `hyperjump` MUST carry the `mn` tag. Verifiers MUST reject a ride without one, or whose nonce does not meet the price, except the rides listed by event id in `decks/grandfathered-v1-hyperjumps.txt`. There is no grace period for anything not on the list.
 - Every listed ride was published before the reference client began publishing this version, and each was audited at Level 2 before it was listed. A verifier MUST accept a listed ride's root and openings without re-checking them, and MUST check everything else about it exactly as for any other ride (§4.3, §5.2, §8). No chain is invalidated by this revision and no identity has to respawn.
-- The audit found seven listed rides whose roots do not match the block data: the client that published them computed some leaves from incorrect block hashes. They are not forgeries, and they are exempted by decision so that no identity has to respawn; the list marks them.
+- All sixteen listed rides passed that audit: every leaf recomputed from the block hashes and the event's own `previous_event_id`, and every root matched its `proof` tag.
 - A ride without an `mn` tag that is not on the list is invalid, and so is the chain from that event forward. Event ids cannot be forged, so the list cannot be joined after the fact, as a date cutoff could be by backdating `created_at`. The list's format is that of `grandfathered-v2-sidesteps.txt` (`CYBERSPACE_V2.md` §6.16).
 
 ---
