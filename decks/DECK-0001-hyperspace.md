@@ -3,8 +3,9 @@
 DECK: 0001
 Title: Hyperspace (Bitcoin block transit)
 Status: Draft v3 (supersedes the v2 draft of 2026-04-16 and the v1 draft of 2026-02-28)
+Mandatory: yes. Every verifier implements this DECK, because a `hyperjump` moves an identity (`CYBERSPACE_V2.md` §8.9).
 Created: 2026-02-28
-Last updated: 2026-09-28
+Last updated: 2026-10-02
 Requires: `CYBERSPACE_V2.md` (spec version `2026-03-16-h34-corrected`)
 
 ## Abstract
@@ -355,6 +356,7 @@ A boarding toll, fixed work paid by `enter-hyperspace` beyond the temporal-axis 
 - Two movement events with the same `previous_event_id` are a fork. A fork is resolved by the base fork rule (`CYBERSPACE_V2.md` §8.7.3): the branch signed first continues the chain, and the other branch is not part of it. An earlier version of this section made both branches invalid from that point; that rule is replaced.
 - `enter-hyperspace` MAY follow any movement action.
 - `hyperjump` MUST follow `enter-hyperspace` or `hyperjump` (§4.3).
+- `enter-hyperspace` and `hyperjump` MUST NOT appear inside a virtual bracket (`CYBERSPACE_V2.md` §8.11.4, rule 3). An identity MAY open a bracket after `enter-hyperspace` or `hyperjump`; for the rule above, an `exit-virtual` action stands for the action before its `enter-virtual` (§8.11.4, rule 8), so a traveler can play a game at their station or at a stop and ride on afterwards. The ride's work is seeded by its actual previous event, the `exit-virtual` action (§5.3).
 - A stop's coordinate MUST be verified against Bitcoin consensus for the selected network; implementations SHOULD treat stops with fewer than six confirmations as provisional and avoid them as destinations.
 
 ---

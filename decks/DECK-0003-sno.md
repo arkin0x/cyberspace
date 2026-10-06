@@ -3,6 +3,7 @@
 DECK: 0003
 Title: SNO (Simple Nostr Objects)
 Status: Draft
+Mandatory: no
 Created: 2026-09-14
 Last updated: 2026-09-24
 Requires: `CYBERSPACE_V2.md` (spec version `2026-03-16-h34-corrected`)
