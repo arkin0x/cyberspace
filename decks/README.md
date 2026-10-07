@@ -56,7 +56,7 @@ The design record for this category, and for why the base protocol defines holdi
 
 ## Registry
 - `DECK-0001-hyperspace.md`: Hyperspace, Bitcoin block transit (ports, landfalls, stations, rides). **Mandatory.**
-- DECK-0002: unassigned. The Virtual Spawn draft was removed on 2026-10-02 before it was ratified: games are played inside a virtual bracket, which is base protocol (`../CYBERSPACE_V2.md` §8.11), and a game is identified by its pubkey rather than by an event. The number may be reused.
+- DECK-0002: reserved for the **Games DECK**, not yet written. It will define recommended primitive game actions and their shapes, control definitions (onscreen controls, key bindings), and all other game matters for games played inside a virtual bracket (`../CYBERSPACE_V2.md` §8.11), which the base protocol treats as opaque. It will repeat, for game designers, the action names that rule 3 of `../CYBERSPACE_V2.md` §8.11.4 reserves. Reserved on 2026-10-07. The number previously held the Virtual Spawn draft, which was removed on 2026-10-02 before it was ratified: games are played inside a virtual bracket, which is base protocol, and a game is identified by its pubkey rather than by an event.
 - `DECK-0003-sno.md`: SNO (Simple Nostr Objects), the small 3D object format. Defines `kind 33331`, a standalone editable object; `kind 3330` bag items and `kind 11333` avatars carry the same payload. Beside it: `sno-reference.py`, a conformance implementation that runs its own rejection table; `sno-palette.json` and `sno-palette.mjs`, the built-in 256-colour palette and the generator that produces it; `sno-palette.png`, the sheet
 
 ## Reserved kinds
