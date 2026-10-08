@@ -1,10 +1,10 @@
 {
  "name": "cyberspace chain rules golden vectors",
  "chain_rules_revision": "2026-09-28-virtual-brackets",
- "revision_note": "2026-09-28-virtual-brackets with the rulings folded in on 2026-10-07 and clarified on 2026-10-08 (CYBERSPACE_V2.md 8.12)",
+ "revision_note": "2026-09-28-virtual-brackets with the rulings folded in on 2026-10-07 and in two rounds on 2026-10-08 (CYBERSPACE_V2.md 8.12): the first round clarified forks, signatures, sector tags and regions; the second made a fork fatal, made any A tag equal to spawn a spawn, made a spawn never a link, required every tag the chain rules read exactly once with a well-formed value, and fixed the network for chain validity as Bitcoin mainnet, always, so a net tag is never read (DECK-0001 1.4)",
  "spec": {
   "repository": "arkin0x/cyberspace",
-  "commit": "912f3d70e4d15d70054e9fa98646098a1c216d47"
+  "commit": "1bf5694f349241f60762145efad5019569e837e6"
  },
  "generator": "scripts/gen_chain_vectors.py in arkin0x/cyberspace-cli",
  "regenerate": "PYTHONPATH=src python scripts/gen_chain_vectors.py",
@@ -23325,6 +23325,1077 @@
     "reason": "malformed",
     "invalid_at": "9f9ccc71de2f61308c099427402094c6cb02a0159e9637409b0a1c78f7c0e961",
     "invalid_index": 1
+   }
+  },
+  {
+   "name": "spawn-never-a-link-old",
+   "spec": [
+    "8.7.3 a spawn is never a link"
+   ],
+   "description": "An older spawn whose e tags name the newest spawn as genesis and a hop in the middle of its chain as previous. A spawn is never a link, so it is not a second next event after that hop: there is no fork, and the chain is valid at its head.",
+   "events": [
+    {
+     "id": "1277e4de6acd9e42f90901d7d0826d64833835b90e87ac2f317daa8094829e28",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000396,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "spawn"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ]
+     ],
+     "content": "",
+     "sig": "42733f5b4aa0d3a5687ceb2d5f892f81068b1ceb6b7e9c509b067570d116c0b06f478137d84d0a0bb11fdb90301d6f622686ad5a6536df4af5f9ae0650fb41a8"
+    },
+    {
+     "id": "56711ca5dc03d408b457796382986e12126e2e59c8b2c0b6e76090624a3f2361",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000397,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "hop"
+      ],
+      [
+       "e",
+       "1277e4de6acd9e42f90901d7d0826d64833835b90e87ac2f317daa8094829e28",
+       "",
+       "genesis"
+      ],
+      [
+       "e",
+       "1277e4de6acd9e42f90901d7d0826d64833835b90e87ac2f317daa8094829e28",
+       "",
+       "previous"
+      ],
+      [
+       "c",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39ba7"
+      ],
+      [
+       "proof",
+       "fd5032063c58a802b4a0b21582af56c2b30a5286d377c69bc5aa7f163a487410"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ]
+     ],
+     "content": "",
+     "sig": "c620a8224292ffc0a580441e225d8ca917083ef57042470af50690f78017d7ce6cac7db2e8cd16c9e1f071fb6084fa17c249df289f474c0f92b5e4ee95206545"
+    },
+    {
+     "id": "5429d250dc46ca7a5ce0159b5ce323301d0ee24184ce755dc5cf17caac9fac53",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000398,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "hop"
+      ],
+      [
+       "e",
+       "1277e4de6acd9e42f90901d7d0826d64833835b90e87ac2f317daa8094829e28",
+       "",
+       "genesis"
+      ],
+      [
+       "e",
+       "56711ca5dc03d408b457796382986e12126e2e59c8b2c0b6e76090624a3f2361",
+       "",
+       "previous"
+      ],
+      [
+       "c",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39ba7"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39ba3"
+      ],
+      [
+       "proof",
+       "6e074b094a7691b8ee8d44b9b5a77555ffef1f3d5328d5a22f18e38a219a854e"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ]
+     ],
+     "content": "",
+     "sig": "8b6a259e59113f60cf9299ecee302f88e5f2dc108596ceadf05e6a3f3b21e531804ea933598b4fc46b250e29e5234068a7af3c7096a11dd4502ae65e75ec6deb"
+    },
+    {
+     "id": "048ffc431386ab19844e2398c8b776d24491828963f3dec171d4acff24b45f40",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000395,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "spawn"
+      ],
+      [
+       "e",
+       "1277e4de6acd9e42f90901d7d0826d64833835b90e87ac2f317daa8094829e28",
+       "",
+       "genesis"
+      ],
+      [
+       "e",
+       "56711ca5dc03d408b457796382986e12126e2e59c8b2c0b6e76090624a3f2361",
+       "",
+       "previous"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ]
+     ],
+     "content": "",
+     "sig": "9d0f4a9b480917e86f9dbe54aff98c56e30e7f2c12b7ce2650a144429432eaf20e5d296c2d959ccfd097d625c5ed02267282b6d6306d48254979ab274fac8bb8"
+    }
+   ],
+   "expected": {
+    "valid": true,
+    "chain": [
+     "1277e4de6acd9e42f90901d7d0826d64833835b90e87ac2f317daa8094829e28",
+     "56711ca5dc03d408b457796382986e12126e2e59c8b2c0b6e76090624a3f2361",
+     "5429d250dc46ca7a5ce0159b5ce323301d0ee24184ce755dc5cf17caac9fac53"
+    ],
+    "position": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39ba3",
+    "head": "5429d250dc46ca7a5ce0159b5ce323301d0ee24184ce755dc5cf17caac9fac53",
+    "open_bracket": null,
+    "skipped": []
+   }
+  },
+  {
+   "name": "spawn-never-a-link-newest",
+   "spec": [
+    "8.7.3 rule 1",
+    "8.7.3 a spawn is never a link",
+    "8.8"
+   ],
+   "description": "The newest spawn carries e tags naming the old chain's spawn and head. It starts the active chain as usual; its e tags are not read, so it neither extends the old chain nor is made invalid by them.",
+   "events": [
+    {
+     "id": "f0613888e53517030f4220505fd40d07ce7b2a9b54c3cfa7c20c6a2d3da014ea",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000399,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "spawn"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ]
+     ],
+     "content": "",
+     "sig": "b03d0cf3b12bdf4e70a93e6a1e2c935de879d4fa0d0f741784a9e28b2bbdb00499c542518708344f7d54259efada856ce8b20556ba1e525a3fbd7a387584429a"
+    },
+    {
+     "id": "04da6e3758b1d61d3645a19ea33d8a98a69ad97e7782efd395a1f4daa60f5889",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000400,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "hop"
+      ],
+      [
+       "e",
+       "f0613888e53517030f4220505fd40d07ce7b2a9b54c3cfa7c20c6a2d3da014ea",
+       "",
+       "genesis"
+      ],
+      [
+       "e",
+       "f0613888e53517030f4220505fd40d07ce7b2a9b54c3cfa7c20c6a2d3da014ea",
+       "",
+       "previous"
+      ],
+      [
+       "c",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39ba7"
+      ],
+      [
+       "proof",
+       "984619e00aa98f2b99d75929a388863188d439d9c587be60a13bce60590b0f44"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ]
+     ],
+     "content": "",
+     "sig": "3ee505cef6f59e2d00a56a699bed69cf5d976bb3a7387776a6053fa305e986292e505810acad92db0e127c414042f7706a9bb272eb9fccaa7b083aaa3aa28b36"
+    },
+    {
+     "id": "45a69eaf73a41c83299962f3417303840f54ef45e32b1489b8e060fbfeae49bc",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000401,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "spawn"
+      ],
+      [
+       "e",
+       "f0613888e53517030f4220505fd40d07ce7b2a9b54c3cfa7c20c6a2d3da014ea",
+       "",
+       "genesis"
+      ],
+      [
+       "e",
+       "04da6e3758b1d61d3645a19ea33d8a98a69ad97e7782efd395a1f4daa60f5889",
+       "",
+       "previous"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ]
+     ],
+     "content": "",
+     "sig": "fe38ba007edaaf3cc9418365a45948bf561a299163359959df338f483fabf98f626f41b494ca98511d42976994f2d91573bfb77d3023d4d3aa9752293e958bb0"
+    },
+    {
+     "id": "56f33e12f197dd52d8215a58e4650349137af8ea97118fc462de113e8f0b2286",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000402,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "hop"
+      ],
+      [
+       "e",
+       "45a69eaf73a41c83299962f3417303840f54ef45e32b1489b8e060fbfeae49bc",
+       "",
+       "genesis"
+      ],
+      [
+       "e",
+       "45a69eaf73a41c83299962f3417303840f54ef45e32b1489b8e060fbfeae49bc",
+       "",
+       "previous"
+      ],
+      [
+       "c",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39bab"
+      ],
+      [
+       "proof",
+       "b0bc20d0920aecd785e16985bb62f68b28e579e228f1f7d29883bc055a0fa481"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ]
+     ],
+     "content": "",
+     "sig": "8a866282601685190b322552a8d225da9124cec825ce3403188c33ded4f2279b433d213c3d7712f0ca23aea46215f97d9fc8b1473831437e2401a0d0e2f37cee"
+    }
+   ],
+   "expected": {
+    "valid": true,
+    "chain": [
+     "45a69eaf73a41c83299962f3417303840f54ef45e32b1489b8e060fbfeae49bc",
+     "56f33e12f197dd52d8215a58e4650349137af8ea97118fc462de113e8f0b2286"
+    ],
+    "position": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39bab",
+    "head": "56f33e12f197dd52d8215a58e4650349137af8ea97118fc462de113e8f0b2286",
+    "open_bracket": null,
+    "skipped": []
+   }
+  },
+  {
+   "name": "ride-net-tag-unread",
+   "spec": [
+    "DECK-0001 1.4",
+    "8.8"
+   ],
+   "description": "A boarding and a ride carrying net tags that name other networks, the ride two of them. The line is Bitcoin mainnet, always; a net tag is informational and never read, so it is not constrained and the ride is valid.",
+   "events": [
+    {
+     "id": "b221a72fc7d70d5504904348d4338d7efce54e66b7b8899170555cddaad4b851",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000403,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "spawn"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ]
+     ],
+     "content": "",
+     "sig": "09d45ce6fbf1404b850df53c457176b0e75d1740b66f02984b79db746972f1cf9c6056e6d4fd81d80ffa3f2007d16dc61d6c204c546c833c5d1d1731197d26b6"
+    },
+    {
+     "id": "ff2e1af26f1c5dfa92ee2619fb935caad201141ed35b531e142d133e0558a783",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000404,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "enter-hyperspace"
+      ],
+      [
+       "e",
+       "b221a72fc7d70d5504904348d4338d7efce54e66b7b8899170555cddaad4b851",
+       "",
+       "genesis"
+      ],
+      [
+       "e",
+       "b221a72fc7d70d5504904348d4338d7efce54e66b7b8899170555cddaad4b851",
+       "",
+       "previous"
+      ],
+      [
+       "c",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "proof",
+       "3f1e969351d2a06a915f0b7e88433ae8b92c0ff20d294161007cc8e49a3c47ad"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ],
+      [
+       "net",
+       "testnet"
+      ]
+     ],
+     "content": "",
+     "sig": "467c8af6fdbf29f18801428de1f900505dbf860ca63cfa3bb90565a923bdb0872a34df78f1569eb72e38a41270f2ff45e1a772c4686eb2ffa1a91fa68369ec6a"
+    },
+    {
+     "id": "2197577f545656c5dc232cdf39211a3a21fb842806cde4ed096627540b752da6",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000405,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "hyperjump"
+      ],
+      [
+       "e",
+       "b221a72fc7d70d5504904348d4338d7efce54e66b7b8899170555cddaad4b851",
+       "",
+       "genesis"
+      ],
+      [
+       "e",
+       "ff2e1af26f1c5dfa92ee2619fb935caad201141ed35b531e142d133e0558a783",
+       "",
+       "previous"
+      ],
+      [
+       "c",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "C",
+       "3219b3359ec8efc7b4ef0c395470fccbd8bb1783e51060d61cd18ac50bfa9579"
+      ],
+      [
+       "from_height",
+       "2"
+      ],
+      [
+       "B",
+       "4"
+      ],
+      [
+       "as_of",
+       "5"
+      ],
+      [
+       "proof",
+       "e543eb39be5fe40b8f11fc95066014549b7c2c04a72892210220c48a314a781c"
+      ],
+      [
+       "mp",
+       "5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:b33d28bc4d21b0414a46c8d8028f40d5c4757959a3712ba3ba2179e99ac385dc:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:b33d28bc4d21b0414a46c8d8028f40d5c4757959a3712ba3ba2179e99ac385dc:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:b33d28bc4d21b0414a46c8d8028f40d5c4757959a3712ba3ba2179e99ac385dc:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:b33d28bc4d21b0414a46c8d8028f40d5c4757959a3712ba3ba2179e99ac385dc:b33d28bc4d21b0414a46c8d8028f40d5c4757959a3712ba3ba2179e99ac385dc:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:b33d28bc4d21b0414a46c8d8028f40d5c4757959a3712ba3ba2179e99ac385dc:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:b33d28bc4d21b0414a46c8d8028f40d5c4757959a3712ba3ba2179e99ac385dc:b33d28bc4d21b0414a46c8d8028f40d5c4757959a3712ba3ba2179e99ac385dc:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:b33d28bc4d21b0414a46c8d8028f40d5c4757959a3712ba3ba2179e99ac385dc:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d:5b6ab0c338a3e3411c45f0f89e10a2e48d9699d6dceb6e27daeb193116e8001d"
+      ],
+      [
+       "mn",
+       "0000000000000000"
+      ],
+      [
+       "X",
+       "15521100556000563"
+      ],
+      [
+       "Y",
+       "1009864743285650"
+      ],
+      [
+       "Z",
+       "20547073643059638"
+      ],
+      [
+       "S",
+       "15521100556000563-1009864743285650-20547073643059638"
+      ],
+      [
+       "net",
+       "testnet"
+      ],
+      [
+       "net",
+       "signet"
+      ]
+     ],
+     "content": "",
+     "sig": "d549248b1be0ec98a0adf5f338bc960d9e2ab71f0baa31c37143dd92d5798c31e40d4b9f641abc0de9656ef511b4212dfd8c3d020eeabb0fa8af33bc42a2aee8"
+    }
+   ],
+   "expected": {
+    "valid": true,
+    "chain": [
+     "b221a72fc7d70d5504904348d4338d7efce54e66b7b8899170555cddaad4b851",
+     "ff2e1af26f1c5dfa92ee2619fb935caad201141ed35b531e142d133e0558a783",
+     "2197577f545656c5dc232cdf39211a3a21fb842806cde4ed096627540b752da6"
+    ],
+    "position": "3219b3359ec8efc7b4ef0c395470fccbd8bb1783e51060d61cd18ac50bfa9579",
+    "head": "2197577f545656c5dc232cdf39211a3a21fb842806cde4ed096627540b752da6",
+    "open_bracket": null,
+    "skipped": []
+   }
+  },
+  {
+   "name": "spawn-sector-tags-repeated",
+   "spec": [
+    "8.3",
+    "8.8",
+    "3.2"
+   ],
+   "description": "The newest spawn carries its S tag twice. It is an invalid newest spawn, so the chain is dead at the spawn coordinate, with no fallback to the older chain.",
+   "events": [
+    {
+     "id": "f21218c3e8f7c9011407ed88d0c41be2fc643c70433b7843669c297a4b7c8b13",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000406,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "spawn"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ]
+     ],
+     "content": "",
+     "sig": "d3fbc4ee5b31dc2c1ea99dc7ff68d65870d9a7037bf1ea3fc091a71fd13b7e605ab5e3caf3329557d3b36563071ca0ac7bb15868d1d5465c185d9a74dba926e8"
+    },
+    {
+     "id": "b0e824ddb9895c7d2393a41fce3f8070e95aa61892b2c1737fec25956149bb9b",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000407,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "hop"
+      ],
+      [
+       "e",
+       "f21218c3e8f7c9011407ed88d0c41be2fc643c70433b7843669c297a4b7c8b13",
+       "",
+       "genesis"
+      ],
+      [
+       "e",
+       "f21218c3e8f7c9011407ed88d0c41be2fc643c70433b7843669c297a4b7c8b13",
+       "",
+       "previous"
+      ],
+      [
+       "c",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39ba7"
+      ],
+      [
+       "proof",
+       "eef11a4d6b23951ec24dc808b130c7d265a02246bb460796a1ea4854f7296981"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ]
+     ],
+     "content": "",
+     "sig": "497c8f402aaa3b2c43832d616a67f0d2832b5916721f55230c3843e559e744c33b4eb311c3522efd2edd64298c070886fdf859510558264e9a0e2a3274b78b04"
+    },
+    {
+     "id": "5b27b3f51a806c4707222510cc2516874098a7e337da556884bf1022bf0202fb",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000408,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "spawn"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ]
+     ],
+     "content": "",
+     "sig": "3e584c628a79be6da61c69131b0189eff948b19caba1d3ca94d282a14f5d27b82bda03ca90c6115bd881e7f297f815b142b1825eeff2d7eb8cf354e2216d921a"
+    }
+   ],
+   "expected": {
+    "valid": false,
+    "chain": [
+     "5b27b3f51a806c4707222510cc2516874098a7e337da556884bf1022bf0202fb"
+    ],
+    "position": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+    "reason": "sector-tags",
+    "invalid_at": "5b27b3f51a806c4707222510cc2516874098a7e337da556884bf1022bf0202fb",
+    "invalid_index": 0
+   }
+  },
+  {
+   "name": "spawn-c-repeated",
+   "spec": [
+    "8.3",
+    "8.8",
+    "3.2"
+   ],
+   "description": "The newest spawn carries its C tag twice. It is an invalid newest spawn, so the chain is dead at the spawn coordinate, with no fallback to the older chain.",
+   "events": [
+    {
+     "id": "e44e9393b515e5c043ad1c040bc7ebe497c6140a0d7a8ff9954e8190162da83d",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000409,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "spawn"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ]
+     ],
+     "content": "",
+     "sig": "80f0b82b5981c12fcb0aa1eb6974718183ecc60b0624e1c0784a726cfee198a000917796040c7553b4c14ecdd757ae1e67e4c7dfdd660a90c445cc2ff55149eb"
+    },
+    {
+     "id": "855f38ea6fa25544c30fedde2ee51e93d93bcc88941b7b715991d5c40e20f38c",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000410,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "hop"
+      ],
+      [
+       "e",
+       "e44e9393b515e5c043ad1c040bc7ebe497c6140a0d7a8ff9954e8190162da83d",
+       "",
+       "genesis"
+      ],
+      [
+       "e",
+       "e44e9393b515e5c043ad1c040bc7ebe497c6140a0d7a8ff9954e8190162da83d",
+       "",
+       "previous"
+      ],
+      [
+       "c",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39ba7"
+      ],
+      [
+       "proof",
+       "1274016e5ad957ed9d4c2a8d4012958411f308b24e417d32baab1aad7fde02d4"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ]
+     ],
+     "content": "",
+     "sig": "ed5b5881e017b63c33b89d76b1859db01f3af9db2531b93aa50dc631b9d63613c38d7e5e34cb66e666e7a72727f88440b8c8c915cce14e5474493ae49ed44ae5"
+    },
+    {
+     "id": "5585550699579954a79c6fc2d2b228c17e2704478e50f4f49e1f8157b59c1fbc",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000411,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "spawn"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ]
+     ],
+     "content": "",
+     "sig": "85a4fe2b22ed1849ab32b7378c73b40ca4891d02b406242c9b212cc724be6d319c9e93f0760e50487ef9c9aedfb6ce3ec60e60d1e85c43aca941c9723d6a1fef"
+    }
+   ],
+   "expected": {
+    "valid": false,
+    "chain": [
+     "5585550699579954a79c6fc2d2b228c17e2704478e50f4f49e1f8157b59c1fbc"
+    ],
+    "position": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+    "reason": "malformed",
+    "invalid_at": "5585550699579954a79c6fc2d2b228c17e2704478e50f4f49e1f8157b59c1fbc",
+    "invalid_index": 0
+   }
+  },
+  {
+   "name": "same-event-twice",
+   "spec": [
+    "8.7.3 rule 4"
+   ],
+   "description": "The same hop is delivered twice in the input. Forks are counted among distinct events, distinct by id, so a copy of one event is not a fork.",
+   "events": [
+    {
+     "id": "69b841acebb682c1df257935fcf4f2fe20dc1a86d7786558cf0c9583df335110",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000412,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "spawn"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ]
+     ],
+     "content": "",
+     "sig": "b008499228a1f576c43993190cccd46b60a552046139b78870a747ae3faf4a4a46d239e13ac12e45dbac330506aabb55f9dc2e8ab0c7b1e3eeda569d95bd32bc"
+    },
+    {
+     "id": "a4f682e3b5ea20d7186731522fa1313cab80de38e3df6a55680b295ec886a8a4",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000413,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "hop"
+      ],
+      [
+       "e",
+       "69b841acebb682c1df257935fcf4f2fe20dc1a86d7786558cf0c9583df335110",
+       "",
+       "genesis"
+      ],
+      [
+       "e",
+       "69b841acebb682c1df257935fcf4f2fe20dc1a86d7786558cf0c9583df335110",
+       "",
+       "previous"
+      ],
+      [
+       "c",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39ba7"
+      ],
+      [
+       "proof",
+       "55073c0b7e9ea421ec77adaf4ed1ef9271f8dee986909a2b1cc6215bf5261c27"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ]
+     ],
+     "content": "",
+     "sig": "55ce17709e931015baff48334017c0b2e53933d1d5060df8ad490b446c642b6ec58274fc548f646dbd25c06e52fb5833e31411ed47d505311fdd13b787dfeb7f"
+    },
+    {
+     "id": "a4f682e3b5ea20d7186731522fa1313cab80de38e3df6a55680b295ec886a8a4",
+     "pubkey": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf",
+     "created_at": 1790000413,
+     "kind": 3333,
+     "tags": [
+      [
+       "A",
+       "hop"
+      ],
+      [
+       "e",
+       "69b841acebb682c1df257935fcf4f2fe20dc1a86d7786558cf0c9583df335110",
+       "",
+       "genesis"
+      ],
+      [
+       "e",
+       "69b841acebb682c1df257935fcf4f2fe20dc1a86d7786558cf0c9583df335110",
+       "",
+       "previous"
+      ],
+      [
+       "c",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39baf"
+      ],
+      [
+       "C",
+       "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39ba7"
+      ],
+      [
+       "proof",
+       "55073c0b7e9ea421ec77adaf4ed1ef9271f8dee986909a2b1cc6215bf5261c27"
+      ],
+      [
+       "X",
+       "16651794195664918"
+      ],
+      [
+       "Y",
+       "24775930175555303"
+      ],
+      [
+       "Z",
+       "23529476586002063"
+      ],
+      [
+       "S",
+       "16651794195664918-24775930175555303-23529476586002063"
+      ]
+     ],
+     "content": "",
+     "sig": "55ce17709e931015baff48334017c0b2e53933d1d5060df8ad490b446c642b6ec58274fc548f646dbd25c06e52fb5833e31411ed47d505311fdd13b787dfeb7f"
+    }
+   ],
+   "expected": {
+    "valid": true,
+    "chain": [
+     "69b841acebb682c1df257935fcf4f2fe20dc1a86d7786558cf0c9583df335110",
+     "a4f682e3b5ea20d7186731522fa1313cab80de38e3df6a55680b295ec886a8a4"
+    ],
+    "position": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39ba7",
+    "head": "a4f682e3b5ea20d7186731522fa1313cab80de38e3df6a55680b295ec886a8a4",
+    "open_bracket": null,
+    "skipped": []
    }
   }
  ]
