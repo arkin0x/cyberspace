@@ -64,6 +64,11 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [5.6 Movement proof hash (normative)](#56-movement-proof-hash-normative)
   - [5.7 Worked example (non-normative)](#57-worked-example-non-normative)
   - [5.8 Performance expectations (non-normative)](#58-performance-expectations-non-normative)
+  - [5.9 Residue openings (normative)](#59-residue-openings-normative)
+  - [5.10 The seal, the re-roll price and the openings (normative)](#510-the-seal-the-re-roll-price-and-the-openings-normative)
+  - [5.11 Hop verification levels](#511-hop-verification-levels)
+  - [5.12 Performance of residue openings (non-normative)](#512-performance-of-residue-openings-non-normative)
+  - [5.13 Version 2 of the hop proof (normative)](#513-version-2-of-the-hop-proof-normative)
 - [6. The Wall and the Sidestep](#6-the-wall-and-the-sidestep)
   - [6.1 The storage bottleneck (non-normative)](#61-the-storage-bottleneck-non-normative)
   - [6.2 How the sidestep action works](#62-how-the-sidestep-action-works)
@@ -463,6 +468,8 @@ This does not weaken anything above. The operation count is unchanged, so §4.8 
 
 **It detects error, not fraud, and the difference matters.** The window is cheap for everyone symmetrically, so an adversary runs it too, learns the same low bits, and appends whatever they like above them. A prefix that matches is therefore evidence of an honest mistake not having happened, and no evidence at all against somebody trying. Use it to confirm that a transfer arrived intact, that a disclosed root is for the region you asked for rather than a neighbouring one, or that a long computation on your own hardware did not corrupt. Do not use it as a proof of anything.
 
+The same holds for one residue of a root, its remainder modulo an odd number (§5.9): anyone can compute it cheaply, so on its own it proves nothing. Residue openings, the hop proof of §5.9 to §5.13, turn many residues into evidence of work by making the prover seal a list of them a quarter as wide as the root before it learns which ones it will be asked to show (§5.10).
+
 The load-bearing consequence is the negative one: **a root prefix is not evidence of possession.** Anyone can compute one in seconds without holding the region, so no protocol, market or game may treat a prefix as attestation. Possession is demonstrated by using the root, which is to say by deriving a key that actually decrypts, and a wrong root simply fails to open anything.
 
 These five properties together create something unprecedented: digital space with the structural integrity of physical space, enforced by mathematics rather than by any authority.
@@ -559,6 +566,8 @@ The movement proof hash is derived from the 4D hop preimage `hop_n`. This intent
 
 When used in Nostr tags, `proof_hash` MUST be encoded as lowercase hex in the `proof` tag.
 
+**Version 1 of the hop proof.** This `proof_hash` is version 1 of the hop proof. Under chain rules revision `2026-10-08-residue-openings` (§8.12), a hop's `proof` tag carries the seal of version 2, residue openings (§5.9, §5.10), instead. The definition of `proof_hash` stays, for three reasons: it is the proof carried by the version 1 hops listed in `grandfathered-v1-hops.txt` (§5.13), the worked example of §5.7 locks the derivation of `K`, `cantor_t` and `hop_n` with it, and the sidestep proof hash of §6.8 is built the same way.
+
 ### 5.7 Worked example (non-normative)
 
 Movement: `(0, 0, 0) → (4104, 0, 0)`
@@ -600,6 +609,8 @@ Temporal axis example using `previous_event_id` = 64 hex zeros:
 
 Different `previous_event_id` values produce different `proof_hash` values, even for identical spatial moves. This is the temporal axis at work.
 
+The residue openings of this same movement, with the same `previous_event_id`, are the golden vector of §5.10.
+
 ### 5.8 Performance expectations (non-normative)
 
 Reference implementations observe that cost grows with the per-axis LCA height (because the aligned subtree contains `2^h` leaves). In addition, each hop includes the temporal axis traversal at terrain-derived height `K`, imposing non-cacheable work per hop even when spatial `region_n` is reused. Because `K` depends on the destination coordinate, some regions of Cyberspace are intrinsically easier or harder to traverse.
@@ -616,6 +627,259 @@ Approximate per-axis expectations from early benchmarks (illustrative only):
 | 65,536 G | 17 | 1.2 MB | ~ 1 sec |
 
 Implementations should cap per-hop distance for UX and may rely on multiple hops for long travel.
+
+These figures are the cost of producing a hop. Under version 2 of the hop proof, verifying a hop no longer repeats them; §5.12 gives the measured cost of both.
+
+### 5.9 Residue openings (normative)
+
+Under chain rules revision `2026-10-08-residue-openings` (§8.12), a hop proves its work with **residue openings**, version 2 of the hop proof. The Cantor work is exactly what §4 and §5.1 to §5.4 define: the same three axis trees, the same temporal tree at the same terrain height `K`, and the same `hop_n`. Only the commitment at the end changes. Instead of hashing `hop_n` (§5.6), the prover computes `hop_n` modulo many primes, seals that list of remainders in a Merkle tree, pays a re-roll price, and publishes 16 entries of the list with their inclusion paths (§5.10). A verifier recomputes those 16 entries itself, each in word-sized arithmetic, without building `hop_n` or any root (§5.11).
+
+**What does not change.** The aligned subtrees and their roots (§4.5, §4.6), `region_n` (§4.7), every location-based key and lookup id (§7.2), the terrain function (§5.2), the temporal axis (§5.3) and `hop_n` itself (§5.4) are exactly as before. A prover that also wants `region_n`, for a key, combines its axis roots as before; residue openings never need it.
+
+**Why the hop needs a new proof (non-normative).** Version 1 of the hop proof is a fingerprint, `SHA256(SHA256(hop_n))`, and a fingerprint is all-or-nothing. Nobody can work backwards from it, and nobody can check it a little bit. The only way to check it is to rebuild every tree from the bottom row up, combine the roots into `hop_n`, hash it twice and compare, so the verifier does exactly the work the mover did. At height 20 that is about 4 seconds for the mover and another 4 seconds for anyone who checks, for every hop in the chain, and checking a long chain means replaying the whole journey. Residue openings let a verifier check a hop at height 20 in about 4 milliseconds, while the mover's work grows by about a fifth (§5.12).
+
+**Terms:**
+- **Residue:** what is left over when a number is divided by a modulus, written `x mod p`. It is where the number lands on a clock with `p` positions.
+- **Hop prime:** one of the `m` primes `p_0, ..., p_(m-1)` of a hop, each derived on its own from `previous_event_id` and its index `j`.
+- **h_max:** the largest of the hop's three axis heights (§4.4) and its temporal height `K` (§5.2).
+- **Seal:** the Merkle root over the hop's residues, carried in the hop's `proof` tag (§5.10, §8.4).
+- **Opening:** one block of 8 residues and its inclusion path to the seal (§5.10).
+- **Re-roll price:** the work a prover must spend to obtain one set of sample positions: on average one sixteenth of an honest hop at the hop's heights (§5.10).
+
+**Constants (normative):**
+```
+HOP_RESIDUE_PRIME_DOMAIN  = b"CYBERSPACE_HOP_RESIDUE_PRIME_V1"    # 31 bytes
+HOP_RESIDUE_LEAF_DOMAIN   = b"CYBERSPACE_HOP_RESIDUE_LEAF_V1"     # 30 bytes
+HOP_RESIDUE_GRIND_DOMAIN  = b"CYBERSPACE_HOP_RESIDUE_GRIND_V1"    # 31 bytes
+HOP_RESIDUE_SAMPLE_DOMAIN = b"CYBERSPACE_HOP_RESIDUE_SAMPLE_V1"   # 32 bytes
+HOP_SAMPLES               = 16      # residues a verifier recomputes
+RESIDUE_BLOCK             = 8       # residues per Merkle leaf
+PRIME_BITS                = 61      # every hop prime is at least 2^61
+WIDTH_DIVISOR             = 4       # the primes' product spans a quarter of the widest root
+HOP_GRIND_HEIGHT          = 12      # one re-roll attempt is one aligned height-12 tree modulo p_0
+SMALL_ODD_PRIMES          = (3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47,
+                             53, 59, 61, 67, 71, 73, 79, 83, 89, 97)
+HOP_REROLL_BUDGET         = (0, 0, 0, 0, 0, 0, 1, 2, 4, 7, 14, 30, 65, 149, 355, 782,
+                             1753, 4016, 8959, 20028, 44826, 99974, 223681)   # heights 0 to 22
+PAD_LEAF                  = 32 zero bytes
+```
+
+`be32(n)` and `be64(n)` are `n` as 4 and 8 big-endian bytes. If any part of this construction changes (a constant, a preimage format, an encoding), every domain string the change touches MUST be bumped to a new value.
+
+**Residues of a root.** For an odd modulus `p`, pairing modulo `p` is
+
+```
+pi_p(a, b) = ((a + b) × (a + b + 1) × inv2 + b) mod p,    where inv2 = (p + 1) / 2
+```
+
+For all natural numbers `a` and `b`, `π(a, b) mod p = pi_p(a mod p, b mod p)`. Applied level by level, `compute_subtree_cantor(base, h) mod p` is the same `2^h - 1` pairings carried out with `pi_p`, starting from the leaves `(base + i) mod p`, and every value along the way is below `p`. For a hop with axis roots `cantor_x`, `cantor_y`, `cantor_z` and temporal root `cantor_t`:
+
+```
+hop_n mod p = pi_p(pi_p(pi_p(cantor_x mod p, cantor_y mod p), cantor_z mod p), cantor_t mod p)
+```
+
+Implementations MAY compute a root modulo `p` with any equivalent algorithm, such as Babbage's method of differences or a square-root-time method; the result MUST equal `compute_subtree_cantor(base, h) mod p`.
+
+**Why a root has a cheap shadow (non-normative).** A Cantor pairing does only three things: it adds, it multiplies and it halves. On a clock with `p` positions, adding and multiplying do not care about full laps, only about where you land. Halving is the one odd step, but on a clock of odd size "half of x" is the same as "`(p + 1) / 2` times x", because twice `(p + 1) / 2` is one full lap plus 1. With `s = a + b`, the identity `2 × π(a, b) = s(s + 1) + 2b` holds over the integers, so it holds on the clock too, and a tree built on the clock lands exactly where the real root lands. In the real tree the numbers double in length at every level, until the top pairings multiply numbers that are megabytes long. On the clock nothing ever grows past the clock's size, and a 61-bit prime fits in one machine word. At height 20, one residue of a root costs about 2.2 milliseconds as a plain tree on the clock and 0.23 milliseconds by the method of differences, against 3.86 seconds to make the hop (§5.12). Halving works only on a clock of odd size, which is the first rule every hop prime follows. Anybody can compute such a residue, because it needs only the tree's base and height, which come from the event. That is why one residue proves nothing (§4.9), and why the rest of this section exists.
+
+**The hop primes.** For each index `j` from 0 to `m - 1`, the hop prime `p_j` is derived from `previous_event_id`, the 32 raw bytes of the id in the hop's `e` previous tag (§5.3), and from `j`, and from nothing else:
+
+1. `digest = SHA256(HOP_RESIDUE_PRIME_DOMAIN || previous_event_id || be64(j))`.
+2. `x` is the first 8 bytes of `digest` read as a big-endian integer and shifted right by 4 bits, which leaves 60 bits.
+3. `n = (2^61 + x) | 1`, the starting point made odd.
+4. While `n` is divisible by any number in `SMALL_ODD_PRIMES`, or `n` is not a base-2 strong probable prime, set `n = n + 2`.
+5. `p_j = n`.
+
+`n` is a **base-2 strong probable prime** when, writing `n - 1 = d × 2^r` with `d` odd, either `2^d mod n` is 1 or `n - 1`, or `2^(d × 2^i) mod n` is `n - 1` for some `i` from 1 to `r - 1`.
+
+Every `p_j` is odd and lies in `[2^61, 2^62)`, so a residue modulo it fits in 8 bytes. The test is a probable-prime test, and no step requires a proof of primality: `p_j` is, by definition, the number this procedure returns. The same prime MAY appear at two indices; implementations MUST NOT deduplicate.
+
+**The residue count.** A hop has `m` primes:
+
+```
+m_raw = ceil(85 × 2^h_max / (WIDTH_DIVISOR × PRIME_BITS))
+m     = max(RESIDUE_BLOCK, RESIDUE_BLOCK × ceil(m_raw / RESIDUE_BLOCK))
+```
+
+Every prime is at least `2^61`, so `Q = p_0 × p_1 × ... × p_(m-1)` has at least `85 × 2^h_max / 4` bits, a quarter of the widest root of the hop. At h20, `m = 365,288`; at h30, `m = 374,049,408`.
+
+The **residues** of the hop are `r_j = hop_n mod p_j`, for `j` from 0 to `m - 1`.
+
+**Why many prime clocks act as one giant clock (non-normative).** One residue narrows a number down only a little, because every `p`-th number lands on the same spot of a `p`-clock. Add a second clock whose size shares no factor with the first, and the pair of spots repeats only at the product of the two sizes, so two residues behave exactly like one residue on a clock that large. Each further clock multiplies the combined clock's size again. This is the Chinese Remainder Theorem, named after a puzzle in the *Sunzi Suanjing* ("count some things by threes and two are left over"), and it is the reason a list of small residues is worth as much as one residue on a gigantic clock. The clocks are primes because two different primes never share a factor, so every new clock adds its full size and none partly repeats another.
+
+**Why a quarter, and not all of `hop_n` (non-normative).** `Q` is deliberately not as large as `hop_n`. It spans a quarter of the widest axis root, and `hop_n` is about eight times as wide as that root, so the residues pin down `hop_n mod Q`, a number millions of digits long at height 20, and **never `hop_n` itself**. That is enough, and going further would only cost more. What the count has to achieve is that getting the true list any way other than building the trees costs more than building them. There are two other ways:
+- **One residue at a time.** Each residue is cheap, but all of them together are not: at height 20, 365,288 residues at 0.23 milliseconds each come to about 84 seconds, against about 4.7 seconds for the honest hop (§5.12). The honest prover is faster at the whole list because it builds each root once and then divides it by every prime in one batch.
+- **The whole hop on the combined clock.** Any tree can be carried out modulo `Q`, and every residue then falls out at the end. That saves work only on levels where the real numbers are wider than `Q`, because on the clock a number never grows past `Q`. With `Q` at a quarter of the widest root, that is only the top two levels, and wrapping them costs about what it saves: measured, it is no cheaper than the exact trees. The shortcut starts to win only when the clock is between 1/32 and 1/64 of the root (at 1/64 it costs 79 to 96 percent of the exact trees), so a quarter sits at least eight times above that point. A prover that shrinks its clock to 1/64 of the root also holds only one sixteenth of the true residues, and passes 16 checks with odds of 1 in 2^64.
+
+Covering all of `hop_n` would take up to 32 times as many primes and add no safety. The list grows with the work, always about a quarter of the widest root, but it stays with the prover; the event carries only openings, which grow by one sibling hash each time the list doubles (§5.12).
+
+**Why every index gets its own prime (non-normative).** `hop_n = π(region_n, cantor_t)` is the place and the moment. The place, `region_n`, is the same for everyone crossing the same aligned region, and it is the expensive part. The moment, `cantor_t`, comes from the mover's previous event id and is cheap. On any clock, `hop_n`'s residue is one pairing, done on the clock, of the place's residue and the moment's residue, so anyone who already knows the place's residue on a clock can finish the rest cheaply. That rules out three designs:
+1. **Fixed primes make residues reusable.** A region's residues on fixed primes never change, so someone who computed a region once could keep its table and cross it again for about 27 percent of a fresh hop at height 20, measured. Under version 1 such a crossing costs about 73 percent, because the full-width combine cannot be cached. That is the "instant teleportation over previously-trod terrain" that the temporal axis exists to prevent (§5.1).
+2. **Fixed primes make residues leak.** Every published opening reveals residues of one mover's `hop_n`. Anyone can compute that mover's `cantor_t` from its public previous event id and run the last pairing backwards on the clock to peel off the place's residue (a quadratic, so at most two candidates). With fixed primes these leaks add up: an independent review pooled the openings of 30 movers through one region and rebuilt 76 percent of that region's table, enough to cross it on other people's work.
+3. **A window into a fixed catalog can be aimed.** If each hop used a consecutive stretch of one fixed catalog of primes, starting at a position chosen by its previous event id, a mover could re-roll its own previous event id before publishing it, by changing that event's `created_at` and signing again. That does not touch the previous event's proof, which depends on the event before it. The mover would stop when the stretch landed on primes it already held a table for.
+
+Drawing every prime on its own, from `(previous_event_id, j)`, out of about 27 quadrillion candidates, closes all three. The next hop has a whole new set of clocks, so a table on the old clocks is useless. An opening reveals residues on clocks that, in practice, no other hop will ever use. Re-rolling the previous event id gives a brand-new scattered set of primes, with no stretch to aim at. The previous event id is the right seed for the same reasons it seeds the temporal axis (§5.3): the verifier reads it from the event, nobody knows it until the previous hop is done, it differs at every position in the chain, and it exists before the work starts. The seal could not serve, because the primes are needed to make the list that is sealed.
+
+### 5.10 The seal, the re-roll price and the openings (normative)
+
+**The seal.** Split the residues into `m / RESIDUE_BLOCK` blocks of 8 consecutive residues: block `b` holds `r_(8b)` to `r_(8b+7)`. Each block is one leaf:
+
+```
+leaf_b = SHA256(HOP_RESIDUE_LEAF_DOMAIN || previous_event_id || be64(b)
+                || be64(r_(8b)) || be64(r_(8b+1)) || ... || be64(r_(8b+7)))
+```
+
+Append `PAD_LEAF` until the number of leaves is a power of two, and build the tree bottom-up with `parent = SHA256(left || right)`, as in §6.4 step 5. The root is the **seal**, and it is the value of the hop's `proof` tag (§8.4). `depth` is the number of levels above the leaves: the smallest `d` with `2^d ≥ m / RESIDUE_BLOCK`. A tree of a single leaf has depth 0, and its seal is that leaf.
+
+**Why a seal (non-normative).** The list is far too big for an event: at height 20 it is 365,288 residues of 8 bytes each, about 2.9 MB. A Merkle tree seals it into 32 bytes, as version 1's fingerprint sealed `hop_n`, with one difference that is the whole point: a Merkle tree can be opened one entry at a time. Change any residue and its leaf changes, then every box above it, and finally the seal, so once the seal is published the list is locked. An opening is the one block plus the boxes hanging off its route to the top, a couple of dozen hashes. Each leaf carries the previous event id and its own block number, so a leaf of one hop is never a leaf of another hop, nor of another position in the same tree.
+
+**The re-roll price.** The sample positions are drawn from a 32-byte value `G` that costs residue work to obtain. One **attempt**, for an unsigned 64-bit `nonce`:
+
+```
+seed   = SHA256(HOP_RESIDUE_GRIND_DOMAIN || previous_event_id || seal || be64(nonce))
+g_base = ((int(seed) mod 2^85) >> HOP_GRIND_HEIGHT) << HOP_GRIND_HEIGHT
+r_g    = compute_subtree_cantor(g_base, HOP_GRIND_HEIGHT) mod p_0
+G      = SHA256(HOP_RESIDUE_GRIND_DOMAIN || seed || be64(r_g))
+```
+
+`int(seed)` reads the 32 bytes as a big-endian integer, `p_0` is the hop's first prime, and `r_g` is computed modulo `p_0` as in §5.9, without the root itself. The price `A` is the sum of the budgets for the hop's three axis heights and `K`, and at least 1:
+
+```
+B(h) = HOP_REROLL_BUDGET[h]                          for h ≤ 22
+B(h) = floor(223681 × 9^(h - 22) / 4^(h - 22))       for h > 22, in exact integer arithmetic
+A    = max(1, B(h_x) + B(h_y) + B(h_z) + B(K))
+```
+
+The prover MUST publish, in the `mn` tag, a `nonce` for which `G`, read as a 256-bit big-endian integer, satisfies `G × A < 2^256`. Each attempt succeeds with probability `1/A`, so the prover performs `A` attempts on average, and a verifier repeats one. Any nonce that meets the price is valid; the golden vectors take the first one counting up from 0, and a production prover MAY split the search across workers.
+
+**Why the price (non-normative).** Without it, a prover could do the expensive part honestly and skip some of the cheap part: build the trees, compute only some of the residues, put junk in the rest, and then keep drawing new sample positions until all 16 miss the junk. If a fresh draw were nearly free, that would save up to about a third of the work. An independent review found exactly this in an earlier version of this design, which priced draws only below h18. The residue work is **divisible**: as with a Merkle tree, where half the leaves cost half the work, half the residues cost about half the residue work, so it needs the price at every height. The Cantor trees are **holographic**: every residue depends on every leaf and every pairing, so the cheap way to most residues is the root, and holding even one sixteenth of them costs most of a full tree (§5.9). The trees therefore need no price of their own; the price protects the divisible part. When every fresh set of samples costs at least `1/HOP_SAMPLES` of the divisible work, no fraction of skipped work lowers the expected cost of an accepted proof (§5.11 states the argument, which is §6.11's), and with the price in place the cheapest forger found pays 1.000 times the honest cost at h16, h18, h20 and h22 (§5.12).
+
+**Why it is priced this way (non-normative).** This is the re-roll price of the sidestep (§6.10), with three differences. First, the currency is residue work, not SHA-256: one attempt is one aligned height-12 tree modulo a 61-bit prime, measured at 6.1 microseconds, which hash-mining hardware cannot make cheaper, and the seed chooses the tree's base, so no attempt can be prepared in advance. Second, the cost of an honest hop is not a simple count of leaves, because the numbers grow as the tree climbs, so the budget per height is a table calibrated by measurement: `HOP_REROLL_BUDGET[h]` is one sixteenth of an honest hop at height `h`, counted in attempts, measured on one core of a Ryzen 7 6800H. Above h22 each height costs 9/4 of the one below, close to the growth of 2.23 to 2.24 per height measured from h19 to h22. Third, a multi-axis hop sums the budgets of its axes and of `K`, which prices it conservatively. As for the sidestep, the threshold is an integer comparison rather than a count of leading zero bits, so that the price stays exact for sums that are not powers of two. The table is a set of normative constants, like the terrain constants of §5.2, and changing it is a change to the chain rules (§8.12).
+
+**The draw.** For each `i` from 0 to `HOP_SAMPLES - 1`:
+
+```
+idx_i = int(SHA256(HOP_RESIDUE_SAMPLE_DOMAIN || G || be32(i))) mod m
+```
+
+`idx_i` names the residue `r_(idx_i)`, which sits in block `idx_i div 8` at position `idx_i mod 8`. Indices MAY collide, and implementations MUST NOT deduplicate them, so that the number of openings is fixed and the `mp` tag is fixed-width.
+
+**Why the draw comes from the seal (non-normative).** Nobody asks the mover for particular entries in real time. A hash of the seal, the previous event id and the nonce asks the question in place of a live checker, so every verifier, at any time, reads the event, works out the same 16 positions and checks that the openings are exactly those. This is the Fiat-Shamir transform (Amos Fiat and Adi Shamir, 1986). Because the draw depends on the seal, the list is locked before the mover learns which entries will be opened, and re-sealing or trying nonces until the draw is friendly is what the price makes expensive. The previous event id enters the draw directly, through `seed`, as it does for the sidestep (§6.10) and the ride (DECK-0001 §5.5), and again through `p_0` and through every leaf.
+
+**The openings.** For each `idx_i`, in ascending `i`, the prover publishes one opening: the 8 residues of block `idx_i div 8`, each as `be64`, followed by the `depth` sibling hashes on the route from that block's leaf to the seal, from the leaf level upward. An opening is `64 + 32 × depth` bytes, and the 16 openings together are `HOP_SAMPLES × (64 + 32 × depth)` bytes. Two samples in the same block publish the same opening twice. At each level the verifier determines left and right from the block number, as in §6.10: an even position is a left child and an odd one a right child, and the position halves, rounding down, at each level up. The `mp` tag carries the openings (§8.4).
+
+**Why openings carry whole blocks (non-normative).** The verifier works out the sampled residue itself, but it needs the other seven residues of the block to recompute the leaf it climbs from. Blocks of 8 make the tree three levels shallower than one leaf per residue would, which saves 96 bytes of siblings per opening and costs 56 bytes of extra residues. Each opening carries its own siblings even when two openings share some, so every opening has the same width and the tag needs no separators.
+
+**Golden vectors (normative).** `hop-residue-reference.py` (§14) prints the golden vectors of this construction, and a conforming implementation MUST reproduce every one of them exactly. For the movement of §5.7, `(0, 0, 0) → (4104, 0, 0)` with `previous_event_id` equal to 32 zero bytes:
+- the axis heights are `13, 0, 0` and `K = 11`, so `h_max = 13`, `m = 2856` in 357 blocks, `depth = 9`, and `A = 179` (149 for the axis at height 13 and 30 for `K = 11`)
+- `p_0 = 2501841973170584791` and `p_1 = 2618389119072288907`
+- `proof` (the seal): `c5524980e1b021dc49fb64d14a521456a48693d0711a886516c1f4ab733db5cb`
+- `mn`: `0000000000000057` (nonce 87, the first that meets the price counting up from 0), with `G = 003e95fef5d92b12ea28d8d2ac538c91712219afaab153f2ee1a94f6a6d64e40`
+- the first sample index is 2092, and its residue is 2707389969566835098
+- `mp`: 11,264 characters, whose SHA-256, taken over the tag value as ASCII, is `3d5d88eba8a384d134bba7ba00ea48b7188802c482f011fbef3b8100ccbc4e93`
+
+The script also prints a hop that moves on all three axes with a nonzero `previous_event_id`, single primes (one at an index above 2^32), one leaf, one attempt, and budgets above h22.
+
+### 5.11 Hop verification levels
+
+**Level 1: residue openings.** A verifier checks a hop's proof as follows; §8.7.1 places these steps among the other checks of a hop.
+
+1. Derive everything from the event, taking nothing from the prover: each axis's height and aligned base from `c` and `C` (§4.4, §4.5); `K` from `C`, including its plane bit (§5.2); `t_base` from `previous_event_id` and `K` (§5.3); and from those `h_max`, `m` (§5.9), `depth` and `A` (§5.10).
+2. Parse the seal from `proof`, the nonce from `mn` and the 16 openings from `mp`, and reject unless each has exactly the form and width §8.4 gives it.
+3. Replay one attempt: compute `G` from `previous_event_id`, the seal and the nonce (§5.10), and reject unless `G × A < 2^256`.
+4. Derive `idx_0` to `idx_15` from `G` (§5.10).
+5. For each `i`, with opening `i`: derive `p = p_(idx_i)` (§5.9); compute `hop_n mod p` from the axis bases and heights and from `t_base` and `K` (§5.9); reject unless it equals residue `idx_i mod 8` of the opening's block; then recompute `leaf_b` for `b = idx_i div 8` from the opening's 8 residues, climb its `depth` siblings, and reject unless the climb ends at the seal.
+6. Accept if and only if every step passes.
+
+Level 1 never builds a root, `region_n` or `hop_n`. It costs one attempt, at most 17 prime derivations, 16 residues of `hop_n` and 16 paths: about 4 milliseconds per hop at height 20, measured (§5.12).
+
+**Level 2: full audit.** A verifier rebuilds every root, computes every residue `r_j` for `j` from 0 to `m - 1`, rebuilds the seal and compares it with the `proof` tag, then checks the price and the openings as at Level 1. This costs the same order of work as making the hop.
+
+**Security model.** As for sidesteps (§6.11), the protocol does NOT require every verifier to perform Level 2. Security relies on deterministic fraud detectability: the true seal is a deterministic function of the hop's coordinates and `previous_event_id`, every one of which is public on the event, so a seal over anything but the true residues remains permanently and objectively detectable by any party willing to do the work, and a detected fraud invalidates the chain from that event forward.
+
+**What sampling bounds (non-normative).** A prover whose sealed list holds the true residue at a fraction `f` of its positions survives 16 samples drawn by `G` with probability about `f^16`:
+
+| Share of the sealed list that is true | Chance of passing all 16 checks |
+|---|---|
+| 99 percent | 85 percent |
+| 90 percent | 19 percent, about 1 in 5 |
+| 75 percent | 1 percent |
+| 50 percent | 1 in 65,536 |
+| 1 in 16 | 1 in 2^64 |
+
+What decides whether partial work pays is the price of trying again. Write `W` for the divisible part of an honest hop's work, which is at most all of it, and `S` for `HOP_SAMPLES`. Every fresh set of samples costs at least `W/S`, so a prover holding a fraction `f` of the true residues pays at least `f·W + f^(−S)·W/S` for the divisible part, against the honest `W + W/S`. The difference is `W·u(f)` with `u(f) = (f^(−S) − 1)/S − (1 − f)`, and `u(f) ≥ 0` for every `f` in `(0, 1]`, by the proof in §6.11. With any cheaper retry, skipping a small fraction of the residues would pay. The holographic part needs no price: the cheapest strategy measured for holding one sixteenth of the true residues costs 79 to 96 percent of the exact trees, and then passes with odds of 1 in 2^64.
+
+**What is proven, what is measured, what is assumed (non-normative).**
+
+| Claim | Status |
+|---|---|
+| the residue identity of §5.9, the method of differences, the CRT bound of §5.9, the `f^16` sampling bound and the price argument above | proven, and checked numerically by `hop-residue-reference.py` |
+| the cost of every strategy above, of the honest prover and of the verifier | measured on one machine (§5.12) |
+| the re-roll budget table | calibrated on that machine; if on other hardware the price came to only half of `W/S`, the most a cheater could gain is about 1.1 percent of the divisible work, by the same argument |
+| that no algorithm computes most residues of a root much faster than building the tree, beyond those tried | assumed, the same assumption the protocol already makes about the root itself (§4.1, §13) |
+
+**Why 16 checks (non-normative).** With the price in place, the sample count no longer decides whether skipping work pays. It decides how hopeless the holographic shortcut is, what a verifier spends, and how large the openings are. Sixteen checks make the one-sixteenth shortcut hopeless, at odds of 1 in 2^64, cost a verifier about 4 milliseconds at height 20, and keep the openings near the size of a sidestep's (§5.12).
+
+### 5.12 Performance of residue openings (non-normative)
+
+Every figure in this section was measured on one core of a Ryzen 7 6800H, with the prover in C using GMP and the verifier in C using 64-bit words. The chains are 40 linked hops, each starting where the previous one ended, and the verifier derived every height, base, `K` and temporal base from the events themselves. Version 1 verification is a recomputation, so it costs exactly version 1's production.
+
+| 40 linked hops | produce, version 1 | produce, residue openings | verify, residue openings | verify vs version 1 production | verify vs residue openings production | verify vs the Cantor trees alone |
+|---|---:|---:|---:|---:|---:|---:|
+| heights 10 to 20 | 21.7 s | 26.4 s (1.22x) | 0.039 s | 561x faster | 683x faster | 153x faster |
+| heights 8 to 16 | 1.57 s | 1.82 s (1.16x) | 0.015 s | 103x faster | 120x faster | 22x faster |
+| all at h20 | 160.2 s | 193.3 s (1.21x) | 0.154 s | 1,040x faster | 1,255x faster | 295x faster |
+
+The last column is the most conservative. Every accepted proof at h18 and above must contain the Cantor trees (§5.9, §5.11), so the trees alone are a floor on any producer, and the verifier beats even that floor. Flipping one residue in one opening made the verifier reject the chain at that hop.
+
+Other measured figures:
+- One residue of an h20 root: 2.2 ms as a plain tree modulo `p`, and 0.23 ms by the method of differences at level 6, which is 12.8 times faster. Making the whole h20 hop under version 1 takes 3.86 s, of which 1.08 s is the axis tree and 2.78 s the full-width combine and hash.
+- One hop prime: about 2 µs. Over 5,000 test draws the search visited about 20 odd candidates on average and 208 at most, and about four rejections in five came from the small-prime filter.
+- One re-roll attempt: 6.1 µs.
+- The honest hop under residue openings, its re-roll price, and the cheapest forger found, minimized over every fraction `f` of residues held:
+
+| h | honest hop, residue openings | re-roll price | cheapest forger, price only below h18 | cheapest forger, price at every height |
+|---:|---:|---:|---:|---:|
+| 16 | 0.18 s | 0.012 s | 1.00x honest | 1.000x honest |
+| 18 | 0.97 s | 0.10 s | 0.70x honest | 1.000x honest |
+| 20 | 4.74 s | 0.40 s | 0.65x honest | 1.000x honest |
+| 22 | 23.3 s | 1.6 s | 0.64x honest | 1.000x honest |
+
+These measurements rounded the price up to a power of two of attempts (at h20, 2^16 attempts, where `A` is about 44,800), which is at least the price `A` of §5.10, so the honest overhead they show is an upper bound for this section's price. The honest residue work is also unoptimized: the remainder tree costs 2 to 3 times the trees, and the prime search is unsieved. Faster versions of either would lower the prover's overhead, and with it the first two verify ratios, but not the ratio against the trees alone.
+
+The sizes follow from §5.9 and §5.10:
+
+| h_max | residues `m` | the list, which stays with the prover | depth | `mp` characters |
+|---:|---:|---:|---:|---:|
+| 8 | 96 | 768 bytes | 4 | 6,144 |
+| 12 | 1,432 | 11 KB | 8 | 10,240 |
+| 16 | 22,832 | 183 KB | 12 | 14,336 |
+| 20 | 365,288 | 2.9 MB | 16 | 18,432 |
+| 24 | 5,844,528 | 47 MB | 20 | 22,528 |
+| 30 | 374,049,408 | 3.0 GB | 26 | 28,672 |
+| 34 | 5,984,790,496 | 48 GB | 30 | 32,768 |
+| 47 | 49,027,403,730,344 | 392 TB | 43 | 46,080 |
+
+The `proof` tag stays 64 characters and `mn` adds 16. At h20 a hop's `mp` is 18,432 characters, against about 11 KB for a single-axis sidestep at the same height (§6.14), and even at h47 it is 46,080 characters, within common relay event-size limits. The list grows as fast as the work, about a quarter of the widest root, and a mover at h47 already needs petabytes for the trees themselves. Implementations SHOULD confirm their relays' event size limits before publishing hops above about h60, where the `mp` tag approaches 64 KB.
+
+### 5.13 Version 2 of the hop proof (normative)
+
+Residue openings are a breaking change to hop verification. The Cantor work is unchanged: the trees, `region_n`, `K`, `cantor_t` and `hop_n` are exactly as before, so the golden values of §5.7 carry over. What changes is what a hop's `proof` tag commits to, and that a hop carries the `mn` and `mp` tags.
+
+- The four domain strings of §5.9 are new, and so are the `mn` and `mp` tags on a hop (§8.4).
+- Under chain rules revision `2026-10-08-residue-openings` (§8.12), a hop MUST carry the seal of §5.10 in its `proof` tag, together with its `mn` and `mp` tags, and verifiers MUST check them per §5.11 and §8.7.1.
+- Verifiers implementing this revision MUST reject version 1 hops, whose `proof` tag is the `proof_hash` of §5.6 and which carry no `mn` and no `mp` tag, with one exception: the version 1 hops listed in `grandfathered-v1-hops.txt`. There is no grace period and no dual-acceptance mode for anything not on that list.
+- The list names, by event id, the version 1 hops published before the reference clients began publishing version 2, as found by a final census taken at the cutover. Each one is audited before it is listed: its `proof_hash` is recomputed per §5.6 from its own `c`, `C` and `previous_event_id`, and compared with its `proof` tag. A hop that fails that audit is not listed, so it stays invalid, as it already was.
+- A verifier MUST accept a listed hop's `proof` tag without recomputing it, and MUST check everything else about it exactly as for any other hop: chain linkage, continuity, its sector tags, and the count and form of its tags (§8.8). A listed hop MAY lack the `mn` and `mp` tags (§8.8). Because every version 1 hop published before the cutover is listed unless it fails the audit, the cutover itself invalidates no chain and makes no identity respawn.
+- A version 1 hop that is not on the list is invalid, and so is the chain from that event forward (§8.7.3). There is no date cutoff: event ids cannot be forged, so the list cannot be joined after the fact, as a date cutoff could be by backdating `created_at`.
+- Each non-empty line of `grandfathered-v1-hops.txt` that does not begin with `#` starts with a 64-character lowercase hex event id; anything after the id on the same line is commentary. This is the format of `grandfathered-v2-sidesteps.txt` (§6.16).
+- The list is filled from the final census, taken when the reference clients begin publishing version 2 hops.
+
+Version 1 hops are recognizable by the absence of the `mn` and `mp` tags.
+
+**Why version 1 hops are not accepted alongside version 2 (non-normative).** A version 1 hop cannot be forged; it is expensive to check. If verifiers kept accepting it, every verifier would still need the full recomputation for any hop it meets, and a mover that kept publishing version 1 hops would make everyone who checks its chain replay its whole journey. One proof per action keeps every verifier's cost bounded by the openings.
+
+**Why a list of event ids and not a date (non-normative).** `created_at` is whatever the signer writes, so a date cutoff could be joined after the fact by backdating, at no cost. An event id is the hash of the event, so nobody can make a new event with a listed id. Listing every audited old hop by id means the cutover invalidates no chain, while every hop published afterwards is cheap to verify. A verifier implementation can embed the listed ids as a constant generated from the file, noting the commit it came from, rather than fetching them at runtime.
 
 ---
 
@@ -1292,7 +1556,7 @@ Required tags:
 
 ### 8.4 Hop event
 
-A hop event extends the movement chain by one Cantor pairing tree proof.
+A hop event extends the movement chain by one Cantor pairing tree proof, carried as residue openings (§5.9 to §5.11).
 
 Required tags:
 - `A` tag: `["A", "hop"]`
@@ -1300,8 +1564,14 @@ Required tags:
 - `e` previous: `["e", "<previous_event_id>", "", "previous"]`
 - `c` tag: `["c", "<prev_coord_hex>"]` (32-byte lowercase hex string)
 - `C` tag: `["C", "<coord_hex>"]` (32-byte lowercase hex string)
-- `proof` tag: `["proof", "<proof_hash_hex>"]` (32-byte lowercase hex string)
+- `proof` tag: `["proof", "<seal_hex>"]` (the seal of §5.10, a 32-byte lowercase hex string)
+- `mn` tag: `["mn", "<nonce_hex>"]` (the re-roll nonce of §5.10, as exactly 16 lowercase hex characters, big-endian)
+- `mp` tag: `["mp", "<openings_hex>"]` (the `HOP_SAMPLES` openings of §5.10, lowercase hex)
 - Sector tags: `X`, `Y`, `Z`, `S` computed from `C` (per §10). Each MUST appear exactly once. Missing sector tags, a sector tag that appears more than once, or values that do not equal the ones computed from `C`, make the event invalid.
+
+**Openings encoding:** The `mp` value is the concatenation of the `HOP_SAMPLES` openings of §5.10 in ascending `i`, with no separators. Each opening is its block's 8 residues, each as 16 hex characters (`be64`), followed by its `depth` sibling hashes from the leaf level upward, each as 64 hex characters. An opening is therefore `128 + 64 × depth` characters, and the tag is exactly `HOP_SAMPLES × (128 + 64 × depth)` characters, 18,432 at `h_max = 20`. `depth` follows from `h_max` (§5.9, §5.10), which the verifier derives from `c`, `C` and the terrain of §5.2, so a hop carries no height tags. An `mp` of any other length, or with any character outside `0-9` and `a-f`, is malformed, and the event MUST be rejected.
+
+**Version 1 hops:** A hop whose `proof` tag is the `proof_hash` of §5.6 and which carries no `mn` and no `mp` tag is a version 1 hop. It MUST be rejected per §5.13 unless its id is listed in `grandfathered-v1-hops.txt`.
 
 ### 8.5 Sidestep event
 
@@ -1352,15 +1622,20 @@ Content: MAY carry plaintext meant for humans, a riddle (§7.7). The protocol do
 
 #### 8.7.1 Hop verification
 
-To verify a hop:
+To verify a hop (Level 1, residue openings):
 1. Parse previous and current coords; decode to `(x1,y1,z1,plane)` and `(x2,y2,z2,plane)`.
 2. Plane changes are valid in v2; verifiers MUST support hops where `plane1 != plane2`.
-3. Compute the stable spatial region integer `region_n` per §4.7.
+3. Compute each axis's LCA height and aligned base per §4.4 and §4.5.
 4. Derive the terrain-based temporal height `K` from the destination coordinate `(x2,y2,z2,plane2)` per §5.2 (including the destination plane bit).
-5. Compute the temporal axis root `cantor_t` from the hop event's `previous_event_id` (`e` tag with marker `previous`) and `K` per §5.3.
-6. Compute `hop_n = π(region_n, cantor_t)` per §5.4.
-7. Compute `proof_hash` per §5.6.
-8. Accept iff it matches the event's `proof` tag.
+5. Compute the temporal base `t_base` from the hop event's `previous_event_id` (`e` tag with marker `previous`) and `K` per §5.3.
+6. Compute `h_max` and `m` per §5.9, and `depth` and the price `A` per §5.10.
+7. If the hop's id is listed in `grandfathered-v1-hops.txt`, accept its `proof` without steps 8 to 11 (§5.13). Otherwise parse the seal from `proof`, the nonce from `mn` and the openings from `mp`, and reject if any of the three is missing or not of the form and width §8.4 gives it.
+8. Compute `G` from `previous_event_id`, the seal and the nonce per §5.10; reject unless `G × A < 2^256`.
+9. Derive the sample indices `idx_0` to `idx_15` from `G` per §5.10.
+10. For each `idx_i`: derive the hop prime `p_(idx_i)` per §5.9; compute `hop_n mod p_(idx_i)` from the axis roots and the temporal root modulo that prime per §5.9; compare it with residue `idx_i mod 8` of opening `i`; recompute the leaf of block `idx_i div 8` from the opening's residues, and verify its path of exactly `depth` siblings to the seal.
+11. Accept iff every comparison and every path holds.
+
+These steps never build a root, `region_n` or `hop_n`. A verifier that skips step 8 accepts the divisible-work forgery of §5.10. Level 2 (full audit) verification is described in §5.11.
 
 #### 8.7.2 Sidestep verification (Level 1: sampled openings)
 
@@ -1428,7 +1703,7 @@ The base Cyberspace v2 protocol defines three movement action types and two brac
 | `A` tag value | Description | Proof type | Defined in |
 |---|---|---|---|
 | `spawn` | Identity placement at pubkey-derived coordinate | None (identity proof) | §8.3 |
-| `hop` | Movement via Cantor pairing tree | Cantor root (§4.6) | §8.4 |
+| `hop` | Movement via Cantor pairing tree | Residue openings of the Cantor roots (§5.9) | §8.4 |
 | `sidestep` | Boundary crossing via Merkle hash tree | Merkle root (§6.4) | §8.5 |
 | `enter-virtual` | Opens a virtual bracket: the identity starts playing a game, and its position in cyberspace is held | None | §8.11 |
 | `exit-virtual` | Closes a virtual bracket: the identity leaves the game and is back at the position it entered from | None | §8.11 |
@@ -1444,16 +1719,16 @@ The tags the chain rules read are these, and no others:
 | Event | Tags the chain rules read |
 |---|---|
 | `spawn` (§8.3) | `A`, `C`, `X`, `Y`, `Z`, `S` |
-| `hop` (§8.4) | `A`, `e` genesis, `e` previous, `c`, `C`, `proof`, `X`, `Y`, `Z`, `S` |
-| `sidestep` (§8.5) | as for a hop, and `mr`, `mp`, `mn`, `hx`, `hy`, `hz` |
-| `enter-hyperspace` (DECK-0001 §3.1) | as for a hop |
-| `hyperjump` (DECK-0001 §5.2) | as for a hop, and `from_height`, `B`, `mp`, `mn`, and `as_of` on the first ride after boarding (DECK-0001 §4.3) |
+| `hop` (§8.4) | `A`, `e` genesis, `e` previous, `c`, `C`, `proof`, `mn`, `mp`, `X`, `Y`, `Z`, `S` |
+| `sidestep` (§8.5) | as for a hop, and `mr`, `hx`, `hy`, `hz` |
+| `enter-hyperspace` (DECK-0001 §3.1) | `A`, `e` genesis, `e` previous, `c`, `C`, `proof`, `X`, `Y`, `Z`, `S` |
+| `hyperjump` (DECK-0001 §5.2) | as for `enter-hyperspace`, and `from_height`, `B`, `mp`, `mn`, and `as_of` on the first ride after boarding (DECK-0001 §4.3) |
 | `enter-virtual` (§8.11.1) | `A`, `e` genesis, `e` previous, `c`, `C`, `region`, `p` marked `game`, `X`, `Y`, `Z`, `S` |
 | `exit-virtual` (§8.11.3) | `A`, `e` genesis, `e` previous, `e` entry, `C`, `X`, `Y`, `Z`, `S` |
 | a virtual action (§8.11.2) | `A`, `e` genesis, `e` previous |
 | a skipped action (§8.9) | `A`, `e` genesis, `e` previous |
 
-Two exceptions are part of the rules that define them. A sidestep listed in `grandfathered-v2-sidesteps.txt` (§6.16), and a ride listed in `decks/grandfathered-v1-hyperjumps.txt` (DECK-0001 §5.8), MAY lack the `mn` tag; when one carries it, it appears exactly once. Those lists waive only the re-checking of a listed event's proof (its root and openings); every tag it carries that the chain rules read, including `proof` and `mp`, still MUST appear exactly once with a well-formed value. The `c` tag of an `exit-virtual` action is optional and is never read, so it is not constrained at all (§8.11.3). Every other tag is free: tags the chain rules do not read, such as `client`, `imeta`, `net` (the network for chain validity is Bitcoin mainnet, always, so a `net` tag on an action is informational and never read, DECK-0001 §1.4), the `e` tags with other markers, the tags a game puts on its actions inside a bracket, and the tags of a skipped action other than its `A`, `e` genesis and `e` previous tags, MAY appear any number of times with any value. A spawn's `e` tags, if it has any, are not read either, because a spawn is never a link (§8.7.3, "A spawn is never a link").
+Two exceptions are part of the rules that define them. A sidestep listed in `grandfathered-v2-sidesteps.txt` (§6.16), and a ride listed in `decks/grandfathered-v1-hyperjumps.txt` (DECK-0001 §5.8), MAY lack the `mn` tag, and a hop listed in `grandfathered-v1-hops.txt` (§5.13) MAY lack the `mn` and `mp` tags; when a listed event carries a tag it may lack, that tag appears exactly once. Those lists waive only the re-checking of a listed event's proof (for a sidestep or a ride its root and openings, for a hop its `proof`); every other tag it carries that the chain rules read, including `proof`, and `mp` on a sidestep or a ride, still MUST appear exactly once with a well-formed value. A listed hop's `proof` is the `proof_hash` of §5.6, and it is well formed when it is 32-byte lowercase hex. The `c` tag of an `exit-virtual` action is optional and is never read, so it is not constrained at all (§8.11.3). Every other tag is free: tags the chain rules do not read, such as `client`, `imeta`, `net` (the network for chain validity is Bitcoin mainnet, always, so a `net` tag on an action is informational and never read, DECK-0001 §1.4), the `e` tags with other markers, the tags a game puts on its actions inside a bracket, and the tags of a skipped action other than its `A`, `e` genesis and `e` previous tags, MAY appear any number of times with any value. A spawn's `e` tags, if it has any, are not read either, because a spawn is never a link (§8.7.3, "A spawn is never a link").
 
 **Why each tag is read exactly once (non-normative):** Readers must never disagree about a chain. When a tag the rules read can appear twice, one reader takes the first copy and another the last, and the same chain puts the identity in two places. Resolution therefore follows the first copy of each link (§8.7.3), so every reader resolves the same chain, and validity rejects any second copy of a tag the rules read, so no verdict ever rests on which copy a reader chose. Before this rule, a bare `["A"]` was read as no `A` tag by some readers and as one nameless skipped action by others, so the same chain placed a player in different spots. Requiring each read tag exactly once, and counting an empty tag as a malformed one, leaves nothing for a reader to choose. Only the identity's own client can publish such an event (§8.7.3), and a client that builds its tags from the rules never does.
 
@@ -1649,7 +1924,7 @@ Open (non-normative): meetings between players inside one bracket, such as two p
 
 ### 8.12 Chain rules revision (normative)
 
-- `CHAIN_RULES_REVISION = "2026-09-28-virtual-brackets"`
+- `CHAIN_RULES_REVISION = "2026-10-08-residue-openings"`
 
 The chain rules are the rules that decide which movement chains are valid and which event is an identity's position: §3.2, §8.3 to §8.5, §8.7, §8.8 (exactly one `A` tag, and each tag the chain rules read exactly once with a value), §8.9, §8.11, and §10 for the sector tags of movement events, together with the chain rules of every mandatory DECK. A DECK is mandatory when its actions can change an identity's position (§8.9); at this revision the only mandatory DECK is DECK-0001. A verifier SHOULD state the revision it implements, so that two verifiers that disagree about a chain can see whether they are running the same rules.
 
@@ -1657,10 +1932,15 @@ The chain rules are the rules that decide which movement chains are valid and wh
 |---|---|
 | (unnamed, before 2026-09-28) | Chains as defined by §3.2 and §8.3 to §8.7.2, with sidestep proofs of version 2 (§6.15). Forks were not resolved by the base protocol. |
 | `2026-09-28-virtual-brackets` | Sidestep proofs of version 3, with the re-roll price and the grandfathered list (§6.16). DECK-0001 (hyperspace) made mandatory, with ride openings of version 2 (DECK-0001 §5.8). The fork rule (§8.7.3). Virtual brackets (§8.11). Movement is universal: a DECK whose actions change an identity's position is mandatory, an action a verifier does not recognize is skipped, and a position change across skipped actions makes the chain invalid (§8.9). Folded in on 2026-10-07: events that are not authentic (an invalid NIP-01 id or signature, or another author) are discarded before resolution, and a branch through one is cut off (§8.7.3); the newest spawn wins even when it is invalid, with no fallback to an older spawn (§3.2, §8.7.3); an invalid chain is frozen at its last valid position until the identity respawns (§3.2, §8.7.3); every event carries exactly one `A` tag (§8.8); a skipped action is checked only for being authentic, linked and carrying one `A` tag (§8.9); a virtual bracket is opaque and checked as a unit, its entry does not move the identity, and nothing inside it but links, the `A` tag and reserved names is checked (§8.9, §8.11); rule 3 of §8.11.4 reserves every action of the base protocol and of a mandatory DECK (§8.11.4); sector tags count toward the validity of every base and mandatory DECK action (§10, §8.3 to §8.5, §8.11.1, §8.11.3, DECK-0001 §1.3); and there is no zero-length ride (DECK-0001 §5.2, §5.6, §5.8). Clarified on 2026-10-08: an event without a valid signature is discarded even when it was never published (§8.2); each sector tag appears exactly once (§10); and the base position need not lie in or near a bracket's region (§8.11.1). Folded in later on 2026-10-08: a fork kills the chain, which is invalid from the spawn, and the identity stands at its spawn coordinate until it respawns; this replaces the rule that the branch signed first continues the chain, and the clarification of the same day that an earlier invalid branch continues it (§3.2, §8.7.3, §8.11.6, DECK-0001 §8); clients MUST confirm they hold the live head before signing (§8.7.3); only kind 3333 events take part in resolution (§8.7.3, Chain events); an event is a spawn when any of its `A` tags is `spawn`, and a spawn with a second `A` tag is invalid (§3.2, §8.7.3 rule 1, §8.11.2); every chain event after the spawn carries exactly one `e` genesis and one `e` previous tag, and an exit exactly one `e` entry tag, while resolution follows the first copy of each (§8.7.3, §8.9, §8.11.4, §8.11.5); every tag the chain rules read appears exactly once with a well-formed value, and an empty or valueless tag counts as a malformed one (§8.8, DECK-0001 §8); the `c` of an `exit-virtual` action is never read and never makes the exit invalid (§8.11.3, §8.11.4); a spawn is never a link, whatever `e` tags it carries, so it never extends or forks a chain and is never a virtual or skipped action (§8.7.3, §8.8, §8.11.2, §8.11.4); and the network for chain validity is Bitcoin mainnet, always, and a `net` tag on an action is never read (§8.8, DECK-0001 §1.4). |
+| `2026-10-08-residue-openings` | Everything in `2026-09-28-virtual-brackets`, with hop proofs of version 2: residue openings (§5.9 to §5.11, §5.13). A hop's `proof` tag carries the seal over its residues instead of the `proof_hash` of §5.6, and a hop carries the `mn` and `mp` tags, each read exactly once (§8.4, §8.7.1, §8.8). The re-roll budget table of §5.10 is part of these rules. Version 1 hops are invalid, except those listed by event id in `grandfathered-v1-hops.txt`, whose `proof` is accepted without recomputation while everything else about them is checked; there is no date cutoff, and the list is filled from the final census of version 1 hops at the cutover (§5.13). |
 
-**Golden vectors (normative):** The golden vectors in `chain-rules-2026-09-28-virtual-brackets.json`, in this repository, lock the chain rules of this revision; the reference implementation (§14) generated them; a conforming verifier MUST reach every vector's verdict, its `position` (for an invalid vector, the last valid position where the identity stands frozen) and, for an invalid vector, its `invalid_at`; the file's `reasons` field names the rule that each `reason` code stands for; and a port runs every vector in full and skips none, because every signature and proof in the vectors is real and cheap to check and their only block data is the synthetic line in `line.blocks`, which a verifier uses in place of Bitcoin mainnet (DECK-0001 §1.4) when it runs the vectors and at no other time, and it MUST check DECK-0001 §5.6 before a ride's proof, because the two zero-length ride vectors carry proofs that no Level 1 check can verify.
+**Golden vectors (normative):** The golden vectors in `chain-rules-2026-09-28-virtual-brackets.json`, in this repository, lock the chain rules of revision `2026-09-28-virtual-brackets`; the reference implementation (§14) generated them; a verifier conforming to that revision MUST reach every vector's verdict, its `position` (for an invalid vector, the last valid position where the identity stands frozen) and, for an invalid vector, its `invalid_at`; the file's `reasons` field names the rule that each `reason` code stands for; and a port runs every vector in full and skips none, because every signature and proof in the vectors is real and cheap to check and their only block data is the synthetic line in `line.blocks`, which a verifier uses in place of Bitcoin mainnet (DECK-0001 §1.4) when it runs the vectors and at no other time, and it MUST check DECK-0001 §5.6 before a ride's proof, because the two zero-length ride vectors carry proofs that no Level 1 check can verify.
+
+No chain-rules golden vectors lock revision `2026-10-08-residue-openings` yet. The vectors of `2026-09-28-virtual-brackets` carry version 1 hops, which this revision rejects unless they are listed in `grandfathered-v1-hops.txt` (§5.13), so they are not vectors of this revision. Until vectors whose hops carry residue openings are added, the golden vectors of §5.10 lock the hop proof of this revision.
 
 Note (non-normative): the rulings of 2026-10-07 and 2026-10-08 were folded into `2026-09-28-virtual-brackets` rather than named as a new revision, because no verifier had shipped claiming that revision when they were made. A chain signed before 2026-10-07 can be invalid under the rulings of that day, for example because its sector tags do not match its `C`; such a chain is frozen at its last valid position like any other invalid chain (§8.7.3). A chain signed before 2026-10-08 can be invalid under the rulings of that day, for example because it forked, and a forked chain is dead from its spawn (§8.7.3, rule 4).
+
+Note (non-normative): residue openings are a new revision, not a ruling folded into `2026-09-28-virtual-brackets`, because they change what a hop proof is. A verifier of `2026-09-28-virtual-brackets` rejects every hop of version 2, and a verifier of `2026-10-08-residue-openings` rejects every unlisted hop of version 1, so the two revisions disagree about chains, and the revision a verifier states is what tells two such verifiers apart.
 
 Note (non-normative): the GPS mapping has its own version string (§9.5). The two are independent: a change to the mapping moves places, and a change to the chain rules changes which chains are valid.
 
@@ -1998,6 +2278,7 @@ Implementers should treat that repo as the reference for:
 
 This repository also carries stdlib-only reference scripts that are executable statements of specific sections, each self-checking when run:
 - `sidestep-reference.py`: the version 3 sidestep construction (§6.4, §6.5, §6.10, §6.11), with golden vectors and a check that each property those sections claim actually holds, including that the half-tree forgery of §6.11 costs more than an honest crossing
+- `hop-residue-reference.py`: residue openings, version 2 of the hop proof (§5.9 to §5.11, §8.4): residues of a root, the method of differences, the hop primes, the seal, the re-roll price, the draw, the tag encoding and both verification levels, with golden vectors, a cross-check that its derivation reproduces the §5.7 golden `proof_hash` and `lookup_id`, and a check that each property those sections claim actually holds, including that a prover holding only part of the true residues passes Level 1 exactly when every sample lands on a residue it holds
 - `hint-reference.py`: §7.7 and the §10 rule for bags: canonical form, containment, sector tags, seeker work, malformed hints and plane preservation, locking the golden vectors of §7.7
 - `decks/landfall-reference.py`: landfall derivation (DECK-0001 §1.2)
 
