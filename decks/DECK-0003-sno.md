@@ -5,7 +5,7 @@ Title: SNO (Simple Nostr Objects)
 Status: Draft
 Mandatory: no
 Created: 2026-09-14
-Last updated: 2026-09-24
+Last updated: 2026-10-08
 Requires: `CYBERSPACE_V2.md` (spec version `2026-03-16-h34-corrected`)
 
 ## Abstract
@@ -26,6 +26,7 @@ The design goal is not to compete with glTF or USD. It is to be the three-dimens
 | Model space | X right, Y up, +Z toward the viewer: right handed, the glTF convention (§2) |
 | Position lattice | whole units plus 120ths of a unit (§1.2) |
 | Size | no ceiling on vertices or faces; the event's size is the relay's concern, as for every other kind (§1.8) |
+| Credit for a copy | the NIP-18 `q` tag naming the original's address; a `p` naming its author on a public remix only (§3.5) |
 | Reference implementation | `decks/sno-reference.py`, which is §1.9 written as code |
 
 **Conformance.** `decks/sno-reference.py` implements §1.9 with no dependencies and carries a rejection case for every numbered rule that rejects. It was checked against ONOSENDAI's independent TypeScript reader, and the two agree on every case, including the three places where this format is deliberately forgiving rather than strict. A third implementation can be checked against the same table.
@@ -444,6 +445,35 @@ An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload
 
 **Why a partially encrypted `kind 33331` and not a wrapper kind.** The object keeps its kind, so a query for `kind 33331` returns hidden objects too, as previews; a client that knows nothing of this DECK shows the preview, which is the sentence above pointing at a client that can find the object; and the shape is already implemented in clients that follow FF-1. A wrapper kind (an application-specific event carrying the ciphertext) would hide the object from every one of those.
 
+
+### 3.5 Crediting a copy
+
+**A copy of someone else's object names the object it was copied from.** Two things make a copy. A placement that carries another author's payload inline (§3.2) instead of referencing it, so that what was built stays exactly as built. And a remix: a copy taken into a workshop, edited, and published under the editor's own key as a new `kind 33331` with a `d` of its own. Either way the original's author made the shape, and the copy says so.
+
+**Every copy and every remix carries the quote tag of NIP-18 naming the original's address:**
+
+```
+["q", "33331:<original author pubkey>:<original d>", "<relay hint>"]
+```
+
+The relay hint is a relay the original was seen on, and MAY be empty. A copy carries exactly one `q` tag for the object it was copied from; a copy of a copy names the object it was copied from, not the first one in the line, because that is the one its author saw.
+
+**A public remix also carries a `p` tag naming the original's author.**
+
+```
+["p", "<original author pubkey>"]
+```
+
+That is what makes the author's clients tell them their object was remixed. "Public" means published as its own `kind 33331` for anyone to read (§3.1). A copy sealed inside a bag (§3.2), an inline item or anything else only the region key opens, MUST NOT carry the `p`: a notification would point the author at a hidden placement, and a hidden placement is only for whoever finds it. The `q` inside the seal is as private as the item it credits.
+
+**A reader MAY show the credit and SHOULD NOT treat it as anything else.** A `q` tag says where a shape came from. It places nothing, it is not fetched to draw the object, and an object whose `q` names something that no longer exists is drawn exactly the same.
+
+**Why `q` and not `a` or `e`.** On a `kind 33331`, an `a` or `e` tag already means "this object places that one" (§1.10): a publisher writes each placement there so a relay can answer "what places this object". A credit written the same way would read as a placement, and a query for everything that places a tile would return everything copied from it. `q` is the standard tag for "this is based on that", relays index it like any single-letter tag, so "what copies my object" is one query (`#q`), and it means nothing else on this kind.
+
+**Why the address and not the event id.** The credit is for the object, which its author may go on editing, not for the version that happened to be copied. The copy's own payload already holds that version.
+
+**A large copy carried as its own hidden event carries no credit in plain view.** A copy too large to carry inline goes out as a hidden object of its own (§3.4), and every tag on that event is public. A `q` there would tell anyone which object is hidden somewhere, which is as much a spoiler as a hint, so it is left off. A rule for carrying the credit inside the seal is open (§8).
+
 ---
 
 ## 4. Rendering (normative where it says MUST)
@@ -575,6 +605,7 @@ One apparent gap is not one. SNO has per-vertex color and no material, which is 
 4. **A per-object key for a hidden object carried by reference.** §3.4 encrypts the object with the region key, which ties it to the place. A key of its own, carried inside the bag beside the reference, would let one large object be referenced from several places and moved without re-encryption, at the cost of a second key to lose.
 5. **Whether `parts` should also allow a mirror.** Eight integers place and turn and scale; a negative scale step halves, it does not mirror. A left glove from a right glove needs one more flag or a second object. Left out until someone needs it.
 6. **The rotation order.** §1.10 fixes X then Y then Z about the parent's axes. It is a convention, not a derivation; if a modeling tool in common use disagrees, the cost of matching it is one sentence now and every published object later.
+7. **Crediting a large copy privately.** §3.5 leaves the credit off a copy carried as its own hidden event (§3.4), because that event's tags are public. Carrying it inside the seal would need either a field in the payload, which every reader would then have to ignore, or a second encrypted tag on the event. Neither is decided.
 
 ## Appendix A: a worked example (non-normative)
 
