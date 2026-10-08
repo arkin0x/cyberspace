@@ -162,6 +162,8 @@ Required tags:
 - `proof`: `["proof", "<proof_hash_hex>"]` per §3.2
 - Sector tags from `C` (§1.3; missing, duplicated or mismatched sector tags make the event invalid)
 
+Each required tag MUST appear exactly once, with a well-formed value (§8).
+
 Optional: `net`.
 
 ### 3.2 Entry proof (normative)
@@ -260,6 +262,8 @@ Required tags:
 - `mp`: `["mp", "<openings>"]` per §5.5
 - `mn`: `["mn", "<nonce_hex>"]`: the re-roll nonce of §5.5, as exactly 16 lowercase hex characters, big-endian
 - Sector tags from `C` (§1.3; missing, duplicated or mismatched sector tags make the event invalid)
+
+Each required tag MUST appear exactly once, with a well-formed value, and so MUST `as_of` on the first ride after boarding (§8).
 
 Optional: `net`; `e` tags with markers `hyperjump_from` / `hyperjump_to` referencing anchor events.
 
@@ -361,7 +365,9 @@ A boarding toll, fixed work paid by `enter-hyperspace` beyond the temporal-axis 
 
 ## 8. Equivocation and chain integrity (normative)
 
-- Two movement events with the same `previous_event_id` are a fork. A fork is resolved by the base fork rule (`CYBERSPACE_V2.md` §8.7.3): the branch signed first continues the chain, and the other branch is not part of it. An earlier version of this section made both branches invalid from that point; that rule is replaced.
+- Two movement events on the active chain with the same `previous_event_id` are a fork, and a fork kills the chain (`CYBERSPACE_V2.md` §8.7.3, rule 4): the chain is invalid from the spawn, and the identity stands at its spawn coordinate until it respawns. This restores the rule of the v1 draft of this section, which made both branches invalid. An interim version of this section deferred to a base rule under which the branch signed first continued the chain; that rule is withdrawn, because together with an invalid chain standing at its last valid position it let an identity rewind to any position it had held (`CYBERSPACE_V2.md` §8.7.3, "Why a fork kills the chain").
+- **Each tag read exactly once (normative):** Every tag of this DECK's actions that a chain rule reads MUST appear on the event exactly once, with a well-formed value, as `CYBERSPACE_V2.md` §8.8 requires for every chain event. On both actions these are `A`, `e` genesis, `e` previous, `c`, `C`, `proof` and the sector tags; on every `hyperjump` also `from_height`, `B`, `mp` and `mn`; and on the first `hyperjump` after an `enter-hyperspace` also `as_of` (§4.3). A tag whose value is missing or empty still counts as that tag and is malformed, so an event that carries one, or carries any of these tags twice, is invalid, and the chain is invalid from that event. The one exception is §5.8: a ride listed in `decks/grandfathered-v1-hyperjumps.txt` MAY lack `mn`, and carries it at most once. Tags these rules do not read, such as `net` and the `e` tags marked `hyperjump_from` or `hyperjump_to`, are not constrained.
+- **Why (non-normative):** The order of an event's tags must never change a verdict. When a tag the rules read can appear twice, readers that take different copies disagree about the same ride, for example about its destination height or its station bound, and so about where the identity stands.
 - `enter-hyperspace` MAY follow any movement action.
 - `hyperjump` MUST follow `enter-hyperspace` or `hyperjump` (§4.3).
 - `enter-hyperspace` and `hyperjump` MUST NOT appear inside a virtual bracket (`CYBERSPACE_V2.md` §8.11.4, rule 3). An identity MAY open a bracket after `enter-hyperspace` or `hyperjump`; for the rule above, an `exit-virtual` action stands for the action before its `enter-virtual` (§8.11.4, rule 8), so a traveler can play a game at their station or at a stop and ride on afterwards. The ride's work is seeded by its actual previous event, the `exit-virtual` action (§5.3).
@@ -414,6 +420,7 @@ In an ultrametric space, targets become reachable by becoming numerous, never by
 - v3 (this document): plane-bit rule with landfalls; boarding from anywhere at a deterministic station; seeded per-block ride work with sampled verification; toll reserved.
 - v3 revision (2026-09-28): the re-roll price on ride openings, with samples drawn from `G` (§5.5, §5.8).
 - v3 revision (2026-10-07): no zero-length ride (§5.6), with the §5.8 exemption limited to roots and openings; sector tags count toward validity, each carried exactly once (§1.3).
+- v3 revision (2026-10-08): a fork kills the chain, restoring the v1 rule (§8); every tag the chain rules read is carried exactly once with a well-formed value (§3.1, §5.2, §8).
 
 ## Appendix C: Reference implementations (non-normative)
 
