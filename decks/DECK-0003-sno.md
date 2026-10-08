@@ -450,7 +450,7 @@ An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload
 
 **A copy of someone else's object names the object it was copied from.** Two things make a copy. A placement that carries another author's payload inline (§3.2) instead of referencing it, so that what was built stays exactly as built. And a remix: a copy taken into a workshop, edited, and published under the editor's own key as a new `kind 33331` with a `d` of its own. Either way the original's author made the shape, and the copy says so.
 
-**Every copy and every remix carries the quote tag of NIP-18 naming the original's address:**
+**Every copy and every remix carries the quote tag of NIP-18 naming the original's address, except as below:**
 
 ```
 ["q", "33331:<original author pubkey>:<original d>", "<relay hint>"]
