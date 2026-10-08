@@ -101,6 +101,12 @@ Sector tags `X`, `Y`, `Z`, `S` for any event that carries a stop coordinate are 
 
 On the `enter-hyperspace` (§3.1) and `hyperjump` (§5.2) actions of this DECK, as on every base action, the sector tags are REQUIRED and count toward the event's validity (`CYBERSPACE_V2.md` §10): each of the four MUST appear exactly once, and an event whose sector tags are missing, appear more than once, or have values that do not equal the ones computed from its `C`, is invalid, and the chain is invalid from that event.
 
+### 1.4 The network (normative)
+
+The line is the block chain of Bitcoin mainnet, always. Wherever this DECK speaks of the network for chain validity, for the stops a ride passes and reaches, the station, the station set bound and the height `B`, it means Bitcoin mainnet. A `net` tag on an `enter-hyperspace` or `hyperjump` action is informational: chain validity never reads it, whatever its value, and it never selects another network.
+
+**Why always mainnet (non-normative):** There is one cyberspace, anchored to one Bitcoin. If an action could name its own network, two riders on different networks would have different stops and different stations, and readers would have to choose ride by ride which network to believe, so they would split over the same chain. Experiments on testnet or other networks belong on a separate relay, with rules of their own.
+
 ---
 
 ## 2. Block anchor events (kind 321)
@@ -124,7 +130,7 @@ Anchors published before this revision carry `C = merkle_root` for every block a
 
 ### 2.3 Validation (normative)
 
-An anchor is valid for a given stop iff `M` and `H` match the block at height `B` on the selected network, `P` matches its previous block hash, and `C` equals the derivation of §1 from `M` and `H`. How an implementation obtains block data is out of scope (full node, headers-only, trusted checkpoints).
+An anchor is valid for a given stop iff `M` and `H` match the block at height `B` on Bitcoin mainnet (§1.4), `P` matches its previous block hash, and `C` equals the derivation of §1 from `M` and `H`. How an implementation obtains block data is out of scope (full node, headers-only, trusted checkpoints).
 
 ### 2.4 Bulk distribution (non-normative)
 
@@ -164,7 +170,7 @@ Required tags:
 
 Each required tag MUST appear exactly once, with a well-formed value (§8).
 
-Optional: `net`.
+Optional: `net` (informational, never read, §1.4).
 
 ### 3.2 Entry proof (normative)
 
@@ -202,7 +208,7 @@ d(p, q) = max(find_lca_height(px, qx), find_lca_height(py, qy), find_lca_height(
 
 ### 4.2 Definition
 
-Let `C_e` be the coordinate of the identity's `enter-hyperspace` event, and let `A` be the **station set bound**: a block height declared in the `as_of` tag of the identity's first `hyperjump` event (§5.2). `A` MUST be a height that exists on the selected network and MUST be `≥ B_to`, the ride's destination height. Let `Stops(A)` be the set of all stops with height `≤ A`.
+Let `C_e` be the coordinate of the identity's `enter-hyperspace` event, and let `A` be the **station set bound**: a block height declared in the `as_of` tag of the identity's first `hyperjump` event (§5.2). `A` MUST be a height that exists on Bitcoin mainnet (§1.4) and MUST be `≥ B_to`, the ride's destination height. Let `Stops(A)` be the set of all stops with height `≤ A`.
 
 ```
 station(C_e, A) = the stop s in Stops(A) minimising d(C_e, C_s),
@@ -265,7 +271,7 @@ Required tags:
 
 Each required tag MUST appear exactly once, with a well-formed value, and so MUST `as_of` on the first ride after boarding (§8).
 
-Optional: `net`; `e` tags with markers `hyperjump_from` / `hyperjump_to` referencing anchor events.
+Optional: `net` (informational, never read, §1.4); `e` tags with markers `hyperjump_from` / `hyperjump_to` referencing anchor events.
 
 ### 5.3 Per-block work (normative)
 
@@ -313,7 +319,7 @@ idx_i = int(sha256(HYPERSPACE_SAMPLE_DOMAIN || G || be32(i))) mod n
 **Level 1 verification (routine):**
 
 1. Check chain structure, `c`, that `B` differs from `from_height` (§5.6), the sector tags (§1.3), and the §4.3 chain rule (recomputing the station from the declared `as_of` bound when the previous event is an `enter-hyperspace`; the bound MUST reference an existing height and be `≥ B_to`).
-2. Check `C` equals the stop coordinate for height `B` per §1 on the selected network.
+2. Check `C` equals the stop coordinate for height `B` per §1 on Bitcoin mainnet (§1.4).
 3. Recompute `G` from `previous_event_id`, `root` and the `mn` nonce, and reject unless `G × A < 2^256` (one height-16 tree).
 4. Recompute the sample indices from `G`.
 5. For each sampled index, recompute `leaf_b` from scratch per §5.3 (this requires the block hash of `b` and repeats the block's Cantor work), and verify its inclusion path to `root`.
@@ -366,12 +372,12 @@ A boarding toll, fixed work paid by `enter-hyperspace` beyond the temporal-axis 
 ## 8. Equivocation and chain integrity (normative)
 
 - When, during the walk of `CYBERSPACE_V2.md` §8.7.3 rule 3, more than one distinct movement event (distinct by id) whose `e` genesis names the newest spawn names the current event as its `previous_event_id`, the chain has forked, and a fork kills it (`CYBERSPACE_V2.md` §8.7.3, rule 4): the chain is invalid from the spawn, and the identity stands at its spawn coordinate until it respawns. This restores the rule of the v1 draft of this section, which made both branches invalid. An interim version of this section deferred to a base rule under which the branch signed first continued the chain; that rule is withdrawn, because together with an invalid chain standing at its last valid position it let an identity rewind to any position it had held (`CYBERSPACE_V2.md` §8.7.3, "Why a fork kills the chain").
-- **Each tag read exactly once (normative):** Every tag of this DECK's actions that a chain rule reads MUST appear on the event exactly once, with a well-formed value, as `CYBERSPACE_V2.md` §8.8 requires for every chain event. On both actions these are `A`, `e` genesis, `e` previous, `c`, `C`, `proof` and the sector tags; on every `hyperjump` also `from_height`, `B`, `mp` and `mn`; and on the first `hyperjump` after an `enter-hyperspace` also `as_of` (§4.3). A tag whose value is missing or empty still counts as that tag and is malformed, so an event that carries one, or carries any of these tags twice, is invalid, and the chain is invalid from that event. The one exception is §5.8: a ride listed in `decks/grandfathered-v1-hyperjumps.txt` MAY lack `mn`, and carries it at most once. The listing waives only the re-check of the ride's root and openings; its `proof` and `mp` tags, like the rest, still MUST appear exactly once with a well-formed value. Tags these rules do not read, such as `net` and the `e` tags marked `hyperjump_from` or `hyperjump_to`, are not constrained.
+- **Each tag read exactly once (normative):** Every tag of this DECK's actions that a chain rule reads MUST appear on the event exactly once, with a well-formed value, as `CYBERSPACE_V2.md` §8.8 requires for every chain event. On both actions these are `A`, `e` genesis, `e` previous, `c`, `C`, `proof` and the sector tags; on every `hyperjump` also `from_height`, `B`, `mp` and `mn`; and on the first `hyperjump` after an `enter-hyperspace` also `as_of` (§4.3). A tag whose value is missing or empty still counts as that tag and is malformed, so an event that carries one, or carries any of these tags twice, is invalid, and the chain is invalid from that event. The one exception is §5.8: a ride listed in `decks/grandfathered-v1-hyperjumps.txt` MAY lack `mn`, and carries it at most once. The listing waives only the re-check of the ride's root and openings; its `proof` and `mp` tags, like the rest, still MUST appear exactly once with a well-formed value. Tags these rules do not read, such as `net` (§1.4) and the `e` tags marked `hyperjump_from` or `hyperjump_to`, are not constrained.
 - **Why (non-normative):** Readers must never disagree about a ride. When a tag the rules read can appear twice, readers that take different copies disagree about the same ride, for example about its destination height or its station bound, and so about where the identity stands. Validity therefore rejects any second copy, so no verdict rests on which copy a reader chose.
 - `enter-hyperspace` MAY follow any movement action.
 - `hyperjump` MUST follow `enter-hyperspace` or `hyperjump` (§4.3).
 - `enter-hyperspace` and `hyperjump` MUST NOT appear inside a virtual bracket (`CYBERSPACE_V2.md` §8.11.4, rule 3). An identity MAY open a bracket after `enter-hyperspace` or `hyperjump`; for the rule above, an `exit-virtual` action stands for the action before its `enter-virtual` (§8.11.4, rule 8), so a traveler can play a game at their station or at a stop and ride on afterwards. The ride's work is seeded by its actual previous event, the `exit-virtual` action (§5.3).
-- A stop's coordinate MUST be verified against Bitcoin consensus for the selected network; implementations SHOULD treat stops with fewer than six confirmations as provisional and avoid them as destinations.
+- A stop's coordinate MUST be verified against Bitcoin mainnet consensus (§1.4); implementations SHOULD treat stops with fewer than six confirmations as provisional and avoid them as destinations.
 
 ---
 
@@ -420,7 +426,7 @@ In an ultrametric space, targets become reachable by becoming numerous, never by
 - v3 (this document): plane-bit rule with landfalls; boarding from anywhere at a deterministic station; seeded per-block ride work with sampled verification; toll reserved.
 - v3 revision (2026-09-28): the re-roll price on ride openings, with samples drawn from `G` (§5.5, §5.8).
 - v3 revision (2026-10-07): no zero-length ride (§5.6), with the §5.8 exemption limited to roots and openings; sector tags count toward validity, each carried exactly once (§1.3).
-- v3 revision (2026-10-08): a fork kills the chain, restoring the v1 rule (§8); every tag the chain rules read is carried exactly once with a well-formed value (§3.1, §5.2, §8).
+- v3 revision (2026-10-08): a fork kills the chain, restoring the v1 rule (§8); every tag the chain rules read is carried exactly once with a well-formed value (§3.1, §5.2, §8); the network is Bitcoin mainnet, always, and a `net` tag on an action is never read (§1.4).
 
 ## Appendix C: Reference implementations (non-normative)
 
