@@ -5,7 +5,7 @@ Title: Hyperspace (Bitcoin block transit)
 Status: Draft v3 (supersedes the v2 draft of 2026-04-16 and the v1 draft of 2026-02-28)
 Mandatory: yes. Every verifier implements this DECK, because a `hyperjump` moves an identity (`CYBERSPACE_V2.md` §8.9).
 Created: 2026-02-28
-Last updated: 2026-10-07
+Last updated: 2026-10-08
 Requires: `CYBERSPACE_V2.md` (spec version `2026-03-16-h34-corrected`)
 
 ## Abstract
@@ -99,7 +99,7 @@ Reference implementation: `decks/landfall-reference.py` in this repository (stdl
 
 Sector tags `X`, `Y`, `Z`, `S` for any event that carries a stop coordinate are computed from `C` per `CYBERSPACE_V2.md` §10, not from the merkle root.
 
-On the `enter-hyperspace` (§3.1) and `hyperjump` (§5.2) actions of this DECK, as on every base action, the sector tags are REQUIRED and count toward the event's validity (`CYBERSPACE_V2.md` §10): an event whose sector tags are missing, or whose values do not equal the ones computed from its `C`, is invalid, and the chain is invalid from that event.
+On the `enter-hyperspace` (§3.1) and `hyperjump` (§5.2) actions of this DECK, as on every base action, the sector tags are REQUIRED and count toward the event's validity (`CYBERSPACE_V2.md` §10): each of the four MUST appear exactly once, and an event whose sector tags are missing, appear more than once, or have values that do not equal the ones computed from its `C`, is invalid, and the chain is invalid from that event.
 
 ---
 
@@ -160,7 +160,7 @@ Required tags:
 - `c`: `["c", "<current_coord_hex>"]`
 - `C`: `["C", "<current_coord_hex>"]` (MUST equal `c`; the identity does not move)
 - `proof`: `["proof", "<proof_hash_hex>"]` per §3.2
-- Sector tags from `C` (§1.3; missing or mismatched sector tags make the event invalid)
+- Sector tags from `C` (§1.3; missing, duplicated or mismatched sector tags make the event invalid)
 
 Optional: `net`.
 
@@ -259,7 +259,7 @@ Required tags:
 - `proof`: `["proof", "<merkle_root_hex>"]` per §5.4
 - `mp`: `["mp", "<openings>"]` per §5.5
 - `mn`: `["mn", "<nonce_hex>"]`: the re-roll nonce of §5.5, as exactly 16 lowercase hex characters, big-endian
-- Sector tags from `C` (§1.3; missing or mismatched sector tags make the event invalid)
+- Sector tags from `C` (§1.3; missing, duplicated or mismatched sector tags make the event invalid)
 
 Optional: `net`; `e` tags with markers `hyperjump_from` / `hyperjump_to` referencing anchor events.
 
@@ -413,7 +413,7 @@ In an ultrametric space, targets become reachable by becoming numerous, never by
 - v2 (2026-04-16): sector-plane entry (units error, see Appendix A); Cantor path tree over block heights as the ride proof (free in practice).
 - v3 (this document): plane-bit rule with landfalls; boarding from anywhere at a deterministic station; seeded per-block ride work with sampled verification; toll reserved.
 - v3 revision (2026-09-28): the re-roll price on ride openings, with samples drawn from `G` (§5.5, §5.8).
-- v3 revision (2026-10-07): no zero-length ride (§5.6), with the §5.8 exemption limited to roots and openings; sector tags count toward validity (§1.3).
+- v3 revision (2026-10-07): no zero-length ride (§5.6), with the §5.8 exemption limited to roots and openings; sector tags count toward validity, each carried exactly once (§1.3).
 
 ## Appendix C: Reference implementations (non-normative)
 

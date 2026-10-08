@@ -1,7 +1,7 @@
 # Cyberspace v2: Protocol Specification
 
 **Date:** February 10, 2026
-**Last updated:** October 7, 2026
+**Last updated:** October 8, 2026
 **Status:** Design complete (spec); reference implementation in progress
 
 ---
@@ -1273,9 +1273,7 @@ The event `id` MUST be computed as NIP-01 canonical serialization:
 - Encode as UTF-8 JSON with no whitespace (equivalent to Python `json.dumps(..., separators=(",", ":"), ensure_ascii=False)`)
 - Hash: `sha256(serialized_bytes)`
 
-**Signature (`sig`):** For published events, `sig` MUST be a valid Schnorr signature over the event `id` as required by NIP-01.
-
-Note: some prototypes may leave `sig` blank for local-only chains and sign at publish-time; that is not a wire-format requirement.
+**Signature (`sig`):** `sig` MUST be a valid Schnorr signature over the event `id` as required by NIP-01. An event whose `id` or `sig` fails these checks is not authentic, and a reader discards it before resolving a chain (§8.7.3).
 
 ### 8.3 Spawn event (first event)
 
@@ -1286,7 +1284,7 @@ Required tags:
 - `C` tag: `["C", "<coord_hex>"]`
   - `coord_hex` MUST be a 32-byte lowercase hex string (64 hex chars, no `0x` prefix)
   - For spawn events, `coord_hex` MUST equal the event `pubkey` (spawn coordinate)
-- Sector tags: `X`, `Y`, `Z`, `S` computed from `C` (per §10). Missing sector tags, or values that do not equal the ones computed from `C`, make the event invalid.
+- Sector tags: `X`, `Y`, `Z`, `S` computed from `C` (per §10). Each MUST appear exactly once. Missing sector tags, a sector tag that appears more than once, or values that do not equal the ones computed from `C`, make the event invalid.
 
 ### 8.4 Hop event
 
@@ -1299,7 +1297,7 @@ Required tags:
 - `c` tag: `["c", "<prev_coord_hex>"]` (32-byte lowercase hex string)
 - `C` tag: `["C", "<coord_hex>"]` (32-byte lowercase hex string)
 - `proof` tag: `["proof", "<proof_hash_hex>"]` (32-byte lowercase hex string)
-- Sector tags: `X`, `Y`, `Z`, `S` computed from `C` (per §10). Missing sector tags, or values that do not equal the ones computed from `C`, make the event invalid.
+- Sector tags: `X`, `Y`, `Z`, `S` computed from `C` (per §10). Each MUST appear exactly once. Missing sector tags, a sector tag that appears more than once, or values that do not equal the ones computed from `C`, make the event invalid.
 
 ### 8.5 Sidestep event
 
@@ -1318,7 +1316,7 @@ Required tags:
 - `hx` tag: `["hx", "<lca_height_x>"]` (LCA height on X axis, decimal string)
 - `hy` tag: `["hy", "<lca_height_y>"]` (LCA height on Y axis, decimal string)
 - `hz` tag: `["hz", "<lca_height_z>"]` (LCA height on Z axis, decimal string)
-- Sector tags: `X`, `Y`, `Z`, `S` computed from `C` (per §10). Missing sector tags, or values that do not equal the ones computed from `C`, make the event invalid.
+- Sector tags: `X`, `Y`, `Z`, `S` computed from `C` (per §10). Each MUST appear exactly once. Missing sector tags, a sector tag that appears more than once, or values that do not equal the ones computed from `C`, make the event invalid.
 
 **Openings encoding:** Each per-axis segment in the `mp` tag is the concatenation of `SIDESTEP_SAMPLES + 1` inclusion proofs in the order defined by §6.10 (destination first, then samples in ascending `i`). Each proof is `h` sibling hashes from leaf to root, hex-encoded, so an axis with LCA height `h` contributes exactly `64 × h × (SIDESTEP_SAMPLES + 1)` hex characters. For trivial axes (`h = 0`), the segment is an empty string between colons.
 
@@ -1401,7 +1399,9 @@ An identity's **active chain** is the one line of its movement events that says 
 
 Note (non-normative): `created_at` is set by the signer, so an identity can sign a branch that claims to be older than one it already published. The rule therefore guarantees that readers agree, not that an identity cannot rewrite its own chain. Both branches stay on relays, signed, so the fork is always detectable (§12.1).
 
-**Validity and position (normative):** Resolution comes first and validity second. Rules 1 to 5 choose the active chain from authentic events by their links, their `created_at` and their ids alone, without checking any proof or tag, and validity is then decided on the chain they chose, one event at a time, from the spawn forward. An event that breaks any of the chain rules (§8.12) is **invalid**, and the chain is invalid from that event: the event and every event after it on the active chain count for nothing. The identity's position is then its **last valid position**, the position the chain would give it if it ended at the last valid event before the first invalid one. In the ordinary case that is the `C` of the last valid event. When the last valid event is a skipped action, or lies inside a virtual bracket, it is the position §8.9 (item 5) and §8.11.4 (rule 7) give a chain that ends there. When the spawn itself is invalid there is no valid event, and the position is the spawn coordinate, the coordinate of the identity's pubkey (§3.2). An invalid chain is **frozen** at that position: no event published after the invalid one on that chain can move the identity, however valid it is on its own, and only a respawn starts a chain that can be valid again (§3.2).
+**Validity and position (normative):** Resolution comes first and validity second. Rules 1 to 5 choose the active chain from authentic events by their links, their `created_at` and their ids alone, without checking any proof or tag, and validity is then decided on the chain they chose, one event at a time, from the spawn forward. A fork is therefore decided by signing time before any branch is checked: a branch signed earlier continues the chain even when it is invalid, and a later branch does not replace it even when that branch is valid (rule 4). An event that breaks any of the chain rules (§8.12) is **invalid**, and the chain is invalid from that event: the event and every event after it on the active chain count for nothing. The identity's position is then its **last valid position**, the position the chain would give it if it ended at the last valid event before the first invalid one. In the ordinary case that is the `C` of the last valid event. When the last valid event is a skipped action, or lies inside a virtual bracket, it is the position §8.9 (item 5) and §8.11.4 (rule 7) give a chain that ends there. When the spawn itself is invalid there is no valid event, and the position is the spawn coordinate, the coordinate of the identity's pubkey (§3.2). An invalid chain is **frozen** at that position: no event published after the invalid one on that chain can move the identity, however valid it is on its own, and only a respawn starts a chain that can be valid again (§3.2).
+
+**Why resolution comes before validity (non-normative):** Every reader then agrees on the active chain without verifying a single proof, so readers that verify more, less or nothing at all still point at the same chain, and they can disagree only about whether it is valid, which each can settle by checking the proofs.
 
 **Why the newest spawn wins even when it is invalid (non-normative):** A spawn is the identity's own statement that it starts over, and because forged events are discarded before resolution, only the identity's own client can publish an invalid one. Resolution never looks at validity, so every reader holding the same events resolves the same chain before it decides anything about that chain. Falling back to an older spawn would make resolution depend on validity, and it would revive a chain the identity had already chosen to end. The newest spawn therefore decides, and the remedy for an invalid spawn is another spawn.
 
@@ -1525,7 +1525,7 @@ Required tags:
 - `C` tag: `["C", "<coord_hex>"]`: MUST equal the `c` tag. Entering a game does not move the identity, just as boarding hyperspace does not (DECK-0001 §3.1). Where the identity starts inside the game, if the game has such a thing, is the game's to say, in a tag the game defines.
 - `region` tag: `["region", "<coord_hex>", "<H>"]`: the aligned cube the game is played in, declared in the clear (below)
 - `p` tag marked `game`: `["p", "<game_pubkey>", "<relay_hint>", "game"]`: the game's identity, a 32-byte lowercase hex pubkey. An `enter-virtual` action MUST carry exactly one `p` tag marked `game`. `relay_hint` MAY be an empty string.
-- Sector tags: `X`, `Y`, `Z`, `S` computed from `C`, which is the base position (per §10). Missing sector tags, or values that do not equal the ones computed from `C`, make the event invalid.
+- Sector tags: `X`, `Y`, `Z`, `S` computed from `C`, which is the base position (per §10). Each MUST appear exactly once. Missing sector tags, a sector tag that appears more than once, or values that do not equal the ones computed from `C`, make the event invalid.
 
 **The region (normative):** The region is an aligned cube of height `H`, in the same terms as a hint box whose three heights are equal (§7.7):
 - `H`: an integer in `[0, 85]`, written as a decimal string with no sign and no leading zeros except `"0"`
@@ -1533,7 +1533,9 @@ Required tags:
 - the region is `[bx, bx + 2^H) × [by, by + 2^H) × [bz, bz + 2^H)` on plane `P`
 - a coordinate `(x, y, z, p)` lies inside the region when `p = P` and `x >> H = bx >> H`, `y >> H = by >> H` and `z >> H = bz >> H`
 
-A base verifier checks the region for form only: the tag has the shape above, the base is aligned, and `H` is canonical. It does not check that the base position, or any coordinate a game puts on its actions, lies inside the region. What the region means for the game's actions is the game's to decide.
+A base verifier checks the region for form only: the tag has the shape above, the base is aligned, and `H` is canonical. It does not check that the base position, or any coordinate a game puts on its actions, lies inside the region. The base protocol does not require the base position to lie in or near the declared region, so an identity can play a game without traveling to it. What the region means for the game's actions is the game's to decide.
+
+**Proximity is the game's (non-normative):** A game that wants its players to be near the place it is played enforces that itself, for example by checking that a player's chain head lies within some distance of the region before it honors the player's entry. This proximal validation is optional. It belongs to the game, and to the future Games DECK (DECK-0002, §8.11.7), and it has no effect on the validity of any chain under the base protocol.
 
 **Why the region is declared in the clear:** Any reader, including a client that has never heard of the game, can then see where the game says it is played, and a client can draw that box while the identity is inside it (§8.11.7). A `lookup_id` (§7.2) is a hash, and it names a region only to someone who has already computed that region's key, so it cannot serve this purpose. Publishing the box gives away nothing the game did not choose to say.
 
@@ -1561,7 +1563,7 @@ Required tags:
 - `e` previous: `["e", "<previous_event_id>", "", "previous"]`: the last virtual action, or the `enter-virtual` action itself when no virtual action came between
 - `e` entry: `["e", "<enter_virtual_event_id>", "", "entry"]`: the `enter-virtual` action this closes
 - `C` tag: `["C", "<coord_hex>"]`: MUST equal the `c` tag of the `enter-virtual` action. This is the base position, restored.
-- Sector tags: `X`, `Y`, `Z`, `S` computed from `C`, which is the base position (per §10). Missing sector tags, or values that do not equal the ones computed from `C`, make the event invalid.
+- Sector tags: `X`, `Y`, `Z`, `S` computed from `C`, which is the base position (per §10). Each MUST appear exactly once. Missing sector tags, a sector tag that appears more than once, or values that do not equal the ones computed from `C`, make the event invalid.
 
 Optional tags:
 - `c` tag: `["c", "<coord_hex>"]`. An `exit-virtual` action MAY carry a `c` tag, for example the identity's last position inside the game, with whatever meaning the game gives it. A base verifier does not check it (§8.11.4, rule 4).
@@ -1582,9 +1584,9 @@ A respawn is never inside a bracket. A spawn names no previous event, so it star
 #### 8.11.5 Verifying a bracket (base)
 
 A base verifier checks a bracket as a unit. To verify a bracket, it:
-1. Checks the `enter-virtual` action: it carries exactly one `A` tag (§8.8); its `c` equals the `C` of the nearest recognized action before it (§8.9); its `C` equals its `c` (§8.11.1); its sector tags equal the values computed from its `C` (§10); it carries exactly one `p` tag marked `game`, holding a 32-byte lowercase hex pubkey; and its `region` tag is well formed, with an aligned base and a canonical `H` (§8.11.1).
+1. Checks the `enter-virtual` action: it carries exactly one `A` tag (§8.8); its `c` equals the `C` of the nearest recognized action before it (§8.9); its `C` equals its `c` (§8.11.1); it carries each sector tag exactly once, with the value computed from its `C` (§10); it carries exactly one `p` tag marked `game`, holding a 32-byte lowercase hex pubkey; and its `region` tag is well formed, with an aligned base and a canonical `H` (§8.11.1).
 2. Checks each following event, until an `exit-virtual` action or the end of the chain: it is linked, with its `e` genesis tag naming the current spawn and its `e` previous tag naming the event before it (resolution already guarantees both, §8.7.3); it carries exactly one `A` tag (§8.8); and that tag is not a reserved name (rule 3). Nothing else about it is checked (rule 4).
-3. Checks the `exit-virtual` action: it carries exactly one `A` tag (§8.8); its `e` entry tag names the open `enter-virtual` action (rule 6); its `C` equals that action's `c` (rule 2); and its sector tags equal the values computed from its `C` (§10). Its `c` is not checked (rule 4).
+3. Checks the `exit-virtual` action: it carries exactly one `A` tag (§8.8); its `e` entry tag names the open `enter-virtual` action (rule 6); its `C` equals that action's `c` (rule 2); and it carries each sector tag exactly once, with the value computed from its `C` (§10). Its `c` is not checked (rule 4).
 4. Continues ordinary verification after the `exit-virtual` action, whose `C` is the identity's base position: the `c` of the next recognized action MUST equal it (§8.9).
 
 A base verifier checks the game's `p` tag and the `region` tag only for form. It does not contact the game, it does not check that anything lies inside the region, and it does not check virtual actions against the names the game uses; that is the game's work (§8.11.7).
@@ -1615,7 +1617,7 @@ The chain rules are the rules that decide which movement chains are valid and wh
 | Revision | Changes |
 |---|---|
 | (unnamed, before 2026-09-28) | Chains as defined by §3.2 and §8.3 to §8.7.2, with sidestep proofs of version 2 (§6.15). Forks were not resolved by the base protocol. |
-| `2026-09-28-virtual-brackets` | Sidestep proofs of version 3, with the re-roll price and the grandfathered list (§6.16). DECK-0001 (hyperspace) made mandatory, with ride openings of version 2 (DECK-0001 §5.8). The fork rule (§8.7.3). Virtual brackets (§8.11). Movement is universal: a DECK whose actions change an identity's position is mandatory, an action a verifier does not recognize is skipped, and a position change across skipped actions makes the chain invalid (§8.9). Folded in on 2026-10-07: events that are not authentic (an invalid NIP-01 id or signature, or another author) are discarded before resolution, and a branch through one is cut off (§8.7.3); the newest spawn wins even when it is invalid, with no fallback to an older spawn (§3.2, §8.7.3); an invalid chain is frozen at its last valid position until the identity respawns (§3.2, §8.7.3); every event carries exactly one `A` tag (§8.8); a skipped action is checked only for being authentic, linked and carrying one `A` tag (§8.9); a virtual bracket is opaque and checked as a unit, its entry does not move the identity, and nothing inside it but links, the `A` tag and reserved names is checked (§8.9, §8.11); rule 3 of §8.11.4 reserves every action of the base protocol and of a mandatory DECK (§8.11.4); sector tags count toward the validity of every base and mandatory DECK action (§10, §8.3 to §8.5, §8.11.1, §8.11.3, DECK-0001 §1.3); and there is no zero-length ride (DECK-0001 §5.2, §5.6, §5.8). |
+| `2026-09-28-virtual-brackets` | Sidestep proofs of version 3, with the re-roll price and the grandfathered list (§6.16). DECK-0001 (hyperspace) made mandatory, with ride openings of version 2 (DECK-0001 §5.8). The fork rule (§8.7.3). Virtual brackets (§8.11). Movement is universal: a DECK whose actions change an identity's position is mandatory, an action a verifier does not recognize is skipped, and a position change across skipped actions makes the chain invalid (§8.9). Folded in on 2026-10-07: events that are not authentic (an invalid NIP-01 id or signature, or another author) are discarded before resolution, and a branch through one is cut off (§8.7.3); the newest spawn wins even when it is invalid, with no fallback to an older spawn (§3.2, §8.7.3); an invalid chain is frozen at its last valid position until the identity respawns (§3.2, §8.7.3); every event carries exactly one `A` tag (§8.8); a skipped action is checked only for being authentic, linked and carrying one `A` tag (§8.9); a virtual bracket is opaque and checked as a unit, its entry does not move the identity, and nothing inside it but links, the `A` tag and reserved names is checked (§8.9, §8.11); rule 3 of §8.11.4 reserves every action of the base protocol and of a mandatory DECK (§8.11.4); sector tags count toward the validity of every base and mandatory DECK action (§10, §8.3 to §8.5, §8.11.1, §8.11.3, DECK-0001 §1.3); and there is no zero-length ride (DECK-0001 §5.2, §5.6, §5.8). Clarified on 2026-10-08: a fork is decided by signing time before validity is checked, so an earlier invalid branch continues the chain (§8.7.3); an event without a valid signature is discarded even when it was never published (§8.2); each sector tag appears exactly once (§10); and the base position need not lie in or near a bracket's region (§8.11.1). |
 
 Note (non-normative): the rulings of 2026-10-07 were folded into `2026-09-28-virtual-brackets` rather than named as a new revision, because no verifier had shipped claiming that revision when they were made. A chain signed before 2026-10-07 can be invalid under them, for example because its sector tags do not match its `C`; such a chain is frozen at its last valid position like any other invalid chain (§8.7.3).
 
@@ -1811,7 +1813,7 @@ Tag formatting rules (normative):
 - `sx`, `sy`, `sz` MUST be encoded as base-10 integers (strings), with no leading `+` and no leading zeros (except `"0"`).
 - `S` MUST be exactly `"<sx>-<sy>-<sz>"`.
 
-**Movement events (kind 3333, normative):** On every movement event whose action belongs to the base protocol or to a mandatory DECK, which at this revision are `spawn`, `hop`, `sidestep`, `enter-hyperspace`, `hyperjump`, `enter-virtual` and `exit-virtual`, the four sector tags above are REQUIRED, computed from the event's `C`, and are part of the event's validity. An event whose sector tags are missing, or whose values do not equal the ones computed from its `C` in the format above, is invalid, and the chain is invalid from that event (§8.7.3). Sector tags are not required on the virtual actions inside a bracket, which the base protocol does not read (§8.11.4, rule 4), and they are not checked on skipped actions, whose tags belong to the DECK that defines them (§8.9).
+**Movement events (kind 3333, normative):** On every movement event whose action belongs to the base protocol or to a mandatory DECK, which at this revision are `spawn`, `hop`, `sidestep`, `enter-hyperspace`, `hyperjump`, `enter-virtual` and `exit-virtual`, the four sector tags above are REQUIRED, computed from the event's `C`, and are part of the event's validity. An event whose sector tags are missing, or whose values do not equal the ones computed from its `C` in the format above, is invalid, and the chain is invalid from that event (§8.7.3). Each of the four MUST appear exactly once: an event carrying two or more of any one sector tag (two `X` tags, for example, or two `S` tags) is invalid in the same way, exactly as an event carrying two `A` tags is (§8.8). Sector tags are not required on the virtual actions inside a bracket, which the base protocol does not read (§8.11.4, rule 4), and they are not checked on skipped actions, whose tags belong to the DECK that defines them (§8.9).
 
 **Why sector tags count toward validity (non-normative):** Relays index single-letter tags, and the sector tags are how a reader asks a relay what is in a sector or along a slice. A reader that asks for a sector receives the events whose tags say they are there, and it cannot tell from the query whether a tag tells the truth. If sector tags carried no weight, an identity could stand in one place while its events were indexed as somewhere else: hidden from everyone who looked where it stood, and shown to everyone who looked where it was not. Making the tags part of validity means that a movement event found by its sector is in that sector, or its chain is invalid. A client computes the tags from `C` as it publishes, so the rule costs an honest client nothing.
 
