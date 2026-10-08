@@ -5,7 +5,7 @@ Title: Hyperspace (Bitcoin block transit)
 Status: Draft v3 (supersedes the v2 draft of 2026-04-16 and the v1 draft of 2026-02-28)
 Mandatory: yes. Every verifier implements this DECK, because a `hyperjump` moves an identity (`CYBERSPACE_V2.md` §8.9).
 Created: 2026-02-28
-Last updated: 2026-10-02
+Last updated: 2026-10-08
 Requires: `CYBERSPACE_V2.md` (spec version `2026-03-16-h34-corrected`)
 
 ## Abstract
@@ -99,6 +99,8 @@ Reference implementation: `decks/landfall-reference.py` in this repository (stdl
 
 Sector tags `X`, `Y`, `Z`, `S` for any event that carries a stop coordinate are computed from `C` per `CYBERSPACE_V2.md` §10, not from the merkle root.
 
+On the `enter-hyperspace` (§3.1) and `hyperjump` (§5.2) actions of this DECK, as on every base action, the sector tags are REQUIRED and count toward the event's validity (`CYBERSPACE_V2.md` §10): each of the four MUST appear exactly once, and an event whose sector tags are missing, appear more than once, or have values that do not equal the ones computed from its `C`, is invalid, and the chain is invalid from that event.
+
 ---
 
 ## 2. Block anchor events (kind 321)
@@ -158,7 +160,7 @@ Required tags:
 - `c`: `["c", "<current_coord_hex>"]`
 - `C`: `["C", "<current_coord_hex>"]` (MUST equal `c`; the identity does not move)
 - `proof`: `["proof", "<proof_hash_hex>"]` per §3.2
-- Sector tags from `C`
+- Sector tags from `C` (§1.3; missing, duplicated or mismatched sector tags make the event invalid)
 
 Optional: `net`.
 
@@ -178,7 +180,7 @@ This binds the boarding to the identity's chain position and cannot be precomput
 - After `enter-hyperspace`, the identity's location is still `C`.
 - The identity's location changes only when a `hyperjump` action is published (§5). After the first ride, its location is the destination stop's coordinate.
 - A `hop` or `sidestep` published immediately after `enter-hyperspace` moves from `C` as usual and cancels the boarding.
-- Publishing `enter-hyperspace` while already located at a stop is valid; the station is then that stop (LCA 0).
+- Publishing `enter-hyperspace` while already located at a stop is valid; the station is then that stop (LCA 0). The first ride then leaves that stop for a different one, because there is no zero-length ride (§5.6).
 
 ---
 
@@ -252,12 +254,12 @@ Required tags:
 - `c`: `["c", "<origin_coord_hex>"]`: the identity's current coordinate (for the first ride after boarding, the `enter-hyperspace` coordinate; otherwise the previous stop's coordinate)
 - `C`: `["C", "<destination_stop_coord_hex>"]`
 - `from_height`: `["from_height", "<B_from>"]` (base-10)
-- `B`: `["B", "<B_to>"]` (destination height, base-10; `B_to != B_from` unless §5.6 applies)
+- `B`: `["B", "<B_to>"]` (destination height, base-10; `B_to != B_from` always, because there is no zero-length ride, §5.6)
 - `as_of`: `["as_of", "<A>"]` (the station set bound, base-10; REQUIRED on the first ride after boarding, per §4.2; `A ≥ B_to`)
 - `proof`: `["proof", "<merkle_root_hex>"]` per §5.4
 - `mp`: `["mp", "<openings>"]` per §5.5
 - `mn`: `["mn", "<nonce_hex>"]`: the re-roll nonce of §5.5, as exactly 16 lowercase hex characters, big-endian
-- Sector tags from `C`
+- Sector tags from `C` (§1.3; missing, duplicated or mismatched sector tags make the event invalid)
 
 Optional: `net`; `e` tags with markers `hyperjump_from` / `hyperjump_to` referencing anchor events.
 
@@ -306,7 +308,7 @@ idx_i = int(sha256(HYPERSPACE_SAMPLE_DOMAIN || G || be32(i))) mod n
 
 **Level 1 verification (routine):**
 
-1. Check chain structure, `c`, and the §4.3 chain rule (recomputing the station from the declared `as_of` bound when the previous event is an `enter-hyperspace`; the bound MUST reference an existing height and be `≥ B_to`).
+1. Check chain structure, `c`, that `B` differs from `from_height` (§5.6), the sector tags (§1.3), and the §4.3 chain rule (recomputing the station from the declared `as_of` bound when the previous event is an `enter-hyperspace`; the bound MUST reference an existing height and be `≥ B_to`).
 2. Check `C` equals the stop coordinate for height `B` per §1 on the selected network.
 3. Recompute `G` from `previous_event_id`, `root` and the `mn` nonce, and reject unless `G × A < 2^256` (one height-16 tree).
 4. Recompute the sample indices from `G`.
@@ -317,9 +319,15 @@ idx_i = int(sha256(HYPERSPACE_SAMPLE_DOMAIN || G || be32(i))) mod n
 
 **Why sampling, and why the price (non-normative).** Level 1 costs `SAMPLES` blocks of work instead of `n`. A prover can skip blocks: it computes only some leaves, puts fabricated values in the rest, and publishes the root. A sample landing on a fabricated leaf fails, so a prover that did a fraction `f` of the blocks passes one set of samples with probability `f^SAMPLES`. Before §5.8 the samples came from the root alone, and a new set cost a few hashes (change one fabricated leaf, rehash its path). Skipping 10 or 20 percent of a ride then cost almost nothing extra, and about 2^40 cheap attempts bought roughly half of it. The re-roll price closes this: each new set of samples costs about one thirty-second of the ride, and at that price no fraction of skipped blocks lowers the expected cost of an accepted proof. The honest overhead is the same one thirty-second, 3 to 4 percent. The openings are about 40 KB for a full-length ride, within common relay event-size limits.
 
-### 5.6 Zero-length ride
+### 5.6 No zero-length ride (normative)
 
-If `station(C_e, B_to) == B_to` (the identity's nearest stop is its destination), the ride has `n = 0`. The event carries `from_height == B`, `proof` of 64 zero characters, an `mn` of 16 zero characters, and an empty `mp` value; there is no price and nothing to sample. This relocates the identity from `C_e` to the stop and is the intended meaning of boarding at one's station.
+There is no zero-length ride. Every `hyperjump` passes at least one block: its `B` MUST NOT equal its `from_height`, and a ride whose `B` equals its `from_height` is invalid, and the chain is invalid from that event (`CYBERSPACE_V2.md` §8.7.3). This holds for every ride, including the first ride after boarding, whose `from_height` is the station.
+
+Boarding does not put an identity at its station. After `enter-hyperspace` the identity is still at `C_e` (§3.3), and the station is only where the line begins for it. An identity that wants to stand at its own station's coordinate takes two rides: the first goes from the station to any different stop, and the second, whose `from_height` is the first ride's `B` (§4.3), comes back to the station. Each ride passes at least one block and carries the work for every block it passes (§5.3).
+
+**Why there is no zero-length ride (non-normative):** Boarding lets an identity travel from its station to a destination block. It was never meant to move an identity onto its station with no ride at all. A ride is travel along the line, and its proof is work for every block it passes; a ride that passes no block carries no work and proves nothing.
+
+An earlier version of this section defined a zero-length ride, with `from_height == B`, a `proof` of 64 zero characters, an `mn` of 16 zero characters and an empty `mp`, as the way to board at one's own station. It is removed without a grandfathered list. When it was removed, only three zero-length rides had ever been published (`17f65f44a59ac5a8d6bc6a6de3d7f2dc6f732b1171303061f0c7aa4af8dbe85a`, `331059b35b86754a9b9a0be15c3af1b89c7a1918081ac5df7ae7d90fdd39d694` and `d457ac3a47ce93463c2f89869774e86bf7518ef79657cab6dd0fbc66993cb37d`), all on one chain that was already invalid for another reason. All three are on the list of §5.8, whose exemption covers their roots and openings and nothing else, so this section makes them invalid.
 
 ### 5.7 Cost expectations (non-normative)
 
@@ -331,7 +339,7 @@ The re-roll price of §5.5 is a breaking change to ride verification. The per-bl
 
 - `HYPERSPACE_SAMPLE_DOMAIN` is bumped from `CYBERSPACE_HYPERSPACE_SAMPLE_V1` to `CYBERSPACE_HYPERSPACE_SAMPLE_V2`, and `HYPERSPACE_GRIND_DOMAIN` and `GRIND_HEIGHT` are new.
 - A `hyperjump` MUST carry the `mn` tag. Verifiers MUST reject a ride without one, or whose nonce does not meet the price, except the rides listed by event id in `decks/grandfathered-v1-hyperjumps.txt`. There is no grace period for anything not on the list.
-- Every listed ride was published before the reference client began publishing this version, and each was audited at Level 2 before it was listed. A verifier MUST accept a listed ride's root and openings without re-checking them, and MUST check everything else about it exactly as for any other ride (§4.3, §5.2, §8). No chain is invalidated by this revision and no identity has to respawn.
+- Every listed ride was published before the reference client began publishing this version, and each was audited at Level 2 before it was listed. A verifier MUST accept a listed ride's root and openings without re-checking them, and MUST check everything else about it exactly as for any other ride (§4.3, §5.2, §5.6, §8). The exemption covers a listed ride's root and openings only: a listed ride that breaks any other rule, such as §5.6, is invalid like any other ride. No chain is invalidated by the re-roll price and no identity has to respawn because of it.
 - All sixteen listed rides passed that audit: every leaf recomputed from the block hashes and the event's own `previous_event_id`, and every root matched its `proof` tag.
 - A ride without an `mn` tag that is not on the list is invalid, and so is the chain from that event forward. Event ids cannot be forged, so the list cannot be joined after the fact, as a date cutoff could be by backdating `created_at`. The list's format is that of `grandfathered-v2-sidesteps.txt` (`CYBERSPACE_V2.md` §6.16).
 
@@ -405,6 +413,7 @@ In an ultrametric space, targets become reachable by becoming numerous, never by
 - v2 (2026-04-16): sector-plane entry (units error, see Appendix A); Cantor path tree over block heights as the ride proof (free in practice).
 - v3 (this document): plane-bit rule with landfalls; boarding from anywhere at a deterministic station; seeded per-block ride work with sampled verification; toll reserved.
 - v3 revision (2026-09-28): the re-roll price on ride openings, with samples drawn from `G` (§5.5, §5.8).
+- v3 revision (2026-10-07): no zero-length ride (§5.6), with the §5.8 exemption limited to roots and openings; sector tags count toward validity, each carried exactly once (§1.3).
 
 ## Appendix C: Reference implementations (non-normative)
 
