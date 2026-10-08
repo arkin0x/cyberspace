@@ -1,0 +1,14 @@
+# Version 1 hops exempt under CYBERSPACE_V2.md §5.13 (chain rules revision 2026-10-08-residue-openings).
+#
+# PLACEHOLDER. This list is filled at the cutover to residue openings, from a final census of every
+# version 1 hop (a hop whose proof tag is the proof_hash of §5.6 and which carries no mn and no mp
+# tag) published before the reference clients began publishing version 2 hops. There is no date
+# cutoff: created_at can be backdated, and event ids cannot be forged.
+#
+# Each hop is audited before it is listed: its proof_hash recomputed per §5.6 from its own c, C and
+# previous_event_id, and compared with its proof tag. A hop that fails the audit is not listed.
+# Until the census fills it, this file lists no event, so no version 1 hop is exempt.
+#
+# Format: lines starting with # are comments. Every other non-empty line starts with a 64-character
+# lowercase hex event id; anything after the id on the same line is commentary:
+# event_id pubkey created_at(UTC) lca_heights(x,y,z) K audit
