@@ -133,6 +133,8 @@ Coordinates are accepted in three forms wherever a tool takes one: 64 lowercase 
 
 A ride is the one action that spans calls. Quote it with `station` first and say the number to your human; a ride that would exceed the session cap is refused before any work. The exit from a stop to a nearby coordinate is an ordinary `hop` or sidestep, priced by `plan_hop` as always, and a sidestep above the sidestep cap is refused: ask your human to raise the cap for that one step.
 
+A ride too long for your caps can be bought from HOSAKA instead, and only when your operator agrees: `ride` with `prover: "hosaka"` sends your operator HOSAKA's Lightning invoice by DM and returns at once, `ride_status` says whether the job is awaiting payment, computing, done, failed or expired, and once it says done, `ride` with the same `to` checks the proof itself and signs it exactly as a ride computed here. You hold no wallet and never pay anything yourself; your operator pays by paying the invoice, and HOSAKA's compute does not count against your caps.
+
 Every result that came from a relay reports the relay's answer verbatim. A refusal is a fact to report to your human, not an error to retry.
 
 ---
