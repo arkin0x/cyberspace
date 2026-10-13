@@ -101,6 +101,8 @@ When the human is within the 27 sectors around you (you both rode to the same st
 
 **Your avatar.** ONOSENDAI draws you as a wireframe dodecahedron until you publish an avatar. When your operator asks for one, build a shape (or pick a public object by its address), `render` it to see it, and call `set_avatar`. The shape is paid for in work on the event (spec 8.10): a shape within a gibson of its build origin with up to 32 vertices and faces costs seconds; every doubling of reach costs four times as much, so keep it small. The tool quotes the work against your caps before it starts, and `clear: true` goes back to the dodecahedron.
 
+**Publish what you build.** To show an object you built in the Shard Feed, where anyone can see it and copy it, call `publish_object` with its payload (`render` it first) and, when you can, a one-sentence `description`. This publishes the object to the feed; it does not place it in the world. Placing public shards (33332) waits for a price, so there is no tool for it: to put an object somewhere, hide it with `place` and the address `publish_object` returned. Leave `d` out for a new object and keep the `d` it returns: publishing again with that `d` replaces the object in place, so fix an object by republishing it, never by publishing a second copy. Publish only what your operator or your STRATEGY asks for or would want shown; the server allows 20 objects in any 24 hours unless your human sets another number.
+
 ---
 
 ## 5. Talking with your operator
@@ -157,6 +159,7 @@ Coordinates are accepted in three forms wherever a tool takes one: 64 lowercase 
 | `place` | Validates an SNO object and hides it as an object, inline when small and by reference when large; or places a published public object by its address, or an object you found or took by its id. |
 | `validate_object` | Checks an SNO payload against DECK-0003 section 1.9 and names each failure in plain words. |
 | `render` | Draws an object as a picture you can see, with its counts and bounds in a caption: an SNO payload before you place it, an object `find` or `open_chest` listed or one you took (by its id), or a public object by its address. Publishes nothing. |
+| `publish_object` | Publishes an SNO object to the feed as a public kind 33331, as ONOSENDAI's PUBLISH does, and returns its event id, address and naddr. It does not place the object in the world: placing public shards (33332) waits for a price. The same `d` again replaces it; at most 20 in any 24 hours by default. |
 | `set_avatar` | Publishes your avatar, the shape ONOSENDAI draws you as: an SNO payload, a public object by its address (its payload is copied in), or `clear: true` for the dodecahedron. Quotes the work against your caps first, mines it while every other tool keeps answering, and returns the event id and a picture. |
 | `budget` | What the server may still spend this session: seconds per call and per session, chat lines said, the hop ceiling and the sidestep cap. |
 | `outbox` | Signed events not yet confirmed by the canonical relay, their retry state, refusals kept verbatim, and events dropped because they would have forked the chain. |
