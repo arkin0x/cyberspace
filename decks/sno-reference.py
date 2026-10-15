@@ -405,6 +405,120 @@ def resolve_palette(field: Any, fetched: Any = None) -> list[list[int]]:
     return out
 
 
+# --------------------------------------------------------------------------
+# What a reader draws, once a payload validates. Each of these assumes
+# validate() has already accepted the payload, and adds no rule of its own.
+# They exist so that the conformance vectors (sno-vectors.json) can state an
+# expected result for colours and fronts that this file produced, rather than
+# one somebody worked out by hand.
+# --------------------------------------------------------------------------
+
+def vertex_colors(payload: dict, fetched_palette: Any = None) -> list[list]:
+    """§1.3: the colour each vertex is drawn in, one per vertex.
+
+    In a v2 payload an index names an entry of whichever palette applies
+    (§1.3a, §1.3b), and the result is that entry, three integers 0..255. In a
+    v1 payload the colour is the literal triple, clamped to 0..1 on read and
+    otherwise taken exactly as written, never snapped to a palette entry.
+    """
+    if payload["v"] == 1:
+        return [[min(1, max(0, x)) for x in c] for c in payload["colors"]]
+    palette = resolve_palette(payload.get("palette"), fetched_palette)
+    return [list(palette[i]) for i in payload["colors"]]
+
+
+def face_colors(payload: dict, fetched_palette: Any = None) -> list[list[int]] | None:
+    """§1.4a: the colour that fills each face, or None when every face
+    interpolates its corners. None and an empty list are different answers:
+    the second is an object that carries face colours and has no faces."""
+    if payload.get("facecolors") is None:
+        return None
+    palette = resolve_palette(payload.get("palette"), fetched_palette)
+    indices = expand_face_colors(payload["facecolors"], len(payload["faces"]), len(palette))
+    return [list(palette[i]) for i in indices]
+
+
+def fronts(payload: dict) -> list[tuple[int, int, int]]:
+    """§1.4: the side each face looks toward, as the normal (b - a) × (c - a).
+
+    Computed on exact positions in ticks, in the frame of §2, which for a v1
+    payload is after its Z is negated. The result is therefore three integers,
+    in square ticks, and only its direction carries meaning: the front is the
+    side it points to, and seen from there the corners run counter-clockwise.
+    A face whose three corners are collinear or coincide has the zero vector
+    and no front. It is still valid, because §1.9 rule 8 asks only for three
+    distinct indices.
+    """
+    ticks = expand_ticks(payload.get("ticks"), len(payload["vertices"]))
+    flip = -1 if payload["v"] == 1 else 1
+    pts = [
+        (v[0] * TICKS_PER_UNIT + t[0], v[1] * TICKS_PER_UNIT + t[1], (v[2] * TICKS_PER_UNIT + t[2]) * flip)
+        for v, t in zip(payload["vertices"], ticks)
+    ]
+    out: list[tuple[int, int, int]] = []
+    for a, b, c in payload["faces"]:
+        u = [pts[b][i] - pts[a][i] for i in range(3)]
+        w = [pts[c][i] - pts[a][i] for i in range(3)]
+        out.append((u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]))
+    return out
+
+
+#: §3. The kinds whose events carry a payload in `content`.
+OBJECT_KIND = 33331  # §3.1, a standalone object
+ITEM_KIND = 3330     # §3.2, an item inside a bag, signed or unsigned
+AVATAR_KIND = 11333  # §3.3, an avatar
+
+
+def _refuse_constant(name: str) -> None:
+    raise ValueError(f"{name} is not a JSON value")
+
+
+def parse_content(text: Any) -> Any:
+    """An event's `content` read as JSON, or a rule 1 rejection.
+
+    JSON as RFC 8259 defines it. Python's json module also reads NaN,
+    Infinity and -Infinity, which are not JSON and which no browser's
+    JSON.parse accepts, so they are refused here: otherwise a v1 colour of
+    NaN would pass this file and fail every JavaScript reader.
+    """
+    if not isinstance(text, str):
+        raise SnoError("rule 1: content is not a string")
+    try:
+        return json.loads(text, parse_constant=_refuse_constant)
+    except ValueError:
+        raise SnoError("rule 1: content is not JSON") from None
+
+
+def read_event(event: Any, fetched_palette: Any = None) -> dict:
+    """§3: what a reader makes of an event that carries an object.
+
+    Returns one of:
+
+    - {"status": "object", "payload": <the payload, validated>}
+    - {"status": "hidden"}: a kind 33331 with an `encrypted` tag is an object
+      sealed to a place (§3.4). Its content is a preview for people, not a
+      payload, and is not parsed.
+    - {"status": "default-avatar"}: a kind 11333 with empty content (§3.3).
+
+    Raises SnoError when the content fails §1.9, which includes content that
+    is not JSON at all (§3.1: a client MUST NOT render it).
+
+    Not checked here: the event's id and signature, which are NIP-01's
+    business and which a kind 3330 item may lack (§6), and the `d` tag of
+    §3.1, which says what a publisher writes.
+    """
+    if not isinstance(event, dict):
+        raise SnoError("§3: an event is a JSON object")
+    kind = event.get("kind")
+    if kind not in (OBJECT_KIND, ITEM_KIND, AVATAR_KIND) or isinstance(kind, bool):
+        raise SnoError(f"§3: kind {kind!r} does not carry an object")
+    tags = event.get("tags") if isinstance(event.get("tags"), list) else []
+    content = event.get("content")
+    if kind == OBJECT_KIND and any(isinstance(t, list) and t[:1] == ["encrypted"] for t in tags):
+        return {"status": "hidden"}
+    if kind == AVATAR_KIND and content == "":
+        return {"status": "default-avatar"}
+    return {"status": "object", "payload": validate(parse_content(content), fetched_palette)}
 
 
 # --------------------------------------------------------------------------
@@ -671,6 +785,45 @@ def _self_test() -> None:
         except SnoError as e:
             assert str(e).startswith("rule 8c"), (why, e)
     print("face colours: an index or a run, a run repeats the index before it, absent is not colour 0")
+
+    # §1.3: what each vertex is drawn in. An index is a palette entry; a v1
+    # literal is clamped and otherwise left exactly as written.
+    assert vertex_colors(ok) == [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 255]]
+    assert vertex_colors(validate(four)) == four["palette"]
+    assert vertex_colors(validate({**AS_V1, "colors": [[1.5, -0.25, 0.5], [0, 1, 0], [0, 0, 1], [1, 1, 1]]}))[0] == [1, 0, 0.5]
+    assert face_colors(ok) is None
+    assert face_colors(solid) == [[255, 0, 0]] * 4
+    print("colours: an index reads as its palette entry, a v1 literal is clamped and never snapped")
+
+    # §1.4: every face of Appendix A looks out of the solid, so its normal
+    # points away from the middle of the tetrahedron.
+    middle = [sum(v[a] for v in APPENDIX_A["vertices"]) * TICKS_PER_UNIT / 4 for a in range(3)]
+    for face, n in zip(APPENDIX_A["faces"], fronts(ok)):
+        centre = [sum(APPENDIX_A["vertices"][i][a] for i in face) * TICKS_PER_UNIT / 3 for a in range(3)]
+        assert sum(n[a] * (centre[a] - middle[a]) for a in range(3)) > 0, (face, n)
+    # The v1 negation is a mirror, and a mirror turns every front round: the
+    # same indices on the mirrored corners give (-x, -y, z) where v2 gives
+    # (x, y, z). That is why §1.4 reads the front after the negation.
+    assert fronts(v1) == [(-x, -y, z) for x, y, z in fronts(ok)]
+    sheet = {**APPENDIX_A, "vertices": [[0, 0, 0], [1, 0, 0], [0, 0, 1]], "colors": [0, 0, 0], "faces": [[0, 1, 2]]}
+    assert fronts(validate(sheet)) == [(0, -14400, 0)]
+    assert fronts(validate({**sheet, "v": 1, "colors": [[0, 0, 0]] * 3})) == [(0, 14400, 0)]
+    print("fronts: Appendix A looks outward on every face, and the v1 negation turns a front round")
+
+    # §3: the event around a payload.
+    tetra = json.dumps(APPENDIX_A)
+    assert read_event({"kind": 33331, "tags": [["d", "t"]], "content": tetra})["payload"]["name"] == "tetra"
+    assert read_event({"kind": 3330, "tags": [], "content": tetra})["status"] == "object"
+    assert read_event({"kind": 11333, "tags": [], "content": ""}) == {"status": "default-avatar"}
+    assert read_event({"kind": 33331, "tags": [["d", "x"], ["encrypted", "aes-256-gcm", "AAAA", "cyberspace:region"]],
+                       "content": "This object is hidden at a place in cyberspace."}) == {"status": "hidden"}
+    for content in ("{", "", "not json", '{"v": NaN}'):
+        try:
+            read_event({"kind": 33331, "tags": [["d", "t"]], "content": content})
+            raise AssertionError(f"accepted content {content!r}")
+        except SnoError as e:
+            assert str(e).startswith("rule 1"), e
+    print("events: 33331, 3330 and 11333 read the same payload; hidden and default avatars are not errors; NaN is not JSON")
 
     if failures:
         raise SystemExit(1)

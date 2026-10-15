@@ -28,8 +28,9 @@ The design goal is not to compete with glTF or USD. It is to be the three-dimens
 | Size | no ceiling on vertices or faces; the event's size is the relay's concern, as for every other kind (§1.8) |
 | Credit for a copy | the NIP-18 `q` tag naming the original's address; a `p` naming its author on a public remix only (§3.5) |
 | Reference implementation | `decks/sno-reference.py`, which is §1.9 written as code |
+| Conformance vectors | `decks/sno-vectors.json`, events with the result a reader must reach, checked against the reference by `decks/sno-vectors.py` (§9.1) |
 
-**Conformance.** `decks/sno-reference.py` implements §1.9 with no dependencies and carries a rejection case for every numbered rule that rejects. It was checked against [sno-core](https://github.com/arkin0x/sno-core), the independent TypeScript library that ONOSENDAI, snocrash and cyberspace-mcp all read and write objects with, and the two agree on every case, including the three places where this format is deliberately forgiving rather than strict (last checked 2026-10-15, against sno-core 0.1.12: all 35 rejection cases, and Appendix A). A third implementation can be checked against the same table.
+**Conformance.** `decks/sno-reference.py` implements §1.9 with no dependencies and carries a rejection case for every numbered rule that rejects. It was checked against [sno-core](https://github.com/arkin0x/sno-core), the independent TypeScript library that ONOSENDAI, snocrash and cyberspace-mcp all read and write objects with, and the two agree on every case, including the three places where this format is deliberately forgiving rather than strict (last checked 2026-10-15, against sno-core 0.1.12: all 35 rejection cases, and Appendix A). A third implementation can be checked against the same table, and since 2026-10-15 it does not have to port the table to do so: the same checks, and many more, are published as data in `decks/sno-vectors.json`, which any language can read (§9.1).
 
 ---
 
@@ -603,6 +604,47 @@ One apparent gap is not one. SNO has per-vertex color and no material, which is 
 5. **Whether `parts` should also allow a mirror.** Eight integers place and turn and scale; a negative scale step halves, it does not mirror. A left glove from a right glove needs one more flag or a second object. Left out until someone needs it.
 6. **The rotation order.** §1.10 fixes X then Y then Z about the parent's axes. It is a convention, not a derivation; if a modeling tool in common use disagrees, the cost of matching it is one sentence now and every published object later.
 7. **Crediting a large copy privately.** §3.5 leaves the credit off a copy carried as its own hidden event (§3.4), because that event's tags are public. Carrying it inside the seal would need either a field in the payload, which every reader would then have to ignore, or a second encrypted tag on the event. Neither is decided.
+
+## 9. Conformance and implementations
+
+### 9.1 Conformance vectors
+
+`decks/sno-vectors.json` is a set of test vectors for this document. Each vector is a whole nostr event that carries an object, together with the result a reader arrives at when it reads that event. The vectors exist so that an implementation in any language can check itself against the reference without porting the reference, and so that two implementations that both pass can be expected to draw the same object the same way.
+
+**What a vector holds.** `event` is the event to read: a `kind 33331` (§3.1), a `kind 3330` bag item (§3.2), or a `kind 11333` avatar (§3.3). Events copied from relays keep their signatures. The others are unsigned and carry only their NIP-01 `id`, because the vectors test the object and not the signature. `palette_event`, when present, is the event a reader fetched for the payload's `palette` reference (§1.3b); when it is absent, the fetch failed. `expected` is the result:
+
+| Field | Meaning |
+|---|---|
+| `valid` | `false` means a reader MUST NOT render the object. `rule` then names the rule of §1.9 that the reference cited, and `error` is the reference's message, which a reader need not match word for word |
+| `status` | `object` when a payload was read; `hidden` for a `kind 33331` sealed to a place (§3.4); `default-avatar` for a `kind 11333` with empty content (§3.3) |
+| `extent` | the extent after repair (§1.8) |
+| `remainders`, `positions_ticks`, `positions` | `ticks` expanded to one remainder per vertex (§1.2), and every position in whole ticks and as an exact fraction of a unit, in the frame of §2 (so a version 1 payload's Z is already negated) |
+| `colors`, `face_colors` | the color each vertex is drawn in, and the color that fills each face or `null` when faces interpolate, after the palette that applies has been resolved (§1.3, §1.3a, §1.3b, §1.4a) |
+| `fronts` | for each face, the normal (b - a) × (c - a) computed on the positions in ticks. Only its direction carries meaning: it points to the face's front (§1.4). The zero vector means the face has no area and no front |
+| `refs`, `parts` | the placements as written (§1.10) |
+
+The file's own `conventions` block restates these definitions, so that the file can be read without this section beside it.
+
+**Where the results come from.** Every expected result was produced by `decks/sno-reference.py`; none was written by hand. `python3 decks/sno-vectors.py` recomputes each result from the reference and exits non-zero if any has changed, which catches an unintended change to the reference as surely as an edit to the vectors. After an intended change, `python3 decks/sno-vectors.py --write` regenerates the results, and the diff it produces is the thing to review.
+
+**Strict and not strict.** A vector marked `strict: true` is one this document decides, and a reader MUST reach its result. A vector marked `strict: false` is one where this document leaves a reader room, or does not say clearly what a reader does; its `note` says which. The result shown is still the reference's, but a reader that reaches a different one is not wrong for that reason alone. These vectors are kept in the file so that the room is visible to implementers rather than discovered by them.
+
+**What the vectors do not cover.** Following placements (§1.10): the depth bound, the treatment of a cycle, and the placeholder drawn for a part that cannot be fetched, fails §1.9, or scales outside `0..84`. Those need fetched events and rules that the reference does not yet encode, so each client's own tests check them today. The vectors also say nothing about signatures, about relays, or about how an object looks beyond its positions, faces and colors.
+
+**Versioning.** The file carries an integer `version`, which increases whenever a vector is added, changed or removed, so that an implementation keeping a copy can tell which copy it has.
+
+An implementation that differs from a strict vector has a bug, or the reference does. Either way the difference is worth an issue on this repository.
+
+### 9.2 Implementations
+
+These are the clients known to read SNO objects as of 2026-10-15, with the kinds each one reads and writes as far as its published source shows. The list is informative and is not an endorsement.
+
+| Client | Reads | Writes | What it does with an object |
+|---|---|---|---|
+| [ONOSENDAI](https://onosendai.tech) | `33331`, `3330`, `11333` | `33331`, including hidden objects (§3.4); `3330`; `11333` | The Cyberspace client. Its shard workshop is where objects are built; it hides them at places in bags, finds them there, places objects inside other objects, and wears one as an avatar. It reads and writes objects through sno-core. |
+| [snocrash](https://snocrash.art) | `33331`; `3367` palette events | `33331`; `3367` palette events | The editor: make, publish, browse and remix objects, and publish palettes as color moments (§1.3b). It reads and writes objects through sno-core. |
+| [Ditto](https://ditto.pub) | `33331` | none | Draws objects in its feed, on a page of their own, and as quote embeds, and places them as furniture in the rooms of Blobbi, its virtual pet game. A room names an object with a `sno:<naddr>` reference in Ditto's own room event, described in Ditto's `NIP.md`. It skips hidden objects, and draws at most 60,000 vertices and 100,000 faces across an object and its parts, which is a client's limit of the kind §6 allows rather than a rejection under §1.9. |
+| [Grimoire](https://grimoire.rocks) | `33331`, `3330`, `11333` | none | Draws objects in its feed and in a detail view, with their placements and fetched palettes. It shows a hidden object as a preview and an avatar with empty content as the default avatar. Its parser is a port of `sno-reference.py`. |
 
 ## Appendix A: a worked example (non-normative)
 
