@@ -1,0 +1,199 @@
+{
+  "note": "Deterministic vectors. Keys are SHA-256(\"cyberspace vectors: <label>\"); AES-GCM nonces are the first 12 bytes and the NIP-44 nonce all 32 bytes of SHA-256(\"cyberspace vectors nonce: <label>\"); BIP-340 aux randomness is 32 zero bytes. Readers MUST accept any valid signature.",
+  "keys": {
+    "hider_secret": "259a38c87af760be72797e8549d3342e7cf34413620295be8072a1184a44009d",
+    "hider": "d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c",
+    "item_secret": "4f8306d60d55ea6a851ca01de3131aa06a1c97ffdc53903fd51173f73c033c5b",
+    "item": "17f2f2753715a844de39c398f3e6b112d36b61a2ad6a38d9a75a93579d35dec9",
+    "chest_sender_secret": "88048a8c990202a11539bbffa91c2413ccc4ef098a3e1ce9e4101e9096feb572",
+    "chest_sender": "01854685ad151dd2c88dcc9f271a9069ded309507df8d29b6fdb02959d4e559a",
+    "speaker_secret": "32d5c12b170da70e108ebd0d85c563332f5c3d53430e01e7b2db28f4b08a4624",
+    "speaker": "dcb25695efbeb5383fe529652dc549ab087aabcbde7e1a6c6e92d46e02594e9b",
+    "region_key": "b4cb40e2137415935f96f55783bd9ce9702584583a4e4981f2418a9d50888aa6",
+    "lookup_id": "1ad7a804c105d12654735c650cc3c5e1b4e46a86e79701e22d396f3ea375a91c"
+  },
+  "key_item": {
+    "pubkey": "d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c",
+    "created_at": 1791800000,
+    "kind": 3340,
+    "content": "Opens the vault under the bridge.",
+    "tags": [
+      [
+        "C",
+        "c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724"
+      ],
+      [
+        "title",
+        "Vapor Key"
+      ],
+      [
+        "item",
+        "17f2f2753715a844de39c398f3e6b112d36b61a2ad6a38d9a75a93579d35dec9"
+      ],
+      [
+        "secret",
+        "4f8306d60d55ea6a851ca01de3131aa06a1c97ffdc53903fd51173f73c033c5b"
+      ],
+      [
+        "-"
+      ]
+    ],
+    "id": "546b4bcae23a41111e1172fd833278e498a2bb549332873d0ef3dbb9c68740b1",
+    "sig": "d7920b9808b3fe4ff9821e9f8f533c8738b6c4f964b8c1b50b2f1657bdca075857f4ae7609d370985d65b8c124a5b65828b131fed04a956cb1445186c1d27241"
+  },
+  "chest": {
+    "plaintext": "[{\"pubkey\":\"d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c\",\"created_at\":1791800000,\"kind\":1,\"content\":\"You found the secret sauce.\",\"tags\":[[\"C\",\"c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724\"]],\"id\":\"fc12c3e4448c9dc279c8c78ef95160b86728119b6ace007df4fe23ec41b63f65\",\"sig\":\"648f6ad7fa52ca8a94d17dcb6a2c7d677e3bca92e425164b9ccc3e15d25c802bb7318e42379b88348c864ce108583dec7bee2a3fd2f3597a44c948e81d4be1e2\"}]",
+    "nip44_nonce": "3e77567068b130fcf63e09e93f01903cf29044b2590ef442095ed6998b6f7986",
+    "conversation_key": "3ede09c8246832ab86d83f13e34871c38e38997b26a17a6b4c641e0d89a74f78",
+    "event": {
+      "pubkey": "d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c",
+      "created_at": 1791800000,
+      "kind": 3341,
+      "content": "Aj53VnBosTD89j4J6T8BkDzykESyWQ70Qgle1pmLb3mG81AyvcA0TBQG1p+htsBoWFzofXyzCgbAQchT2qkp0zSQ7BhX0pKnQPNtOA/QNwGLt6t+QqI9VuR/LWQkbGPa/fIXDzoLI/lEG2x5OWg3v/l06VZUsUNpxAO97KdnbmjsNTQUbhb1L/QYF7eBT+KI+xPJ606A5DaAtcgHMf3tGj4h3L4u8xKe0PdF7CNo6SApLI6Pq5gzXPuVBRFXboAwJVgX9jIy6XSnXFQ8l6V8Ms3sFQLmN4CRuFj/2xr7jWf+qw6GJZEy8Wz4+v2HNPnBf3i/Bf1GqQ7j1zZPhd1GfSr4O73l0F3TPKnigF4e1FtVF3xRSbu1BGmzwSmQIG8Wj3fK1TWWpf2KWgt6Rq6e5yqgZbDTcyDkh3anYK560u+pB82AUcHJvR787iFY6Eb7XOpjng2UyYCYadpisFLjqTXWHPUUCH+LVP07ywxDl2VvxgFqsywYzH8iYJTZ2uxr7u1T71Elgz7QOrGiEetKK1ykZ8bk24VVgm0HKdXdPKmlBgdHi/3es7LWbKF19PaIoKudTD8b8JEwmEbfBxxMVqHXU/IjvN+fd9gCNqYZ/F1qJ/cXBM5LM9WBQaxyAFspFGQRvInEMxvufcc7dxlc5UHVrkM3ulK5wE6UtjcGFBTZFMM=",
+      "tags": [
+        [
+          "C",
+          "c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724"
+        ],
+        [
+          "title",
+          "Vault"
+        ],
+        [
+          "lock",
+          "17f2f2753715a844de39c398f3e6b112d36b61a2ad6a38d9a75a93579d35dec9",
+          "01854685ad151dd2c88dcc9f271a9069ded309507df8d29b6fdb02959d4e559a"
+        ],
+        [
+          "requires",
+          "Vapor Key"
+        ]
+      ],
+      "id": "aa862bd9558a79b5eee03db6786c6261c23c6b75347e1c677e9dddc348548b0e",
+      "sig": "85da6ea730085616993209819676e4fec70e9560216c89c0d954f7eff9f3d9d96a1c22dc4b92b187754a5df49959233536841fae87756e16259b8bde55ea111e"
+    }
+  },
+  "item_listing": {
+    "proof_message": "7280db9d03d428f7c4988953013c18c804052fe912df82028cd765647e7ac527",
+    "event": {
+      "pubkey": "d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c",
+      "created_at": 1791800000,
+      "kind": 33340,
+      "content": "Opens the vault under the bridge.",
+      "tags": [
+        [
+          "d",
+          "17f2f2753715a844de39c398f3e6b112d36b61a2ad6a38d9a75a93579d35dec9"
+        ],
+        [
+          "name",
+          "Vapor Key"
+        ],
+        [
+          "proof",
+          "17549c1f75c707c5d96a8db6aba5273809c9730694fd9e10a35f64f1a4d60bb91e957a2fec0a1a6bee80af8c78a66a626c9fd436b042b494ffc80c65dac4c0c9"
+        ]
+      ],
+      "id": "8b232f949ac1d7be49a7577e31327c7ccab01f3bd0ade6024ca77769999aa7c3",
+      "sig": "8b0a0d98548e92b8d4a13a0bd284e0995b5eb1ebaa086ba2dc169874caafb24b51687de7e6a7e11c2f5db6fdf3e44583f20f8d24f6426bb63be528ff2e810dd6"
+    }
+  },
+  "chat": {
+    "rumor": {
+      "pubkey": "dcb25695efbeb5383fe529652dc549ab087aabcbde7e1a6c6e92d46e02594e9b",
+      "created_at": 1791800000,
+      "kind": 23333,
+      "content": "meet at the port nostr:npub1placeholder",
+      "tags": [
+        [
+          "d",
+          "1ad7a804c105d12654735c650cc3c5e1b4e46a86e79701e22d396f3ea375a91c"
+        ],
+        [
+          "C",
+          "c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724"
+        ],
+        [
+          "p",
+          "d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c"
+        ]
+      ],
+      "id": "0210b1a6090c213e2bd4a3392116fbbd1d116cd53231b90ce5c2a8151f97c977"
+    },
+    "envelope_plaintext": "[{\"pubkey\":\"dcb25695efbeb5383fe529652dc549ab087aabcbde7e1a6c6e92d46e02594e9b\",\"created_at\":1791800000,\"kind\":23333,\"content\":\"meet at the port nostr:npub1placeholder\",\"tags\":[[\"d\",\"1ad7a804c105d12654735c650cc3c5e1b4e46a86e79701e22d396f3ea375a91c\"],[\"C\",\"c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724\"],[\"p\",\"d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c\"]],\"id\":\"0210b1a6090c213e2bd4a3392116fbbd1d116cd53231b90ce5c2a8151f97c977\"}]",
+    "aes_nonce": "045357c6c422f3b82f92b0b4",
+    "envelope": {
+      "pubkey": "dcb25695efbeb5383fe529652dc549ab087aabcbde7e1a6c6e92d46e02594e9b",
+      "created_at": 1791800000,
+      "kind": 23330,
+      "content": "",
+      "tags": [
+        [
+          "d",
+          "1ad7a804c105d12654735c650cc3c5e1b4e46a86e79701e22d396f3ea375a91c"
+        ],
+        [
+          "encrypted",
+          "aes-256-gcm",
+          "BFNXxsQi87gvkrC0kFiVroNbN7HYdbLrEE+l42nM9B7JA/NL02/P6LFco5rhO34iwNqfSQs6Z5GBK5ndnMAjWw0ttxFt1Eeyh4sDCaXNg9UhVCRcOJmRTOZAAY0aRSTUv8spImiX/DVtvZ6hul3Q7RkJ81+gw6/tdPsPM0ms/TtDDOehlb68xyUyYFcU6HhhEY4OTue/8O2C5tPfUchtTrHWr0fODoDerhNZ0bIZiltdf1QwZtHEh9o9scWv92rgzwRZfm/Op3KRzPtbdR5U/Z4UT6FmQAYArGAe9bDWvHw2Jt6LLZ8LPTKqdJi/z1vPnY+SIEYq08viInJ2t1NVfjoB9nleVAqEUx2s3rCC88h84Wi6ZI3UVeLnyBMPYCYCQuYuKNZ2Q9UAPAM5pUJd1I9JxM2SPZau/jvDyTNU6Ek37PImlM37cO4l0rjron+5azGjPjJ3lWvrou+8OYhtbl/DXlnJfm57C2Z7ExkeYC7rnheawbY7Um/LwTauXPdOx8+Q1QqwaX9JKmsq+v4FOslZ2DWsxYOtZpP/M69dDokq22m+5u+4ojlBa6iY3SuhS4mlEsf8ZV9F/OKgcuaohfJOIdV7+QdxlBkIH3gC/04udpnhKRO/VwkCdHo0mum+HJ6Nq5c1MMYBkZIqbiIwTg=="
+        ],
+        [
+          "version",
+          "2"
+        ],
+        [
+          "h",
+          "12"
+        ]
+      ],
+      "id": "2a44d8c1af9738d1b9e1fb8450a73204907a241fba513b19ef28aa9b02fbf9f9",
+      "sig": "bc899d33007a62458722ff177184c67c10f89ea6d6473148b9b11a82781be9f5ff698c08d7b68c87d15d7a75de4a79142999bf4ea5c6ec4f5fc287f9c5f459b2"
+    }
+  },
+  "comment": {
+    "plaintext": "Took one. Thanks for the riddle.",
+    "aes_nonce": "dfb50d3d220af0eeb38dce72",
+    "event": {
+      "pubkey": "dcb25695efbeb5383fe529652dc549ab087aabcbde7e1a6c6e92d46e02594e9b",
+      "created_at": 1791800060,
+      "kind": 1111,
+      "content": "This comment is hidden at an undisclosed location in cyberspace. Happy hunting: https://onosendai.tech",
+      "tags": [
+        [
+          "A",
+          "33330:d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c:1ad7a804c105d12654735c650cc3c5e1b4e46a86e79701e22d396f3ea375a91c"
+        ],
+        [
+          "K",
+          "33330"
+        ],
+        [
+          "P",
+          "d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c"
+        ],
+        [
+          "e",
+          "546b4bcae23a41111e1172fd833278e498a2bb549332873d0ef3dbb9c68740b1",
+          "",
+          "d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c"
+        ],
+        [
+          "k",
+          "3340"
+        ],
+        [
+          "p",
+          "d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c"
+        ],
+        [
+          "encrypted",
+          "aes-256-gcm",
+          "37UNPSIK8O6zjc5ycW4AFqaaxXLUWtHEgzJIdpK9yWwOAdYiOEGrgMSFYEun/RCgSfnZ3opD+cdzpNhL",
+          "cyberspace:region"
+        ]
+      ],
+      "id": "2cd735b49a5b151c3438708fdad5266ac3e6da144a33bf67954faf397d81eadc",
+      "sig": "aae879fc99560e4d12dec10129af300d76435916d87e855aa7e15b119e5bf8762a1318f7d670288c1d1bb1ffe8dadc285b35556a42dfd2dbc86d82903d5d1d78"
+    }
+  }
+}
