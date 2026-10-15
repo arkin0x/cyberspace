@@ -52,6 +52,17 @@ def _is_num(x: Any) -> bool:
     return isinstance(x, (int, float)) and not isinstance(x, bool)
 
 
+#: §1.9 rule 1a. Whitespace is the characters Unicode gives the White_Space
+#: property, written out rather than left to str.strip(), which also strips
+#: four ASCII separators (U+001C to U+001F) that are not whitespace and that
+#: JavaScript's trim() keeps. A name made only of these is empty.
+_BLANK = re.compile("[\u0009-\u000d\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]*")
+
+
+def _blank(text: str) -> bool:
+    return _BLANK.fullmatch(text) is not None
+
+
 def expand_ticks(ticks: Any, count: int) -> list[list[int]]:
     """§1.2: the run-length encoded remainders, one triple per vertex.
 
@@ -138,7 +149,16 @@ def validate(payload: Any, fetched_palette: Any = None) -> dict:
     # §1.1a: there is no `type` field in either version. Payloads written before
     # this document carry type "shard"; it is ignored here and never rejected
     # on, because the field is noise and rejecting on noise would break every
-    # object already published.
+    # object already published. That holds for a null `type` too.
+
+    # 1a. name: required, a string, and not empty once whitespace is set aside.
+    # A reader still truncates it to 64 characters for display (§1.8); a long
+    # name is never a rejection.
+    name = payload.get("name")
+    if not isinstance(name, str):
+        raise SnoError("rule 1a: name is missing or is not a string")
+    if _blank(name):
+        raise SnoError("rule 1a: name is empty or only whitespace")
 
     # 2. the three arrays, and vertices parallel to colors
     for key in ("vertices", "colors", "faces"):
@@ -164,10 +184,15 @@ def validate(payload: Any, fetched_palette: Any = None) -> dict:
         if not (isinstance(v, list) and len(v) == 3 and all(_is_int(c) for c in v)):
             raise SnoError("rule 6: a vertex is not three integers")
 
-    # 7. ticks
+    # 7. ticks. Null is not absence (§1.1): an optional field written as null
+    # fails the rule that checks it, here and at 8a, 8c, 10, 11 and 12.
+    if "ticks" in payload and payload["ticks"] is None:
+        raise SnoError("rule 7: ticks is null; a publisher omits a field rather than writing null")
     ticks = expand_ticks(payload.get("ticks"), len(vertices))
 
     # 8a. the palette, and 8b the colours read against it
+    if "palette" in payload and payload["palette"] is None:
+        raise SnoError("rule 8a: palette is null; a publisher omits a field rather than writing null")
     palette = resolve_palette(payload.get("palette"), fetched_palette)
     if payload["v"] == 1:
         # §1.3: version 1 predates the palette and carries literal triples.
@@ -193,17 +218,22 @@ def validate(payload: Any, fetched_palette: Any = None) -> dict:
 
     # 8a. face colours, when the object carries any
     if "facecolors" in payload:
+        if payload["facecolors"] is None:
+            raise SnoError("rule 8c: facecolors is null; a publisher omits a field rather than writing null")
         expand_face_colors(payload["facecolors"], len(faces), len(palette))
 
     # 9. extent is repaired, never validated (§1.8). Out of range becomes the
     # default, then it grows until it contains the data, so an object is never
-    # rejected for disagreeing with its own bounding hint.
+    # rejected for disagreeing with its own bounding hint. Null is malformed
+    # like any other value that is not an integer, so it too becomes 8: the
+    # one optional field where null is not a rejection.
     payload = dict(payload)
     payload["extent"] = repaired_extent(payload.get("extent"), vertices, ticks)
 
     # 10. standing on Earth. `up` is a boolean and false means absent; `spin`
     # is checked whenever it is present, because a nonsense bearing is
-    # malformed even where the bearing goes unused.
+    # malformed even where the bearing goes unused. Null is neither a boolean
+    # nor an integer, so it fails both, as it does for refs and parts below.
     if "up" in payload and not isinstance(payload["up"], bool):
         raise SnoError("rule 10: up, when present, must be a boolean")
     if "spin" in payload:
@@ -503,9 +533,13 @@ def read_event(event: Any, fetched_palette: Any = None) -> dict:
     Raises SnoError when the content fails §1.9, which includes content that
     is not JSON at all (§3.1: a client MUST NOT render it).
 
+    Raises SnoError, too, for a kind 33331 with no `d` tag or an empty one
+    (§3.1), hidden or not: NIP-01 addresses it by kind, pubkey and `d`, and a
+    relay that reads a missing `d` as the empty string files every such event
+    from one author under one address, each replacing the last.
+
     Not checked here: the event's id and signature, which are NIP-01's
-    business and which a kind 3330 item may lack (§6), and the `d` tag of
-    §3.1, which says what a publisher writes.
+    business and which a kind 3330 item may lack (§6).
     """
     if not isinstance(event, dict):
         raise SnoError("§3: an event is a JSON object")
@@ -514,6 +548,11 @@ def read_event(event: Any, fetched_palette: Any = None) -> dict:
         raise SnoError(f"§3: kind {kind!r} does not carry an object")
     tags = event.get("tags") if isinstance(event.get("tags"), list) else []
     content = event.get("content")
+    if kind == OBJECT_KIND:
+        # §3.1: the `d` tag is the first tag named "d", as NIP-01 reads it.
+        d = next((t for t in tags if isinstance(t, list) and t[:1] == ["d"]), None)
+        if d is None or len(d) < 2 or not isinstance(d[1], str) or d[1] == "":
+            raise SnoError("§3.1: a kind 33331 has no d tag, or an empty one")
     if kind == OBJECT_KIND and any(isinstance(t, list) and t[:1] == ["encrypted"] for t in tags):
         return {"status": "hidden"}
     if kind == AVATAR_KIND and content == "":
@@ -545,9 +584,16 @@ def _rejections() -> list[tuple[str, dict]]:
         out.update(over)
         return out
 
+    nameless = {k: v for k, v in APPENDIX_A.items() if k != "name"}
+
     return [
         ("rule 1", variant(v=3)),
         ("rule 1", variant(v=0)),
+        ("rule 1a", nameless),
+        ("rule 1a", variant(name=7)),
+        ("rule 1a", variant(name=None)),
+        ("rule 1a", variant(name="")),
+        ("rule 1a", variant(name=" \t\u3000")),
         ("rule 2", variant(colors=[238])),
         ("rule 4", variant(mode="wireframe")),
         ("rule 5", variant(unit=85)),
@@ -556,10 +602,12 @@ def _rejections() -> list[tuple[str, dict]]:
         ("rule 7", variant(ticks=[-3])),
         ("rule 7", variant(ticks=[[0, 0, 120], -3])),
         ("rule 7", variant(ticks=[4])),
+        ("rule 7", variant(ticks=None)),                           # null is not absence
         ("rule 8", variant(faces=[[0, 1, 9]])),
         ("rule 8", variant(faces=[[0, 1, 1]])),
         ("rule 8a", variant(palette=[[255, 0, 0]])),               # a palette of one
         ("rule 8a", variant(palette=[[255, 0, 0, 0], [0, 0, 0]])), # an entry of four
+        ("rule 8a", variant(palette=None)),
         ("rule 8b", variant(colors=[0, 1, 2, 256])),               # past the built-in
         ("rule 8b", variant(colors=[0, 1, 2, -1])),                # negative
         ("rule 8b", variant(colors=[0, 1, 2, 1.5])),               # fractional
@@ -567,16 +615,22 @@ def _rejections() -> list[tuple[str, dict]]:
         ("rule 8c", variant(facecolors=[238, -4])),                # too many
         ("rule 8c", variant(facecolors=[-4])),                     # a run with nothing before it
         ("rule 8c", variant(facecolors=[238, 256, -2])),           # past the palette
+        ("rule 8c", variant(facecolors=None)),
+        ("rule 8c", variant(vertices=[], colors=[], faces=[], facecolors=None)),  # null even with no faces to color
         ("rule 10", variant(up="yes")),
         ("rule 10", variant(up=True, spin=360)),
         ("rule 10", variant(spin=360)),
+        ("rule 10", variant(up=None)),
+        ("rule 10", variant(spin=None)),
         ("rule 11", variant(refs="x")),
+        ("rule 11", variant(refs=None)),
         ("rule 11", variant(refs=[["a", "33331:" + "AB" * 32 + ":d"]])),  # uppercase hex
         ("rule 11", variant(refs=[["a", "30023:" + "ab" * 32 + ":d"]])),  # not an object's kind
         ("rule 11", variant(refs=[["e", "cd" * 31]])),                     # short id
         ("rule 11", variant(refs=[["p", "ab" * 32]])),
         ("rule 11", variant(refs=[["e", "cd" * 32, "wss://x", "extra"]])),
         ("rule 12", variant(parts=[[0, 0, 0, 0, 0, 0, 0, 0]])),            # parts without refs
+        ("rule 12", variant(parts=None)),
         ("rule 12", variant(refs=[["e", "cd" * 32]], parts=[[1, 0, 0, 0, 0, 0, 0, 0]])),
         ("rule 12", variant(refs=[["e", "cd" * 32]], parts=[[0, 7681, 0, 0, 0, 0, 0, 0]])),
         ("rule 12", variant(refs=[["e", "cd" * 32]], parts=[[0, 0, 0, 0, 360, 0, 0, 0]])),
@@ -610,6 +664,7 @@ def _self_test() -> None:
     assert validate({**APPENDIX_A, "type": "shard"})["v"] == 2
     assert validate({**APPENDIX_A, "type": "anything at all"})["v"] == 2
     assert validate({**APPENDIX_A, "type": 17})["v"] == 2
+    assert validate({**APPENDIX_A, "type": None})["v"] == 2  # null too: the null rule of §1.1 does not reach it
     print("type: no such field, ignored wherever one appears, never required")
 
     # §1.3: a v1 colour is taken as written, and a v1 payload with indices is
@@ -751,8 +806,17 @@ def _self_test() -> None:
     grown = validate(variant_extent := {**APPENDIX_A, "vertices": [[0, 0, 0], [2, 0, 0], [1, 0, 2], [9, 2, 1]]})
     assert grown["extent"] == 9, grown["extent"]
     assert validate({**APPENDIX_A, "extent": 0})["extent"] == 8
+    # Null is malformed, so it is repaired like any other bad extent: the one
+    # optional field where null is not a rejection (§1.1).
+    assert validate({**APPENDIX_A, "extent": None})["extent"] == 8
     assert validate({**APPENDIX_A, "up": False})["up"] is False
-    print("extent repairs: a vertex at 9 units grows the hint from 8 to 9, and extent 0 becomes 8")
+    print("extent repairs: a vertex at 9 units grows the hint from 8 to 9, and extent 0 or null becomes 8")
+
+    # §1.1, rule 1a: a name is required and must say something, but a long one
+    # is truncated for display rather than refused.
+    assert validate({**APPENDIX_A, "name": "n" * 100})["name"] == "n" * 100
+    assert validate({**APPENDIX_A, "name": " x "})["name"] == " x "
+    print("name: required, not blank, and never refused for its length")
 
     # An object with no ticks at all is whole-unit everywhere.
     whole = {k: v for k, v in APPENDIX_A.items() if k != "ticks"}
@@ -817,13 +881,23 @@ def _self_test() -> None:
     assert read_event({"kind": 11333, "tags": [], "content": ""}) == {"status": "default-avatar"}
     assert read_event({"kind": 33331, "tags": [["d", "x"], ["encrypted", "aes-256-gcm", "AAAA", "cyberspace:region"]],
                        "content": "This object is hidden at a place in cyberspace."}) == {"status": "hidden"}
+    # §3.1: a kind 33331 with no d, or an empty one, is refused, hidden or not.
+    # The other kinds have no address and need none.
+    hidden_tag = ["encrypted", "aes-256-gcm", "AAAA", "cyberspace:region"]
+    for tags in ([], [["d", ""]], [["d"]], [["name", "tetra"]], [hidden_tag], [["d", ""], ["d", "late"]]):
+        try:
+            read_event({"kind": 33331, "tags": tags, "content": tetra})
+            raise AssertionError(f"accepted a kind 33331 with tags {tags!r}")
+        except SnoError as e:
+            assert str(e).startswith("§3.1"), e
+    assert read_event({"kind": 33331, "tags": [["d", "t"], ["d", ""]], "content": tetra})["status"] == "object"
     for content in ("{", "", "not json", '{"v": NaN}'):
         try:
             read_event({"kind": 33331, "tags": [["d", "t"]], "content": content})
             raise AssertionError(f"accepted content {content!r}")
         except SnoError as e:
             assert str(e).startswith("rule 1"), e
-    print("events: 33331, 3330 and 11333 read the same payload; hidden and default avatars are not errors; NaN is not JSON")
+    print("events: 33331, 3330 and 11333 read the same payload; hidden and default avatars are not errors; NaN is not JSON; a 33331 needs a d")
 
     if failures:
         raise SystemExit(1)

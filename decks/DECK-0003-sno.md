@@ -56,9 +56,9 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 |---|---|---|---|
 | `v` | integer | yes | Format version, `1` or `2`. They differ in one sign and nothing else (§2). A reader MUST support both and MUST reject any other value. |
 | `type` | string | no | A legacy field. A reader MUST ignore it wherever it appears, and MUST NOT require it or reject on its value. A publisher SHOULD NOT write it (§1.1a). |
-| `name` | string | yes | A name for humans. A reader MUST truncate to 64 characters. |
+| `name` | string | yes | A name for humans. It MUST contain at least one character that is not whitespace (§1.9 rule 1a). A reader MUST truncate it to 64 characters for display, and MUST NOT reject a payload because its name is long. |
 | `unit` | integer | yes | Scale exponent, `0` to `84`. One model unit is `2^unit` base units (§1.6). |
-| `extent` | integer | no | Grid half-width in model units, `1` to `64`. Advisory and self-repairing (§1.8). Absent or malformed means `8`. |
+| `extent` | integer | no | Grid half-width in model units, `1` to `64`. Advisory and self-repairing (§1.8). Absent or malformed, which includes null, means `8`. |
 | `mode` | string | yes | `"solid"`, `"points"` or `"lines"` (§1.5). A reader MUST reject any other value. |
 | `vertices` | array | yes | One `[x, y, z]` triple of **whole units** per vertex (§1.2). |
 | `ticks` | array | no | The sub-unit part of each position (§1.2). Absent means every position is whole. |
@@ -72,6 +72,12 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | `parts` | array | no | Where each placed object stands, turns and scales, one entry per placement (§1.10). Absent means the same. |
 
 `vertices` and `colors` MUST have the same length. Any field not listed here MUST be ignored by a reader, not rejected (§5).
+
+**A name is required, and a writer supplies one.** A payload whose `name` is missing, is not a string, or is empty once leading and trailing whitespace are set aside is invalid, and a reader MUST reject it (§1.9 rule 1a). (Non-normative: a writer should give an object a placeholder name such as `"Untitled"` from the moment it is created, and should put one back if its author clears the name, so that nobody publishes an invalid object by leaving a text box empty.)
+
+**Absent and null are different.** An optional field is either present with a value of the shape the table gives, or absent. A reader MUST reject a payload in which `ticks`, `palette`, `facecolors`, `up`, `spin`, `refs` or `parts` is present with the value null, and each of those fails the rule of §1.9 that checks that field. There are two exceptions, and both follow from rules stated elsewhere: `extent` is repaired rather than validated, so a null `extent` is malformed and means `8` like any other malformed one (§1.8); and `type` is ignored whatever its value (§1.1a). A required field that is null has the wrong type and fails its rule, as it always has. A publisher MUST omit a field it has no value for and MUST NOT write null.
+
+(Non-normative: the rule is strict because it can be loosened later and could not be tightened. No published object that could be read when this rule was made, on 2026-10-15, carries a null field, so refusing null costs nothing today. If a future revision decided that null means absent, every object valid under this rule would still be valid under that one; going the other way, from a lenient rule to a strict one, would turn objects already published into objects a reader refuses.)
 
 ### 1.1a Why there is no `type`
 
@@ -250,13 +256,13 @@ A reader that does not implement `up` draws the object in the application's axes
 | nesting depth | 4 | how far a reader follows placements (§1.10). A bound on the reader's work, not on the object |
 | `extent` | 1 to 64 model units | a hint at the lattice size, so a reader can size a grid before it reads the data |
 | `unit` | 0 to 84 | the Cyberspace address space is `2^85` gibsons on a side |
-| `name` | 64 characters | truncated, not rejected |
+| `name` | 64 characters | truncated, not rejected. An empty name is rejected, which is a different thing (§1.9 rule 1a) |
 
 **There is no ceiling on vertices or faces.** A reader MUST NOT reject a payload for its vertex or face count. Until 2026-09-24 this format set 512 vertices and 1,024 faces, sized so that the worst object it permitted fit a stock relay. It was removed because no other event kind bounds its own content: a long-form article, a file header, a wiki page are as large as their author makes them, and the relay that stores an event decides what it will take. That is a different class of problem from the one a format solves, and a format that solves it anyway puts a number between the author and the thing they were making. The number did that: a 129-square floor pasted square by square reached 516 vertices, deployed, and was opened as nothing by every reader (arkinox, 2026-09-24), and a figure or a vehicle at ordinary low-polygon detail needs 600 to 1,000 and was impossible however well it was built.
 
 What replaces the ceiling is a publisher who knows what things cost and a container that stops multiplying: an object of any size can have an event of its own (§3.1, §3.4), so a bag, which is one event shared by everything hidden at a place, need never grow with the objects it names. The rest of this section is the arithmetic, so a publisher can plan against the relays it uses; none of it is a rule.
 
-`extent` is **advisory and self-repairing**, which is the one place this format is deliberately forgiving. A reader MUST substitute the default of `8` for an `extent` that is absent, not an integer, or outside `1..64`, and MUST then grow it until it contains every vertex. An object is therefore never rejected for disagreeing with its own extent; the data wins and the hint is corrected. This is what lets a modeling tool write geometry first and a bounding hint second without the two ever contradicting.
+`extent` is **advisory and self-repairing**, which is the one place this format is deliberately forgiving. A reader MUST substitute the default of `8` for an `extent` that is absent, not an integer (null included), or outside `1..64`, and MUST then grow it until it contains every vertex. An object is therefore never rejected for disagreeing with its own extent; the data wins and the hint is corrected. This is what lets a modeling tool write geometry first and a bounding hint second without the two ever contradicting.
 
 The position bound is stated as an obligation on publishers rather than readers: a publisher MUST NOT write a vertex further than `64` model units (`7680` ticks) from the origin on any axis. A reader MAY reject such a payload and MAY instead repair it by growing the extent. ONOSENDAI currently repairs. §8 records the consequence.
 
@@ -296,7 +302,10 @@ One trap worth knowing, since it cannot be discovered at runtime: strfry populat
 
 A reader MUST perform all of the following before rendering, and MUST reject the whole payload if any fails. A partially valid object is not rendered partially: a face index pointing past the end of the vertex list is not a defect that degrades gracefully.
 
+"If present" below means present with a value. An optional field present with the value null is not absent: it fails the rule that checks that field, which is rule 7 for `ticks`, 8a for `palette`, 8c for `facecolors`, 10 for `up` and `spin`, 11 for `refs` and 12 for `parts`. `extent` is the exception, under rule 9 (§1.1).
+
 1. `v` is `1` or `2`. A `type` field, if present, is ignored and never rejected on (§1.1a).
+1a. `name` is a string, and at least one of its characters is not whitespace. Whitespace means the characters Unicode gives the White_Space property: U+0009 to U+000D, U+0020, U+0085, U+00A0, U+1680, U+2000 to U+200A, U+2028, U+2029, U+202F, U+205F and U+3000. Its length is not checked: a long name is truncated for display, never rejected (§1.8).
 2. `vertices`, `colors` and `faces` are arrays, and `vertices.length === colors.length`.
 3. There is no bound on `vertices.length` or `faces.length` (§1.8). The number is kept so the rules below keep their names; until 2026-09-24 it read `512` and `1024`.
 4. `mode` is one of the three words.
@@ -307,7 +316,7 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 8a. `palette`, if present, is the name of a known built-in, a well-formed `nevent` or `naddr`, or an array of 2 to 256 entries of three integers `0..255`. A reference that has not been resolved counts as the built-in for the rules below, and is never a reason to reject (§1.3b).
 8b. in a `v: 2` payload, every entry of `colors` is an integer from `0` to one less than the palette's length; in a `v: 1` payload, every entry is three numbers (§1.3).
 8c. `facecolors`, if present, expands to exactly one index per face, its first entry is an index, every run entry is a negative integer, and every index is in range.
-9. `extent`, if present, is repaired rather than validated (§1.8): out of range becomes `8`, then it grows to contain the data.
+9. `extent`, if present, is repaired rather than validated (§1.8): out of range, not an integer, or null becomes `8`, then it grows to contain the data.
 10. `up`, if present, is a boolean; `spin`, if present, is an integer in `0..359`.
 11. `refs`, if present, is an array whose entries are each `["e", <64 lowercase hex>]` or `["a", "33331:<64 lowercase hex>:<d>"]`, optionally followed by one relay URL (§1.10).
 12. `parts`, if present, is an array whose entries are each eight integers: a `refs` index in range, three tick offsets each in `-7680..7680`, three whole degrees each in `0..359`, and a scale step such that the placed object's unit stays in `0..84` (§1.10). `parts` without `refs`, or a `refs` index past the end, is a reason to reject.
@@ -400,11 +409,13 @@ An object stands alone as a `kind 33331` event whose `content` is the payload of
 
 | Tag | Required | Meaning |
 |---|---|---|
-| `d` | yes | the object's identifier, chosen by its author and stable across edits. The workshop's own id for the object serves |
-| `name` | no | `["name", "<name>"]`, duplicating the payload's name so a relay query can filter on it without parsing the content |
+| `d` | yes | the object's identifier, chosen by its author and stable across edits, and never empty. The workshop's own id for the object serves |
+| `name` | no | `["name", "<name>"]`, a copy of the payload's name for a client that reads an event's tags without parsing its `content`. It is metadata and nothing more: NIP-01 relays index only single-letter tags, so a relay cannot filter on it |
 | `alt` | no | a description for clients that cannot render an object (NIP-31) |
 
 `33331` falls in `30000..39999`, which NIP-01 defines as **addressable**: relays keep the newest event per `(pubkey, kind, d)`, so an author edits an object in place by republishing it under the same `d`. That is the right class for a thing someone iterates on in a modeling tool, which is what an object is.
+
+**The `d` tag is required, and a reader refuses an object without one.** A publisher MUST write a `d` tag with a non-empty value on every `kind 33331`, hidden ones (§3.4) included. A reader MUST refuse a `kind 33331` that has no `d` tag, or whose `d` tag has an empty value, and MUST NOT read its content; where an event carries more than one `d` tag, the first is the one that counts, as NIP-01 reads it. The reason is the address. NIP-01 keys an addressable event by its kind, its author's pubkey and its `d` value, and the former NIP-33 text, which is still how relays such as strfry behave, treats a missing `d` as the empty string. Every `d`-less `kind 33331` from one author would therefore share the single address `33331:<pubkey>:`, and each one published would silently replace the one before: an author who made three objects that way would find one, and nothing would say where the other two went. Refusing them on read makes the mistake visible at the first publish rather than at the second.
 
 It costs something, and the cost is worth stating plainly rather than discovering later. Reactions (NIP-25), zaps (NIP-57) and comments (NIP-22) reference an event id, and an address resolves to whatever its author last published, so a payment made against an object can end up pointing at content that changed after it. An application that needs an object to be immutable, because it was paid for or because it was hidden somewhere and must stay as it was found, uses the bag item of §3.2, whose kind is regular.
 
@@ -615,7 +626,7 @@ One apparent gap is not one. SNO has per-vertex color and no material, which is 
 
 | Field | Meaning |
 |---|---|
-| `valid` | `false` means a reader MUST NOT render the object. `rule` then names the rule of §1.9 that the reference cited, and `error` is the reference's message, which a reader need not match word for word |
+| `valid` | `false` means a reader MUST NOT render the object. `rule` then names the rule of §1.9 that the reference cited, or the section, such as `§3.1`, when it is the event rather than its payload that is refused; `error` is the reference's message, which a reader need not match word for word |
 | `status` | `object` when a payload was read; `hidden` for a `kind 33331` sealed to a place (§3.4); `default-avatar` for a `kind 11333` with empty content (§3.3) |
 | `extent` | the extent after repair (§1.8) |
 | `remainders`, `positions_ticks`, `positions` | `ticks` expanded to one remainder per vertex (§1.2), and every position in whole ticks and as an exact fraction of a unit, in the frame of §2 (so a version 1 payload's Z is already negated) |
@@ -628,6 +639,8 @@ The file's own `conventions` block restates these definitions, so that the file 
 **Where the results come from.** Every expected result was produced by `decks/sno-reference.py`; none was written by hand. `python3 decks/sno-vectors.py` recomputes each result from the reference and exits non-zero if any has changed, which catches an unintended change to the reference as surely as an edit to the vectors. After an intended change, `python3 decks/sno-vectors.py --write` regenerates the results, and the diff it produces is the thing to review.
 
 **Strict and not strict.** A vector marked `strict: true` is one this document decides, and a reader MUST reach its result. A vector marked `strict: false` is one where this document leaves a reader room, or does not say clearly what a reader does; its `note` says which. The result shown is still the reference's, but a reader that reaches a different one is not wrong for that reason alone. These vectors are kept in the file so that the room is visible to implementers rather than discovered by them.
+
+Three questions that were open in version 1 of the file, and marked not strict there, were decided on 2026-10-15 and are strict from version 2: a payload with no `name`, or a blank one, is invalid (§1.1, §1.9 rule 1a); a `kind 33331` with no `d` tag, or an empty one, is refused (§3.1); and an optional field written as null is invalid, except `extent`, where null means `8` (§1.1). An implementation that was written against version 1 and took the latitude those vectors described should check itself again.
 
 **What the vectors do not cover.** Following placements (§1.10): the depth bound, the treatment of a cycle, and the placeholder drawn for a part that cannot be fetched, fails §1.9, or scales outside `0..84`. Those need fetched events and rules that the reference does not yet encode, so each client's own tests check them today. The vectors also say nothing about signatures, about relays, or about how an object looks beyond its positions, faces and colors.
 

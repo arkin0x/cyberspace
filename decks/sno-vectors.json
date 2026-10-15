@@ -1,5 +1,5 @@
 {
- "version": 1,
+ "version": 2,
  "deck": "DECK-0003",
  "about": "Conformance vectors for SNO (Simple Nostr Objects). Every `expected` was produced by decks/sno-reference.py; run decks/sno-vectors.py to check that they still agree. DECK-0003 §9.1 says how to use them.",
  "conventions": {
@@ -7,7 +7,7 @@
   "palette_event": "Present when the payload names a palette by nevent or naddr: the event a reader fetched for it. Absent means the fetch failed or was not attempted.",
   "strict": "true: a conformant reader MUST give this result. false: the spec leaves room, or is unclear, and `note` says how; the result shown is the reference's.",
   "detail": "\"summary\": `expected` carries counts rather than per-vertex arrays, to keep this file small.",
-  "expected.valid": "false: a reader MUST NOT render the object. `rule` names the §1.9 rule the reference cited; `error` is its message, which is informative and need not match word for word.",
+  "expected.valid": "false: a reader MUST NOT render the object. `rule` names the §1.9 rule the reference cited, or the section, such as `§3.1`, when the event rather than its payload is refused; `error` is its message, which is informative and need not match word for word.",
   "expected.status": "\"object\": a payload was read. \"hidden\": a kind 33331 sealed to a place (§3.4). \"default-avatar\": a kind 11333 with empty content (§3.3).",
   "expected.extent": "After repair (§1.8).",
   "expected.remainders": "`ticks` expanded, one triple per vertex (§1.2).",
@@ -662,6 +662,41 @@
     "kind": 33331,
     "tags": [["d", "sno-vector-019"]],
     "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]],\"extent\":\"8\"}"
+   },
+   "expected": {
+    "valid": true,
+    "status": "object",
+    "v": 2,
+    "mode": "solid",
+    "unit": 0,
+    "extent": 8,
+    "vertex_count": 4,
+    "face_count": 4,
+    "palette_length": 256,
+    "color_form": "palette",
+    "remainders": [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]],
+    "positions_ticks": [[0, 0, 0], [240, 0, 0], [120, 0, 240], [120, 240, 120]],
+    "positions": [["0", "0", "0"], ["2", "0", "0"], ["1", "0", "2"], ["1", "2", "1"]],
+    "faces": [[0, 1, 2], [0, 3, 1], [1, 3, 2], [0, 2, 3]],
+    "colors": [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 255]],
+    "face_colors": null,
+    "fronts": [[0, -57600, 0], [0, 28800, -57600], [57600, 14400, 28800], [-57600, 14400, 28800]],
+    "refs": [],
+    "parts": []
+   }
+  },
+  {
+   "id": "valid/extent-null",
+   "description": "`extent` written as null. Null is malformed, so it means 8, as any extent that is not an integer does: the one optional field where null is not a rejection (§1.1, §1.8).",
+   "sections": ["§1.1", "§1.8"],
+   "strict": true,
+   "event": {
+    "id": "2b5f3d6503250a9f3daa535f3c27871f51442a71fbb460533639d6bb890b21f1",
+    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
+    "created_at": 1792022568,
+    "kind": 33331,
+    "tags": [["d", "sno-vector-168"]],
+    "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]],\"extent\":null}"
    },
    "expected": {
     "valid": true,
@@ -2222,78 +2257,6 @@
    }
   },
   {
-   "id": "valid/kind-33331-no-d-tag",
-   "description": "A kind 33331 with no `d` tag. The reference reads the payload.",
-   "sections": ["§3.1"],
-   "strict": false,
-   "note": "§3.1 requires a publisher to write `d`, but does not say whether a reader refuses an event without one. sno-core's feed drops it; the reference reads it.",
-   "event": {
-    "id": "693e45b801736bba5db7ec7815ae8b3d2ee1534ecade89a7347f4ec852444dac",
-    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
-    "created_at": 1792022464,
-    "kind": 33331,
-    "tags": [],
-    "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]]}"
-   },
-   "expected": {
-    "valid": true,
-    "status": "object",
-    "v": 2,
-    "mode": "solid",
-    "unit": 0,
-    "extent": 8,
-    "vertex_count": 4,
-    "face_count": 4,
-    "palette_length": 256,
-    "color_form": "palette",
-    "remainders": [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]],
-    "positions_ticks": [[0, 0, 0], [240, 0, 0], [120, 0, 240], [120, 240, 120]],
-    "positions": [["0", "0", "0"], ["2", "0", "0"], ["1", "0", "2"], ["1", "2", "1"]],
-    "faces": [[0, 1, 2], [0, 3, 1], [1, 3, 2], [0, 2, 3]],
-    "colors": [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 255]],
-    "face_colors": null,
-    "fronts": [[0, -57600, 0], [0, 28800, -57600], [57600, 14400, 28800], [-57600, 14400, 28800]],
-    "refs": [],
-    "parts": []
-   }
-  },
-  {
-   "id": "valid/name-absent",
-   "description": "A payload with no `name`. The reference accepts it.",
-   "sections": ["§1.1", "§1.9"],
-   "strict": false,
-   "note": "§1.1 marks `name` required and says a reader MUST reject a payload missing a required field, but §1.9 never checks `name` and neither does the reference. Open question for the spec.",
-   "event": {
-    "id": "e2962a2917bcf94f641acdb22afbb3a81edcb88279a833992a90866c8b849266",
-    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
-    "created_at": 1792022465,
-    "kind": 33331,
-    "tags": [["d", "sno-vector-065"]],
-    "content": "{\"v\":2,\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]]}"
-   },
-   "expected": {
-    "valid": true,
-    "status": "object",
-    "v": 2,
-    "mode": "solid",
-    "unit": 0,
-    "extent": 8,
-    "vertex_count": 4,
-    "face_count": 4,
-    "palette_length": 256,
-    "color_form": "palette",
-    "remainders": [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]],
-    "positions_ticks": [[0, 0, 0], [240, 0, 0], [120, 0, 240], [120, 240, 120]],
-    "positions": [["0", "0", "0"], ["2", "0", "0"], ["1", "0", "2"], ["1", "2", "1"]],
-    "faces": [[0, 1, 2], [0, 3, 1], [1, 3, 2], [0, 2, 3]],
-    "colors": [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 255]],
-    "face_colors": null,
-    "fronts": [[0, -57600, 0], [0, 28800, -57600], [57600, 14400, 28800], [-57600, 14400, 28800]],
-    "refs": [],
-    "parts": []
-   }
-  },
-  {
    "id": "valid/name-long",
    "description": "A name of 100 characters. A reader truncates it to 64 for display; it is never a rejection.",
    "sections": ["§1.1", "§1.8"],
@@ -2501,154 +2464,6 @@
    }
   },
   {
-   "id": "latitude/ticks-null",
-   "description": "`ticks` written as null. The reference reads it as absent.",
-   "sections": ["§1.2"],
-   "strict": false,
-   "note": "The spec does not say whether null means absent. The reference reads null as absent for ticks, palette, facecolors and extent, and rejects it for up, spin, refs and parts.",
-   "event": {
-    "id": "06869a69d6f214b8a598e171778fb2ea09d15e3755b85fadfe76d78226434550",
-    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
-    "created_at": 1792022467,
-    "kind": 33331,
-    "tags": [["d", "sno-vector-067"]],
-    "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]],\"ticks\":null}"
-   },
-   "expected": {
-    "valid": true,
-    "status": "object",
-    "v": 2,
-    "mode": "solid",
-    "unit": 0,
-    "extent": 8,
-    "vertex_count": 4,
-    "face_count": 4,
-    "palette_length": 256,
-    "color_form": "palette",
-    "remainders": [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]],
-    "positions_ticks": [[0, 0, 0], [240, 0, 0], [120, 0, 240], [120, 240, 120]],
-    "positions": [["0", "0", "0"], ["2", "0", "0"], ["1", "0", "2"], ["1", "2", "1"]],
-    "faces": [[0, 1, 2], [0, 3, 1], [1, 3, 2], [0, 2, 3]],
-    "colors": [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 255]],
-    "face_colors": null,
-    "fronts": [[0, -57600, 0], [0, 28800, -57600], [57600, 14400, 28800], [-57600, 14400, 28800]],
-    "refs": [],
-    "parts": []
-   }
-  },
-  {
-   "id": "latitude/facecolors-null",
-   "description": "`facecolors` written as null. The reference reads it as absent: every face interpolates.",
-   "sections": ["§1.4a"],
-   "strict": false,
-   "note": "The spec does not say whether null means absent. sno-core rejects this payload.",
-   "event": {
-    "id": "0471cac68375d4feb2e3433bb93141d5f32f0f42960363cfe6138e3e0c846db2",
-    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
-    "created_at": 1792022468,
-    "kind": 33331,
-    "tags": [["d", "sno-vector-068"]],
-    "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]],\"facecolors\":null}"
-   },
-   "expected": {
-    "valid": true,
-    "status": "object",
-    "v": 2,
-    "mode": "solid",
-    "unit": 0,
-    "extent": 8,
-    "vertex_count": 4,
-    "face_count": 4,
-    "palette_length": 256,
-    "color_form": "palette",
-    "remainders": [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]],
-    "positions_ticks": [[0, 0, 0], [240, 0, 0], [120, 0, 240], [120, 240, 120]],
-    "positions": [["0", "0", "0"], ["2", "0", "0"], ["1", "0", "2"], ["1", "2", "1"]],
-    "faces": [[0, 1, 2], [0, 3, 1], [1, 3, 2], [0, 2, 3]],
-    "colors": [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 255]],
-    "face_colors": null,
-    "fronts": [[0, -57600, 0], [0, 28800, -57600], [57600, 14400, 28800], [-57600, 14400, 28800]],
-    "refs": [],
-    "parts": []
-   }
-  },
-  {
-   "id": "latitude/palette-null",
-   "description": "`palette` written as null. The reference reads it as absent: the built-in.",
-   "sections": ["§1.3a"],
-   "strict": false,
-   "note": "The spec does not say whether null means absent.",
-   "event": {
-    "id": "2a73255e37887042cf8f650fc8fd1b40ffcff6aa8d5bae14fe2505ec7d194c08",
-    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
-    "created_at": 1792022469,
-    "kind": 33331,
-    "tags": [["d", "sno-vector-069"]],
-    "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]],\"palette\":null}"
-   },
-   "expected": {
-    "valid": true,
-    "status": "object",
-    "v": 2,
-    "mode": "solid",
-    "unit": 0,
-    "extent": 8,
-    "vertex_count": 4,
-    "face_count": 4,
-    "palette_length": 256,
-    "color_form": "palette",
-    "remainders": [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]],
-    "positions_ticks": [[0, 0, 0], [240, 0, 0], [120, 0, 240], [120, 240, 120]],
-    "positions": [["0", "0", "0"], ["2", "0", "0"], ["1", "0", "2"], ["1", "2", "1"]],
-    "faces": [[0, 1, 2], [0, 3, 1], [1, 3, 2], [0, 2, 3]],
-    "colors": [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 255]],
-    "face_colors": null,
-    "fronts": [[0, -57600, 0], [0, 28800, -57600], [57600, 14400, 28800], [-57600, 14400, 28800]],
-    "refs": [],
-    "parts": []
-   }
-  },
-  {
-   "id": "latitude/refs-null",
-   "description": "`refs` written as null. The reference rejects it under rule 11.",
-   "sections": ["§1.9 rule 11"],
-   "strict": false,
-   "note": "The spec does not say whether null means absent. Grimoire reads it as absent.",
-   "event": {
-    "id": "a487aae8d1cf2a2ba3fadaab605accba3ac196923e18ee2e9e0f74568a989d46",
-    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
-    "created_at": 1792022470,
-    "kind": 33331,
-    "tags": [["d", "sno-vector-070"]],
-    "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]],\"refs\":null}"
-   },
-   "expected": {
-    "valid": false,
-    "rule": "rule 11",
-    "error": "rule 11: refs is not an array"
-   }
-  },
-  {
-   "id": "latitude/parts-null",
-   "description": "`parts` written as null. The reference rejects it under rule 12.",
-   "sections": ["§1.9 rule 12"],
-   "strict": false,
-   "note": "The spec does not say whether null means absent. Grimoire reads it as absent.",
-   "event": {
-    "id": "c09a5544d0bbd7f85af36137e11cfdc3eb1382d2ddfbba09d2b92204b21073e3",
-    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
-    "created_at": 1792022471,
-    "kind": 33331,
-    "tags": [["d", "sno-vector-071"]],
-    "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]],\"parts\":null}"
-   },
-   "expected": {
-    "valid": false,
-    "rule": "rule 12",
-    "error": "rule 12: parts is not an array"
-   }
-  },
-  {
    "id": "latitude/v2-triple-colors",
    "description": "A v2 payload whose colors are triples, as written for a few weeks before 2026-09-16. The reference rejects it under rule 8b.",
    "sections": ["§5", "§1.9 rule 8b"],
@@ -2804,6 +2619,63 @@
    }
   },
   {
+   "id": "invalid/kind-33331-no-d-tag",
+   "description": "A kind 33331 with no `d` tag. Refused: NIP-01 addresses it by kind, pubkey and `d`, and a relay that reads a missing `d` as empty files every such event from one author under one address (§3.1).",
+   "sections": ["§3.1"],
+   "strict": true,
+   "event": {
+    "id": "693e45b801736bba5db7ec7815ae8b3d2ee1534ecade89a7347f4ec852444dac",
+    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
+    "created_at": 1792022464,
+    "kind": 33331,
+    "tags": [],
+    "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]]}"
+   },
+   "expected": {
+    "valid": false,
+    "rule": "§3.1",
+    "error": "§3.1: a kind 33331 has no d tag, or an empty one"
+   }
+  },
+  {
+   "id": "invalid/kind-33331-empty-d",
+   "description": "A kind 33331 whose `d` tag is the empty string. Refused, for the same reason as a missing one (§3.1).",
+   "sections": ["§3.1"],
+   "strict": true,
+   "event": {
+    "id": "157e6263932b44cd31bf1a94306aab2760ca144fa3999a040eac9382313d4d76",
+    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
+    "created_at": 1792022564,
+    "kind": 33331,
+    "tags": [["d", ""]],
+    "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]]}"
+   },
+   "expected": {
+    "valid": false,
+    "rule": "§3.1",
+    "error": "§3.1: a kind 33331 has no d tag, or an empty one"
+   }
+  },
+  {
+   "id": "invalid/kind-33331-hidden-no-d",
+   "description": "A kind 33331 sealed to a place, with no `d` tag. The rule holds for a hidden object too (§3.1, §3.4).",
+   "sections": ["§3.1", "§3.4"],
+   "strict": true,
+   "event": {
+    "id": "ec829f7716b890b7bcf79c8b76b13264127f98953a1a6e238c85144f909faec1",
+    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
+    "created_at": 1792022565,
+    "kind": 33331,
+    "tags": [["encrypted", "aes-256-gcm", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "cyberspace:region"]],
+    "content": "This object is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech"
+   },
+   "expected": {
+    "valid": false,
+    "rule": "§3.1",
+    "error": "§3.1: a kind 33331 has no d tag, or an empty one"
+   }
+  },
+  {
    "id": "invalid/v-3",
    "description": "`v` of 3.",
    "sections": ["§1.9 rule 1", "§5"],
@@ -2896,6 +2768,101 @@
     "valid": false,
     "rule": "rule 1",
     "error": "rule 1: v must be 1 or 2"
+   }
+  },
+  {
+   "id": "invalid/name-missing",
+   "description": "A payload with no `name`. `name` is required (§1.1).",
+   "sections": ["§1.1", "§1.9 rule 1a"],
+   "strict": true,
+   "event": {
+    "id": "e2962a2917bcf94f641acdb22afbb3a81edcb88279a833992a90866c8b849266",
+    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
+    "created_at": 1792022465,
+    "kind": 33331,
+    "tags": [["d", "sno-vector-065"]],
+    "content": "{\"v\":2,\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]]}"
+   },
+   "expected": {
+    "valid": false,
+    "rule": "rule 1a",
+    "error": "rule 1a: name is missing or is not a string"
+   }
+  },
+  {
+   "id": "invalid/name-number",
+   "description": "`name` written as a number. It must be a string.",
+   "sections": ["§1.1", "§1.9 rule 1a"],
+   "strict": true,
+   "event": {
+    "id": "96e37754308fe91a8fb679c2041db8984027fcedcfe2f72d8b98d86a6ba901fb",
+    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
+    "created_at": 1792022560,
+    "kind": 33331,
+    "tags": [["d", "sno-vector-160"]],
+    "content": "{\"v\":2,\"name\":7,\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]]}"
+   },
+   "expected": {
+    "valid": false,
+    "rule": "rule 1a",
+    "error": "rule 1a: name is missing or is not a string"
+   }
+  },
+  {
+   "id": "invalid/name-null",
+   "description": "`name` written as null. Null on a required field is the wrong type, as it always was.",
+   "sections": ["§1.1", "§1.9 rule 1a"],
+   "strict": true,
+   "event": {
+    "id": "24e5dded0e984b41d38adcf3cb9f71ba123984ef28097211a0756ef686de7d6f",
+    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
+    "created_at": 1792022561,
+    "kind": 33331,
+    "tags": [["d", "sno-vector-161"]],
+    "content": "{\"v\":2,\"name\":null,\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]]}"
+   },
+   "expected": {
+    "valid": false,
+    "rule": "rule 1a",
+    "error": "rule 1a: name is missing or is not a string"
+   }
+  },
+  {
+   "id": "invalid/name-empty",
+   "description": "`name` is the empty string.",
+   "sections": ["§1.1", "§1.9 rule 1a"],
+   "strict": true,
+   "event": {
+    "id": "287e576a5e8d5455ef67aa4ebeb4254824e4606b8ec33bd74ef704bccb661351",
+    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
+    "created_at": 1792022562,
+    "kind": 33331,
+    "tags": [["d", "sno-vector-162"]],
+    "content": "{\"v\":2,\"name\":\"\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]]}"
+   },
+   "expected": {
+    "valid": false,
+    "rule": "rule 1a",
+    "error": "rule 1a: name is empty or only whitespace"
+   }
+  },
+  {
+   "id": "invalid/name-whitespace",
+   "description": "`name` is only whitespace: spaces, a tab and an ideographic space (U+3000). Empty once whitespace is set aside.",
+   "sections": ["§1.1", "§1.9 rule 1a"],
+   "strict": true,
+   "event": {
+    "id": "007ab9b7be8d773b164baf79f651acf6c315b0b1b77ad49f7bc46949176a7305",
+    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
+    "created_at": 1792022563,
+    "kind": 33331,
+    "tags": [["d", "sno-vector-163"]],
+    "content": "{\"v\":2,\"name\":\"  \\t　\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]]}"
+   },
+   "expected": {
+    "valid": false,
+    "rule": "rule 1a",
+    "error": "rule 1a: name is empty or only whitespace"
    }
   },
   {
@@ -3374,6 +3341,25 @@
    }
   },
   {
+   "id": "invalid/ticks-null",
+   "description": "`ticks` written as null. Null is not absence: an optional field written as null fails the rule that checks the field, and a publisher omits a field rather than writing null (§1.1).",
+   "sections": ["§1.1", "§1.9 rule 7"],
+   "strict": true,
+   "event": {
+    "id": "06869a69d6f214b8a598e171778fb2ea09d15e3755b85fadfe76d78226434550",
+    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
+    "created_at": 1792022467,
+    "kind": 33331,
+    "tags": [["d", "sno-vector-067"]],
+    "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]],\"ticks\":null}"
+   },
+   "expected": {
+    "valid": false,
+    "rule": "rule 7",
+    "error": "rule 7: ticks is null; a publisher omits a field rather than writing null"
+   }
+  },
+  {
    "id": "invalid/face-index-past-end",
    "description": "A face naming vertex 9 of 4.",
    "sections": ["§1.4", "§1.9 rule 8"],
@@ -3637,6 +3623,25 @@
     "valid": false,
     "rule": "rule 8a",
     "error": "rule 8a: palette is neither a name, a reference, nor an array"
+   }
+  },
+  {
+   "id": "invalid/palette-null",
+   "description": "`palette` written as null. Null is not absence: an optional field written as null fails the rule that checks the field, and a publisher omits a field rather than writing null (§1.1).",
+   "sections": ["§1.1", "§1.9 rule 8a"],
+   "strict": true,
+   "event": {
+    "id": "2a73255e37887042cf8f650fc8fd1b40ffcff6aa8d5bae14fe2505ec7d194c08",
+    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
+    "created_at": 1792022469,
+    "kind": 33331,
+    "tags": [["d", "sno-vector-069"]],
+    "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]],\"palette\":null}"
+   },
+   "expected": {
+    "valid": false,
+    "rule": "rule 8a",
+    "error": "rule 8a: palette is null; a publisher omits a field rather than writing null"
    }
   },
   {
@@ -3934,6 +3939,25 @@
    }
   },
   {
+   "id": "invalid/facecolors-null",
+   "description": "`facecolors` written as null. Null is not absence: an optional field written as null fails the rule that checks the field, and a publisher omits a field rather than writing null (§1.1).",
+   "sections": ["§1.1", "§1.9 rule 8c"],
+   "strict": true,
+   "event": {
+    "id": "0471cac68375d4feb2e3433bb93141d5f32f0f42960363cfe6138e3e0c846db2",
+    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
+    "created_at": 1792022468,
+    "kind": 33331,
+    "tags": [["d", "sno-vector-068"]],
+    "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]],\"facecolors\":null}"
+   },
+   "expected": {
+    "valid": false,
+    "rule": "rule 8c",
+    "error": "rule 8c: facecolors is null; a publisher omits a field rather than writing null"
+   }
+  },
+  {
    "id": "invalid/up-string",
    "description": "`up` of \"yes\".",
    "sections": ["§1.7", "§1.9 rule 10"],
@@ -4021,6 +4045,44 @@
     "kind": 33331,
     "tags": [["d", "sno-vector-143"]],
     "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]],\"spin\":-1}"
+   },
+   "expected": {
+    "valid": false,
+    "rule": "rule 10",
+    "error": "rule 10: spin must be an integer in 0..359"
+   }
+  },
+  {
+   "id": "invalid/up-null",
+   "description": "`up` written as null. Null is not absence: an optional field written as null fails the rule that checks the field, and a publisher omits a field rather than writing null (§1.1).",
+   "sections": ["§1.1", "§1.9 rule 10"],
+   "strict": true,
+   "event": {
+    "id": "ac0a23a9e4497b37e7f25befbbcbe3f9857772d00c4822d5cd91b7522f56f602",
+    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
+    "created_at": 1792022566,
+    "kind": 33331,
+    "tags": [["d", "sno-vector-166"]],
+    "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]],\"up\":null}"
+   },
+   "expected": {
+    "valid": false,
+    "rule": "rule 10",
+    "error": "rule 10: up, when present, must be a boolean"
+   }
+  },
+  {
+   "id": "invalid/spin-null",
+   "description": "`spin` written as null. Null is not absence: an optional field written as null fails the rule that checks the field, and a publisher omits a field rather than writing null (§1.1).",
+   "sections": ["§1.1", "§1.9 rule 10"],
+   "strict": true,
+   "event": {
+    "id": "73ce35537991c91212986d19e270c3d40b7dab04be066e73917971edecdbe910",
+    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
+    "created_at": 1792022567,
+    "kind": 33331,
+    "tags": [["d", "sno-vector-167"]],
+    "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]],\"spin\":null}"
    },
    "expected": {
     "valid": false,
@@ -4159,6 +4221,25 @@
     "valid": false,
     "rule": "rule 11",
     "error": "rule 11: a refs entry is not a tag of two or three strings"
+   }
+  },
+  {
+   "id": "invalid/refs-null",
+   "description": "`refs` written as null. Null is not absence: an optional field written as null fails the rule that checks the field, and a publisher omits a field rather than writing null (§1.1).",
+   "sections": ["§1.1", "§1.9 rule 11"],
+   "strict": true,
+   "event": {
+    "id": "a487aae8d1cf2a2ba3fadaab605accba3ac196923e18ee2e9e0f74568a989d46",
+    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
+    "created_at": 1792022470,
+    "kind": 33331,
+    "tags": [["d", "sno-vector-070"]],
+    "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]],\"refs\":null}"
+   },
+   "expected": {
+    "valid": false,
+    "rule": "rule 11",
+    "error": "rule 11: refs is not an array"
    }
   },
   {
@@ -4325,6 +4406,25 @@
     "kind": 33331,
     "tags": [["d", "sno-vector-159"]],
     "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]],\"refs\":[[\"e\",\"cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\"]],\"parts\":{\"0\":[0,0,0,0,0,0,0,0]}}"
+   },
+   "expected": {
+    "valid": false,
+    "rule": "rule 12",
+    "error": "rule 12: parts is not an array"
+   }
+  },
+  {
+   "id": "invalid/parts-null",
+   "description": "`parts` written as null. Null is not absence: an optional field written as null fails the rule that checks the field, and a publisher omits a field rather than writing null (§1.1).",
+   "sections": ["§1.1", "§1.9 rule 12"],
+   "strict": true,
+   "event": {
+    "id": "c09a5544d0bbd7f85af36137e11cfdc3eb1382d2ddfbba09d2b92204b21073e3",
+    "pubkey": "5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f5e0f",
+    "created_at": 1792022471,
+    "kind": 33331,
+    "tags": [["d", "sno-vector-071"]],
+    "content": "{\"v\":2,\"name\":\"tetra\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[[0,0,0],[2,0,0],[1,0,2],[1,2,1]],\"colors\":[238,235,239,225],\"faces\":[[0,1,2],[0,3,1],[1,3,2],[0,2,3]],\"parts\":null}"
    },
    "expected": {
     "valid": false,
