@@ -409,16 +409,16 @@ def resolve_palette(field: Any, fetched: Any = None) -> list[list[int]]:
 # What a reader draws, once a payload validates. Each of these assumes
 # validate() has already accepted the payload, and adds no rule of its own.
 # They exist so that the conformance vectors (sno-vectors.json) can state an
-# expected result for colours and fronts that this file produced, rather than
+# expected result for colors and fronts that this file produced, rather than
 # one somebody worked out by hand.
 # --------------------------------------------------------------------------
 
 def vertex_colors(payload: dict, fetched_palette: Any = None) -> list[list]:
-    """§1.3: the colour each vertex is drawn in, one per vertex.
+    """§1.3: the color each vertex is drawn in, one per vertex.
 
     In a v2 payload an index names an entry of whichever palette applies
     (§1.3a, §1.3b), and the result is that entry, three integers 0..255. In a
-    v1 payload the colour is the literal triple, clamped to 0..1 on read and
+    v1 payload the color is the literal triple, clamped to 0..1 on read and
     otherwise taken exactly as written, never snapped to a palette entry.
     """
     if payload["v"] == 1:
@@ -428,9 +428,9 @@ def vertex_colors(payload: dict, fetched_palette: Any = None) -> list[list]:
 
 
 def face_colors(payload: dict, fetched_palette: Any = None) -> list[list[int]] | None:
-    """§1.4a: the colour that fills each face, or None when every face
+    """§1.4a: the color that fills each face, or None when every face
     interpolates its corners. None and an empty list are different answers:
-    the second is an object that carries face colours and has no faces."""
+    the second is an object that carries face colors and has no faces."""
     if payload.get("facecolors") is None:
         return None
     palette = resolve_palette(payload.get("palette"), fetched_palette)
@@ -478,7 +478,7 @@ def parse_content(text: Any) -> Any:
 
     JSON as RFC 8259 defines it. Python's json module also reads NaN,
     Infinity and -Infinity, which are not JSON and which no browser's
-    JSON.parse accepts, so they are refused here: otherwise a v1 colour of
+    JSON.parse accepts, so they are refused here: otherwise a v1 color of
     NaN would pass this file and fail every JavaScript reader.
     """
     if not isinstance(text, str):
@@ -793,14 +793,14 @@ def _self_test() -> None:
     assert vertex_colors(validate({**AS_V1, "colors": [[1.5, -0.25, 0.5], [0, 1, 0], [0, 0, 1], [1, 1, 1]]}))[0] == [1, 0, 0.5]
     assert face_colors(ok) is None
     assert face_colors(solid) == [[255, 0, 0]] * 4
-    print("colours: an index reads as its palette entry, a v1 literal is clamped and never snapped")
+    print("colors: an index reads as its palette entry, a v1 literal is clamped and never snapped")
 
     # §1.4: every face of Appendix A looks out of the solid, so its normal
     # points away from the middle of the tetrahedron.
     middle = [sum(v[a] for v in APPENDIX_A["vertices"]) * TICKS_PER_UNIT / 4 for a in range(3)]
     for face, n in zip(APPENDIX_A["faces"], fronts(ok)):
-        centre = [sum(APPENDIX_A["vertices"][i][a] for i in face) * TICKS_PER_UNIT / 3 for a in range(3)]
-        assert sum(n[a] * (centre[a] - middle[a]) for a in range(3)) > 0, (face, n)
+        center = [sum(APPENDIX_A["vertices"][i][a] for i in face) * TICKS_PER_UNIT / 3 for a in range(3)]
+        assert sum(n[a] * (center[a] - middle[a]) for a in range(3)) > 0, (face, n)
     # The v1 negation is a mirror, and a mirror turns every front round: the
     # same indices on the mirrored corners give (-x, -y, z) where v2 gives
     # (x, y, z). That is why §1.4 reads the front after the negation.
