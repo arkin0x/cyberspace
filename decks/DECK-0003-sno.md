@@ -445,6 +445,8 @@ An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload
 
 **Why a partially encrypted `kind 33331` and not a wrapper kind.** The object keeps its kind, so a query for `kind 33331` returns hidden objects too, as previews; a client that knows nothing of this DECK shows the preview, which is the sentence above pointing at a client that can find the object; and the shape is already implemented in clients that follow FF-1. A wrapper kind (an application-specific event carrying the ciphertext) would hide the object from every one of those.
 
+**An object for sale names a key service instead of a place.** Element [3] MAY instead be an FF-1 key service URL: an `https` URL of an endpoint that issues keys, such as Fanfares' `https://api.fanfares.live/request-key`. Such an object is sold, not hidden at a place. No bag references it, no region key opens it, and a reader obtains its key by requesting it from that service as FF-1's key retrieval describes (a NIP-98 request naming the object's `naddr`), usually after paying for it, then decrypts element [2] and reads and validates the payload exactly as above. The rest of this section holds unchanged: the ciphertext is the payload of §1 under the same byte layout, and the event carries nothing that says where the object is, because it is not anywhere. A reader that does not implement key retrieval treats the object as sealed and shows the preview, as it would for any key source it cannot use. Fanfares defines the full event, including its price, payment tags and preview images, in its NIP FF-2, section "3D Object (kind 33331)".
+
 
 ### 3.5 Crediting a copy
 
