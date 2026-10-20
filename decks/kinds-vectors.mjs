@@ -2,7 +2,8 @@
 // (local chat) and DECK-0006 (sealed comments). Deterministic: every key is
 // SHA-256 of a label, every nonce is fixed, and every BIP-340 signature uses
 // 32 zero bytes of auxiliary randomness. A reader MUST accept any valid
-// signature; the fixed aux only makes these files reproducible.
+// signature; the fixed aux only makes these files reproducible. The message
+// sealed in the chest and the chat line are rumors, so they carry no `sig`.
 // Run from a directory where nostr-tools (2.x) and @noble/curves are installed:
 //   node kinds-vectors.mjs > kinds-vectors.json
 import { createHash, webcrypto } from 'node:crypto'
@@ -18,6 +19,8 @@ const sign = (unsigned, sk) => {
   const id = getEventHash(unsigned)
   return { ...unsigned, id, sig: hex(schnorr.sign(Buffer.from(id, 'hex'), sk, AUX)) }
 }
+// A rumor (CYBERSPACE_V2.md §7.6): the canonical id and no `sig` field.
+const rumorOf = (unsigned) => ({ ...unsigned, id: getEventHash(unsigned) })
 async function aesGcm(k, nonce, plaintext) {
   const ck = await webcrypto.subtle.importKey('raw', k, 'AES-GCM', false, ['encrypt'])
   const ct = new Uint8Array(await webcrypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, ck, new TextEncoder().encode(plaintext)))
@@ -39,14 +42,16 @@ const T = 1791800000
 const keyItem = sign({ pubkey: hider, created_at: T, kind: 3340, content: 'Opens the vault under the bridge.', tags: [['C', C], ['title', 'Vapor Key'], ['item', item], ['secret', hex(itemSk)], ['-']] }, hiderSk)
 
 // DECK-0004 §3: a chest sealed to the item's public key with a one-time sender key.
-const message = sign({ pubkey: hider, created_at: T, kind: 1, content: 'You found the secret sauce.', tags: [['C', C]] }, hiderSk)
+// The message inside is a rumor by the chest's signer, and it and the chest
+// both carry NIP-70's `-` (CYBERSPACE_V2.md §7.6, Rumors and Protected items).
+const message = rumorOf({ pubkey: hider, created_at: T, kind: 1, content: 'You found the secret sauce.', tags: [['C', C], ['-']] })
 const chestPlaintext = JSON.stringify([message])
 const convSeal = nip44.utils.getConversationKey(senderSk, item)
 const payload = nip44.encrypt(chestPlaintext, convSeal, nonce32('chest'))
 const convOpen = nip44.utils.getConversationKey(itemSk, sender)
 if (hex(convSeal) !== hex(convOpen)) throw new Error('conversation keys differ')
 if (nip44.decrypt(payload, convOpen) !== chestPlaintext) throw new Error('chest does not open')
-const chest = sign({ pubkey: hider, created_at: T, kind: 3341, content: payload, tags: [['C', C], ['title', 'Vault'], ['lock', item, sender], ['requires', 'Vapor Key']] }, hiderSk)
+const chest = sign({ pubkey: hider, created_at: T, kind: 3341, content: payload, tags: [['C', C], ['title', 'Vault'], ['lock', item, sender], ['requires', 'Vapor Key'], ['-']] }, hiderSk)
 
 // DECK-0004 §4: an item listing.
 const proofMessage = sha(`cyberspace:item-listing:${hider}:${item}`)
@@ -54,8 +59,7 @@ const proof = hex(schnorr.sign(proofMessage, itemSk, AUX))
 const listing = sign({ pubkey: hider, created_at: T, kind: 33340, content: 'Opens the vault under the bridge.', tags: [['d', item], ['name', 'Vapor Key'], ['proof', proof]] }, hiderSk)
 
 // DECK-0005: a chat line (an unsigned rumor) sealed in an ephemeral envelope.
-const rumorUnsigned = { pubkey: speaker, created_at: T, kind: 23333, content: 'meet at the port nostr:npub1placeholder', tags: [['d', lookupId], ['C', C], ['p', hider]] }
-const rumor = { ...rumorUnsigned, id: getEventHash(rumorUnsigned) }
+const rumor = rumorOf({ pubkey: speaker, created_at: T, kind: 23333, content: 'meet at the port nostr:npub1placeholder', tags: [['d', lookupId], ['C', C], ['p', hider]] })
 const chatPlain = JSON.stringify([rumor])
 const chatPayload = await aesGcm(regionKey, nonce12('chat'), chatPlain)
 const envelope = sign({ pubkey: speaker, created_at: T, kind: 23330, content: '', tags: [['d', lookupId], ['encrypted', 'aes-256-gcm', chatPayload], ['version', '2'], ['h', '12']] }, speakerSk)

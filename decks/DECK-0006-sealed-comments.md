@@ -5,7 +5,7 @@ Title: Sealed comments on hidden things
 Status: Draft
 Mandatory: no
 Created: 2026-10-15
-Last updated: 2026-10-15
+Last updated: 2026-10-20
 Requires: `CYBERSPACE_V2.md` §7.2, §7.6 and §8.6; NIP-22; Fanfares NIP FF-1 (derived-key events)
 
 ## Abstract
@@ -39,7 +39,7 @@ The words are at most 2,000 characters, trimmed, and not empty.
 |---|---|
 | an inline item of the bag | `e` = the item's event id, `k` = its kind (`3330`, `1`, `3340`, `3341`, ...), `p` = its author |
 | an item hidden by reference to a sealed object | `e` = the referenced event's id, `a` = its address when the reference is an `a` reference, `k` = its kind, `p` = its author |
-| an item inside a chest (DECK-0004 §3) | as an inline item, with that item's id, kind and author |
+| an item inside a chest (DECK-0004 §3) | as an inline item, with that item's id, kind and author. For an unsigned item, such as a message written as a rumor, the id is its canonical id, which is how readers identify it (DECK-0004 §3.4). |
 | another comment (a reply) | `e` = the comment's id, `k` = `1111`, `p` = the comment's author |
 
 Every comment on anything in one bag shares the root, so one query (`kinds: [1111], #A: [<bag address>]`) finds all of them. A comment on an addressable item names its address as well as its id, so it stays under the item when the item's author edits it and its id changes.

@@ -5,8 +5,8 @@ Title: Local chat
 Status: Draft
 Mandatory: no
 Created: 2026-10-15
-Last updated: 2026-10-15
-Requires: `CYBERSPACE_V2.md` §7.2 (region keys), §7.6 (the bag) and §8.6 (its event); NIP-01, NIP-27
+Last updated: 2026-10-20
+Requires: `CYBERSPACE_V2.md` §7.2 (region keys), §7.6 (the bag) and §8.6 (its event); NIP-01, NIP-27, NIP-70
 
 ## Abstract
 
@@ -77,7 +77,9 @@ A line is an unsigned event, a **rumor**: it has an `id` and no `sig`.
 | `["C", "<coord_hex>"]` | where the speaker stood |
 | `["p", "<hex>"]` | zero to five: the people the line addresses (§3.3) |
 
-A writer MUST NOT sign a line. A line that carries no `sig` field is the normal form.
+A writer MUST NOT sign a line. A line that carries no `sig` field is the normal form. A line whose `sig` is the empty string is unsigned too: `CYBERSPACE_V2.md` §7.6 (Rumors) defines a rumor as an event that carries an `id` and either no `sig` field or a `sig` that is the empty string. A line whose `sig` is any other value is a signed line.
+
+A writer MUST NOT add NIP-70's protected tag, `["-"]`, to a line or to its envelope. The envelope is published on its own, and NIP-70 makes refusing an event that carries `-` a relay's default behaviour, so a protected envelope would reach fewer listeners. The line is a rumor, which no relay accepts as an event in any case. The protected-items rule of `CYBERSPACE_V2.md` §7.6 covers items hidden in a bag or sealed in a chest, not chat.
 
 ### 3.2 Reading a line
 
@@ -87,7 +89,9 @@ A reader MUST drop a line unless all of these hold:
 2. its `pubkey` equals the envelope's `pubkey`;
 3. its `content` is a non-empty string, its `created_at` a number, and its `tags` an array;
 4. its `id` equals the canonical id computed from its `pubkey`, `created_at`, `kind`, `tags` and `content`;
-5. if it carries a `sig` (a line from a client older than this DECK), the signature verifies.
+5. if it carries a `sig` that is not the empty string (a line from a client older than this DECK), the signature verifies. A line whose `sig` is the empty string is read as a rumor, exactly as one with no `sig` field.
+
+Note (non-normative): as of ONOSENDAI `834df05` and cyberspace-mcp `d784289`, both clients' `chatInners` treat any `sig` field, the empty string included, as a signature that must verify, and so drop a line whose `sig` is empty, where rule 5 keeps it. No writer produces such a line. The same clients' bag and chest readers already treat an empty `sig` as none.
 
 A reader MAY cut the content to 500 characters for display. A reader SHOULD keep one line per `id`, so a line that arrives twice is shown once.
 
@@ -103,7 +107,7 @@ A line's plain-text name of someone does not address them.
 
 ### 3.4 Why a rumor (non-normative)
 
-Before 2026-10-13 a line was signed. Anyone who had reached the room could take the signed line out of the envelope and show it anywhere as a standalone, verifiable statement of who said what. A rumor cannot be republished as a valid event. The envelope still binds the speaker to the ciphertext, so this is not the full deniability of NIP-17: someone who publishes the envelope together with the room's key can show what it contained. What a rumor removes is casual quotation.
+Before 2026-10-13 a line was signed. Anyone who had reached the room could take the signed line out of the envelope and show it anywhere as a standalone, verifiable statement of who said what. A rumor cannot be republished as a valid event. The envelope still binds the speaker to the ciphertext, so this is not the full deniability of NIP-17: someone who publishes the envelope together with the room's key can show what it contained. What a rumor removes is casual quotation. Messages hidden in bags and sealed in chests have been written the same way since 2026-10-20 (`CYBERSPACE_V2.md` §7.6, Rumors; DECK-0004 §3.2).
 
 A side benefit: a client asks its signer once per line, for the envelope, rather than twice.
 

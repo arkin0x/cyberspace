@@ -42,14 +42,14 @@
     "sig": "d7920b9808b3fe4ff9821e9f8f533c8738b6c4f964b8c1b50b2f1657bdca075857f4ae7609d370985d65b8c124a5b65828b131fed04a956cb1445186c1d27241"
   },
   "chest": {
-    "plaintext": "[{\"pubkey\":\"d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c\",\"created_at\":1791800000,\"kind\":1,\"content\":\"You found the secret sauce.\",\"tags\":[[\"C\",\"c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724\"]],\"id\":\"fc12c3e4448c9dc279c8c78ef95160b86728119b6ace007df4fe23ec41b63f65\",\"sig\":\"648f6ad7fa52ca8a94d17dcb6a2c7d677e3bca92e425164b9ccc3e15d25c802bb7318e42379b88348c864ce108583dec7bee2a3fd2f3597a44c948e81d4be1e2\"}]",
+    "plaintext": "[{\"pubkey\":\"d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c\",\"created_at\":1791800000,\"kind\":1,\"content\":\"You found the secret sauce.\",\"tags\":[[\"C\",\"c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724\"],[\"-\"]],\"id\":\"01fab6a847da4985548bc7ccaeb207979305ae9b2c2aaff273ed90b07202657b\"}]",
     "nip44_nonce": "3e77567068b130fcf63e09e93f01903cf29044b2590ef442095ed6998b6f7986",
     "conversation_key": "3ede09c8246832ab86d83f13e34871c38e38997b26a17a6b4c641e0d89a74f78",
     "event": {
       "pubkey": "d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c",
       "created_at": 1791800000,
       "kind": 3341,
-      "content": "Aj53VnBosTD89j4J6T8BkDzykESyWQ70Qgle1pmLb3mG81AyvcA0TBQG1p+htsBoWFzofXyzCgbAQchT2qkp0zSQ7BhX0pKnQPNtOA/QNwGLt6t+QqI9VuR/LWQkbGPa/fIXDzoLI/lEG2x5OWg3v/l06VZUsUNpxAO97KdnbmjsNTQUbhb1L/QYF7eBT+KI+xPJ606A5DaAtcgHMf3tGj4h3L4u8xKe0PdF7CNo6SApLI6Pq5gzXPuVBRFXboAwJVgX9jIy6XSnXFQ8l6V8Ms3sFQLmN4CRuFj/2xr7jWf+qw6GJZEy8Wz4+v2HNPnBf3i/Bf1GqQ7j1zZPhd1GfSr4O73l0F3TPKnigF4e1FtVF3xRSbu1BGmzwSmQIG8Wj3fK1TWWpf2KWgt6Rq6e5yqgZbDTcyDkh3anYK560u+pB82AUcHJvR787iFY6Eb7XOpjng2UyYCYadpisFLjqTXWHPUUCH+LVP07ywxDl2VvxgFqsywYzH8iYJTZ2uxr7u1T71Elgz7QOrGiEetKK1ykZ8bk24VVgm0HKdXdPKmlBgdHi/3es7LWbKF19PaIoKudTD8b8JEwmEbfBxxMVqHXU/IjvN+fd9gCNqYZ/F1qJ/cXBM5LM9WBQaxyAFspFGQRvInEMxvufcc7dxlc5UHVrkM3ulK5wE6UtjcGFBTZFMM=",
+      "content": "Aj53VnBosTD89j4J6T8BkDzykESyWQ70Qgle1pmLb3mG89MyvcA0TBQG1p+htsBoWFzofXyzCgbAQchT2qkp0zSQ7BhX0pKnQPNtOA/QNwGLt6t+QqI9VuR/LWQkbGPa/fIXDzoLI/lEG2x5OWg3v/l06VZUsUNpxAO97KdnbmjsNTQUbhb1L/QYF7eBT+KI+xPJ606A5DaAtcgHMf3tGj4h3L4u8xKe0PdF7CNo6SApLI6Pq5gzXPuVBRFXboAwJVgX9jIy6XSnXFQ8l6V8Ms3sFQLmN4CRuFj/2xr7jWf+qw6GJZEy8Wz4+v2HNPnBf3i/Bf1GqQ7j1zZPhd1GfSr4O73l0F3TPKmT915akiQyGThbHKvsFTy2k3zKdTdK2HKZjWKX/v+HC1UhEKjLtCn9MbXRfCjihyehNKx6272sAJnVVsKdvEysv3QD7hetXe1xgBnSl4WYLqVUhGqFn1SyK/qkFzwsn6GEV5WvIw7i00BRIoMs/eKfPfcMNG7aMHc8",
       "tags": [
         [
           "C",
@@ -67,10 +67,13 @@
         [
           "requires",
           "Vapor Key"
+        ],
+        [
+          "-"
         ]
       ],
-      "id": "aa862bd9558a79b5eee03db6786c6261c23c6b75347e1c677e9dddc348548b0e",
-      "sig": "85da6ea730085616993209819676e4fec70e9560216c89c0d954f7eff9f3d9d96a1c22dc4b92b187754a5df49959233536841fae87756e16259b8bde55ea111e"
+      "id": "c58f497210ad3d398b3532d84744dab330aefdcfd21b1287090ddbc960ffaab1",
+      "sig": "8cc0b1b3c0a43c5dd7091cf1d8492e9082e5001e359a8819718a3f53097fe9c9efa50be4b0589035ba9f907a277c1d5a5a0c11efa93d7ecf0b4928cb0f4c5c20"
     }
   },
   "item_listing": {

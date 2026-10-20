@@ -5,7 +5,7 @@ Title: Items and Chests
 Status: Draft
 Mandatory: no
 Created: 2026-10-15
-Last updated: 2026-10-15
+Last updated: 2026-10-20
 Requires: `CYBERSPACE_V2.md` §7.6 (the bag) and §8.6 (its event); NIP-01, NIP-44 v2, NIP-70, NIP-92; BIP-340
 
 ## Abstract
@@ -24,6 +24,7 @@ This DECK writes down what ONOSENDAI (from its Keys and Chests slice of 2026-10-
 - **Chest:** an inline bag item of `kind 3341` whose content is a NIP-44 v2 payload sealed to a lock (§3).
 - **Lock:** the public key a chest is sealed to, an item's or a person's.
 - **Item listing:** a public `kind 33340` event that names an item by its public key (§4).
+- **Rumor:** an item that carries an `id` and no signature (`CYBERSPACE_V2.md` §7.6, Rumors). A message sealed in a chest is written as one (§3.2).
 - **Forger:** whoever generated an item's keypair. In this DECK the forger is also the item event's signer, the hider.
 
 ## 1. Overview (non-normative)
@@ -55,7 +56,7 @@ An item is a nostr event carried inline in a bag's list of entries (`CYBERSPACE_
 | `["C", "<coord_hex>"]` | the item's exact coordinate, under the rules of `CYBERSPACE_V2.md` §7.6. |
 | `["imeta", "url <data URI>", "m <mime>", "dim <w>x<h>"]` | OPTIONAL. The item's picture (§2.4). |
 
-The item event is signed by the hider, as every inline item SHOULD be (`CYBERSPACE_V2.md` §7.6).
+The item event is signed by the hider, as `CYBERSPACE_V2.md` §7.6 says every item that is not a message SHOULD be.
 
 ### 2.2 Reading an item
 
@@ -75,7 +76,7 @@ Reading an item is holding it. A client SHOULD keep the items its user holds (th
 
 **The content is what other clients show.** A client that does not know `kind 3340` renders the content of an item as a note. If the secret were the content, every such client would print it. A tag is invisible to them.
 
-**`-` keeps the hider's signature at home.** The item event is signed by the hider and carries the secret. A finder who decrypts the bag holds that signed event, and could publish it to a relay, which would give the item to everyone who reads that relay under the hider's name. NIP-70 tells a relay to accept a protected event only from its author, so a compliant relay refuses that publication. It does not stop a finder from re-signing the same secret as themselves; nothing can, because a finder holds the secret. What it stops is the forgery of attribution.
+**`-` keeps the hider's signature at home.** The item event is signed by the hider and carries the secret. A finder who decrypts the bag holds that signed event, and could publish it to a relay, which would give the item to everyone who reads that relay under the hider's name. NIP-70 tells a relay to accept a protected event only from its author, so a compliant relay refuses that publication. It does not stop a finder from re-signing the same secret as themselves; nothing can, because a finder holds the secret. What it stops is the forgery of attribution. The key item carried `-` from the day it was introduced; since 2026-10-20 every item hidden in a bag or sealed in a chest carries it (`CYBERSPACE_V2.md` §7.6, Protected items).
 
 ### 2.4 The picture
 
@@ -105,9 +106,12 @@ A chest is a nostr event carried inline in a bag or in another chest. Like an it
 | `["lock", "<lock pubkey hex>", "<sender pubkey hex>"]` | exactly one. The public key the chest is sealed to, then the public key of the one-time sender (§3.2). Both 64 lowercase hex characters. |
 | `["title", "<name>"]` | the chest's name, at most 64 characters. SHOULD be present. |
 | `["requires", "<label>"]` | the hider's description of what opens the chest, at most 64 characters, shown to a reader who cannot open it. MAY be empty. |
+| `["-"]` | the NIP-70 protected marker. A writer MUST add it (`CYBERSPACE_V2.md` §7.6, Protected items). |
 | `["C", "<coord_hex>"]` | the chest's exact coordinate, under the rules of `CYBERSPACE_V2.md` §7.6. |
 
-A reader MUST drop a chest whose `lock` tag is missing or malformed, or whose `content` is empty.
+The chest event is signed by the hider, as `CYBERSPACE_V2.md` §7.6 says every item that is not a message SHOULD be. Its signature is what vouches for the messages sealed inside it (§3.4). A chest written without one vouches for nothing, and a reader MAY drop it (`CYBERSPACE_V2.md` §7.6, Every other kind).
+
+A reader MUST drop a chest whose `lock` tag is missing or malformed, or whose `content` is empty. A reader MUST NOT drop a chest for carrying `-` or for lacking it: chests sealed before 2026-10-20 lack it.
 
 ### 3.2 Sealing
 
@@ -122,6 +126,12 @@ The seal follows the gift-wrap pattern of NIP-59, applied to a list of entries:
 
 A chest can therefore be sealed to a key whose secret the sealer does not hold, and once it is sealed nobody, the sealer included, can open it without the lock's secret.
 
+**What goes in.** The entries of a chest follow the rules for the items of a bag (`CYBERSPACE_V2.md` §7.6), with the chest in the place of the bag and the chest's signer in the place of the bag's:
+
+- A message (`kind 1`) MUST be written as a rumor. Its `pubkey` MUST be the key that signs the chest, its `id` MUST be its canonical id (`CYBERSPACE_V2.md` §8.2), and it carries no `sig`. A writer MUST NOT sign a message it seals into a chest.
+- Every item the writer signs, or writes as a rumor, into the chest MUST carry NIP-70's `["-"]`: a shard (`3330`), a message (`1`), a key item (`3340`) and a chest (`3341`). An item signed by another key, which the writer seals as it is (for example a copy of an item it took), is carried unchanged, because adding a tag to it would break its signature.
+- Every item that is not a message SHOULD be signed by the writer, for the reason §7.6 gives: once it is taken elsewhere, only its own signature says who made it.
+
 ### 3.3 Opening
 
 - **With an item:** `conversation_key = nip44_get_conversation_key(item_secret, sender_pubkey)`, which is the same key as in §3.2 by the symmetry of ECDH, then `nip44_decrypt(content, conversation_key)`.
@@ -133,14 +143,20 @@ A reader SHOULD offer to open a chest when its user holds an item whose public k
 
 The decrypted plaintext is read as a list of entries under `CYBERSPACE_V2.md` §7.6:
 
-- Each inline item is verified as a bag's items are: a signed item MUST verify and is dropped alone when it does not; an unsigned item is allowed and its `pubkey` is a claim a reader MUST NOT present as verified.
+- Each inline item is verified as a bag's items are (`CYBERSPACE_V2.md` §7.6, Items and Rumors). An item is unsigned when it carries no `sig` field or a `sig` that is the empty string. An item with any other `sig` is signed: its `id` MUST be its canonical id and its signature MUST verify, and a reader MUST drop it, and only it, when either check fails.
+- An unsigned item is kept. A reader identifies it by its canonical id, whatever `id` it carries, so that a claimed id cannot stand in for another item's. Its `pubkey` is a claim, and a reader MUST NOT present it as verified unless the chest vouches for it, as the next rule says.
+- **Rumors in a chest.** A message rumor is vouched for by the chest that holds it when all three of these hold: the rumor's `pubkey` equals the chest's own `pubkey`; the rumor's `id` is its canonical id; and the chest's own authorship is verified, because the chest is signed and its signature verifies. A reader that keeps a vouched-for rumor MUST attribute its content to the chest's signer, and MAY present that authorship as verified. Reason: the chest's signature covers its `content`, which decrypts to exactly one list, in which this rumor's `pubkey` is the chest's own. This is the rule of `CYBERSPACE_V2.md` §7.6 ("Inside an item"), and it applies at every depth.
+- **The chest's own signer, never the bag's.** The key that vouches for a rumor is the `pubkey` of the chest the rumor is in. It is never the author of the bag that holds the chest, and never the signer of an outer chest. A chest inside another chest may have been sealed by someone else, for example when a hider seals a copy of a chest they took into a chest of their own; a rumor inside it that names the bag's author is a claim.
+- **A chest that is a claim vouches for nothing.** When a chest's own authorship is not verified, every rumor inside it has a `pubkey` that is a claim. `CYBERSPACE_V2.md` §7.6 also counts a chest that is itself a rumor vouched for by what holds it; writers do not write one (§3.1), and since writers write only messages as rumors, a reader MAY read an unsigned chest, or a rumor of any kind other than `1`, as an unsigned item whose `pubkey` is a claim. ONOSENDAI and cyberspace-mcp drop an unsigned chest found directly in a bag, and keep one found inside another chest as a claim, so that nothing inside it is vouched for.
+- **Signed messages.** A reader MUST still accept a signed message whose signature verifies, because messages sealed into chests before 2026-10-20 are signed. Its author is a fact on the strength of its own signature.
+- A reader MUST NOT drop an item for carrying `-` or for lacking it.
 - A chest MAY hold items of any kind, including items (§2) and other chests. A chest holding the item that opens the next chest is a chain.
 - A plaintext that is not a JSON array is a chest the reader cannot read; it SHOULD say so rather than show an empty chest.
 - Readers today do not follow references inside a chest: a reference is a relay query that opening a chest should not make on its own. A reader MAY skip references in a chest, and a writer SHOULD NOT put them there until a later revision says how they are fetched.
 
 **Where the contents stand.** A content item that carries a `C` tag in the chest's plane and inside the region of the bag that holds the chest stands at that coordinate. Any other content item stands where the chest stands. A chest that holds a room of shards therefore reveals the room in place when it is opened.
 
-**Taking.** Taking something out of an opened chest copies it into the reader's own keeping. The chest still holds it for the next reader.
+**Taking.** Taking something out of an opened chest copies it into the reader's own keeping. The chest still holds it for the next reader. A taken copy of a rumor proves nothing to anyone else: it has no signature, and the chest that vouched for it is not part of the copy. A client MAY keep, with what it took, whether the author was verified when its user opened the chest, as cyberspace-mcp's `take` keeps what `open_chest` said; that record is the reader's own, and nobody else can check it.
 
 **Removing.** Only the hider removes something from a chest, by sealing the remaining entries again (§3.2) with a fresh sender key and the same lock, and rewriting the bag that holds the chest. An emptied chest is still a chest.
 
@@ -199,7 +215,9 @@ A client that shows listings (ONOSENDAI's ITEM FEED):
 
 ## 5. Test vectors
 
-`kinds-vectors.json`, beside this DECK, holds one of each event this DECK defines, built from fixed keys and fixed nonces by `kinds-vectors.mjs`: a key item, a chest sealed to that item with its plaintext, NIP-44 nonce and conversation key, and a listing of the item with its proof message. ONOSENDAI's readers (`keyItemOf`, `chestItemOf`, `openWithSecret`, `readContents`, `listingOf`, and `unbag` of a bag holding the item and the chest) and cyberspace-mcp's (`keyItemOf`, `chestItemOf`, the chest opener) accept every vector, as of ONOSENDAI `a417f81` and cyberspace-mcp `a13eb7b`.
+`kinds-vectors.json`, beside this DECK, holds one of each event this DECK defines, built from fixed keys and fixed nonces by `kinds-vectors.mjs`: a key item; a chest sealed to that item, with its plaintext, NIP-44 nonce and conversation key; and a listing of the item with its proof message. The key item and the chest both carry `-`. The chest holds one message, written as a rumor by the chest's signer: it carries `-`, its `id` is its canonical id, and it has no `sig`.
+
+ONOSENDAI's readers (`keyItemOf`, `chestItemOf`, `openWithSecret`, `listingOf`, `unbag` of a bag holding the item and the chest, and `readContents` with the sealer `sealerOf` gives for the chest found in that bag) and cyberspace-mcp's (`keyItemOf`, `chestItemOf`, `openWithSecret`, `unbag`, and `readContents` with the sealer `sealerOfSeen` gives) accept every vector, as of ONOSENDAI `834df05` and cyberspace-mcp `d784289`. Both mark the message as verified when given the chest's signer as the sealer, and as a claim when given no sealer or any other key.
 
 The signatures in the vectors use 32 zero bytes of BIP-340 auxiliary randomness so that the file is reproducible. A reader MUST accept any valid signature, not only these.
 
@@ -209,6 +227,7 @@ The signatures in the vectors use 32 zero bytes of BIP-340 auxiliary randomness 
 - **A listing reveals an item's existence and public key.** It does not reveal where the item is hidden or let anyone open a chest sealed to it.
 - **Listings by holders.** Because the proof shows holding rather than forging, any holder can publish a listing of an item under any name and picture, and the newest listing currently wins the feed. A client that wants the forger's word to stand needs a second proof binding the listing to the original item event's signer (§7).
 - **Chest size.** A chest is one NIP-44 payload and so holds at most 65,535 bytes, much less than a bag. Large contents belong in a bag, or behind references once chests support them.
+- **A message in a chest proves its author only in place.** It is a rumor, so a finder who copies it out cannot publish it as a note its hider signed, and the hider's signed items carry `-`, so a relay that honours NIP-70 refuses a copy published by anyone but the hider; a relay that does not honour it still accepts one. Neither is deniability: whoever publishes the bag with its region key, together with what opens the chest, can show what the chest held, signed by its author.
 - **The `requires` label is the hider's text.** It is shown to readers who cannot open the chest and may say anything; it is data, never an instruction.
 
 ## 7. Open questions (non-normative)
