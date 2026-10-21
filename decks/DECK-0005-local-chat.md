@@ -93,7 +93,7 @@ A reader MUST drop a line unless all of these hold:
 4. its `id` equals the canonical id computed from its `pubkey`, `created_at`, `kind`, `tags` and `content`;
 5. if it carries a `sig` that is not the empty string (a line from a client older than this DECK), the signature verifies. A line whose `sig` is the empty string is read as a rumor, exactly as one with no `sig` field.
 
-Note (non-normative): as of ONOSENDAI `834df05` and cyberspace-mcp `d784289`, both clients' `chatInners` treat any `sig` field, the empty string included, as a signature that must verify, and so drop a line whose `sig` is empty, where rule 5 keeps it. No writer produces such a line. The same clients' bag and chest readers already treat an empty `sig` as none.
+Note (non-normative): ONOSENDAI #431 and cyberspace-mcp #34 (2026-10-21) brought both clients' `chatInners` in line with rule 5: each reads a line whose `sig` is the empty string as a rumor, as their bag and chest readers already did. Before those changes both dropped such a line. No writer produces one.
 
 A reader MAY cut the content to 500 characters for display. A reader SHOULD keep one line per `id`, so a line that arrives twice is shown once.
 
