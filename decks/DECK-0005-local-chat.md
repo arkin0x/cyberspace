@@ -5,7 +5,7 @@ Title: Local chat
 Status: Draft
 Mandatory: no
 Created: 2026-10-15
-Last updated: 2026-10-20
+Last updated: 2026-10-21
 Requires: `CYBERSPACE_V2.md` §7.2 (region keys), §7.6 (the bag) and §8.6 (its event); NIP-01, NIP-27, NIP-70
 
 ## Abstract
@@ -41,9 +41,11 @@ A `kind 23330` event is a bag (`CYBERSPACE_V2.md` §8.6) in every respect but it
 | `["d", "<lookup_id hex>"]` | exactly one. The room. |
 | `["encrypted", "aes-256-gcm", "<payload base64>"]` | exactly one. The plaintext of §2.1, encrypted with the room's region key under the cipher of `CYBERSPACE_V2.md` §7.6. |
 | `["version", "2"]` | exactly one |
-| `["h", "<height>"]` | the room's height. SHOULD be present. |
+| `["H", "<height>"]` | the room's height, as the height tag of `CYBERSPACE_V2.md` §8.6, written and read by that section's rules. SHOULD be present. |
 
 The `content` is empty. The envelope is signed by the speaker.
+
+Note (non-normative): ONOSENDAI #438 and cyberspace-mcp #35 (2026-10-21) write the room's height as `H`. Envelopes from clients older than those carry `h`, which the rules of §8.6 still read.
 
 `23330` is in NIP-01's ephemeral range (20000 to 29999), so a relay forwards it to current subscribers and does not store it. A line said before a reader subscribed is gone, which is what local chat means.
 

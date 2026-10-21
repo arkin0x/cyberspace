@@ -62,7 +62,7 @@ const listing = sign({ pubkey: hider, created_at: T, kind: 33340, content: 'Open
 const rumor = rumorOf({ pubkey: speaker, created_at: T, kind: 23333, content: 'meet at the port nostr:npub1placeholder', tags: [['d', lookupId], ['C', C], ['p', hider]] })
 const chatPlain = JSON.stringify([rumor])
 const chatPayload = await aesGcm(regionKey, nonce12('chat'), chatPlain)
-const envelope = sign({ pubkey: speaker, created_at: T, kind: 23330, content: '', tags: [['d', lookupId], ['encrypted', 'aes-256-gcm', chatPayload], ['version', '2'], ['h', '12']] }, speakerSk)
+const envelope = sign({ pubkey: speaker, created_at: T, kind: 23330, content: '', tags: [['d', lookupId], ['encrypted', 'aes-256-gcm', chatPayload], ['version', '2'], ['H', '12']] }, speakerSk)
 
 // DECK-0006: a sealed comment on the key item, rooted at the bag.
 const bagAddress = `33330:${hider}:${lookupId}`
