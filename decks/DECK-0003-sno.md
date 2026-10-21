@@ -437,7 +437,7 @@ An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload
 | `d` | the object's identifier, chosen by its author and stable across edits, as in §3.1. It MUST NOT be derived from the location. (Non-normative: ONOSENDAI and cyberspace-mcp write a fresh random `d` for every placement, so two places holding the same object are two unrelated events and cannot be linked by their tags.) |
 | `name`, `alt` | MAY be present, as in §3.1, and MUST NOT reveal the location |
 
-**The event MUST carry nothing that says where the object is.** No `C`, no `h`, no hint and no sector tag: those belong to the bag, which is what the region key protects. The event is a locked box in plain view; the bag is the note that says where the box stands and is readable only there.
+**The event MUST carry nothing that says where the object is.** No `C`, no height tag (`H`, or the `h` of `CYBERSPACE_V2.md` §8.6), no hint and no sector tag: those belong to the bag, which is what the region key protects. The event is a locked box in plain view; the bag is the note that says where the box stands and is readable only there.
 
 **One key opens the place and everything referenced from it.** The object is encrypted with the same region key that opens the bag, so a reader that has opened the bag opens every object it references with the key in hand, and a reader that has not can open neither. The cost is that the object is tied to the region: moving it to another place means re-encrypting it. A per-object key carried inside the bag would lift that and let one event be referenced from several places; §8 records it as open.
 
