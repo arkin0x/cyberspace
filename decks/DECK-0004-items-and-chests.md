@@ -5,7 +5,7 @@ Title: Items and Chests
 Status: Draft
 Mandatory: no
 Created: 2026-10-15
-Last updated: 2026-10-20
+Last updated: 2026-10-21
 Requires: `CYBERSPACE_V2.md` §7.6 (the bag) and §8.6 (its event); NIP-01, NIP-44 v2, NIP-70, NIP-92; BIP-340
 
 ## Abstract
@@ -55,6 +55,8 @@ An item is a nostr event carried inline in a bag's list of entries (`CYBERSPACE_
 | `["-"]` | the NIP-70 protected marker. MUST be present. |
 | `["C", "<coord_hex>"]` | the item's exact coordinate, under the rules of `CYBERSPACE_V2.md` §7.6. |
 | `["imeta", "url <data URI>", "m <mime>", "dim <w>x<h>"]` | OPTIONAL. The item's picture (§2.4). |
+| `["model", "33331:<pubkey>:<d>", "<relay>"]` | OPTIONAL. The SNO object the item wears where it stands in space (§2.5). |
+| `["animate", "<motion>", ...]` | OPTIONAL. How that object moves: any of `bob`, `spin-y`, `spin-x` (§2.5). |
 
 The item event is signed by the hider, as `CYBERSPACE_V2.md` §7.6 says every item that is not a message SHOULD be.
 
@@ -92,6 +94,45 @@ A reader MUST accept the picture only when all of these hold, and otherwise MUST
 - `dim` gives a width and a height that are integers from 1 to 32.
 
 **Why a data URI and never an address (non-normative).** An `https` picture would make every reader's client fetch the hider's server when it lists the item, telling that server the reader's address and the moment they found the item. A data URI travels inside the seal and fetches nothing.
+
+### 2.5 The model and its motion
+
+An item MAY name a SNO object (DECK-0003) to be drawn as, where it stands in space, in place of whatever mark the reader draws for an item, and MAY say how that object moves. Both are tags of the item, so they travel with it wherever the item goes: into a bag, into a chest, into a copy a reader takes, and into the new version a move writes.
+
+```
+["model", "33331:<64 lowercase hex pubkey>:<d>", "<relay>"]
+["animate", "bob", "spin-y", "spin-x"]
+```
+
+**`model`.** The second element is the address of a public `kind 33331` object (DECK-0003 §3.1), written `kind:pubkey:d` as an `a` tag writes it and as a placement's reference names an object (DECK-0003 §1.10). It names the object by address and not by event id on purpose: when the object's author publishes a new version, every item that wears it is drawn as the new version. The third element is OPTIONAL: a relay that holds the object, a `ws://` or `wss://` URL. A reader:
+
+1. MUST accept the tag only when its second element is `33331`, a colon, 64 lowercase hex characters, a colon, and a `d` of 1 to 128 printable ASCII characters with no spaces; otherwise it MUST read the item as one without a model.
+2. MUST ignore a third element that is not a `ws://` or `wss://` URL, and read the tag as one without a relay.
+3. takes the first `model` tag it accepts, and ignores any other.
+4. fetches the newest event at that address from the relay named, if any, and from the relays it already reads. An object it cannot fetch, a sealed object (one with an `encrypted` tag, DECK-0003 §3.4), and an object whose payload fails DECK-0003 §1.9 are read as no model, and the reader draws the item as it draws an item without one.
+
+**`animate`.** Each element after the first is one motion. A reader MUST ignore a name it does not know, MUST read a name given twice as given once, and MUST read the motions only when the item carries a `model` it accepted. A writer MUST write each motion at most once, in the order `bob`, `spin-y`, `spin-x`, in one tag, and MUST NOT write the tag without a `model` or with no motions. The motions stack:
+
+| Motion | What it is |
+|---|---|
+| `bob` | The object rises and falls along the item's Y axis on a sine wave, gently: a period of a few seconds, and a reach each way that is a small fraction of the object's size. |
+| `spin-y` | The object turns at a steady rate about the Y axis through its own centre. |
+| `spin-x` | The object turns at a steady rate about the X axis through its own centre. |
+
+When both turns are present, the turn about X is inside the turn about Y (a point of the object is first turned about X, then the result about Y), and the turn about Y SHOULD be the slower of the two, by a ratio that is not a ratio of small whole numbers, so that the object tumbles without visibly repeating. ONOSENDAI turns X at 0.5 radians a second and Y at 0.5 divided by the golden ratio. The object's centre is the middle of its bounds, with every object it places (DECK-0003 §1.10). The axes are the axes the object was built on (DECK-0003 §1.2), turned with the view as the reader turns a hidden shard. A reader SHOULD hold the object still when its user has asked for reduced motion.
+
+**Where it stands and how large it is.** The object's centre stands exactly where the reader would draw the item's own mark: the item's coordinate (`CYBERSPACE_V2.md` §7.6), at the middle of its gibson. It is drawn at its own scale: one model unit is 2^`unit` gibsons (DECK-0003 §1.6), as a hidden shard is. A reader MAY draw it larger when it would otherwise be too small to see, as long as everything about it (the object, its box below, its cut below) is scaled together.
+
+**The box.** A reader that draws an outline around an item drawn as its model SHOULD draw a box of whole gibsons that holds the object through the whole of its motion:
+
+1. Start from the object's half extents about its centre on each axis.
+2. For `spin-y`, X and Z reach the largest distance of any point of the object from the Y axis through the centre. For `spin-x`, Y and Z reach the largest distance from the X axis. For both, X and Z reach the largest distance from the centre, and Y the largest distance from the X axis. A placed object's points MAY be taken as the corners of its bounds.
+3. For `bob`, add the bob's reach to Y on both sides.
+4. Convert to gibsons and round each axis up to a whole number, never less than 1. An object that fits in 2 by 1 by 1 gibsons and does not turn gets a box of 2 by 1 by 1.
+
+The box is centred on the item's place. Nothing about the box or the object is limited except by the region: both are cut at the walls of the region of the bag that holds the item, exactly as a hidden shard is cut at them (`CYBERSPACE_V2.md` §7.6). Because the object moves inside walls that do not, the cut is made where the object is at each moment, not once where it starts.
+
+**Why by address, and what a fetch reveals (non-normative).** An address follows the author's edits, which is what someone dressing an item in their own object wants. The fetch is a query to relays for one public object, the same query any client makes to draw a placed object; it names the object, never the item, the bag, or where either is. A relay that sees it learns that someone asked for that object, which is already true of every placement of it.
 
 ## 3. The chest: `kind 3341` (normative)
 
@@ -228,6 +269,7 @@ The signatures in the vectors use 32 zero bytes of BIP-340 auxiliary randomness 
 - **Listings by holders.** Because the proof shows holding rather than forging, any holder can publish a listing of an item under any name and picture, and the newest listing currently wins the feed. A client that wants the forger's word to stand needs a second proof binding the listing to the original item event's signer (§7).
 - **Chest size.** A chest is one NIP-44 payload and so holds at most 65,535 bytes, much less than a bag. Large contents belong in a bag, or behind references once chests support them.
 - **A message in a chest proves its author only in place.** It is a rumor, so a finder who copies it out cannot publish it as a note its hider signed, and the hider's signed items carry `-`, so a relay that honours NIP-70 refuses a copy published by anyone but the hider; a relay that does not honour it still accepts one. Neither is deniability: whoever publishes the bag with its region key, together with what opens the chest, can show what the chest held, signed by its author.
+- **A model is someone else's object.** An item's `model` names a public object that its author can replace at any time (§2.5), so what an item looks like can change after it was hidden, and an author who deletes the object leaves every item that wears it drawn without a model. A forger who wants the look fixed names an object they authored.
 - **The `requires` label is the hider's text.** It is shown to readers who cannot open the chest and may say anything; it is data, never an instruction.
 
 ## 7. Open questions (non-normative)
