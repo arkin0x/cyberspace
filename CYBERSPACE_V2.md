@@ -1261,6 +1261,29 @@ Produced and checked by `hint-reference.py`. Points are 256-bit coordinates per 
 
 The ideaspace point is `x = 2^84 + 12345`, `y = 3 · 2^80 + 777`, `z = 2^85 - 1 - 4242` on plane 1. The second vector is a two-dimensional hunt: X is exact, so the seeker sweeps a 2^9 by 2^9 slab of height-5 regions. The third has an open axis: `Hy = 40` leaves the Y sector undetermined, so the bag carries `X` and `Z` but neither `Y` nor `S`, and the sweep is 2^40 candidates, far beyond any search; that hint tells the seeker where to travel.
 
+**Contents (optional):**
+
+A bag MAY say in public what it holds, by kind and count, so that a seeker knows what the search is for before doing it. Like a hint, this is the hider's choice and a claim. It says nothing about where the bag is, and nothing about what its items say.
+
+`["contents", "<kind>", "<count>"]`
+
+- `kind` is one of:
+  - `shard`: a shard, carried inline (`kind 3330`) or by reference (`kind 33331`, §7.6 References)
+  - `message`: a message (`kind 1`)
+  - `key`: a key item (`kind 3340`)
+  - `chest`: a chest (`kind 3341`)
+  - `cashu`: a Cashu token written in a message's text
+  - `nft`: a nonfungible.cash claim link written in a message's text, `https://nonfungible.cash/claim/<id>#<key>`, where `id` is 32 lowercase hex characters and `key` is 43 base64url characters that encode 32 bytes, so its last character is one of `AEIMQUYcgkosw048`. The scheme and host are compared without regard to case, as in any URL; the id and key are exact. A link glued to the end of a word, or standing inside another URL's path or query, is not counted. Each distinct link in a message counts once.
+- `count` is a decimal string, a positive integer with no sign and no leading zeros (the rules of §10).
+- A message that holds a token or a link is also counted as a message, so `message` is at least the number of messages that carry them.
+- A bag MUST carry at most one `contents` tag per kind, and SHOULD write them in the order above. A kind the bag does not hold is left out; a count of zero is never written.
+- A writer that publishes contents MUST compute them from the plaintext it is sealing, every time it publishes the bag, so that they are never stale. Because a bag is rewritten whole (§7.6 Lifecycle), this costs nothing extra.
+- Money alone: a writer MAY publish only that money is inside, as `["contents", "cashu"]` with no count, and only while the bag holds a Cashu token. There is no such form for any other kind; in particular, an NFT is not money, and `["contents", "nft"]` without a count says nothing.
+
+**Reading contents (normative):** a reader MUST ignore a `contents` tag whose kind it does not know, and one whose count is present but is not a positive integer. Contents never invalidate a bag, and a reader MUST NOT treat a bag as holding less than it finds, or more, because of them: what the bag holds is decided by its plaintext alone (§7.6).
+
+**Contents are a claim (non-normative):** nothing verifies them until the bag is opened. A token or a link counted in public may already have been spent, claimed or cancelled by the time a seeker opens the bag; the count says what was sealed, not what is still there. A hider who publishes that an NFT or money is inside invites sweepers (Reading is not reaching, above: anyone who derives the key reads the bag from anywhere), and may prefer to hide it inside a chest as well.
+
 ### 7.8 Holding a region (non-normative)
 
 Computing a region's Cantor root produces every intermediate node of the per-axis trees on the way up, and every intermediate node is itself the root of an aligned sub-region (§4.5). Whoever keeps those nodes on disk **holds** the region: the per-axis roots of every aligned sub-region inside it, at every height, are on hand, so any location-based key inside the holding costs one pairing step (§4.7, §7.2) instead of a tree. Holding is §7.5 carried to its limit.
@@ -1367,6 +1390,7 @@ Optional tags:
 - `h` tag: `["h", "<height>"]` (decimal string): the height of the region whose key encrypts the content, which is the discovery radius of §7.3; at least 1 (§7.6)
 - `hint` tag: `["hint", "<coord_hex>", "<Hx>", "<Hy>", "<Hz>"]`: the hider's coarse statement of where the bag can be found (§7.7)
 - Sector tags `X`, `Y`, `Z`, `S`: required on a bag that carries a `hint` tag, for each axis whose hint height is at most 30 (§7.7, §10); MUST NOT appear otherwise
+- `contents` tags: `["contents", "<kind>", "<count>"]`, the hider's public statement of what the bag holds, by kind (`shard`, `message`, `key`, `chest`, `cashu`, `nft`) and count, or `["contents", "cashu"]` alone to say only that money is inside (§7.7 Contents)
 
 Content: MAY carry plaintext meant for humans, a riddle (§7.7). The protocol does not interpret it.
 
