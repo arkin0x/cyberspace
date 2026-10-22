@@ -1249,6 +1249,29 @@ Nothing in the protocol verifies a hint until the bag is found and its region is
 
 The bag's `content` field MAY hold a plaintext hint written for humans, a riddle (§8.6). A riddle can stand alone or accompany a geometric hint. The protocol does not read it; it is for the seeker to interpret.
 
+**Contents (optional):**
+
+A bag MAY say in public what it holds, by kind and count, so that a seeker knows what the search is for before doing it. Like a hint, this is the hider's choice and a claim. It says nothing about where the bag is, and nothing about what its items say.
+
+`["contents", "<kind>", "<count>"]`
+
+- `kind` is one of:
+  - `shard`: a shard, carried inline (`kind 3330`) or by reference (`kind 33331`, §7.6 References)
+  - `message`: a message (`kind 1`)
+  - `key`: a key item (`kind 3340`)
+  - `chest`: a chest (`kind 3341`)
+  - `cashu`: a Cashu token written in a message's text
+  - `nft`: a nonfungible.cash claim link written in a message's text, `https://nonfungible.cash/claim/<id>#<key>`, where `id` is 32 lowercase hex characters and `key` is 43 base64url characters. Each distinct link in a message counts once.
+- `count` is a decimal string, a positive integer with no sign and no leading zeros (the rules of §10).
+- A message that holds a token or a link is also counted as a message, so `message` is at least the number of messages that carry them.
+- A bag MUST carry at most one `contents` tag per kind, and SHOULD write them in the order above. A kind the bag does not hold is left out; a count of zero is never written.
+- A writer that publishes contents MUST compute them from the plaintext it is sealing, every time it publishes the bag, so that they are never stale. Because a bag is rewritten whole (§7.6 Lifecycle), this costs nothing extra.
+- Money alone: a writer MAY publish only that money is inside, as `["contents", "cashu"]` with no count, and only while the bag holds a Cashu token. There is no such form for any other kind; in particular, an NFT is not money, and `["contents", "nft"]` without a count says nothing.
+
+**Reading contents (normative):** a reader MUST ignore a `contents` tag whose kind it does not know, and one whose count is present but is not a positive integer. Contents never invalidate a bag, and a reader MUST NOT treat a bag as holding less than it finds, or more, because of them: what the bag holds is decided by its plaintext alone (§7.6).
+
+**Contents are a claim (non-normative):** nothing verifies them until the bag is opened. A token or a link counted in public may already have been spent, claimed or cancelled by the time a seeker opens the bag; the count says what was sealed, not what is still there. A hider who publishes that an NFT or money is inside invites sweepers (§7.1: anyone who derives the key reads the bag from anywhere), and may prefer to hide it inside a chest as well.
+
 **Golden vectors:**
 
 Produced and checked by `hint-reference.py`. Points are 256-bit coordinates per §2.2 (32 bytes of hex). `london` is the §9.8 golden vector.
@@ -1367,6 +1390,7 @@ Optional tags:
 - `h` tag: `["h", "<height>"]` (decimal string): the height of the region whose key encrypts the content, which is the discovery radius of §7.3; at least 1 (§7.6)
 - `hint` tag: `["hint", "<coord_hex>", "<Hx>", "<Hy>", "<Hz>"]`: the hider's coarse statement of where the bag can be found (§7.7)
 - Sector tags `X`, `Y`, `Z`, `S`: required on a bag that carries a `hint` tag, for each axis whose hint height is at most 30 (§7.7, §10); MUST NOT appear otherwise
+- `contents` tags: `["contents", "<kind>", "<count>"]`, the hider's public statement of what the bag holds, by kind (`shard`, `message`, `key`, `chest`, `cashu`, `nft`) and count, or `["contents", "cashu"]` alone to say only that money is inside (§7.7 Contents)
 
 Content: MAY carry plaintext meant for humans, a riddle (§7.7). The protocol does not interpret it.
 
