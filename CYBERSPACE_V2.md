@@ -1249,6 +1249,18 @@ Nothing in the protocol verifies a hint until the bag is found and its region is
 
 The bag's `content` field MAY hold a plaintext hint written for humans, a riddle (§8.6). A riddle can stand alone or accompany a geometric hint. The protocol does not read it; it is for the seeker to interpret.
 
+**Golden vectors:**
+
+Produced and checked by `hint-reference.py`. Points are 256-bit coordinates per §2.2 (32 bytes of hex). `london` is the §9.8 golden vector.
+
+| Vector | Point (plane) | Bag `h` | Heights | `hint` coordinate | Sector tags | Candidates |
+|---|---|---:|---|---|---|---:|
+| `london_h5_box11` | `london` (0) | 5 | 11, 11, 11 | `c492492492492492492492edf5bee7267451c787d95ba4d7840c76d000000000` | `X` `18014398541305938`, `Y` `18014398549232983`, `Z` `18014398509410999`, `S` `18014398541305938-18014398549232983-18014398509410999` | 2^18 |
+| `london_h5_x_exact` | `london` (0) | 5 | 5, 14, 14 | `c492492492492492492492edf5bee7267451c787d95ba4d7840c749041240000` | same as above | 2^18 |
+| `ideaspace_h8_y_open` | `a4b64924924924924924924924924924924924924924924924924d84b60d9c8f` (1) | 8 | 12, 40, 12 | `a4b64924924924924924924924924924924924924924924924924d8000000001` | `X` `18014398509481984`, `Z` `36028797018963967`, no `Y`, no `S` | 2^40 |
+
+The ideaspace point is `x = 2^84 + 12345`, `y = 3 · 2^80 + 777`, `z = 2^85 - 1 - 4242` on plane 1. The second vector is a two-dimensional hunt: X is exact, so the seeker sweeps a 2^9 by 2^9 slab of height-5 regions. The third has an open axis: `Hy = 40` leaves the Y sector undetermined, so the bag carries `X` and `Z` but neither `Y` nor `S`, and the sweep is 2^40 candidates, far beyond any search; that hint tells the seeker where to travel.
+
 **Contents (optional):**
 
 A bag MAY say in public what it holds, by kind and count, so that a seeker knows what the search is for before doing it. Like a hint, this is the hider's choice and a claim. It says nothing about where the bag is, and nothing about what its items say.
@@ -1261,7 +1273,7 @@ A bag MAY say in public what it holds, by kind and count, so that a seeker knows
   - `key`: a key item (`kind 3340`)
   - `chest`: a chest (`kind 3341`)
   - `cashu`: a Cashu token written in a message's text
-  - `nft`: a nonfungible.cash claim link written in a message's text, `https://nonfungible.cash/claim/<id>#<key>`, where `id` is 32 lowercase hex characters and `key` is 43 base64url characters. Each distinct link in a message counts once.
+  - `nft`: a nonfungible.cash claim link written in a message's text, `https://nonfungible.cash/claim/<id>#<key>`, where `id` is 32 lowercase hex characters and `key` is 43 base64url characters that encode 32 bytes, so its last character is one of `AEIMQUYcgkosw048`. The scheme and host are compared without regard to case, as in any URL; the id and key are exact. A link glued to the end of a word, or standing inside another URL's path or query, is not counted. Each distinct link in a message counts once.
 - `count` is a decimal string, a positive integer with no sign and no leading zeros (the rules of §10).
 - A message that holds a token or a link is also counted as a message, so `message` is at least the number of messages that carry them.
 - A bag MUST carry at most one `contents` tag per kind, and SHOULD write them in the order above. A kind the bag does not hold is left out; a count of zero is never written.
@@ -1270,19 +1282,7 @@ A bag MAY say in public what it holds, by kind and count, so that a seeker knows
 
 **Reading contents (normative):** a reader MUST ignore a `contents` tag whose kind it does not know, and one whose count is present but is not a positive integer. Contents never invalidate a bag, and a reader MUST NOT treat a bag as holding less than it finds, or more, because of them: what the bag holds is decided by its plaintext alone (§7.6).
 
-**Contents are a claim (non-normative):** nothing verifies them until the bag is opened. A token or a link counted in public may already have been spent, claimed or cancelled by the time a seeker opens the bag; the count says what was sealed, not what is still there. A hider who publishes that an NFT or money is inside invites sweepers (§7.1: anyone who derives the key reads the bag from anywhere), and may prefer to hide it inside a chest as well.
-
-**Golden vectors:**
-
-Produced and checked by `hint-reference.py`. Points are 256-bit coordinates per §2.2 (32 bytes of hex). `london` is the §9.8 golden vector.
-
-| Vector | Point (plane) | Bag `h` | Heights | `hint` coordinate | Sector tags | Candidates |
-|---|---|---:|---|---|---|---:|
-| `london_h5_box11` | `london` (0) | 5 | 11, 11, 11 | `c492492492492492492492edf5bee7267451c787d95ba4d7840c76d000000000` | `X` `18014398541305938`, `Y` `18014398549232983`, `Z` `18014398509410999`, `S` `18014398541305938-18014398549232983-18014398509410999` | 2^18 |
-| `london_h5_x_exact` | `london` (0) | 5 | 5, 14, 14 | `c492492492492492492492edf5bee7267451c787d95ba4d7840c749041240000` | same as above | 2^18 |
-| `ideaspace_h8_y_open` | `a4b64924924924924924924924924924924924924924924924924d84b60d9c8f` (1) | 8 | 12, 40, 12 | `a4b64924924924924924924924924924924924924924924924924d8000000001` | `X` `18014398509481984`, `Z` `36028797018963967`, no `Y`, no `S` | 2^40 |
-
-The ideaspace point is `x = 2^84 + 12345`, `y = 3 · 2^80 + 777`, `z = 2^85 - 1 - 4242` on plane 1. The second vector is a two-dimensional hunt: X is exact, so the seeker sweeps a 2^9 by 2^9 slab of height-5 regions. The third has an open axis: `Hy = 40` leaves the Y sector undetermined, so the bag carries `X` and `Z` but neither `Y` nor `S`, and the sweep is 2^40 candidates, far beyond any search; that hint tells the seeker where to travel.
+**Contents are a claim (non-normative):** nothing verifies them until the bag is opened. A token or a link counted in public may already have been spent, claimed or cancelled by the time a seeker opens the bag; the count says what was sealed, not what is still there. A hider who publishes that an NFT or money is inside invites sweepers (Reading is not reaching, above: anyone who derives the key reads the bag from anywhere), and may prefer to hide it inside a chest as well.
 
 ### 7.8 Holding a region (non-normative)
 
