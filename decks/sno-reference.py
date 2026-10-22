@@ -415,13 +415,12 @@ APPENDIX_A = {
     "v": 2,
     "name": "tetra",
     "unit": 0,
-    "extent": 8,
     "mode": "solid",
     "vertices": [[0, 0, 0], [2, 0, 0], [1, 0, 2], [1, 2, 1]],
-    "ticks": [-4],
     # 238 pure red, 235 pure green, 239 pure blue, 225 white, in the built-in.
     "colors": [238, 235, 239, 225],
-    "faces": [[0, 1, 2], [0, 1, 3], [1, 2, 3], [0, 2, 3]],
+    # Wound outward: every front looks out of the solid (§1.4).
+    "faces": [[0, 1, 2], [0, 3, 1], [1, 3, 2], [0, 2, 3]],
 }
 
 

@@ -1117,7 +1117,7 @@ Note: this caching optimization applies to spatial region computations for disco
 
 Content hidden at a place is published as a **bag**. A bag is one Nostr event of kind 33330 (event format in §8.6) whose payload is encrypted with the key of one region at one height (§7.2), and it holds everything its author has hidden in that region at that height. Anyone can fetch a bag from a relay, because the ciphertext is public. Only someone who has computed the region's key can open it, whether they computed it by moving into the region or by deriving it for the coordinate directly (§7.1). The bag is addressable by its `lookup_id`, so a relay keeps only the newest bag per author and region, and the author changes what is hidden there by publishing a newer bag.
 
-**Height (normative):** the region's height MUST be at least 1. A height-0 region is a single Gibson, and height 0 is the one case in which a root does not identify its height (§4.6); discovery scanning starts at height 1 (§7.4). A bag whose `h` tag (§8.6) is `0` MUST be rejected.
+**Height (normative):** the region's height MUST be at least 1. A height-0 region is a single Gibson, and height 0 is the one case in which a root does not identify its height (§4.6); discovery scanning starts at height 1 (§7.4). A bag whose height tag (§8.6) states `0` MUST be rejected.
 
 **Cipher (normative):**
 - key: the `location_decryption_key` of §7.2 (32 bytes)
@@ -1134,10 +1134,32 @@ The plaintext is arbitrary bytes. The protocol places no requirement on it beyon
 - **Opaque**: anything that is not a list of entries, such as a text note or a file. Its interpretation is application-defined; a client may show it as text or offer it as a download.
 
 **Items (normative):**
-- An item is a nostr event. It MAY be signed. If it carries a `sig`, its `id` MUST be the canonical id (§8.2) and the signature MUST verify; a reader MUST drop an item that fails either check, and only that item, because one corrupt or forged item says nothing about the others. An item without a `sig` is allowed, because some content is deliberately left unsigned; its `pubkey` is then a claim, and readers MUST NOT present it as verified.
-- The bag's `pubkey` is the key that placed the items in the region. Readers MUST attribute placement to the bag's author, and MUST attribute authorship of an item's content to the item's `pubkey` only when the item is signed. A signed item written by one key and hidden by another is therefore shown as that author's content, placed here by the hider.
+- An item is a nostr event. It MAY be signed. If it carries a `sig`, its `id` MUST be the canonical id (§8.2) and the signature MUST verify; a reader MUST drop an item that fails either check, and only that item, because one corrupt or forged item says nothing about the others. An item without a `sig` is allowed, because some content is deliberately left unsigned; its `pubkey` is then a claim, and readers MUST NOT present it as verified, unless it is a rumor that the bag vouches for (**Rumors**, below).
+- The bag's `pubkey` is the key that placed the items in the region. Readers MUST attribute placement to the bag's author, and MUST attribute authorship of an item's content to the item's `pubkey` only when the item is signed or is a rumor that the bag vouches for. A signed item written by one key and hidden by another is therefore shown as that author's content, placed here by the hider.
 - An item MAY carry a `C` tag: `["C", "<coord_hex>"]`, its exact coordinate (§2), which lets a client render it at a point rather than somewhere in the region. If present, the coordinate MUST lie inside the region the bag is encrypted to: the same plane, and equal to the region's base above height `h`. Readers MAY drop an item whose `C` lies outside, because such an item claims a place its key does not cover. Without a `C` tag, an item is located no more precisely than the region.
 - A reader that does not understand an item's `kind` skips it and renders the rest.
+
+**Rumors (normative):**
+
+A **rumor** is an item that carries an `id` and no signature: no `sig` field, or a `sig` that is the empty string. The term is NIP-59's, for the unsigned event that NIP-17 carries as a `kind 14` inside its seal. A writer MUST set a rumor's `id` to the canonical id (§8.2) of its own `pubkey`, `created_at`, `kind`, `tags` and `content`, and MUST set its `pubkey` to the key that signs the bag, or the item, that holds it. An item whose `sig` is any other value is a signed item, and its signature MUST verify as above.
+
+- A rumor whose `pubkey` is the bag's `pubkey` and whose `id` is canonical is **vouched for by the bag**. A reader that keeps it MUST attribute its content to the bag's author, and MAY present that authorship as verified. Reason: the bag's signature covers its encrypted payload, and under the region key that payload decrypts to exactly one plaintext, in which this rumor's `pubkey` is the bag's own.
+- A rumor whose `id` is not canonical is not vouched for by anyone. A reader MUST NOT present its author as verified; it MAY drop it, or read it as an unsigned item identified by its canonical id.
+- A rumor whose `pubkey` is not the bag's `pubkey` is an unsigned item like any other, and its `pubkey` is a claim.
+- **Inside an item:** some items carry a list of entries of their own, encrypted in their `content`; a chest (`kind 3341`) is one, a list of entries sealed to a public key. A rumor inside such an item is vouched for by that item when three things hold: the rumor's `pubkey` equals the item's `pubkey`, the rumor's `id` is canonical, and the item's own authorship is verified, because it is signed and its signature verifies, or because it is itself a rumor vouched for in the same way. The item's signature covers its `content`, which decrypts to exactly one list. This applies at every depth. Any other rumor inside such an item has a `pubkey` that is a claim.
+- **Messages:** a message, a `kind 1` item with its text in `content`, MUST be written as a rumor. A writer MUST NOT sign a message it hides, whether it hides it in a bag or inside another item. A reader MUST still accept a signed message whose signature verifies, because messages written before 2026-10-20 are signed.
+- **Every other kind:** a writer SHOULD sign every item that is not a message, because a shard, a key item or a chest can be taken from one place and seen in another, where only its own signature says who made it. Since writers write only messages as rumors, a reader MAY drop a rumor of any other kind, or read it as an unsigned item whose `pubkey` is a claim.
+
+Note (non-normative): a bag is rewritten whole (Lifecycle, below), and its author's client carries every existing entry forward as it is. A message hidden before 2026-10-20 therefore stays signed until its hider removes it or hides it again. Writing it again as a rumor would change its `id`, which is what comments and reactions on it name.
+
+**Protected items (normative):**
+
+- A writer MUST add NIP-70's protected tag, `["-"]`, to every item it signs or writes as a rumor into a bag or into another item: a shard (`3330`), a message (`1`), a key item (`3340`, an item that is a keypair) and a chest (`3341`). A relay that honours NIP-70 accepts an event that carries `-` only from its author, after NIP-42 authentication, so a finder who copies an item out of a bag cannot republish it to such a relay under the hider's name. An item signed by another key, which a writer places as it is (Items, above), is carried unchanged, because adding a tag to it would break its signature.
+- A writer MUST NOT add `-` to the bag itself (§8.6) or to a referenced event (References, below). Both are published on their own, and NIP-70 makes refusing an event that carries `-` a relay's default behaviour (a relay accepts one only from its authenticated author, and only if it chooses to), so a protected bag or a protected referenced event would reach fewer relays.
+- A reader MUST NOT reject a reference because the event it names carries `-`. The author of a public object may add `-` to it; others can still place it by reference, but no one else can republish the object itself to a relay that honours NIP-70, so a client that would copy it onto its own relays places an object of its own instead, signed by its own key and crediting the original (DECK-0003).
+- A reader MUST NOT drop an item for carrying `-` or for lacking it. Shards, messages and chests written before 2026-10-20 lack it; key items have carried it since they were introduced.
+
+**Why messages are rumors and items are protected (non-normative):** a finder who opens a bag holds every item in it as JSON. A signed `kind 1` message lifted out of the bag is a valid public note: published anywhere, it shows as a note its hider wrote, with the exact coordinate of the hiding place in its `C` tag. A rumor is not a valid event, so no relay or client accepts a copy of it as the hider's note, while the bag, which the hider does sign, still tells everyone who reached the place who left the message. Chat lines (`kind 23333` inside a `kind 23330` envelope) have been written this way since 2026-10-13. Shards, key items and chests stay signed, because their own signature is the only proof of who made them once they are taken elsewhere. The `-` tag asks relays to refuse a copy of one of them republished by anyone but its author; a relay that does not honour NIP-70 still accepts such a copy, with its exact `C` coordinate. On a message the `-` tag is redundant, since a rumor cannot be published as a valid event at all; it is there so that every item follows one rule. Neither measure gives deniability: whoever publishes the bag together with its region key can still show what it contained, signed by its author. They prevent a finder from publishing one item, alone, as a valid event under the hider's key.
 
 **References (normative):**
 
@@ -1150,7 +1172,7 @@ The rules:
 - The referenced event MAY be of any kind. Its kind is the kind in the `a` coordinate, or the kind of the event the `e` id names; nothing in the bag restates it.
 - The relay hint MAY be the empty string. `<coord_hex>` is the entry's exact coordinate and follows the rules of the `C` tag above: it MUST lie inside the bag's region, and a reader MAY drop a reference whose coordinate lies outside. It MAY be omitted, in which case the entry is located no more precisely than the region.
 - The referenced event is a **partially encrypted event** in the shape of Fanfares' NIP FF-1: its `content` is a public **preview** for readers who cannot open it, and it carries exactly one `["encrypted", "aes-256-gcm", "<payload>", "cyberspace:region"]` tag. The payload is the event's hidden content, encrypted with this bag's region key under the cipher above. The fourth element, `cyberspace:region`, stands where FF-1 puts a key service URL and says that the key is derived from a place rather than issued: a reader MUST NOT make a network request for it. The event carries a `d` tag, as FF-1 gives every partially encrypted event whatever its kind, which is what gives every referenced event a coordinate.
-- The referenced event MUST carry nothing that says where it is: no `C`, no `h`, no hint and no sector tag. Those belong to the bag, which is what the region key protects. The event is a locked box in plain view; the bag is the note that says where the box stands.
+- The referenced event MUST carry nothing that says where it is: no `C`, no height tag (`H`, or the `h` of §8.6), no hint and no sector tag. Those belong to the bag, which is what the region key protects. The event is a locked box in plain view; the bag is the note that says where the box stands.
 - Whoever opened the bag opens every event it references, with the key already in hand, and a reader that has not opened the bag can open none of them. What the decrypted payload means is defined by the referenced event's kind; DECK-0003 §3.2 and §3.4 define it for objects.
 - The referenced event is published, so it is signed like any other event, and a reader MUST verify it as usual. Placement is attributed to the bag's author, and authorship of the referenced content to the referenced event's `pubkey`, which MAY differ from the bag's: placing another author's event is a placement.
 - A reference that cannot be fetched, or whose payload does not open with this bag's key, is a missing entry. A reader drops it and SHOULD say that something was found but could not be retrieved, rather than that nothing was found.
@@ -1179,6 +1201,8 @@ A **hint** is the hider's clue as to where the bag is. It is optional, public, a
 - `bx = (x >> Hx) << Hx`, `by = (y >> Hy) << Hy`, `bz = (z >> Hz) << Hz`: the aligned bases
 - the box is `[bx, bx + 2^Hx) × [by, by + 2^Hy) × [bz, bz + 2^Hz)` on plane `P`
 
+In this section `H` stands for any one of the hint heights `Hx`, `Hy` and `Hz`. It is a number, not the bag's `H` tag (§8.6). The bag's own height, which that tag states, is the number `h`.
+
 A height of `85` leaves an axis open: the base is `0`, the box spans the whole axis, and the hint says nothing about that coordinate. Equal heights make a cube. Unequal heights make a slab or a column; an exact axis (height equal to the bag's) with two coarse axes turns the search into two dimensions. Heights of `30` on all three axes name exactly one sector (§10).
 
 **The `hint` tag (normative):**
@@ -1191,7 +1215,7 @@ A height of `85` leaves an axis open: the base is `0`, the box spans the whole a
 
 **What a hint claims (normative):**
 
-The bag's region (the aligned cube of height `h`, where `h` is the `h` tag of §8.6) lies inside the box, on plane `P`. Because both the region and the box are aligned, containment is two checks per axis: `H >= h`, and the region's base equals the box's base after both are shifted right by `H`. When the bag carries an `h` tag, each hint height MUST therefore be at least `h`; a box smaller than the region could not contain it. Three heights equal to `h` name the region itself: the hint is then a destination the seeker can compute or walk to directly, not a search.
+The bag's region (the aligned cube of height `h`, where `h` is the height the bag's height tag states, §8.6) lies inside the box, on plane `P`. Because both the region and the box are aligned, containment is two checks per axis: `H >= h`, and the region's base equals the box's base after both are shifted right by `H`. When the bag states its height, each hint height MUST therefore be at least `h`; a box smaller than the region could not contain it. Three heights equal to `h` name the region itself: the hint is then a destination the seeker can compute or walk to directly, not a search.
 
 **Sector tags (normative):**
 
@@ -1239,6 +1263,29 @@ Produced and checked by `hint-reference.py`. Points are 256-bit coordinates per 
 
 The ideaspace point is `x = 2^84 + 12345`, `y = 3 · 2^80 + 777`, `z = 2^85 - 1 - 4242` on plane 1. The second vector is a two-dimensional hunt: X is exact, so the seeker sweeps a 2^9 by 2^9 slab of height-5 regions. The third has an open axis: `Hy = 40` leaves the Y sector undetermined, so the bag carries `X` and `Z` but neither `Y` nor `S`, and the sweep is 2^40 candidates, far beyond any search; that hint tells the seeker where to travel.
 
+**Contents (optional):**
+
+A bag MAY say in public what it holds, by kind and count, so that a seeker knows what the search is for before doing it. Like a hint, this is the hider's choice and a claim. It says nothing about where the bag is, and nothing about what its items say.
+
+`["contents", "<kind>", "<count>"]`
+
+- `kind` is one of:
+  - `shard`: a shard, carried inline (`kind 3330`) or by reference (`kind 33331`, §7.6 References)
+  - `message`: a message (`kind 1`)
+  - `key`: a key item (`kind 3340`)
+  - `chest`: a chest (`kind 3341`)
+  - `cashu`: a Cashu token written in a message's text
+  - `nft`: a nonfungible.cash claim link written in a message's text, `https://nonfungible.cash/claim/<id>#<key>`, where `id` is 32 lowercase hex characters and `key` is 43 base64url characters that encode 32 bytes, so its last character is one of `AEIMQUYcgkosw048`. The scheme and host are compared without regard to case, as in any URL; the id and key are exact. A link glued to the end of a word, or standing inside another URL's path or query, is not counted. Each distinct link in a message counts once.
+- `count` is a decimal string, a positive integer with no sign and no leading zeros (the rules of §10).
+- A message that holds a token or a link is also counted as a message, so `message` is at least the number of messages that carry them.
+- A bag MUST carry at most one `contents` tag per kind, and SHOULD write them in the order above. A kind the bag does not hold is left out; a count of zero is never written.
+- A writer that publishes contents MUST compute them from the plaintext it is sealing, every time it publishes the bag, so that they are never stale. Because a bag is rewritten whole (§7.6 Lifecycle), this costs nothing extra.
+- Money alone: a writer MAY publish only that money is inside, as `["contents", "cashu"]` with no count, and only while the bag holds a Cashu token. There is no such form for any other kind; in particular, an NFT is not money, and `["contents", "nft"]` without a count says nothing.
+
+**Reading contents (normative):** a reader MUST ignore a `contents` tag whose kind it does not know, and one whose count is present but is not a positive integer. Contents never invalidate a bag, and a reader MUST NOT treat a bag as holding less than it finds, or more, because of them: what the bag holds is decided by its plaintext alone (§7.6).
+
+**Contents are a claim (non-normative):** nothing verifies them until the bag is opened. A token or a link counted in public may already have been spent, claimed or cancelled by the time a seeker opens the bag; the count says what was sealed, not what is still there. A hider who publishes that an NFT or money is inside invites sweepers (Reading is not reaching, above: anyone who derives the key reads the bag from anywhere), and may prefer to hide it inside a chest as well.
+
 ### 7.8 Holding a region (non-normative)
 
 Computing a region's Cantor root produces every intermediate node of the per-axis trees on the way up, and every intermediate node is itself the root of an aligned sub-region (§4.5). Whoever keeps those nodes on disk **holds** the region: the per-axis roots of every aligned sub-region inside it, at every height, are on hand, so any location-based key inside the holding costs one pairing step (§4.7, §7.2) instead of a tree. Holding is §7.5 carried to its limit.
@@ -1277,7 +1324,7 @@ The event `id` MUST be computed as NIP-01 canonical serialization:
 - Encode as UTF-8 JSON with no whitespace (equivalent to Python `json.dumps(..., separators=(",", ":"), ensure_ascii=False)`)
 - Hash: `sha256(serialized_bytes)`
 
-**Signature (`sig`):** `sig` MUST be a valid Schnorr signature over the event `id` as required by NIP-01. An event whose `id` or `sig` fails these checks is not authentic, and a reader discards it before resolving a chain (§8.7.3).
+**Signature (`sig`):** `sig` MUST be a valid Schnorr signature over the event `id` as required by NIP-01. An event whose `id` or `sig` fails these checks is not authentic, and a reader discards it before resolving a chain (§8.7.3). A rumor (§7.6), an item that carries an `id` and no signature inside a bag or inside another item, follows only the `id` rule.
 
 ### 8.3 Spawn event (first event)
 
@@ -1342,11 +1389,22 @@ Required tags:
   - `version` names the rules of §7.6. A reader MUST ignore a bag whose version it does not know.
 
 Optional tags:
-- `h` tag: `["h", "<height>"]` (decimal string): the height of the region whose key encrypts the content, which is the discovery radius of §7.3; at least 1 (§7.6)
+- `H` tag: `["H", "<height>"]` (decimal string, no sign, no leading zeros except `"0"`): the height of the region whose key encrypts the content, which is the discovery radius of §7.3; at least 1 (§7.6). This is the bag's **height tag**.
 - `hint` tag: `["hint", "<coord_hex>", "<Hx>", "<Hy>", "<Hz>"]`: the hider's coarse statement of where the bag can be found (§7.7)
 - Sector tags `X`, `Y`, `Z`, `S`: required on a bag that carries a `hint` tag, for each axis whose hint height is at most 30 (§7.7, §10); MUST NOT appear otherwise
+- `contents` tags: `["contents", "<kind>", "<count>"]`, the hider's public statement of what the bag holds, by kind (`shard`, `message`, `key`, `chest`, `cashu`, `nft`) and count, or `["contents", "cashu"]` alone to say only that money is inside (§7.7 Contents)
 
 Content: MAY carry plaintext meant for humans, a riddle (§7.7). The protocol does not interpret it.
+
+**The height tag (normative):**
+- A writer that states a bag's height MUST write it as exactly one `H` tag. A writer MUST NOT write an `h` tag on a bag.
+- A reader reads the height from the `H` tag. If the bag carries no `H` tag, the reader reads it from an `h` tag instead, in the same form: bags written before 2026-10-21 state their height that way. If the bag carries any `H` tag, the reader MUST ignore every `h` tag on it, whatever its value.
+- The tag the reader reads MUST appear exactly once, with a well-formed value. If it appears more than once, or its value is missing or malformed, the bag states no height: the reader treats the height as absent, exactly as if the bag carried neither tag. The bag is not invalid for it, because the height tag is optional; a reader that opened the bag knows its height anyway, as the height of the key that opened it (§7.2).
+- A bag that states height `0` MUST be rejected (§7.6).
+- A writer that rewrites a bag (§7.6, Lifecycle) and keeps its height public writes it as `H`, even when the bag it replaces said it with `h`.
+- These rules apply to every event that is a bag in all but its kind, such as the chat envelope (`kind 23330`), which states its room's height the same way.
+
+**Why `H` and not `h` (non-normative):** The height tag was `h` until 2026-10-21. NIP-29 (relay-based groups) reads an `h` tag on an event of any kind as the id of the group the event is posted to. A relay that runs NIP-29 therefore refused bags (it had no group named `7`), or would have filed one into a real group whose id happened to be a height. Uppercase `H` matches cyberspace's other uppercase tags, such as `A` and `C`, and no NIP defines it. The reader fallback exists only so that bags already on relays keep stating their height. It is not a second way to write one. The tag name `H` is unrelated to the hint heights `Hx`, `Hy` and `Hz` of §7.7, and to the region height `H` of §8.11.1, both of which are numbers inside other tags.
 
 ### 8.7 Verification summary
 

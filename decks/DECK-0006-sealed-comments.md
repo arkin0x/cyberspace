@@ -5,7 +5,7 @@ Title: Sealed comments on hidden things
 Status: Draft
 Mandatory: no
 Created: 2026-10-15
-Last updated: 2026-10-20
+Last updated: 2026-10-22
 Requires: `CYBERSPACE_V2.md` §7.2, §7.6 and §8.6; NIP-22; Fanfares NIP FF-1 (derived-key events)
 
 ## Abstract
@@ -37,7 +37,7 @@ The words are at most 2,000 characters, trimmed, and not empty.
 
 | Commenting on | Parent tags |
 |---|---|
-| an inline item of the bag | `e` = the item's event id, `k` = its kind (`3330`, `1`, `3340`, `3341`, ...), `p` = its author |
+| an inline item of the bag | `e` = the item's lineage id (§2.2), which is its event id unless it has been moved, `k` = its kind (`3330`, `1`, `3340`, `3341`, ...), `p` = its author |
 | an item hidden by reference to a sealed object | `e` = the referenced event's id, `a` = its address when the reference is an `a` reference, `k` = its kind, `p` = its author |
 | an item inside a chest (DECK-0004 §3) | as an inline item, with that item's id, kind and author. For an unsigned item, such as a message written as a rumor, the id is its canonical id, which is how readers identify it (DECK-0004 §3.4). |
 | another comment (a reply) | `e` = the comment's id, `k` = `1111`, `p` = the comment's author |
@@ -53,13 +53,26 @@ When the item is a **public** object placed by reference (an `a` reference to a 
 
 A reader that opens such a comment shows it under the item its `item` names. A reply to it is an ordinary reply (§2).
 
+### 2.2 A moved item
+
+An item carried inline is a regular event, so a client that moves one (ONOSENDAI's EDIT, cyberspace-mcp's `move_placed`) cannot change it in place. It writes a new event at the new `C`, takes the old one out of the bag, and the new event has a new id. So that comments on the item stay with it, the new event carries the item's **lineage**: the id of the item's first version.
+
+- A writer that moves an inline item MUST add `["d", "<lineage id>"]` to the new event, where the lineage id is that of the version it replaces: that version's `d` when it carries one, and otherwise that version's own id. The writer keeps every other tag of the version it replaces, except `C` and `d`, so that a move changes only where the item is. A message moved this way stays a rumor (`CYBERSPACE_V2.md` §7.6, Rumors), and its new canonical id covers the `d`.
+- A reader reads an inline item's lineage id as the value of its `d` tag when that value is 64 lowercase hex characters, and as the item's own id otherwise. A `d` of any other shape is not a lineage, and a reader ignores it.
+- A comment on an inline item MUST name the item's lineage id as its `e` parent, and a reader threads under an inline item the comments whose parent is its lineage id (§3). A comment made on any version of the item is therefore shown under every later version. ONOSENDAI names the same id in reactions (`kind 7`) on an inline item.
+- An item hidden by reference needs no lineage: its object keeps its own `d` across a move, and comments name it by address as well as by id (§2).
+
+Comments are rooted on the bag (§1), so they follow a move only while the item stays in the same bag. An item moved into another region goes into the bag of that region, and the comments made before the move stay under the old bag's root, where a reader of the new bag does not look.
+
+**Why `d` (non-normative).** `d` is the tag nostr uses for an identity that outlives any one version of an event. On a regular kind such as `3330` or `3340` a relay gives it no meaning, and the item is sealed inside the bag in any case, so no relay ever sees it. Both ONOSENDAI (#369, 2026-10-17) and cyberspace-mcp (`move_placed`) write and read it this way.
+
 ## 3. Reading (normative)
 
 1. Query `kind 1111` with `#A` set to the bag's address.
 2. Parse each comment's root (`A`), parent (`e`, else `a`) and parent kind (`k`), and drop a comment that lacks any of them.
 3. Decrypt the `encrypted` payload with the bag's region key. A payload that does not open is a comment this reader cannot read; it shows the placeholder, and it is not an error.
 4. A decrypted payload that begins with `{` and parses as an object with string `item` and `text` fields is the form of §2.1; any other payload is the words themselves.
-5. Thread: a comment whose `k` is not `1111` and whose parent is the item (by id or by address) is top-level under that item; a comment whose `k` is `1111` hangs under the comment it names; a reply whose parent is not present is left out.
+5. Thread: a comment whose `k` is not `1111` and whose parent is the item (by its lineage id, §2.2, or by address) is top-level under that item; a comment whose `k` is `1111` hangs under the comment it names; a reply whose parent is not present is left out.
 
 A reader MUST verify each comment's signature, as for any event, before treating its words as its author's.
 
