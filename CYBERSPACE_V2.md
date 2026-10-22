@@ -1117,7 +1117,7 @@ Note: this caching optimization applies to spatial region computations for disco
 
 Content hidden at a place is published as a **bag**. A bag is one Nostr event of kind 33330 (event format in §8.6) whose payload is encrypted with the key of one region at one height (§7.2), and it holds everything its author has hidden in that region at that height. Anyone can fetch a bag from a relay, because the ciphertext is public. Only someone who has computed the region's key can open it, whether they computed it by moving into the region or by deriving it for the coordinate directly (§7.1). The bag is addressable by its `lookup_id`, so a relay keeps only the newest bag per author and region, and the author changes what is hidden there by publishing a newer bag.
 
-**Height (normative):** the region's height MUST be at least 1. A height-0 region is a single Gibson, and height 0 is the one case in which a root does not identify its height (§4.6); discovery scanning starts at height 1 (§7.4). A bag whose `h` tag (§8.6) is `0` MUST be rejected.
+**Height (normative):** the region's height MUST be at least 1. A height-0 region is a single Gibson, and height 0 is the one case in which a root does not identify its height (§4.6); discovery scanning starts at height 1 (§7.4). A bag whose height tag (§8.6) states `0` MUST be rejected.
 
 **Cipher (normative):**
 - key: the `location_decryption_key` of §7.2 (32 bytes)
@@ -1172,7 +1172,7 @@ The rules:
 - The referenced event MAY be of any kind. Its kind is the kind in the `a` coordinate, or the kind of the event the `e` id names; nothing in the bag restates it.
 - The relay hint MAY be the empty string. `<coord_hex>` is the entry's exact coordinate and follows the rules of the `C` tag above: it MUST lie inside the bag's region, and a reader MAY drop a reference whose coordinate lies outside. It MAY be omitted, in which case the entry is located no more precisely than the region.
 - The referenced event is a **partially encrypted event** in the shape of Fanfares' NIP FF-1: its `content` is a public **preview** for readers who cannot open it, and it carries exactly one `["encrypted", "aes-256-gcm", "<payload>", "cyberspace:region"]` tag. The payload is the event's hidden content, encrypted with this bag's region key under the cipher above. The fourth element, `cyberspace:region`, stands where FF-1 puts a key service URL and says that the key is derived from a place rather than issued: a reader MUST NOT make a network request for it. The event carries a `d` tag, as FF-1 gives every partially encrypted event whatever its kind, which is what gives every referenced event a coordinate.
-- The referenced event MUST carry nothing that says where it is: no `C`, no `h`, no hint and no sector tag. Those belong to the bag, which is what the region key protects. The event is a locked box in plain view; the bag is the note that says where the box stands.
+- The referenced event MUST carry nothing that says where it is: no `C`, no height tag (`H`, or the `h` of §8.6), no hint and no sector tag. Those belong to the bag, which is what the region key protects. The event is a locked box in plain view; the bag is the note that says where the box stands.
 - Whoever opened the bag opens every event it references, with the key already in hand, and a reader that has not opened the bag can open none of them. What the decrypted payload means is defined by the referenced event's kind; DECK-0003 §3.2 and §3.4 define it for objects.
 - The referenced event is published, so it is signed like any other event, and a reader MUST verify it as usual. Placement is attributed to the bag's author, and authorship of the referenced content to the referenced event's `pubkey`, which MAY differ from the bag's: placing another author's event is a placement.
 - A reference that cannot be fetched, or whose payload does not open with this bag's key, is a missing entry. A reader drops it and SHOULD say that something was found but could not be retrieved, rather than that nothing was found.
@@ -1201,6 +1201,8 @@ A **hint** is the hider's clue as to where the bag is. It is optional, public, a
 - `bx = (x >> Hx) << Hx`, `by = (y >> Hy) << Hy`, `bz = (z >> Hz) << Hz`: the aligned bases
 - the box is `[bx, bx + 2^Hx) × [by, by + 2^Hy) × [bz, bz + 2^Hz)` on plane `P`
 
+In this section `H` stands for any one of the hint heights `Hx`, `Hy` and `Hz`. It is a number, not the bag's `H` tag (§8.6). The bag's own height, which that tag states, is the number `h`.
+
 A height of `85` leaves an axis open: the base is `0`, the box spans the whole axis, and the hint says nothing about that coordinate. Equal heights make a cube. Unequal heights make a slab or a column; an exact axis (height equal to the bag's) with two coarse axes turns the search into two dimensions. Heights of `30` on all three axes name exactly one sector (§10).
 
 **The `hint` tag (normative):**
@@ -1213,7 +1215,7 @@ A height of `85` leaves an axis open: the base is `0`, the box spans the whole a
 
 **What a hint claims (normative):**
 
-The bag's region (the aligned cube of height `h`, where `h` is the `h` tag of §8.6) lies inside the box, on plane `P`. Because both the region and the box are aligned, containment is two checks per axis: `H >= h`, and the region's base equals the box's base after both are shifted right by `H`. When the bag carries an `h` tag, each hint height MUST therefore be at least `h`; a box smaller than the region could not contain it. Three heights equal to `h` name the region itself: the hint is then a destination the seeker can compute or walk to directly, not a search.
+The bag's region (the aligned cube of height `h`, where `h` is the height the bag's height tag states, §8.6) lies inside the box, on plane `P`. Because both the region and the box are aligned, containment is two checks per axis: `H >= h`, and the region's base equals the box's base after both are shifted right by `H`. When the bag states its height, each hint height MUST therefore be at least `h`; a box smaller than the region could not contain it. Three heights equal to `h` name the region itself: the hint is then a destination the seeker can compute or walk to directly, not a search.
 
 **Sector tags (normative):**
 
@@ -1387,12 +1389,22 @@ Required tags:
   - `version` names the rules of §7.6. A reader MUST ignore a bag whose version it does not know.
 
 Optional tags:
-- `h` tag: `["h", "<height>"]` (decimal string): the height of the region whose key encrypts the content, which is the discovery radius of §7.3; at least 1 (§7.6)
+- `H` tag: `["H", "<height>"]` (decimal string, no sign, no leading zeros except `"0"`): the height of the region whose key encrypts the content, which is the discovery radius of §7.3; at least 1 (§7.6). This is the bag's **height tag**.
 - `hint` tag: `["hint", "<coord_hex>", "<Hx>", "<Hy>", "<Hz>"]`: the hider's coarse statement of where the bag can be found (§7.7)
 - Sector tags `X`, `Y`, `Z`, `S`: required on a bag that carries a `hint` tag, for each axis whose hint height is at most 30 (§7.7, §10); MUST NOT appear otherwise
 - `contents` tags: `["contents", "<kind>", "<count>"]`, the hider's public statement of what the bag holds, by kind (`shard`, `message`, `key`, `chest`, `cashu`, `nft`) and count, or `["contents", "cashu"]` alone to say only that money is inside (§7.7 Contents)
 
 Content: MAY carry plaintext meant for humans, a riddle (§7.7). The protocol does not interpret it.
+
+**The height tag (normative):**
+- A writer that states a bag's height MUST write it as exactly one `H` tag. A writer MUST NOT write an `h` tag on a bag.
+- A reader reads the height from the `H` tag. If the bag carries no `H` tag, the reader reads it from an `h` tag instead, in the same form: bags written before 2026-10-21 state their height that way. If the bag carries any `H` tag, the reader MUST ignore every `h` tag on it, whatever its value.
+- The tag the reader reads MUST appear exactly once, with a well-formed value. If it appears more than once, or its value is missing or malformed, the bag states no height: the reader treats the height as absent, exactly as if the bag carried neither tag. The bag is not invalid for it, because the height tag is optional; a reader that opened the bag knows its height anyway, as the height of the key that opened it (§7.2).
+- A bag that states height `0` MUST be rejected (§7.6).
+- A writer that rewrites a bag (§7.6, Lifecycle) and keeps its height public writes it as `H`, even when the bag it replaces said it with `h`.
+- These rules apply to every event that is a bag in all but its kind, such as the chat envelope (`kind 23330`), which states its room's height the same way.
+
+**Why `H` and not `h` (non-normative):** The height tag was `h` until 2026-10-21. NIP-29 (relay-based groups) reads an `h` tag on an event of any kind as the id of the group the event is posted to. A relay that runs NIP-29 therefore refused bags (it had no group named `7`), or would have filed one into a real group whose id happened to be a height. Uppercase `H` matches cyberspace's other uppercase tags, such as `A` and `C`, and no NIP defines it. The reader fallback exists only so that bags already on relays keep stating their height. It is not a second way to write one. The tag name `H` is unrelated to the hint heights `Hx`, `Hy` and `Hz` of §7.7, and to the region height `H` of §8.11.1, both of which are numbers inside other tags.
 
 ### 8.7 Verification summary
 
