@@ -112,7 +112,7 @@ An item MAY name a SNO object (DECK-0003) to be drawn as, where it stands in spa
 3. takes the first `model` tag it accepts, and ignores any other.
 4. fetches the newest event at that address from the relay named, if any, and from the relays it already reads. An object it cannot fetch, a sealed object (one with an `encrypted` tag, DECK-0003 §3.4), and an object whose payload fails DECK-0003 §1.9 are read as no model, and the reader draws the item as it draws an item without one.
 
-**`animate`.** Each element after the first is one motion. A reader MUST ignore a name it does not know, MUST read a name given twice as given once, and MUST read the motions only when the item carries a `model` it accepted. A writer MUST write each motion at most once, in the order `bob`, `spin-y`, `spin-x`, in one tag, and MUST NOT write the tag without a `model` or with no motions. The motions stack:
+**`animate`.** Each element after the first is one motion. A reader MUST ignore a name it does not know, MUST read a name given twice as given once, and MUST read the motions only when the item carries a `model` it accepted. A reader reads the motions of every `animate` tag the item carries, so motions split across two tags are read as one list. A writer MUST write each motion at most once, in the order `bob`, `spin-y`, `spin-x`, in one tag, and MUST NOT write the tag without a `model` or with no motions. The motions stack:
 
 | Motion | What it is |
 |---|---|
