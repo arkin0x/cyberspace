@@ -5,7 +5,7 @@ Title: Items and Chests
 Status: Draft
 Mandatory: no
 Created: 2026-10-15
-Last updated: 2026-10-20
+Last updated: 2026-10-22
 Requires: `CYBERSPACE_V2.md` §7.6 (the bag) and §8.6 (its event); NIP-01, NIP-44 v2, NIP-70, NIP-92; BIP-340
 
 ## Abstract
@@ -55,6 +55,7 @@ An item is a nostr event carried inline in a bag's list of entries (`CYBERSPACE_
 | `["-"]` | the NIP-70 protected marker. MUST be present. |
 | `["C", "<coord_hex>"]` | the item's exact coordinate, under the rules of `CYBERSPACE_V2.md` §7.6. |
 | `["imeta", "url <data URI>", "m <mime>", "dim <w>x<h>"]` | OPTIONAL. The item's picture (§2.4). |
+| `["d", "<64 lowercase hex>"]` | present only on an item that has been moved: the event id of the item's first version, its lineage, which comments on the item name (DECK-0006 §2.2). |
 
 The item event is signed by the hider, as `CYBERSPACE_V2.md` §7.6 says every item that is not a message SHOULD be.
 
