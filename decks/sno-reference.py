@@ -326,10 +326,10 @@ def authored_constraint(payload: dict) -> str:
     """§1.12: the value an authoring tool shows, and writes when it publishes.
 
     This is the editor's side, and it differs from walk_constraint() on
-    purpose. "all", "opaque" and "off" are an author's choice and come back
-    exactly as found. Absent means the author has not chosen, and a
-    malformed value is not a choice either: both come back as "opaque", the
-    authoring default, so a tool publishes what it showed. A tool writes the
+    purpose. "all", "opaque" and "off" are a choice and come back exactly as
+    found. Absent is treated as not chosen, and a malformed value is not a
+    choice either: both come back as "opaque", the authoring default, so a
+    tool publishes what it showed its user. A tool writes the
     value this returns, and so never writes an absent field for an object it
     publishes (an avatar, which every reader ignores here, may omit it).
     """
