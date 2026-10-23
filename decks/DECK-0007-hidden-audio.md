@@ -50,7 +50,7 @@ The item is a NIP-94 file metadata event carried inline in a bag's list of entri
 | `content` | the hider's caption, at most 280 characters, or empty |
 | `["C", "<coord_hex>"]` | exactly one. The source's coordinate, under the rules of `CYBERSPACE_V2.md` §7.6. |
 | `["title", "<name>"]` | the sound's name, at most 64 characters. SHOULD be present. |
-| `["url", "<https URL>"]` | exactly one. Where the encrypted file is: a Blossom URL whose last path segment is the `x` hash (BUD-01). |
+| `["url", "<https URL>"]` | exactly one. Where the encrypted file is: a Blossom URL whose last path segment is the `x` hash, optionally followed by `.` and an extension (BUD-01). |
 | `["m", "<MIME type>"]` | exactly one. The type of the file once decrypted. It MUST begin with `audio/`. |
 | `["x", "<64 lowercase hex>"]` | exactly one. The SHA-256 of the bytes at `url`: the ciphertext, which is what Blossom names the blob by. |
 | `["ox", "<64 lowercase hex>"]` | the SHA-256 of the decrypted file. SHOULD be present. |
@@ -66,24 +66,26 @@ The item is a NIP-94 file metadata event carried inline in a bag's list of entri
 | `["-"]` | the NIP-70 protected marker. MUST be present (`CYBERSPACE_V2.md` §7.6, Protected items). |
 | `["d", "<64 lowercase hex>"]` | present only on an item that has been moved: the event id of its first version (DECK-0006 §2.2). |
 
-Decimal integers here follow `CYBERSPACE_V2.md` §10: no sign, no leading zeros. The flag tags carry no value; a reader looks only at the tag's name.
+Decimal integers here follow `CYBERSPACE_V2.md` §10: no sign, no leading zeros. Hex is written in lowercase; a reader MAY accept uppercase. The flag tags carry no value; a reader looks only at the tag's name. Where the table says "exactly one" and an item carries more, a reader uses the first.
 
-A writer writes `retrigger` only on a one-shot. A writer MAY leave out `fade`; the sphere is then as large as fits in the region (§4.1). The item MUST NOT be published on its own: its `decryption-key` tag is the file, and an item published to a relay is the file given to everyone who reads the relay.
+A writer writes `retrigger` only on a one-shot. A writer MAY leave out `fade`; the sphere's radius is then half the distance to the region's nearest wall (§4.1). The item MUST NOT be published on its own: its `decryption-key` tag is the file, and an item published to a relay is the file given to everyone who reads the relay.
 
 ### 2.2 The file
 
 - The file MUST be encrypted before it is uploaded: AES-256-GCM, with a key of 32 bytes and a nonce of 12 bytes, both fresh and random for every file, a 16-byte tag, and no additional authenticated data.
 - The bytes uploaded, and the bytes at `url`, are the ciphertext with the tag appended, exactly as WebCrypto's `encrypt` returns them. The nonce is not prefixed: it travels in `decryption-nonce`.
 - The key and the nonce are written into the item and nowhere else. A writer MUST NOT upload the file unencrypted, and MUST NOT reuse a key or a nonce across files.
+- A writer MUST NOT reuse a key, a nonce or a ciphertext across placements. The same sound placed twice is encrypted twice and uploaded twice, so no two placements share an `x`: a shared `x` would tell a finder of one place that another bag holds the same sound, and one leaked key would open both. (ONOSENDAI's PLACE AGAIN opens the first copy with its key and seals a fresh one.)
 - A writer SHOULD upload the ciphertext with the type `application/octet-stream`, so that the server is not told it holds audio.
 - The upload is an ordinary Blossom upload (BUD-02): a `kind 24242` authorization signed by the uploader, naming the ciphertext's hash. The hider chooses the server.
+- The item's `url` MUST satisfy rule 2 of §2.3. A server may answer an upload with a URL that does not (an `http` address behind a proxy, a path of its own); the writer then writes the server's own address followed by `/` and the `x` hash, where BUD-01 serves the blob.
 
 ### 2.3 Reading the item
 
 A reader MUST skip, as an item it cannot read (`CYBERSPACE_V2.md` §7.6), a `kind 1063` whose:
 
 1. `m` does not begin with `audio/`, or is absent;
-2. `url` is absent, or is not an `https` URL (a reader MAY also accept `http` to its own machine, for testing);
+2. `url` is absent, is not an `https` URL, or has a last path segment other than the `x` hash, optionally followed by `.` and an extension of one to eight letters or digits. So a found item can only ever make a reader fetch a blob by its hash, never another endpoint on the server or on the reader's own network. A reader MAY accept `http` to its own machine while it is being developed, and MUST NOT otherwise;
 3. `x` is not 64 hex characters;
 4. `encryption-algorithm` is absent or is not `aes-gcm`;
 5. `decryption-key` is not 64 hex characters, or `decryption-nonce` is not 24.
@@ -99,7 +101,11 @@ A reader reads a `fade` that is not a decimal integer as absent, a `retrigger` o
 3. Decrypt with the item's key and nonce. A failure of the GCM tag means the bytes are not this item's file; a reader MUST NOT play anything.
 4. When the item carries `ox`, the SHA-256 of the decrypted file MUST equal it.
 
-A reader MAY keep the decrypted file in memory while it is heard, and SHOULD fetch a file only once while it is kept.
+A reader SHOULD set a limit on how many bytes it takes from a server (ONOSENDAI takes at most 25 MiB and 16 bytes, the largest file it hides, sealed), and SHOULD refuse more than the item's `size` when it gives one, reading no further than that, so that a found item cannot make a reader download without end.
+
+A reader MAY keep the decrypted file in memory while it is heard, and SHOULD fetch a file only once while it is kept. A file kept in memory belongs to its `x` together with its key and nonce: a second item that names the same `x` with another key opens only with its own.
+
+A client that shows an item's raw event (ONOSENDAI's event data on the item's card) SHOULD hide `decryption-key` and `decryption-nonce`, since the key is the file and a picture of the card would hand it to anyone.
 
 ## 3. Written as a rumor (normative)
 
@@ -121,7 +127,7 @@ That is the same reasoning that made messages rumors on 2026-10-20 (`CYBERSPACE_
 
 - The source is the centre of the gibson the item's `C` tag names: half a gibson past its coordinate on each axis.
 - Distances in this section are in gibsons. A reader measures them in the region's own frame: the region's aligned base (`CYBERSPACE_V2.md` §7.2) is the origin, so every number is at most the region's side, `2^H` for a region of height `H`, however far out in cyberspace the region is.
-- The sphere's radius `r` is the item's `fade`, but never more than the distance from the source to the region's nearest wall: `r = min(fade, w)`, where `w` is that distance. Without `fade`, `r = w`, the largest sphere about the source that fits in the region.
+- The sphere's radius `r` is the item's `fade`, but never more than the distance from the source to the region's nearest wall: `r = min(fade, w)`, where `w` is that distance. Without `fade`, `r = w / 2`: half the way to the nearest wall, so the sound still fades toward that wall as it does in every other direction (a sphere that reaches the wall would be full up to it, then silent).
 - A writer SHOULD NOT write a `fade` larger than `w` for the place it hides the item. A reader clamps one that is.
 
 ### 4.2 Loudness
