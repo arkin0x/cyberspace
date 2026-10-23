@@ -1,9 +1,10 @@
 // Golden vectors for DECK-0004 (items, chests, item listings), DECK-0005
-// (local chat) and DECK-0006 (sealed comments). Deterministic: every key is
+// (local chat), DECK-0006 (sealed comments) and DECK-0007 (hidden audio). Deterministic: every key is
 // SHA-256 of a label, every nonce is fixed, and every BIP-340 signature uses
 // 32 zero bytes of auxiliary randomness. A reader MUST accept any valid
 // signature; the fixed aux only makes these files reproducible. The message
-// sealed in the chest and the chat line are rumors, so they carry no `sig`.
+// sealed in the chest, the chat line and the hidden audio item are rumors, so
+// they carry no `sig`.
 // Run from a directory where nostr-tools (2.x) and @noble/curves are installed:
 //   node kinds-vectors.mjs > kinds-vectors.json
 import { createHash, webcrypto } from 'node:crypto'
@@ -70,6 +71,51 @@ const commentText = 'Took one. Thanks for the riddle.'
 const commentCt = await aesGcm(regionKey, nonce12('comment'), commentText)
 const comment = sign({ pubkey: speaker, created_at: T + 60, kind: 1111, content: 'This comment is hidden at an undisclosed location in cyberspace. Happy hunting: https://onosendai.tech', tags: [['A', bagAddress], ['K', '33330'], ['P', hider], ['e', keyItem.id, '', hider], ['k', '3340'], ['p', hider], ['encrypted', 'aes-256-gcm', commentCt, 'cyberspace:region']] }, speakerSk)
 
+// DECK-0007: hidden audio. The file is a generated tone (never a recording):
+// a mono 16-bit PCM WAV, 40 samples of a 440 Hz sine at 8000 Hz. It is
+// encrypted with AES-256-GCM under a fresh key and nonce, ciphertext and tag
+// raw, no nonce prefix (DECK-0007 §2.2), and the item, a rumor by the hider,
+// carries both.
+function toneWav(samples = 40, hz = 440, rate = 8000) {
+  const data = samples * 2
+  const b = Buffer.alloc(44 + data)
+  b.write('RIFF', 0); b.writeUInt32LE(36 + data, 4); b.write('WAVE', 8)
+  b.write('fmt ', 12); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22)
+  b.writeUInt32LE(rate, 24); b.writeUInt32LE(rate * 2, 28); b.writeUInt16LE(2, 32); b.writeUInt16LE(16, 34)
+  b.write('data', 36); b.writeUInt32LE(data, 40)
+  for (let i = 0; i < samples; i++) b.writeInt16LE(Math.round(Math.sin((2 * Math.PI * hz * i) / rate) * 0.3 * 32767), 44 + i * 2)
+  return b
+}
+const audioFile = toneWav()
+const audioKey = key('audio file')
+const audioNonce = nonce12('audio file')
+const audioCk = await webcrypto.subtle.importKey('raw', audioKey, 'AES-GCM', false, ['encrypt'])
+const audioCipher = Buffer.from(await webcrypto.subtle.encrypt({ name: 'AES-GCM', iv: audioNonce }, audioCk, audioFile))
+const audioX = hex(sha(audioCipher))
+const audioItem = rumorOf({ pubkey: hider, created_at: T, kind: 1063, content: 'Listen by the altar.', tags: [
+  ['C', C], ['title', 'Temple bell'], ['url', `https://blossom.example/${audioX}`], ['m', 'audio/wav'], ['x', audioX], ['ox', hex(sha(audioFile))],
+  ['size', String(audioCipher.length)], ['encryption-algorithm', 'aes-gcm'], ['decryption-key', hex(audioKey)], ['decryption-nonce', hex(audioNonce)],
+  ['autoplay'], ['retrigger', 'once'], ['fade', '6'], ['walk'], ['-'],
+] })
+// DECK-0007 §4.2: how loud, at a few listeners, in a height-5 region (32 gibsons a side).
+function exitDistance(from, dir, side) {
+  let t = Infinity
+  for (let i = 0; i < 3; i++) { if (dir[i] > 0) t = Math.min(t, (side - from[i]) / dir[i]); else if (dir[i] < 0) t = Math.min(t, -from[i] / dir[i]) }
+  return t
+}
+function gain(src, lis, side, r) {
+  if (!lis.every((v) => v >= 0 && v <= side)) return 0
+  const dir = lis.map((v, i) => v - src[i]); const d = Math.hypot(...dir)
+  if (d <= r) return 1
+  const e = exitDistance(src, dir.map((v) => v / d), side)
+  const t = Math.min(1, Math.max(0, (d - r) / (e - r)))
+  return 1 - t * t * (3 - 2 * t)
+}
+const audioSource = [10.5, 16.5, 16.5]
+const audioRadius = Math.min(6, ...audioSource.map((v) => Math.min(v, 32 - v)))
+const audioGains = [[10.5, 16.5, 16.5], [16.5, 16.5, 16.5], [21.25, 16.5, 16.5], [26.75, 16.5, 16.5], [32, 16.5, 16.5], [0, 16.5, 16.5], [10.5, 26.5, 26.5], [33, 16.5, 16.5]]
+  .map((listener) => ({ listener, gain: Number(gain(audioSource, listener, 32, audioRadius).toFixed(12)) }))
+
 console.log(JSON.stringify({
   note: 'Deterministic vectors. Keys are SHA-256("cyberspace vectors: <label>"); AES-GCM nonces are the first 12 bytes and the NIP-44 nonce all 32 bytes of SHA-256("cyberspace vectors nonce: <label>"); BIP-340 aux randomness is 32 zero bytes. Readers MUST accept any valid signature.',
   keys: { hider_secret: hex(hiderSk), hider, item_secret: hex(itemSk), item, chest_sender_secret: hex(senderSk), chest_sender: sender, speaker_secret: hex(speakerSk), speaker, region_key: hex(regionKey), lookup_id: lookupId },
@@ -78,4 +124,8 @@ console.log(JSON.stringify({
   item_listing: { proof_message: hex(proofMessage), event: listing },
   chat: { rumor, envelope_plaintext: chatPlain, aes_nonce: hex(nonce12('chat')), envelope },
   comment: { plaintext: commentText, aes_nonce: hex(nonce12('comment')), event: comment },
+  audio: {
+    file_hex: audioFile.toString('hex'), file_key: hex(audioKey), file_nonce: hex(audioNonce), ciphertext_hex: audioCipher.toString('hex'), item: audioItem,
+    gain: { region_height: 5, side: 32, source: audioSource, fade: 6, radius: audioRadius, samples: audioGains },
+  },
 }, null, 2))
