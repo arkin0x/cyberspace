@@ -5,7 +5,7 @@ Title: Items and Chests
 Status: Draft
 Mandatory: no
 Created: 2026-10-15
-Last updated: 2026-10-22
+Last updated: 2026-10-23
 Requires: `CYBERSPACE_V2.md` §7.6 (the bag) and §8.6 (its event); NIP-01, NIP-44 v2, NIP-70, NIP-92; BIP-340
 
 ## Abstract
@@ -170,9 +170,9 @@ A chest can therefore be sealed to a key whose secret the sealer does not hold, 
 
 **What goes in.** The entries of a chest follow the rules for the items of a bag (`CYBERSPACE_V2.md` §7.6), with the chest in the place of the bag and the chest's signer in the place of the bag's:
 
-- A message (`kind 1`) MUST be written as a rumor. Its `pubkey` MUST be the key that signs the chest, its `id` MUST be its canonical id (`CYBERSPACE_V2.md` §8.2), and it carries no `sig`. A writer MUST NOT sign a message it seals into a chest.
-- Every item the writer signs, or writes as a rumor, into the chest MUST carry NIP-70's `["-"]`: a shard (`3330`), a message (`1`), a key item (`3340`) and a chest (`3341`). An item signed by another key, which the writer seals as it is (for example a copy of an item it took), is carried unchanged, because adding a tag to it would break its signature.
-- Every item that is not a message SHOULD be signed by the writer, for the reason §7.6 gives: once it is taken elsewhere, only its own signature says who made it.
+- A message (`kind 1`) MUST be written as a rumor. Its `pubkey` MUST be the key that signs the chest, its `id` MUST be its canonical id (`CYBERSPACE_V2.md` §8.2), and it carries no `sig`. A writer MUST NOT sign a message it seals into a chest. Hidden audio (`kind 1063`, DECK-0007 §3) is written the same way.
+- Every item the writer signs, or writes as a rumor, into the chest MUST carry NIP-70's `["-"]`: a shard (`3330`), a message (`1`), a key item (`3340`), a chest (`3341`) and hidden audio (`1063`). An item signed by another key, which the writer seals as it is (for example a copy of an item it took), is carried unchanged, because adding a tag to it would break its signature.
+- Every item that is not a message or hidden audio SHOULD be signed by the writer, for the reason §7.6 gives: once it is taken elsewhere, only its own signature says who made it.
 
 ### 3.3 Opening
 
@@ -187,9 +187,9 @@ The decrypted plaintext is read as a list of entries under `CYBERSPACE_V2.md` §
 
 - Each inline item is verified as a bag's items are (`CYBERSPACE_V2.md` §7.6, Items and Rumors). An item is unsigned when it carries no `sig` field or a `sig` that is the empty string. An item with any other `sig` is signed: its `id` MUST be its canonical id and its signature MUST verify, and a reader MUST drop it, and only it, when either check fails.
 - An unsigned item is kept. A reader identifies it by its canonical id, whatever `id` it carries, so that a claimed id cannot stand in for another item's. Its `pubkey` is a claim, and a reader MUST NOT present it as verified unless the chest vouches for it, as the next rule says.
-- **Rumors in a chest.** A message rumor is vouched for by the chest that holds it when all three of these hold: the rumor's `pubkey` equals the chest's own `pubkey`; the rumor's `id` is its canonical id; and the chest's own authorship is verified, because the chest is signed and its signature verifies. A reader that keeps a vouched-for rumor MUST attribute its content to the chest's signer, and MAY present that authorship as verified. Reason: the chest's signature covers its `content`, which decrypts to exactly one list, in which this rumor's `pubkey` is the chest's own. This is the rule of `CYBERSPACE_V2.md` §7.6 ("Inside an item"), and it applies at every depth.
+- **Rumors in a chest.** A message rumor, or a hidden audio rumor, is vouched for by the chest that holds it when all three of these hold: the rumor's `pubkey` equals the chest's own `pubkey`; the rumor's `id` is its canonical id; and the chest's own authorship is verified, because the chest is signed and its signature verifies. A reader that keeps a vouched-for rumor MUST attribute its content to the chest's signer, and MAY present that authorship as verified. Reason: the chest's signature covers its `content`, which decrypts to exactly one list, in which this rumor's `pubkey` is the chest's own. This is the rule of `CYBERSPACE_V2.md` §7.6 ("Inside an item"), and it applies at every depth.
 - **The chest's own signer, never the bag's.** The key that vouches for a rumor is the `pubkey` of the chest the rumor is in. It is never the author of the bag that holds the chest, and never the signer of an outer chest. A chest inside another chest may have been sealed by someone else, for example when a hider seals a copy of a chest they took into a chest of their own; a rumor inside it that names the bag's author is a claim.
-- **A chest that is a claim vouches for nothing.** When a chest's own authorship is not verified, every rumor inside it has a `pubkey` that is a claim. `CYBERSPACE_V2.md` §7.6 also counts a chest that is itself a rumor vouched for by what holds it; writers do not write one (§3.1), and since writers write only messages as rumors, a reader MAY read an unsigned chest, or a rumor of any kind other than `1`, as an unsigned item whose `pubkey` is a claim. ONOSENDAI and cyberspace-mcp drop an unsigned chest found directly in a bag, and keep one found inside another chest as a claim, so that nothing inside it is vouched for.
+- **A chest that is a claim vouches for nothing.** When a chest's own authorship is not verified, every rumor inside it has a `pubkey` that is a claim. `CYBERSPACE_V2.md` §7.6 also counts a chest that is itself a rumor vouched for by what holds it; writers do not write one (§3.1), and since writers write only messages and hidden audio as rumors, a reader MAY read an unsigned chest, or a rumor of any kind other than `1` and `1063`, as an unsigned item whose `pubkey` is a claim. ONOSENDAI and cyberspace-mcp drop an unsigned chest found directly in a bag, and keep one found inside another chest as a claim, so that nothing inside it is vouched for.
 - **Signed messages.** A reader MUST still accept a signed message whose signature verifies, because messages sealed into chests before 2026-10-20 are signed. Its author is a fact on the strength of its own signature.
 - A reader MUST NOT drop an item for carrying `-` or for lacking it.
 - A chest MAY hold items of any kind, including items (§2) and other chests. A chest holding the item that opens the next chest is a chain.

@@ -62,7 +62,8 @@ The design record for this category, and for why the base protocol defines holdi
 - `DECK-0004-items-and-chests.md`: Items and Chests. Defines `kind 3340`, an item (a keypair hidden in a bag; holding its secret is holding it), `kind 3341`, a chest (a list of entries sealed with NIP-44 v2 to an item's or a person's public key), and `kind 33340`, an item listing (an item's name, picture and public key in public, with a proof by the item's own key, never its secret).
 - `DECK-0005-local-chat.md`: Local chat. Defines `kind 23330`, the ephemeral chat envelope (a bag in the ephemeral range, sealed to the speaker's room), and `kind 23333`, the chat line inside it, an unsigned rumor bound to the envelope's signer.
 - `DECK-0006-sealed-comments.md`: Sealed comments. NIP-22 `kind 1111` comments on hidden things, with the words encrypted to the bag's region key as an FF-1 derived-key event.
-- `kinds-vectors.json` and `kinds-vectors.mjs`: deterministic test vectors for DECK-0004, DECK-0005 and DECK-0006, and the script that produces them (needs `nostr-tools` 2.x).
+- `DECK-0007-hidden-audio.md`: Hidden audio. Defines `kind 1063` as a bag item, a NIP-94 file event naming an encrypted file on Blossom and carrying its key, written as an unsigned rumor; and how it is heard in space: full inside a sphere about its source, fading to silence at the walls of its region, looping or played once on entering the sphere.
+- `kinds-vectors.json` and `kinds-vectors.mjs`: deterministic test vectors for DECK-0004, DECK-0005, DECK-0006 and DECK-0007, and the script that produces them (needs `nostr-tools` 2.x).
 
 ## Reserved kinds
 - `kind 33332`: public shards, shards published in the open rather than hidden in a bag. Reserved, not yet specified. (The archived v1 spec used 33332 for v1 shards; those events carry v1 tags and are not this.)
