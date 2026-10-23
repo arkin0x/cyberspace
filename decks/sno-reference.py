@@ -49,6 +49,10 @@ OPACITY_FLOOR = 10
 #: §1.12. The two words a walker is stopped by; anything else, absent
 #: included, stops nothing, and is reported here as "none".
 WALK_CONSTRAINTS = ("all", "opaque")
+# §1.12: the three words an author can choose; "off" is a choice of nothing.
+AUTHORED_CONSTRAINTS = ("all", "opaque", "off")
+# §1.12: what an authoring tool writes for an object whose author has not chosen.
+AUTHORING_DEFAULT = "opaque"
 
 
 class SnoError(ValueError):
@@ -308,13 +312,31 @@ def drawn_opacity(payload: dict) -> int:
 def walk_constraint(payload: dict) -> str:
     """§1.12: "all", "opaque", or "none" for an object that stops no walker.
 
-    Only the two lowercase words count. Absent, null, "off", "ALL", a number,
-    a boolean, an array, an object, anything else: the object stops nothing,
-    exactly as if the field were absent, and the payload is never rejected for
-    it. A publisher writes nothing at all rather than a word for nothing.
+    This is the reader's side. Only the two lowercase words that stop a
+    walker count. "off", absent, null, "ALL", a number, a boolean, an array,
+    an object, anything else: the object stops nothing, and the payload is
+    never rejected for it. "off" is a word the field has, written by an
+    author who chose nothing; a reader treats it exactly as absent.
     """
     value = payload.get("constrain")
     return value if isinstance(value, str) and value in WALK_CONSTRAINTS else "none"
+
+
+def authored_constraint(payload: dict) -> str:
+    """§1.12: the value an authoring tool shows, and writes when it publishes.
+
+    This is the editor's side, and it differs from walk_constraint() on
+    purpose. "all", "opaque" and "off" are an author's choice and come back
+    exactly as found. Absent means the author has not chosen, and a
+    malformed value is not a choice either: both come back as "opaque", the
+    authoring default, so a tool publishes what it showed. A tool writes the
+    value this returns, and so never writes an absent field for an object it
+    publishes (an avatar, which every reader ignores here, may omit it).
+    """
+    value = payload.get("constrain")
+    if isinstance(value, str) and value in AUTHORED_CONSTRAINTS:
+        return value
+    return AUTHORING_DEFAULT
 
 
 def stops_walker(payload: dict) -> bool:
@@ -794,7 +816,7 @@ def _self_test() -> None:
         (absent, "none", False, "absent stops nothing"),
         ("all", "all", True, "all"),
         ("opaque", "opaque", True, "opaque, on a solid opaque object"),
-        ("off", "none", False, "off is not a word the field has: nothing (and a publisher omits it)"),
+        ("off", "none", False, "off is the author's choice of nothing: a reader reads it as absent"),
         ("none", "none", False, "none is not a word the field has either"),
         ("ALL", "none", False, "the words are lowercase and exact"),
         ("Opaque", "none", False, "the words are lowercase and exact"),
@@ -829,7 +851,34 @@ def _self_test() -> None:
             if stops_walker(payload) != want:
                 print(f"  CONSTRAIN {constraint} with {extra!r}: expected stops={want} ({why})")
                 failures += 1
+    # §1.12, the authoring side: what a tool shows and publishes. An author's
+    # word comes back as found; absent and malformed are not choices, and
+    # come back as the default, "opaque". A reader still reads "off" as
+    # absent, which the reader cases above check.
+    authored = [
+        (absent, "opaque", "absent: the author has not chosen, so the default"),
+        ("off", "off", "an explicit off survives, so it is never written as absent"),
+        ("all", "all", "kept as found"),
+        ("opaque", "opaque", "kept as found"),
+        ("ALL", "opaque", "malformed is not a choice"),
+        ("none", "opaque", "none is not a word the field has"),
+        (None, "opaque", "null is not a choice"),
+        (1, "opaque", "a number is not a choice"),
+    ]
+    for given, want, why in authored:
+        payload = dict(APPENDIX_A) if given is absent else {**APPENDIX_A, "constrain": given}
+        got = authored_constraint(validate(payload))
+        if got != want:
+            print(f"  AUTHORED CONSTRAIN: {given!r} gave {got!r}, expected {want!r} ({why})")
+            failures += 1
+        # Whatever a tool writes, a reader must read as the tool showed it:
+        # "off" stops nothing, the other two are what they say.
+        written = validate({**APPENDIX_A, "constrain": got})
+        if walk_constraint(written) != ("none" if got == "off" else got):
+            print(f"  AUTHORED CONSTRAIN: {got!r} written is read as {walk_constraint(written)!r}")
+            failures += 1
     print(f"{len(walls) + 2 * len(seen_through)} constrain cases (rule 15 never rejects), every payload accepted")
+    print(f"{len(authored)} authoring cases (absent and malformed publish as opaque, off survives)")
 
     if failures:
         raise SystemExit(1)

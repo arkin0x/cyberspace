@@ -43,7 +43,7 @@ The design goal is not to compete with glTF or USD. It is to be the three-dimens
 - **Mode:** which of the three drawings of the same vertex list a client should produce: `solid`, `points` or `lines` (§1.5).
 - **Opacity:** how solid an object is drawn, a whole percent from `1` to `100`. Absent means `100`, fully opaque (§1.11).
 - **Walker:** a viewer that a client moves through a scene a step at a time, as a person walks, rather than by jumping to a place (§1.12).
-- **Constraint (`constrain`):** whether an object's faces stop a walker: `"all"`, `"opaque"`, or absent for none (§1.12).
+- **Constraint (`constrain`):** whether an object's faces stop a walker: `"all"`, `"opaque"`, or `"off"` for none. Absent also means none to a reader, and means "not chosen" to an authoring tool, which writes `"opaque"` (§1.12).
 - **Extent:** the half-width of the grid the object was built on, in model units. A bound, not a size (§1.8).
 
 ---
@@ -68,7 +68,7 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | `faces` | array | yes | Triangles as `[a, b, c]` vertex indices (§1.4). MAY be empty. |
 | `facecolors` | array | no | One palette index per face, run-length encoded, for hard color seams (§1.4a). Absent means every face interpolates its vertices. |
 | `opacity` | integer | no | How solid the object is drawn, a percent, `1` to `100` (§1.11). Repaired, never rejected: absent or malformed means `100`, fully opaque. |
-| `constrain` | string | no | Whether the object's faces stop a walker: `"all"` or `"opaque"` (§1.12). Repaired, never rejected: absent or malformed means they stop nothing. |
+| `constrain` | string | no | Whether the object's faces stop a walker: `"all"`, `"opaque"` or `"off"` (§1.12). Repaired, never rejected: `"off"`, absent or malformed means they stop nothing. An authoring tool writes `"opaque"` unless its author chooses otherwise. |
 | `palette` | string or array | no | Which 256 colors the indices name (§1.3a). Absent means the built-in. |
 | `up` | boolean | no | `true` means the object stands on the Earth's surface where it is placed (§1.7). `false` means the same as absent. |
 | `spin` | integer | no | With `up`: the compass bearing the object's `+Z` faces, `0` to `359` (§1.7). |
@@ -103,7 +103,7 @@ A position is an exact rational, never a float. It is carried in two parts.
 
 **The float hazard (normative).** One 120th is not exactly representable in binary floating point. Two readers that compute `whole + remainder / 120.0`, one in 32-bit and one in 64-bit, will disagree in the last bits. Therefore any operation that depends on exact coincidence, which is at least welding, deduplication, equality, sorting and hashing, MUST be performed on the integer pair before any conversion to a float. A reader that welds on derived floats has given away the one guarantee the lattice makes.
 
-**Canonical form (normative).** There is exactly one way to write a given object, because a format that allows three spellings of the same thing gets three incompatible readers. A publisher MUST omit `ticks` entirely when every remainder is zero, MUST write a run of two or more zero remainders as a single negative integer rather than as repeated triples, MUST omit `extent` when it is `8`, MUST omit `opacity` when it is `100` (§1.11), and MUST omit `constrain` rather than write any value but `"all"` or `"opaque"` (§1.12). A reader MUST accept all equivalent spellings anyway, because it will meet them.
+**Canonical form (normative).** There is exactly one way to write a given object, because a format that allows three spellings of the same thing gets three incompatible readers. A publisher MUST omit `ticks` entirely when every remainder is zero, MUST write a run of two or more zero remainders as a single negative integer rather than as repeated triples, MUST omit `extent` when it is `8`, MUST omit `opacity` when it is `100` (§1.11), and MUST NOT write `constrain` with any value but `"all"`, `"opaque"` or `"off"` (§1.12). An absent `constrain` and `"off"` are not two spellings of one object: a reader treats them alike, but an authoring tool does not, so each is canonical for what it says (§1.12). A reader MUST accept all equivalent spellings anyway, because it will meet them.
 
 ### 1.3 Colors
 
@@ -317,7 +317,7 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 12. `parts`, if present, is an array whose entries are each eight integers: a `refs` index in range, three tick offsets each in `-7680..7680`, three whole degrees each in `0..359`, and a scale step such that the placed object's unit stays in `0..84` (§1.10). `parts` without `refs`, or a `refs` index past the end, is a reason to reject.
 13. A payload with `parts` and no `vertices` of its own is valid: an object may be nothing but the arrangement of others (§1.10).
 14. `opacity`, if present, is repaired rather than validated (§1.11): a value that is not an integer in `1..100`, null included, means `100`, and an integer from `1` to `9` is drawn at `10`. It is never a reason to reject.
-15. `constrain`, if present, is repaired rather than validated (§1.12): a value that is not exactly the string `"all"` or `"opaque"`, null included, means the object stops nothing. It is never a reason to reject.
+15. `constrain`, if present, is repaired rather than validated (§1.12): `"off"`, and any value that is not exactly the string `"all"` or `"opaque"`, null included, means the object stops nothing. It is never a reason to reject.
 
 ---
 
@@ -412,14 +412,15 @@ Positions are ticks and turns are whole degrees because everything else in this 
 
 ### 1.12 Constraint
 
-`constrain` says whether an object's faces stop a walker. It is one of two words, and absent means neither: the object stops nothing, which is how every object behaved before this field existed and how every object without it behaves still.
+`constrain` says whether an object's faces stop a walker. It is one of three words. Two of them, `"all"` and `"opaque"`, name faces that stop a walker; the third, `"off"`, says that the author chose to have none. Absent means none to a reader as well: the object stops nothing, which is how every object behaved before this field existed and how every object without it is read still. What absent means to an authoring tool is different, and is set out under **Absent and `"off"`** below.
 
 | `constrain` | Which of the object's faces stop a walker |
 |---|---|
 | absent | none |
+| `"off"` | none: the author chose no constraint |
 | `"all"` | every face, in every mode, at every opacity |
 | `"opaque"` | every face while the object is opaque, which is `mode` `solid` with an opacity of `100` (§1.11); none while it can be seen through |
-| anything else: `"off"`, `"none"`, `"ALL"`, `"Opaque"`, a number, a boolean, an array, an object, null | none, exactly as if it were absent |
+| anything else: `"none"`, `"OFF"`, `"ALL"`, `"Opaque"`, a number, a boolean, an array, an object, null | none, exactly as if it were absent |
 
 **What a walker is.** Some clients move a viewer through a scene a step at a time, the way a person walks: ONOSENDAI's WALK is one, where every press moves the viewer's avatar one step along one axis. A client that walks its viewer SHOULD refuse a step whose straight path would cross a face that stops a walker, or shorten the step so that it ends before the face. A client that never walks a viewer ignores the field. Movement that is not walking is never constrained: a jump to a coordinate, a planned route, or a camera that looks around without moving the avatar all go where they go, which is also what lets a walker that finds itself shut in get out (§6).
 
@@ -438,7 +439,20 @@ Positions are ticks and turns are whole degrees because everything else in this 
 
 **Exact where the lattice is exact.** Positions here are exact rationals (§1.2), and a walker's offset from an object is a whole number of gibsons. A reader SHOULD subtract the object's position from the walker's in integers before anything becomes a float, and SHOULD first set aside, still in integers, every object whose bounds the step's segment misses, so that nothing far away is ever measured in floats. It SHOULD then test what remains in the object's own frame. For an object at a small `unit`, placed with quarter turns and steps of scale, every number in that test is a whole number of ticks or a power of two of modest size, and double precision decides it exactly, touching cases included. At a large `unit` a gibson is a tiny fraction of a tick, and a turn of any other whole degree, or a pose on the Earth (§1.7), brings in irrational values; there a reader decides a touching case with a small tolerance toward crossing, since a wall that leaks is a worse failure than one a hair thicker than drawn.
 
-**It is repaired, never a reason to reject.** A reader MUST read a malformed `constrain` as absent and MUST NOT reject the payload for it (§1.9 rule 15). The field says how a client moves its own viewer, never what shape the object is, and reading a malformed value as absent is the one reading that agrees with every reader written before this section, which ignores the field. It was ruled forgiving from the day it was added, as `opacity` was (§1.11). A publisher MUST NOT write a malformed value, and in particular MUST NOT write `"off"` or any other word for nothing: an object whose author wants no constraint omits the field (§1.2). An object set to `"opaque"` while it is see-through, or to `"all"` while it has no faces, keeps the field: it stops nothing now, and its setting still says what it does once it is opaque or has faces. The two words are lowercase and exact, as `mode`'s are.
+**It is repaired, never a reason to reject.** A reader MUST read a malformed `constrain` as absent and MUST NOT reject the payload for it (§1.9 rule 15). The field says how a client moves its own viewer, never what shape the object is, and reading a malformed value as absent is the one reading that agrees with every reader written before this section, which ignores the field. It was ruled forgiving from the day it was added, as `opacity` was (§1.11). A publisher MUST NOT write a malformed value. `"off"` is not malformed: it is the one word for nothing, and a publisher MUST NOT write any other word for nothing, such as `"none"` or `"false"`. An object set to `"opaque"` while it is see-through, or to `"all"` while it has no faces, keeps the field: it stops nothing now, and its setting still says what it does once it is opaque or has faces. The three words are lowercase and exact, as `mode`'s are.
+
+**Absent and `"off"`.** A reader treats the two alike, and an authoring tool does not.
+
+- **A reader** MUST read an absent `constrain`, and `"off"`, as stopping nothing. Every object published before this paragraph was written keeps the meaning it was published with, and every reader written to this section before `"off"` was named already reads `"off"` as nothing, because it was a malformed value then. Nothing a reader does changes.
+- **An authoring tool** is any client that makes an object, or opens one and publishes it again: a modeling workshop, a builder that edits a placed object, an importer, a kit that publishes its pieces. To such a tool, an absent field means that the object's author has not chosen. An authoring tool SHOULD write `"opaque"` for every object whose author has not chosen a value, and SHOULD show `"opaque"` as the object's setting before it publishes, so that what the author sees is what is published. This covers:
+  - a new object;
+  - an object published without the field, and opened and published again;
+  - an object made from a payload without the field, such as a kit piece or an imported file.
+- **A malformed value** is not a choice either. An authoring tool SHOULD treat it as not chosen, and so show and write `"opaque"` in its place.
+- **An author's choice is kept.** An authoring tool MUST write the value its author chose, and MUST keep `"all"`, `"opaque"` or `"off"` exactly as it found them when the author has not changed the setting. An author who wants no constraint therefore gets `"off"`, never an absent field, because the next tool to open an absent field would write `"opaque"` in its place.
+- **Avatars.** An authoring tool need not write the field into an avatar's payload, since every reader ignores it there (§3.3).
+
+**Why the default is `"opaque"`.** Most objects are built to be solid: walls, floors, furniture, a house. A walker held only by what looks solid meets the world the way it looks, and a see-through object, a pane, a pool of water, a wireframe, still lets it through (`"opaque"` above). So a new object holds a walker unless its author says otherwise. The default could not be made by changing what absent means to a reader: every object already published says nothing, and would grow walls overnight, in places that nobody chose. So the default lives in the authoring tools, where it applies only to what is published from now on, and only by an author who could have chosen otherwise; and `"off"` exists so that the choice of no walls survives being opened again.
 
 **Why `"opaque"`.** A wall a walker can see through is a strange thing to be stopped by. An author building a flooded room wants the stone to hold a walker and the water in the pool to let one wade in, and wants a pane they later make translucent to open with the same edit. `"opaque"` is a wall exactly while the object looks like one. Whether an object can be seen through is read from the payload and never from how a particular reader draws it: an object with an opacity below `100`, or in `lines` or `points` mode, can be seen through for this test even in a reader that draws translucency opaque (§1.11), so every reader that reads opacity the same way (§1.11) holds a walker at the same objects. It is the same line §6 draws for enclosure, for the same reason.
 
@@ -450,11 +464,11 @@ Positions are ticks and turns are whole degrees because everything else in this 
 
 **Why one setting for the whole object, and not one per face.** A doorway is an opening in a wall, not a face that lets walkers through, so a room needs no passable faces to have a way in. Where an author wants a passable surface inside a solid build, a curtain or a waterfall, they make it its own object and place it (§1.10), which is already how one build combines two modes or two opacities. A per-face list would also be at the mercy of every older editor: one that does not know the list keeps it as written while it adds, removes or reorders faces (the note that closes §1.11), and the list would then name the wrong faces.
 
-**What it costs.** Eighteen bytes for `,"constrain":"all"`, twenty-one for `,"constrain":"opaque"`, and nothing for an object with no constraint, which omits it. Appendix A carries an example.
+**What it costs.** Eighteen bytes for `,"constrain":"all"` or `,"constrain":"off"`, twenty-one for `,"constrain":"opaque"`, and nothing for an object without the field, such as one published before an authoring tool wrote the default. Appendix A carries an example.
 
-**Versioning.** `constrain` is a field whose absence has a meaning, so its addition does not bump `v` (§5). An older reader ignores it, and its walkers, if it has any, walk through.
+**Versioning.** `constrain` is a field whose absence has a meaning, so its addition does not bump `v` (§5). An older reader ignores it, and its walkers, if it has any, walk through. Naming `"off"` does not bump `v` either: a reader that predates it reads it as nothing, which is what it means.
 
-(Non-normative: `decks/sno-reference.py` implements the table above as `walk_constraint` and `stops_walker`, and its self-test carries a repair case for each kind of value in it; there is no rejection case, because nothing in this section rejects. As with `opacity`, a reader that edits objects should keep fields it does not recognize when it writes an object back, or the first person to open a walled room in an older editor and publish it again would take its walls down for everyone after them.)
+(Non-normative: `decks/sno-reference.py` implements the table above as `walk_constraint` and `stops_walker`, and the authoring rule as `authored_constraint`, and its self-test carries a repair case for each kind of value in the table and an authoring case for each; there is no rejection case, because nothing in this section rejects. As with `opacity`, a reader that edits objects should keep fields it does not recognize when it writes an object back, or the first person to open a walled room in an older editor and publish it again would take its walls down for everyone after them.)
 
 ## 2. Model space (normative)
 
