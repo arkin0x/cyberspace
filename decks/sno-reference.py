@@ -288,6 +288,10 @@ def drawn_opacity(payload: dict) -> int:
     MAY draw any object opaque, and an avatar (§3.3) is always drawn opaque
     whatever this says; both are the reader's to apply, not the payload's.
     """
+    # Strict on int: a JSON 50.0 arrives here as a float and is repaired to
+    # 100. A reader whose parser cannot tell 50.0 from 50 may draw it at 50
+    # (§1.11); the difference is in how see-through it is drawn, never in
+    # whether it is accepted.
     value = payload.get("opacity", OPACITY_OPAQUE)
     if not _is_int(value) or not 1 <= value <= OPACITY_OPAQUE:
         return OPACITY_OPAQUE
@@ -723,6 +727,9 @@ def _self_test() -> None:
         (True, 100, "a boolean is not an integer: opaque"),
         (None, 100, "null: opaque, the way a null extent means 8"),
         ([50], 100, "an array: opaque"),
+        (False, 100, "false is a boolean, not an integer: opaque"),
+        ({}, 100, "an object: opaque"),
+        (10 ** 100, 100, "a huge integer is out of range: opaque"),
     ]
     for given, drawn, why in repairs:
         payload = dict(APPENDIX_A) if given is absent else {**APPENDIX_A, "opacity": given}
