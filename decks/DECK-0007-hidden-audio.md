@@ -85,7 +85,7 @@ A writer writes `retrigger` only on a one-shot. A writer MAY leave out `fade`; t
 A reader MUST skip, as an item it cannot read (`CYBERSPACE_V2.md` §7.6), a `kind 1063` whose:
 
 1. `m` does not begin with `audio/`, or is absent;
-2. `url` is absent, is not an `https` URL, or has a last path segment other than the `x` hash, optionally followed by `.` and an extension of one to eight letters or digits. So a found item can only ever make a reader fetch a blob by its hash, never another endpoint on the server or on the reader's own network. A reader MAY accept `http` to its own machine while it is being developed, and MUST NOT otherwise;
+2. `url` is absent, or is not a URL of all of these: scheme `https`; a host that is a public name, not an IP address (IPv4 or IPv6, which covers loopback, private and link-local addresses alike), not `localhost`, not a name without a dot, and not a name under `.local`, `.localhost`, `.internal`, `.lan` or `.home.arpa`; no user name or password; no query and no fragment; and a last path segment that is the `x` hash, optionally followed by `.` and an extension of one to eight letters or digits. So the item itself can name only a blob by its hash on a public server, never an endpoint with arguments or a machine on the reader's own network (the server it names can still redirect, §7). A reader MAY accept `http` to its own machine while it is being developed, and MUST NOT otherwise;
 3. `x` is not 64 hex characters;
 4. `encryption-algorithm` is absent or is not `aes-gcm`;
 5. `decryption-key` is not 64 hex characters, or `decryption-nonce` is not 24.
@@ -101,7 +101,7 @@ A reader reads a `fade` that is not a decimal integer as absent, a `retrigger` o
 3. Decrypt with the item's key and nonce. A failure of the GCM tag means the bytes are not this item's file; a reader MUST NOT play anything.
 4. When the item carries `ox`, the SHA-256 of the decrypted file MUST equal it.
 
-A reader SHOULD set a limit on how many bytes it takes from a server (ONOSENDAI takes at most 25 MiB and 16 bytes, the largest file it hides, sealed), and SHOULD refuse more than the item's `size` when it gives one, reading no further than that, so that a found item cannot make a reader download without end.
+A reader SHOULD set a limit on how many bytes it takes from a server (ONOSENDAI takes at most 25 MiB and 16 bytes, the largest file it hides, sealed), and SHOULD refuse more than the item's `size` (plus 16, for a writer that gave the decrypted file's size) when it gives one, reading no further than that, so that a found item cannot make a reader download without end.
 
 A reader MAY keep the decrypted file in memory while it is heard, and SHOULD fetch a file only once while it is kept. A file kept in memory belongs to its `x` together with its key and nonce: a second item that names the same `x` with another key opens only with its own.
 
@@ -192,6 +192,7 @@ A bag that publishes its contents (`CYBERSPACE_V2.md` §7.7) counts hidden audio
 - The Blossom server sees a blob of a given size, uploaded by a given key at a given time, and nothing else: not that it is audio (§2.2), not what it says, not where it is hidden.
 - Many Blossom servers list the blobs a key has uploaded. A hider who does not want their uploads counted can upload from another key or use a server that does not list them; the item does not need the uploader to be the hider.
 - A finder can share the key. Hiding a sound is giving it to whoever finds it. The rumor (§3) keeps a copy from carrying the hider's name; it does not keep the sound from spreading.
+- The URL rule of §2.3 limits what the item can name, not where its server sends the reader: a server that answers with a redirect can point the reader's fetch anywhere, its own network included. ONOSENDAI follows redirects, because Blossom servers commonly redirect to a CDN; a reader that refuses redirects closes this, at the cost of those servers. What any fetch can return is still checked against `x` before anything is decrypted or played (§2.4).
 - Fetching the file tells its server that someone is opening it, from the reader's network address, at that moment. A reader that fetches only once the listener is inside the item's region (ONOSENDAI's third step) tells it no more than that someone reached the place.
 
 ## 8. Vectors
