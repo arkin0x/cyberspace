@@ -49,9 +49,9 @@ OPACITY_FLOOR = 10
 #: §1.12. The two words a walker is stopped by; anything else, absent
 #: included, stops nothing, and is reported here as "none".
 WALK_CONSTRAINTS = ("all", "opaque")
-# §1.12: the three words an author can choose; "off" is a choice of nothing.
+#: §1.12: the three words an author can choose; "off" is a choice of nothing.
 AUTHORED_CONSTRAINTS = ("all", "opaque", "off")
-# §1.12: what an authoring tool writes for an object whose author has not chosen.
+#: §1.12: what an authoring tool writes for an object whose setting nobody chose.
 AUTHORING_DEFAULT = "opaque"
 
 
@@ -817,7 +817,8 @@ def _self_test() -> None:
         ("all", "all", True, "all"),
         ("opaque", "opaque", True, "opaque, on a solid opaque object"),
         ("off", "none", False, "off is the author's choice of nothing: a reader reads it as absent"),
-        ("none", "none", False, "none is not a word the field has either"),
+        ("OFF", "none", False, "the words are lowercase and exact, off included"),
+        ("none", "none", False, "none is not a word the field has"),
         ("ALL", "none", False, "the words are lowercase and exact"),
         ("Opaque", "none", False, "the words are lowercase and exact"),
         (" all", "none", False, "no trimming"),
@@ -861,9 +862,17 @@ def _self_test() -> None:
         ("all", "all", "kept as found"),
         ("opaque", "opaque", "kept as found"),
         ("ALL", "opaque", "malformed is not a choice"),
+        ("OFF", "opaque", "malformed is not a choice, even when it looks like off"),
+        ("Opaque", "opaque", "malformed is not a choice"),
+        (" all", "opaque", "no trimming"),
+        ("", "opaque", "the empty string is not a choice"),
         ("none", "opaque", "none is not a word the field has"),
-        (None, "opaque", "null is not a choice"),
         (1, "opaque", "a number is not a choice"),
+        (True, "opaque", "a boolean is not a choice"),
+        (False, "opaque", "false is not off"),
+        (None, "opaque", "null is not a choice"),
+        (["off"], "opaque", "an array is not a choice"),
+        ({"off": True}, "opaque", "an object is not a choice"),
     ]
     for given, want, why in authored:
         payload = dict(APPENDIX_A) if given is absent else {**APPENDIX_A, "constrain": given}
