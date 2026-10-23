@@ -12,9 +12,9 @@ Run it directly to execute the self-test:
 
 The self-test carries the worked example from Appendix A, and a rejection case
 for every numbered rule in §1.9 that rejects, so a port can be checked against
-the same table. Rules 9 (`extent`) and 14 (`opacity`) repair rather than
-reject, so they carry repair cases instead: a value in, the value a reader
-draws with out.
+the same table. Rules 9 (`extent`), 14 (`opacity`) and 15 (`constrain`)
+repair rather than reject, so they carry repair cases instead: a value in, the
+value a reader draws or walks with out.
 """
 
 from __future__ import annotations
@@ -45,6 +45,10 @@ MODES = ("solid", "points", "lines")
 #: ever wholly invisible.
 OPACITY_OPAQUE = 100
 OPACITY_FLOOR = 10
+
+#: §1.12. The two words a walker is stopped by; anything else, absent
+#: included, stops nothing, and is reported here as "none".
+WALK_CONSTRAINTS = ("all", "opaque")
 
 
 class SnoError(ValueError):
@@ -254,6 +258,9 @@ def validate(payload: Any, fetched_palette: Any = None) -> dict:
     # draws it at. There is deliberately no rejection here and no rejection
     # case in the self-test: a reader that knows the field must never draw
     # less than one that ignores it.
+
+    # 15. constrain is repaired, never validated (§1.12), for the same reason:
+    # walk_constraint() says what a walker meets, and nothing here rejects.
     return payload
 
 
@@ -296,6 +303,36 @@ def drawn_opacity(payload: dict) -> int:
     if not _is_int(value) or not 1 <= value <= OPACITY_OPAQUE:
         return OPACITY_OPAQUE
     return max(value, OPACITY_FLOOR)
+
+
+def walk_constraint(payload: dict) -> str:
+    """§1.12: "all", "opaque", or "none" for an object that stops no walker.
+
+    Only the two lowercase words count. Absent, null, "off", "ALL", a number,
+    a boolean, an array, an object, anything else: the object stops nothing,
+    exactly as if the field were absent, and the payload is never rejected for
+    it. A publisher writes nothing at all rather than a word for nothing.
+    """
+    value = payload.get("constrain")
+    return value if isinstance(value, str) and value in WALK_CONSTRAINTS else "none"
+
+
+def stops_walker(payload: dict) -> bool:
+    """§1.12: whether this object's own faces stop a walker.
+
+    "all" stops one in every mode and at every opacity. "opaque" stops one
+    only while the object is opaque, read from the payload and never from how
+    a reader draws it: mode "solid" and an opacity of 100 after §1.11's repair.
+    A placed object answers for itself (§1.10), and an avatar never stops a
+    walker (§3.3); both are the reader's to apply, not this function's. An
+    object with no faces has nothing to cross whatever this says.
+    """
+    c = walk_constraint(payload)
+    if c == "all":
+        return True
+    if c == "opaque":
+        return payload.get("mode") == "solid" and drawn_opacity(payload) == OPACITY_OPAQUE
+    return False
 
 
 def positions(payload: dict) -> Iterator[tuple[Fraction, Fraction, Fraction]]:
@@ -748,6 +785,51 @@ def _self_test() -> None:
     except SnoError as e:
         assert str(e).startswith("rule 8a"), e
     print("alpha in a palette entry is still a rule 8a rejection, which is why opacity is its own field")
+
+    # §1.12 and rule 15: constrain is repaired, never a rejection. Each case is
+    # a value in, the constraint a walker meets, and whether this object's
+    # faces stop one, for the solid opaque Appendix A object; every payload
+    # must also validate, because nothing about the field rejects.
+    walls = [
+        (absent, "none", False, "absent stops nothing"),
+        ("all", "all", True, "all"),
+        ("opaque", "opaque", True, "opaque, on a solid opaque object"),
+        ("off", "none", False, "off is not a word the field has: nothing (and a publisher omits it)"),
+        ("none", "none", False, "none is not a word the field has either"),
+        ("ALL", "none", False, "the words are lowercase and exact"),
+        ("Opaque", "none", False, "the words are lowercase and exact"),
+        (" all", "none", False, "no trimming"),
+        ("", "none", False, "the empty string"),
+        (1, "none", False, "a number"),
+        (True, "none", False, "a boolean"),
+        (None, "none", False, "null"),
+        (["all"], "none", False, "an array"),
+        ({"all": True}, "none", False, "an object"),
+    ]
+    for given, met, stops, why in walls:
+        payload = dict(APPENDIX_A) if given is absent else {**APPENDIX_A, "constrain": given}
+        accepted = validate(payload)  # raises, and so fails the test, if anything rejected it
+        got = (walk_constraint(accepted), stops_walker(accepted))
+        if got != (met, stops):
+            print(f"  CONSTRAIN: {given!r} gave {got}, expected {(met, stops)} ({why})")
+            failures += 1
+    # "opaque" stops a walker only while the object is opaque: see-through
+    # objects let one through, judged from the payload alone (§1.12).
+    seen_through = [
+        ({"opacity": 99}, False, "translucent: through"),
+        ({"opacity": 5}, False, "translucent, drawn at the floor: through"),
+        ({"opacity": 100}, True, "100 is opaque (and a publisher omits it)"),
+        ({"opacity": 250}, True, "a malformed opacity is opaque (§1.11), so it holds"),
+        ({"mode": "lines"}, False, "lines can be seen through"),
+        ({"mode": "points"}, False, "points can be seen through"),
+    ]
+    for extra, stops, why in seen_through:
+        for constraint, want in (("opaque", stops), ("all", True)):
+            payload = validate({**APPENDIX_A, **extra, "constrain": constraint})
+            if stops_walker(payload) != want:
+                print(f"  CONSTRAIN {constraint} with {extra!r}: expected stops={want} ({why})")
+                failures += 1
+    print(f"{len(walls) + 2 * len(seen_through)} constrain cases (rule 15 never rejects), every payload accepted")
 
     if failures:
         raise SystemExit(1)

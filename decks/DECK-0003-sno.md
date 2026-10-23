@@ -42,6 +42,8 @@ The design goal is not to compete with glTF or USD. It is to be the three-dimens
 - **Face:** a triangle, three vertex indices.
 - **Mode:** which of the three drawings of the same vertex list a client should produce: `solid`, `points` or `lines` (§1.5).
 - **Opacity:** how solid an object is drawn, a whole percent from `1` to `100`. Absent means `100`, fully opaque (§1.11).
+- **Walker:** a viewer that a client moves through a scene a step at a time, as a person walks, rather than by jumping to a place (§1.12).
+- **Constraint:** whether an object's faces stop a walker: `"all"`, `"opaque"`, or absent for none (§1.12).
 - **Extent:** the half-width of the grid the object was built on, in model units. A bound, not a size (§1.8).
 
 ---
@@ -66,6 +68,7 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | `faces` | array | yes | Triangles as `[a, b, c]` vertex indices (§1.4). MAY be empty. |
 | `facecolors` | array | no | One palette index per face, run-length encoded, for hard color seams (§1.4a). Absent means every face interpolates its vertices. |
 | `opacity` | integer | no | How solid the object is drawn, a percent, `1` to `100` (§1.11). Repaired, never rejected: absent or malformed means `100`, fully opaque. |
+| `constrain` | string | no | Whether the object's faces stop a walker: `"all"` or `"opaque"` (§1.12). Repaired, never rejected: absent or malformed means they stop nothing. |
 | `palette` | string or array | no | Which 256 colors the indices name (§1.3a). Absent means the built-in. |
 | `up` | boolean | no | `true` means the object stands on the Earth's surface where it is placed (§1.7). `false` means the same as absent. |
 | `spin` | integer | no | With `up`: the compass bearing the object's `+Z` faces, `0` to `359` (§1.7). |
@@ -100,7 +103,7 @@ A position is an exact rational, never a float. It is carried in two parts.
 
 **The float hazard (normative).** One 120th is not exactly representable in binary floating point. Two readers that compute `whole + remainder / 120.0`, one in 32-bit and one in 64-bit, will disagree in the last bits. Therefore any operation that depends on exact coincidence, which is at least welding, deduplication, equality, sorting and hashing, MUST be performed on the integer pair before any conversion to a float. A reader that welds on derived floats has given away the one guarantee the lattice makes.
 
-**Canonical form (normative).** There is exactly one way to write a given object, because a format that allows three spellings of the same thing gets three incompatible readers. A publisher MUST omit `ticks` entirely when every remainder is zero, MUST write a run of two or more zero remainders as a single negative integer rather than as repeated triples, MUST omit `extent` when it is `8`, and MUST omit `opacity` when it is `100` (§1.11). A reader MUST accept all equivalent spellings anyway, because it will meet them.
+**Canonical form (normative).** There is exactly one way to write a given object, because a format that allows three spellings of the same thing gets three incompatible readers. A publisher MUST omit `ticks` entirely when every remainder is zero, MUST write a run of two or more zero remainders as a single negative integer rather than as repeated triples, MUST omit `extent` when it is `8`, MUST omit `opacity` when it is `100` (§1.11), and MUST omit `constrain` when the object stops nothing (§1.12). A reader MUST accept all equivalent spellings anyway, because it will meet them.
 
 ### 1.3 Colors
 
@@ -257,7 +260,7 @@ A reader that does not implement `up` draws the object in the application's axes
 
 What replaces the ceiling is a publisher who knows what things cost and a container that stops multiplying: an object of any size can have an event of its own (§3.1, §3.4), so a bag, which is one event shared by everything hidden at a place, need never grow with the objects it names. The rest of this section is the arithmetic, so a publisher can plan against the relays it uses; none of it is a rule.
 
-`extent` is **advisory and self-repairing**, which is one of the places this format is deliberately forgiving rather than strict; `opacity` (§1.11) is another, for the same reason. A reader MUST substitute the default of `8` for an `extent` that is absent, not an integer, or outside `1..64`, and MUST then grow it until it contains every vertex. An object is therefore never rejected for disagreeing with its own extent; the data wins and the hint is corrected. This is what lets a modeling tool write geometry first and a bounding hint second without the two ever contradicting.
+`extent` is **advisory and self-repairing**, which is one of the places this format is deliberately forgiving rather than strict; `opacity` (§1.11) and `constrain` (§1.12) are others, for the same reason. A reader MUST substitute the default of `8` for an `extent` that is absent, not an integer, or outside `1..64`, and MUST then grow it until it contains every vertex. An object is therefore never rejected for disagreeing with its own extent; the data wins and the hint is corrected. This is what lets a modeling tool write geometry first and a bounding hint second without the two ever contradicting.
 
 The position bound is stated as an obligation on publishers rather than readers: a publisher MUST NOT write a vertex further than `64` model units (`7680` ticks) from the origin on any axis. A reader MAY reject such a payload and MAY instead repair it by growing the extent. ONOSENDAI currently repairs. §8 records the consequence.
 
@@ -314,6 +317,7 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 12. `parts`, if present, is an array whose entries are each eight integers: a `refs` index in range, three tick offsets each in `-7680..7680`, three whole degrees each in `0..359`, and a scale step such that the placed object's unit stays in `0..84` (§1.10). `parts` without `refs`, or a `refs` index past the end, is a reason to reject.
 13. A payload with `parts` and no `vertices` of its own is valid: an object may be nothing but the arrangement of others (§1.10).
 14. `opacity`, if present, is repaired rather than validated (§1.11): a value that is not an integer in `1..100`, null included, means `100`, and an integer from `1` to `9` is drawn at `10`. It is never a reason to reject.
+15. `constrain`, if present, is repaired rather than validated (§1.12): a value that is not exactly the string `"all"` or `"opaque"`, null included, means the object stops nothing. It is never a reason to reject.
 
 ---
 
@@ -353,7 +357,7 @@ Positions are ticks and turns are whole degrees because everything else in this 
 
 **Why the placements are in the payload and not in the event's tags.** A copy of the payload is the whole object, on the clipboard, in a bag, in another client; placements carried as tags would fall off it. Inside a bag the tags are encrypted with everything else, so nothing would be gained there. A publisher of a public `kind 33331` SHOULD also write each `refs` entry as an `e` or `a` tag on the event, unchanged, so a relay can answer "what places this object" (`#a`, `#e`); a reader MUST take the placements from the payload and MUST NOT read them from tags.
 
-**What a placed object keeps and what it loses.** It keeps its own `palette`, `mode`, `opacity`, `facecolors` and geometry: it is drawn as its author drew it, and a parent's `opacity` does not reach it (§1.11). It loses `up` and `spin`, because the parent's placement decides where it stands and which way it faces, and a parent standing on the Earth (§1.7) carries its parts with it. Its `extent` is ignored; the parent's extent is repaired to contain the placed objects' bounds the same way it is repaired to contain vertices (§1.8), which a reader can only do once the parts are fetched, so a parent's advertised extent may be smaller than what is finally drawn.
+**What a placed object keeps and what it loses.** It keeps its own `palette`, `mode`, `opacity`, `constrain`, `facecolors` and geometry: it is drawn as its author drew it, and a parent's `opacity` and `constrain` do not reach it (§1.11, §1.12). It loses `up` and `spin`, because the parent's placement decides where it stands and which way it faces, and a parent standing on the Earth (§1.7) carries its parts with it. Its `extent` is ignored; the parent's extent is repaired to contain the placed objects' bounds the same way it is repaired to contain vertices (§1.8), which a reader can only do once the parts are fetched, so a parent's advertised extent may be smaller than what is finally drawn.
 
 **Depth and cycles.** A placed object may itself have parts. A reader MUST follow placements no deeper than `4` levels from the object it is rendering, drawing a placeholder in place of anything deeper, and MUST treat a reference to any object already in the chain of parents as missing. Both are bounds a reader can enforce without trusting the author, which is the only kind worth writing down.
 
@@ -405,6 +409,49 @@ Positions are ticks and turns are whole degrees because everything else in this 
 **Versioning.** `opacity` is a field whose absence has a meaning, so its addition does not bump `v` (§5). An older reader ignores it and draws the object opaque.
 
 (Non-normative: `decks/sno-reference.py` implements the table above as `drawn_opacity`, and its self-test carries a repair case for each kind of value in it; there is no rejection case, because nothing in this section rejects. A reader that edits objects should keep fields it does not recognize when it writes an object back, or the first person to open a translucent object in an older editor and publish it again would make it opaque for everyone after them.)
+
+### 1.12 Constraint
+
+`constrain` says whether an object's faces stop a walker. It is one of two words, and absent means neither: the object stops nothing, which is how every object behaved before this field existed and how every object without it behaves still.
+
+| `constrain` | Which of the object's faces stop a walker |
+|---|---|
+| absent | none |
+| `"all"` | every face, in every mode, at every opacity |
+| `"opaque"` | every face while the object is opaque, which is `mode` `solid` with an opacity of `100` (§1.11); none while it can be seen through |
+| anything else: `"off"`, `"none"`, `"ALL"`, `"Opaque"`, a number, a boolean, an array, an object, null | none, exactly as if it were absent |
+
+**What a walker is.** Some clients move a viewer through a scene a step at a time, the way a person walks: ONOSENDAI's WALK is one, where every press moves the viewer's avatar one step along one axis. A client that walks its viewer SHOULD refuse a step whose straight path would cross a face that stops a walker, or shorten the step so that it ends before the face. A client that never walks a viewer ignores the field. Movement that is not walking is never constrained: a jump to a coordinate, a planned route, or a camera that looks around without moving the avatar all go where they go, which is also what lets a walker that finds itself shut in get out (§6).
+
+**A courtesy, not a rule of the space.** In Cyberspace a move is proved and signed by the one who makes it (`CYBERSPACE_V2.md`), and nothing in a chain records what objects stood in the way. A step through a constrained object is a valid step. A reader MUST NOT reject, hide or mark another avatar's movement because it passed through one, and MUST NOT apply the field to anyone's movement but its own viewer's. The field asks a client to hold its own walker the way a wall would; it cannot hold anyone whose client does not, and this document does not try. Walls that hold everyone need every mover to be checked by someone other than the mover, and that is outside this format.
+
+**What crossing means.**
+
+- A walker is a point at the centre of the cell its avatar stands in. In Cyberspace that is the centre of its gibson, which is where a client draws it.
+- A step crosses a face when the straight segment from where the step starts to where it would end meets the triangle. Edges and corners count, so two triangles that share an edge leave no seam to slip through, and a walker cannot squeeze past a wall along its rim.
+- A face the segment runs along, in the face's own plane, is not crossed: a walker moves along a wall or a floor freely.
+- A face the walker already stands on, at the very start of the segment, does not hold it, so a walker can always step off a surface it is touching. A step that would end exactly on a face does cross it: a walker never lands on a wall.
+- The faces are tested where the object is drawn: after `up` and `spin` (§1.7), through every placement (§1.10), and, where a reader cuts an object at the walls of the region it is hidden in, only inside those walls, so that nothing a walker cannot see holds it.
+
+`mode` does not change which triangles exist. An object in `lines` or `points` mode still has its faces, and `"all"` makes them walls although the reader draws them as edges or dots. An object with no faces has nothing to cross, whatever it says.
+
+**Exact where the lattice is exact.** Positions here are exact rationals (§1.2), and a walker's position is a whole number of gibsons. A reader SHOULD subtract the object's position from the walker's in integers before anything becomes a float, and SHOULD then test in the object's own frame, so that a step far from the origin of the space is tested as exactly as one beside it. For an object placed with quarter turns and steps of scale, every number in that test is a whole number of ticks or a power of two, and double precision answers it exactly, touching cases included. A turn of any other whole degree, or a pose on the Earth (§1.7), brings in irrational values, and a reader decides a touching case with a small tolerance toward crossing, since a wall that leaks is a worse failure than one a hair thicker than drawn.
+
+**It is repaired, never a reason to reject.** A reader MUST read a malformed `constrain` as absent and MUST NOT reject the payload for it (§1.9 rule 15). The field says how a client moves its own viewer, never what shape the object is, and reading a malformed value as absent is the one reading that agrees with every reader written before this section, which ignores the field. It was ruled forgiving from the day it was added, as `opacity` was (§1.11). A publisher MUST NOT write a malformed value, and in particular MUST NOT write `"off"` or any other word for nothing: an object that stops nothing omits the field (§1.2). The two words are lowercase and exact, as `mode`'s are.
+
+**Why `"opaque"`.** A wall a walker can see through is a strange thing to be stopped by. An author building a flooded room wants the stone to hold a walker and the water in the pool to let one wade in, and wants a pane they later make translucent to open with the same edit. `"opaque"` is a wall exactly while the object looks like one. Whether an object can be seen through is read from the payload and never from how a particular reader draws it: an object with an opacity below `100`, or in `lines` or `points` mode, can be seen through for this test even in a reader that draws translucency opaque (§1.11), so every reader holds a walker at the same objects. It is the same line §6 draws for enclosure, for the same reason.
+
+**Placed objects and avatars.** A placed object keeps its own `constrain`, and its parent's does not reach it (§1.10). A room set to `"all"` that places a pool of water left unset lets a walker into the water; a parent left unset that places walls set to `"all"` holds a walker at those walls; and an object that is nothing but placements (§1.9 rule 13) has no faces of its own, so its own setting stops nothing. This is the rule `mode` and `opacity` already follow, and it means every face that holds a walker holds it by its own author's choice. An avatar ignores `constrain` altogether (§3.3).
+
+**Why it belongs to the object.** The author knows what an object is for: a wall, a floor, a curtain, a column, a cloud. A setting kept by each viewer would leave every visitor to a maze to find and switch on its walls one by one, and a setting kept by whoever places an object would have to travel beside the reference rather than in it. Someone who places another author's object by reference takes its setting with it, as they take its mode; someone who wants it otherwise places a copy (§3.5).
+
+**Why one setting for the whole object, and not one per face.** A doorway is an opening in a wall, not a face that lets walkers through, so a room needs no passable faces to have a way in. Where an author wants a passable surface inside a solid build, a curtain or a waterfall, they make it its own object and place it (§1.10), which is already how one build combines two modes or two opacities. A per-face list would also have to travel with every edit that adds, removes or reorders faces, the hazard §5's carried fields are warned against.
+
+**What it costs.** Eighteen bytes for `,"constrain":"all"`, twenty-one for `,"constrain":"opaque"`, and nothing for an object that stops nothing, which omits it. Appendix A carries an example.
+
+**Versioning.** `constrain` is a field whose absence has a meaning, so its addition does not bump `v` (§5). An older reader ignores it, and its walkers, if it has any, walk through.
+
+(Non-normative: `decks/sno-reference.py` implements the table above as `walk_constraint` and `stops_walker`, and its self-test carries a repair case for each kind of value in it; there is no rejection case, because nothing in this section rejects. As with `opacity`, a reader that edits objects should keep fields it does not recognize when it writes an object back, or the first person to open a walled room in an older editor and publish it again would take its walls down for everyone after them.)
 
 ## 2. Model space (normative)
 
@@ -471,6 +518,8 @@ A publisher SHOULD carry a large object by reference: a bag is one event shared 
 An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload in its `content`, or empty content for the default avatar. The work an avatar owes is computed from `unit`, `vertices`, `ticks` and `faces` as that section specifies. Nothing in this DECK changes that computation; this document only defines the fields it reads.
 
 **An avatar is drawn opaque.** A reader MUST ignore `opacity` (§1.11) in an avatar's payload, and in every object the avatar places (§1.10), and draw the avatar fully opaque. The work an avatar owes prices its size and its detail, not its visibility, so a translucent avatar would buy a way to move unseen through a shared space for nothing, and an avatar is how one person knows another is present. `opacity` is not one of the fields the work is computed from, so the work an avatar owes is unchanged by it.
+
+**An avatar never stops a walker.** A reader MUST ignore `constrain` (§1.12) in an avatar's payload, and in every object the avatar places (§1.10). An avatar is a person, not a wall: one standing in a doorway would shut it for every walker whose client honours the field, and one that moves would carry a wall about with it, through which nobody could follow. `constrain` is not one of the fields the work is computed from, so the work an avatar owes is unchanged by it.
 
 ### 3.4 A hidden object as its own event
 
@@ -555,7 +604,7 @@ A client MUST perform welding, deduplication and any equality test on the intege
 
 `v` is `1` or `2`, and a reader MUST support both and reject anything else. A version bump means the meaning of an existing field has changed, which is exactly what happened between the two: `v: 2` reads its Z as written and `v: 1` has it negated (§2). Nothing else differs, and nothing else should ever differ by so little: two versions are a cost, and this one buys a format that every other tool can read without a special case.
 
-A reader MUST ignore fields it does not recognize rather than rejecting them. This is what allows an optional field to be added without a version bump, and it is how `extent`, `ticks`, `up`, `spin`, `palette`, `facecolors`, `refs`, `parts` and `opacity` were each added to a format already in use: an older reader sees an object with whole-unit positions on a grid of 8, unoriented, in the built-in colors, every face interpolating its corners, placing nothing, fully opaque, and draws something correct rather than nothing.
+A reader MUST ignore fields it does not recognize rather than rejecting them. This is what allows an optional field to be added without a version bump, and it is how `extent`, `ticks`, `up`, `spin`, `palette`, `facecolors`, `refs`, `parts`, `opacity` and `constrain` were each added to a format already in use: an older reader sees an object with whole-unit positions on a grid of 8, unoriented, in the built-in colors, every face interpolating its corners, placing nothing, fully opaque, stopping no walker, and draws something correct rather than nothing.
 
 An extension that changes how an existing field is interpreted MUST bump `v`. An extension that adds a field whose absence has a well-defined meaning MUST NOT.
 
@@ -580,6 +629,10 @@ Anyone implementing this deck should treat `v: 2` as meaning the palette-indexed
 **Screen real estate is a resource.** An object drawn in a shared space is seen by people who did not ask for it. Cyberspace's answer for avatars is to price size and detail in proof of work (`CYBERSPACE_V2.md` §8.10). Any application that renders objects from strangers without a cost or a filter should expect to be flooded, and the format cannot solve that for it.
 
 **Translucency does not hide** (non-normative). An object with an opacity below `100` does not occlude what is behind it, at any opacity: in a test render at `70`, an object hidden beneath translucent water showed as plainly as if the water were not there, only tinted. The floor of §1.11 does not change that, and no opacity short of `100` hides anything. The same is true of an object drawn in `points` or `lines` mode, which never hid what was behind it. An application that relies on enclosure to keep something out of sight, such as a maze whose rooms are sealed so that what is in one cannot be seen from another, or a vault, has to treat every such object as enclosing nothing, whether or not that application's own reader draws translucency, since other readers will, and should check its enclosure against the opaque `solid` objects alone. Each placed object is judged by its own opacity and its own mode, not its parent's (§1.10): a translucent pane placed inside an opaque frame encloses nothing, and an opaque wall placed by a translucent parent still does.
+
+**A constraint is not a wall** (non-normative). A walker held by `constrain` (§1.12) is held by its own client and by nothing else. A visitor whose client ignores the field, or who simply jumps, is through it, so a constrained object protects nothing: a vault whose walls are set to `"all"` is exactly as open to a determined visitor as one without, and what keeps its contents out of sight is enclosure, above, and what keeps them unread is encryption (§3.4). The field is a way to make a space feel built, not a way to keep anyone out.
+
+**A walker can be shut in.** An object can be hidden around a place where someone stands, and an object's setting can change while a walker is inside it. A walker inside a closed constrained object can then walk nowhere, since every way out crosses a face. A client that constrains its walker SHOULD therefore always leave it a way out that is not walking: a jump, a planned route, or a way to stop honouring the field for itself. ONOSENDAI's way out is HOP, which no constraint touches. Because anyone may hide an object anywhere, a client MAY also let its viewer choose whose objects it honours the field on, as it would choose whose objects it draws.
 
 **No code, no fetches.** An SNO payload is data. It names no URL, embeds no script, and requires no network access to render. A reader that keeps it that way inherits none of the attack surface that formats with external references carry.
 
@@ -695,6 +748,8 @@ The same object with a palette of its own, which for four colors costs less than
 And the same object again with all four faces one color, which is what `facecolors` is for: adding `"facecolors": [238, -3]` gives four flat red triangles with hard edges between them, for 22 more bytes (160 bytes compact without it, 182 with).
 
 The same object as tinted glass is the first document with `"opacity": 40` added, for 13 more bytes (173 compact). A reader draws it at forty percent, or opaque if it cannot draw translucency (§1.11); a reader written before §1.11 ignores the field and draws it opaque.
+
+The same object as a solid block a walker cannot pass through is the first document with `"constrain": "all"` added, for 18 more bytes (178 compact). A client that walks its viewer stops the walker at its faces (§1.12); every other reader, and every reader written before §1.12, ignores the field and draws the object exactly as before.
 
 The same object one meter across rather than two gibsons is the same document with `"unit": 32`: it spans two model units, and at `unit` 32 two model units are 2^33 gibsons, one meter (`CYBERSPACE_V2.md` puts height 34 at two meters).
 
