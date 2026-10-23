@@ -11,8 +11,10 @@ Run it directly to execute the self-test:
     python3 sno-reference.py
 
 The self-test carries the worked example from Appendix A, and a rejection case
-for every numbered rule in §1.9, so a port can be checked against the same
-table.
+for every numbered rule in §1.9 that rejects, so a port can be checked against
+the same table. Rules 9 (`extent`) and 14 (`opacity`) repair rather than
+reject, so they carry repair cases instead: a value in, the value a reader
+draws with out.
 """
 
 from __future__ import annotations
@@ -37,6 +39,12 @@ MAX_NAME = 64
 TICKS_PER_UNIT = 120
 
 MODES = ("solid", "points", "lines")
+
+#: §1.11. Opacity is a whole percent. Absent or malformed means fully opaque;
+#: a valid value below the floor is drawn at the floor, so that no object is
+#: ever wholly invisible.
+OPACITY_OPAQUE = 100
+OPACITY_FLOOR = 10
 
 
 class SnoError(ValueError):
@@ -240,6 +248,12 @@ def validate(payload: Any, fetched_palette: Any = None) -> dict:
             raise SnoError("rule 12: a turn is not whole degrees 0..359")
 
     # 13. Nothing to check: an object may be only the arrangement of others.
+
+    # 14. opacity is repaired, never validated (§1.11): whatever the field
+    # holds, the payload is accepted, and drawn_opacity() says what a reader
+    # draws it at. There is deliberately no rejection here and no rejection
+    # case in the self-test: a reader that knows the field must never draw
+    # less than one that ignores it.
     return payload
 
 
@@ -260,6 +274,28 @@ def repaired_extent(declared: Any, vertices: list, ticks: list[list[int]]) -> in
             if need > extent:
                 extent = need
     return extent
+
+
+def drawn_opacity(payload: dict) -> int:
+    """§1.11: the percent a reader draws the object at, after repair and the floor.
+
+    Absent means 100. A value that is not an integer in 1..100 (0, above 100,
+    negative, fractional, a string, a boolean, null, an array, anything) is
+    malformed and also means 100: repaired to opaque, exactly as if absent,
+    never a rejection. A valid value below 10 is drawn at 10, the floor.
+
+    This is what an object asks for. A reader that cannot draw translucency
+    MAY draw any object opaque, and an avatar (§3.3) is always drawn opaque
+    whatever this says; both are the reader's to apply, not the payload's.
+    """
+    # Strict on int: a JSON 50.0 arrives here as a float and is repaired to
+    # 100. A reader whose parser cannot tell 50.0 from 50 may draw it at 50
+    # (§1.11); the difference is in how see-through it is drawn, never in
+    # whether it is accepted.
+    value = payload.get("opacity", OPACITY_OPAQUE)
+    if not _is_int(value) or not 1 <= value <= OPACITY_OPAQUE:
+        return OPACITY_OPAQUE
+    return max(value, OPACITY_FLOOR)
 
 
 def positions(payload: dict) -> Iterator[tuple[Fraction, Fraction, Fraction]]:
@@ -671,6 +707,47 @@ def _self_test() -> None:
         except SnoError as e:
             assert str(e).startswith("rule 8c"), (why, e)
     print("face colours: an index or a run, a run repeats the index before it, absent is not colour 0")
+
+    # §1.11 and rule 14: opacity is repaired, never a rejection. Each case is a
+    # value in and the percent a reader draws with out; every payload must
+    # also validate, because nothing about opacity rejects.
+    absent = object()
+    repairs = [
+        (absent, 100, "absent is fully opaque"),
+        (100, 100, "100 is fully opaque (and a publisher omits it)"),
+        (50, 50, "a value in range is drawn as given"),
+        (10, 10, "the floor itself"),
+        (9, 10, "below the floor is drawn at the floor"),
+        (1, 10, "the faintest valid value is drawn at the floor"),
+        (0, 100, "zero is out of range: opaque, never invisible"),
+        (101, 100, "above 100 is out of range: opaque"),
+        (-5, 100, "negative: opaque"),
+        (50.5, 100, "fractional: opaque"),
+        ("50", 100, "a string: opaque"),
+        (True, 100, "a boolean is not an integer: opaque"),
+        (None, 100, "null: opaque, the way a null extent means 8"),
+        ([50], 100, "an array: opaque"),
+        (False, 100, "false is a boolean, not an integer: opaque"),
+        ({}, 100, "an object: opaque"),
+        (10 ** 100, 100, "a huge integer is out of range: opaque"),
+    ]
+    for given, drawn, why in repairs:
+        payload = dict(APPENDIX_A) if given is absent else {**APPENDIX_A, "opacity": given}
+        accepted = validate(payload)  # raises, and so fails the test, if anything rejected it
+        got = drawn_opacity(accepted)
+        if got != drawn:
+            print(f"  OPACITY: {given!r} drew at {got}, expected {drawn} ({why})")
+            failures += 1
+    print(f"{len(repairs)} opacity repair cases (rule 14 never rejects), every payload accepted")
+
+    # Why opacity is a field of the object and not a fourth palette channel:
+    # a palette entry of four numbers is refused by every reader (rule 8a).
+    try:
+        validate({**APPENDIX_A, "palette": [[255, 0, 0, 128], [0, 0, 0, 255]]})
+        raise AssertionError("a palette entry carrying alpha should be rejected")
+    except SnoError as e:
+        assert str(e).startswith("rule 8a"), e
+    print("alpha in a palette entry is still a rule 8a rejection, which is why opacity is its own field")
 
     if failures:
         raise SystemExit(1)

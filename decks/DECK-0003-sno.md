@@ -5,7 +5,7 @@ Title: SNO (Simple Nostr Objects)
 Status: Draft
 Mandatory: no
 Created: 2026-09-14
-Last updated: 2026-10-15
+Last updated: 2026-10-23
 Requires: `CYBERSPACE_V2.md` (spec version `2026-03-16-h34-corrected`)
 
 ## Abstract
@@ -41,6 +41,7 @@ The design goal is not to compete with glTF or USD. It is to be the three-dimens
 - **Vertex:** a point, its position given as whole units plus ticks, carrying one RGB color.
 - **Face:** a triangle, three vertex indices.
 - **Mode:** which of the three drawings of the same vertex list a client should produce: `solid`, `points` or `lines` (§1.5).
+- **Opacity:** how solid an object is drawn, a whole percent from `1` to `100`. Absent means `100`, fully opaque (§1.11).
 - **Extent:** the half-width of the grid the object was built on, in model units. A bound, not a size (§1.8).
 
 ---
@@ -64,6 +65,7 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | `colors` | array | yes | One palette index per vertex, parallel to `vertices` (§1.3). |
 | `faces` | array | yes | Triangles as `[a, b, c]` vertex indices (§1.4). MAY be empty. |
 | `facecolors` | array | no | One palette index per face, run-length encoded, for hard color seams (§1.4a). Absent means every face interpolates its vertices. |
+| `opacity` | integer | no | How solid the object is drawn, a percent, `1` to `100` (§1.11). Repaired, never rejected: absent or malformed means `100`, fully opaque. |
 | `palette` | string or array | no | Which 256 colors the indices name (§1.3a). Absent means the built-in. |
 | `up` | boolean | no | `true` means the object stands on the Earth's surface where it is placed (§1.7). `false` means the same as absent. |
 | `spin` | integer | no | With `up`: the compass bearing the object's `+Z` faces, `0` to `359` (§1.7). |
@@ -98,7 +100,7 @@ A position is an exact rational, never a float. It is carried in two parts.
 
 **The float hazard (normative).** One 120th is not exactly representable in binary floating point. Two readers that compute `whole + remainder / 120.0`, one in 32-bit and one in 64-bit, will disagree in the last bits. Therefore any operation that depends on exact coincidence, which is at least welding, deduplication, equality, sorting and hashing, MUST be performed on the integer pair before any conversion to a float. A reader that welds on derived floats has given away the one guarantee the lattice makes.
 
-**Canonical form (normative).** There is exactly one way to write a given object, because a format that allows three spellings of the same thing gets three incompatible readers. A publisher MUST omit `ticks` entirely when every remainder is zero, MUST write a run of two or more zero remainders as a single negative integer rather than as repeated triples, and MUST omit `extent` when it is `8`. A reader MUST accept all equivalent spellings anyway, because it will meet them.
+**Canonical form (normative).** There is exactly one way to write a given object, because a format that allows three spellings of the same thing gets three incompatible readers. A publisher MUST omit `ticks` entirely when every remainder is zero, MUST write a run of two or more zero remainders as a single negative integer rather than as repeated triples, MUST omit `extent` when it is `8`, and MUST omit `opacity` when it is `100` (§1.11). A reader MUST accept all equivalent spellings anyway, because it will meet them.
 
 ### 1.3 Colors
 
@@ -255,7 +257,7 @@ A reader that does not implement `up` draws the object in the application's axes
 
 What replaces the ceiling is a publisher who knows what things cost and a container that stops multiplying: an object of any size can have an event of its own (§3.1, §3.4), so a bag, which is one event shared by everything hidden at a place, need never grow with the objects it names. The rest of this section is the arithmetic, so a publisher can plan against the relays it uses; none of it is a rule.
 
-`extent` is **advisory and self-repairing**, which is the one place this format is deliberately forgiving. A reader MUST substitute the default of `8` for an `extent` that is absent, not an integer, or outside `1..64`, and MUST then grow it until it contains every vertex. An object is therefore never rejected for disagreeing with its own extent; the data wins and the hint is corrected. This is what lets a modeling tool write geometry first and a bounding hint second without the two ever contradicting.
+`extent` is **advisory and self-repairing**, which is one of the places this format is deliberately forgiving rather than strict; `opacity` (§1.11) is another, for the same reason. A reader MUST substitute the default of `8` for an `extent` that is absent, not an integer, or outside `1..64`, and MUST then grow it until it contains every vertex. An object is therefore never rejected for disagreeing with its own extent; the data wins and the hint is corrected. This is what lets a modeling tool write geometry first and a bounding hint second without the two ever contradicting.
 
 The position bound is stated as an obligation on publishers rather than readers: a publisher MUST NOT write a vertex further than `64` model units (`7680` ticks) from the origin on any axis. A reader MAY reject such a payload and MAY instead repair it by growing the extent. ONOSENDAI currently repairs. §8 records the consequence.
 
@@ -311,6 +313,7 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 11. `refs`, if present, is an array whose entries are each `["e", <64 lowercase hex>]` or `["a", "33331:<64 lowercase hex>:<d>"]`, optionally followed by one relay URL (§1.10).
 12. `parts`, if present, is an array whose entries are each eight integers: a `refs` index in range, three tick offsets each in `-7680..7680`, three whole degrees each in `0..359`, and a scale step such that the placed object's unit stays in `0..84` (§1.10). `parts` without `refs`, or a `refs` index past the end, is a reason to reject.
 13. A payload with `parts` and no `vertices` of its own is valid: an object may be nothing but the arrangement of others (§1.10).
+14. `opacity`, if present, is repaired rather than validated (§1.11): a value that is not an integer in `1..100`, null included, means `100`, and an integer from `1` to `9` is drawn at `10`. It is never a reason to reject.
 
 ---
 
@@ -350,7 +353,7 @@ Positions are ticks and turns are whole degrees because everything else in this 
 
 **Why the placements are in the payload and not in the event's tags.** A copy of the payload is the whole object, on the clipboard, in a bag, in another client; placements carried as tags would fall off it. Inside a bag the tags are encrypted with everything else, so nothing would be gained there. A publisher of a public `kind 33331` SHOULD also write each `refs` entry as an `e` or `a` tag on the event, unchanged, so a relay can answer "what places this object" (`#a`, `#e`); a reader MUST take the placements from the payload and MUST NOT read them from tags.
 
-**What a placed object keeps and what it loses.** It keeps its own `palette`, `mode`, `facecolors` and geometry: it is drawn as its author drew it. It loses `up` and `spin`, because the parent's placement decides where it stands and which way it faces, and a parent standing on the Earth (§1.7) carries its parts with it. Its `extent` is ignored; the parent's extent is repaired to contain the placed objects' bounds the same way it is repaired to contain vertices (§1.8), which a reader can only do once the parts are fetched, so a parent's advertised extent may be smaller than what is finally drawn.
+**What a placed object keeps and what it loses.** It keeps its own `palette`, `mode`, `opacity`, `facecolors` and geometry: it is drawn as its author drew it, and a parent's `opacity` does not reach it (§1.11). It loses `up` and `spin`, because the parent's placement decides where it stands and which way it faces, and a parent standing on the Earth (§1.7) carries its parts with it. Its `extent` is ignored; the parent's extent is repaired to contain the placed objects' bounds the same way it is repaired to contain vertices (§1.8), which a reader can only do once the parts are fetched, so a parent's advertised extent may be smaller than what is finally drawn.
 
 **Depth and cycles.** A placed object may itself have parts. A reader MUST follow placements no deeper than `4` levels from the object it is rendering, drawing a placeholder in place of anything deeper, and MUST treat a reference to any object already in the chain of parents as missing. Both are bounds a reader can enforce without trusting the author, which is the only kind worth writing down.
 
@@ -361,6 +364,47 @@ Positions are ticks and turns are whole degrees because everything else in this 
 **Groups are objects (non-normative).** A modeling tool wants to select, move and edit a group of vertices as one thing, and every such tool grows a grouping mechanism. This format has none, on purpose: a group is an object, placed. A client is expected to show an object's parts as things a person can pick (a tray of what is on the bench), isolate one, and edit it. A part that belongs to the person editing is edited in place, and because it is addressable every parent that places it follows; a part that belongs to someone else is cloned under the editor's own key and the placement repointed, which is what "editing someone else's tile" honestly is. None of that is protocol, and none of it needs to be.
 
 **Versioning.** `refs` and `parts` are fields whose absence has a meaning, so their addition does not bump `v` (§5). An older reader ignores them and draws the parent alone.
+
+### 1.11 Opacity
+
+`opacity` says how solid an object is drawn. It is a whole number of percent from `1` to `100`, and absent means `100`: fully opaque, which is how every object was drawn before this field existed and how every object without it is drawn still.
+
+| `opacity` | Drawn at |
+|---|---|
+| absent | `100`, fully opaque |
+| `10` to `100` | that percent |
+| `1` to `9` | `10`, the floor (below) |
+| anything else: `0`, above `100`, negative, fractional, a string, a boolean, an array, an object, null | `100`, fully opaque, exactly as if it were absent |
+
+**It applies to everything the object draws.** The faces of `solid`, the edges of `lines`, the points of `points`, and the vertices a client draws as points in every mode (§1.5) all take the one opacity. There is no opacity per vertex, per face or per palette entry, and the end of this section says why.
+
+**It is repaired, never a reason to reject.** A reader MUST draw an object whose `opacity` is malformed as fully opaque, and MUST NOT reject the payload for it (§1.9 rule 14). Opacity is a matter of how an object looks, never of what shape it is, and an object drawn opaque is still that object, drawn the way every reader that predates this field draws it anyway. A strict rule would make a reader that knows the field draw less than one that does not: the older reader ignores the field and draws the object, while a strict newer reader would draw nothing. For this field, knowing more must never mean drawing less, so a malformed value means the default, and the default is the value every reader already uses. That is what sets `opacity` apart from fields such as `facecolors` and `spin`, whose malformed values are rejections (§1.9 rules 8c and 10). Those were strict from the day they were added, and a guess at what a broken one meant could draw the object wrongly. `opacity`'s default is exactly the opaque drawing every existing reader already makes, and the field was ruled forgiving from the day it was added. This is the same stance `extent` takes (§1.8), and for the same reason. A publisher MUST NOT write a malformed value; the repair exists for readers.
+
+**The floor.** A value from `1` to `9` is valid and is drawn at `10`. An object drawn at one percent is invisible in practice, and an invisible object in a shared space is not an object so much as a trap: something a camera can be put inside, a selection can land on by accident, or a person can be watched from, with nothing on the screen to say it is there. §1.5 already asks a client to keep every object visible however small it is on screen; the floor makes the same promise however faint the author asked for it to be. Ten percent is faint enough for haze and clear glass and still plainly something. The values below it are not errors, so an author who asked for "as faint as possible" gets the faintest the format allows rather than an opaque object. They record what the author asked for and are not other spellings of `10`, so canonical form leaves them as written; a publisher SHOULD still write `10` or more, so that what is written is what is drawn.
+
+**Canonical form.** A publisher MUST omit `opacity` when it is `100`, as it omits `extent` when it is `8` (§1.2), so an opaque object is written exactly as it was before this field existed and there is still one way to write it.
+
+**A reader that cannot draw translucency MAY draw any object opaque.** That is always a correct drawing of the object, and it is what every reader written before this section does, because a reader ignores a field it does not recognize (§5). §4 says how a reader that can draw it should, and §6 says what translucency does not do: it does not hide anything.
+
+**Placed objects and avatars.** A placed object keeps its own opacity, and its parent's does not reach it (§1.10). A parent at `40` placing a tile drawn opaque draws the tile opaque; an author who wants the tile faint places a faint tile. This is the rule `mode` and `palette` already follow, and it means every object on the screen is drawn at an opacity its own author chose, never at the product of a chain of other people's choices. An avatar ignores `opacity` altogether (§3.3).
+
+**Why it exists.** Water, glass, ice, haze, the ghost of a thing that was there. Until now an object could only be solid, a set of points, or a set of lines. A flooded room built from SNO could have opaque water, which hides the floor of the pool and everything on it, or a lattice of lines in `lines` mode, which shows the floor but reads as a grid laid over water rather than as water. Neither is what the author meant.
+
+**Why one number for the whole object, and not alpha in the colors.** Three other places were considered, and each fails.
+
+1. **A fourth channel in each palette entry**, `[r, g, b, a]`. Every reader written to this document rejects a palette entry that is not three integers (§1.9 rule 8a), so the first object to carry one would be refused by every reader in the world, including readers outside Cyberspace that have never heard of this change. A field the older readers ignore is the only way to add something they can live with, and that is what this is.
+2. **`#rrggbbaa` in a palette event's `c` tags** (§1.3b). A reader that finds a value that is not a well-formed `#rrggbb` treats the event as not a palette, so every object naming it would fall back to the built-in colors: wrong colors, silently, which is the worst failure §1.3b allows.
+3. **Alpha per vertex or per face**, as a parallel array in the manner of `facecolors`. It works on the wire, but it asks every reader that draws it to sort the triangles of one object against each other every frame: two translucent triangles blend correctly only when drawn back to front, and which is in front changes as the viewer moves. Opacity per object needs only the ordering a renderer already does for whole objects (§4). And the case the field exists for, a sheet of water or a pane of glass, is one object at one opacity. Where an author wants two opacities in one build, they make two objects and place them (§1.10), which is already how one build combines two modes.
+
+**Written as a JSON integer.** A publisher MUST write `opacity` as a JSON integer: digits only, with no fraction and no exponent, so `50` and never `50.0` or `5e1`. A reader whose JSON parser cannot tell `50.0` from `50` (many cannot) MAY read such a value as `50`; a reader whose parser can tell them apart repairs it to `100` like any other malformed value. The two then draw the object differently, but only in how see-through it is: no reader rejects it, and nothing about its shape changes.
+
+**Why a percent.** Every number a publisher writes is an integer (§1.2), and this one is read by eye in a payload: `"opacity": 40` says what it means, where a byte `102` or a fraction `0.4` would not, and the fraction would be the only float a publisher writes. One percent is a finer step than anyone can tell apart in a blended surface.
+
+**What it costs.** Thirteen bytes for a two-digit value, `,"opacity":40`, and nothing for an opaque object, which omits it. Appendix A carries an example.
+
+**Versioning.** `opacity` is a field whose absence has a meaning, so its addition does not bump `v` (§5). An older reader ignores it and draws the object opaque.
+
+(Non-normative: `decks/sno-reference.py` implements the table above as `drawn_opacity`, and its self-test carries a repair case for each kind of value in it; there is no rejection case, because nothing in this section rejects. A reader that edits objects should keep fields it does not recognize when it writes an object back, or the first person to open a translucent object in an older editor and publish it again would make it opaque for everyone after them.)
 
 ## 2. Model space (normative)
 
@@ -425,6 +469,8 @@ A publisher SHOULD carry a large object by reference: a bag is one event shared 
 ### 3.3 As an avatar
 
 An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload in its `content`, or empty content for the default avatar. The work an avatar owes is computed from `unit`, `vertices`, `ticks` and `faces` as that section specifies. Nothing in this DECK changes that computation; this document only defines the fields it reads.
+
+**An avatar is drawn opaque.** A reader MUST ignore `opacity` (§1.11) in an avatar's payload, and in every object the avatar places (§1.10), and draw the avatar fully opaque. The work an avatar owes prices its size and its detail, not its visibility, so a translucent avatar would buy a way to move unseen through a shared space for nothing, and an avatar is how one person knows another is present. `opacity` is not one of the fields the work is computed from, so the work an avatar owes is unchanged by it.
 
 ### 3.4 A hidden object as its own event
 
@@ -492,6 +538,15 @@ A client MAY light an object instead, and many will, because a lit object sits b
 
 A client MUST NOT invent geometry: no subdivision, no smoothing that moves a vertex, no hole filling. The lattice is exact and a renderer that moves a vertex has broken the one guarantee the format makes.
 
+**Translucency** (§1.11). A client SHOULD draw an object whose opacity is below `100` blended over what is behind it at that opacity; a client that cannot draw translucency MAY draw it opaque (§1.11). The default reading stays unlit: opacity changes how much of a face is drawn, not what color it is, and a client that lights objects lights a translucent face exactly as it lights an opaque one.
+
+What follows is advice rather than requirement. It is how renderers in common use draw translucency correctly, and it is written down so an implementer does not have to find each failure on their own.
+
+- A translucent object does not write depth, so what lies behind it and is drawn after it still shows through.
+- It is drawn after every opaque object, so nothing opaque behind it is painted over it. Translucent objects are ordered back to front by their distance from the viewer. The triangles inside one object need no sorting: an object has one opacity, and layers of one color at one opacity blend to the same result in any order. An object whose colors vary and which overlaps itself may show its layers in a different order as the viewer moves; that is accepted as the price of not sorting triangles.
+- Both sides of every face are still drawn (§1.4), and one draw of both sides together is enough. (Some engines draw a translucent two-sided surface as two passes by default, the backs and then the fronts. For this content the second pass buys almost nothing, and in at least one engine it cost an allocation for every object on every frame, which a scene of a few hundred objects turned into gigabytes a minute.)
+- A client that runs a post-processing pass keyed on what was drawn (a glow, an outline) should check that a translucent surface does not change how the things behind it are treated, only how they look.
+
 A client MUST perform welding, deduplication and any equality test on the integer lattice rather than on floats derived from it (§1.2).
 
 ---
@@ -500,7 +555,7 @@ A client MUST perform welding, deduplication and any equality test on the intege
 
 `v` is `1` or `2`, and a reader MUST support both and reject anything else. A version bump means the meaning of an existing field has changed, which is exactly what happened between the two: `v: 2` reads its Z as written and `v: 1` has it negated (§2). Nothing else differs, and nothing else should ever differ by so little: two versions are a cost, and this one buys a format that every other tool can read without a special case.
 
-A reader MUST ignore fields it does not recognize rather than rejecting them. This is what allows an optional field to be added without a version bump, and it is how `extent`, `ticks`, `up`, `spin`, `palette`, `facecolors`, `refs` and `parts` were each added to a format already in use: an older reader sees an object with whole-unit positions on a grid of 8, unoriented, in the built-in colors, every face interpolating its corners, placing nothing, and draws something correct rather than nothing.
+A reader MUST ignore fields it does not recognize rather than rejecting them. This is what allows an optional field to be added without a version bump, and it is how `extent`, `ticks`, `up`, `spin`, `palette`, `facecolors`, `refs`, `parts` and `opacity` were each added to a format already in use: an older reader sees an object with whole-unit positions on a grid of 8, unoriented, in the built-in colors, every face interpolating its corners, placing nothing, fully opaque, and draws something correct rather than nothing.
 
 An extension that changes how an existing field is interpreted MUST bump `v`. An extension that adds a field whose absence has a well-defined meaning MUST NOT.
 
@@ -523,6 +578,8 @@ Anyone implementing this deck should treat `v: 2` as meaning the palette-indexed
 **Objects are not attribution.** A `kind 3330` event inside a bag may be unsigned (`CYBERSPACE_V2.md` §7), in which case its `pubkey` is a claim and a client MUST NOT present it as verified authorship.
 
 **Screen real estate is a resource.** An object drawn in a shared space is seen by people who did not ask for it. Cyberspace's answer for avatars is to price size and detail in proof of work (`CYBERSPACE_V2.md` §8.10). Any application that renders objects from strangers without a cost or a filter should expect to be flooded, and the format cannot solve that for it.
+
+**Translucency does not hide** (non-normative). An object with an opacity below `100` does not occlude what is behind it, at any opacity: in a test render at `70`, an object hidden beneath translucent water showed as plainly as if the water were not there, only tinted. The floor of §1.11 does not change that, and no opacity short of `100` hides anything. The same is true of an object drawn in `points` or `lines` mode, which never hid what was behind it. An application that relies on enclosure to keep something out of sight, such as a maze whose rooms are sealed so that what is in one cannot be seen from another, or a vault, has to treat every such object as enclosing nothing, whether or not that application's own reader draws translucency, since other readers will, and should check its enclosure against the opaque `solid` objects alone. Each placed object is judged by its own opacity and its own mode, not its parent's (§1.10): a translucent pane placed inside an opaque frame encloses nothing, and an opaque wall placed by a translucent parent still does.
 
 **No code, no fetches.** An SNO payload is data. It names no URL, embeds no script, and requires no network access to render. A reader that keeps it that way inherits none of the attack surface that formats with external references carry.
 
@@ -569,7 +626,8 @@ None of these needs a version bump, because each is an optional field whose abse
 | **Smooth shading** | With no normals every surface is faceted, so a sphere reads as a golf ball | one object-wide boolean telling the renderer to average face normals at shared vertices | one field, no per-vertex data |
 | ~~Per-face color~~ | **Added in §1.4a**, and made affordable by §1.3's palette index, which took a color from 21 bytes to 4. It was the one absence that made the format's own best style its most expensive | | |
 | **Emission** | The one thing a glowing object needs, and Cyberspace is made of glowing objects | an optional material block with an emissive flag and a strength | one small object |
-| **Roughness, metalness, alpha** | The sliders every modeler reaches for after base color | three numbers in the same block | included above |
+| **Roughness, metalness** | The sliders every modeler reaches for after base color | two numbers in the same block | included above |
+| ~~Alpha~~ | **Added in §1.11** as one opacity for the whole object, a percent, which every older reader ignores and draws opaque. Alpha inside the palette was the obvious place and the one place every existing reader would have rejected | | |
 
 Of these, smooth shading and per-face color are the two that change what is possible rather than what is pretty, and per-face color is the only one that makes the budget go further rather than less far.
 
@@ -635,6 +693,8 @@ The same object with a palette of its own, which for four colors costs less than
 ```
 
 And the same object again with all four faces one color, which is what `facecolors` is for: adding `"facecolors": [238, -3]` gives four flat red triangles with hard edges between them, for 22 more bytes (160 bytes compact without it, 182 with).
+
+The same object as tinted glass is the first document with `"opacity": 40` added, for 13 more bytes (173 compact). A reader draws it at forty percent, or opaque if it cannot draw translucency (§1.11); a reader written before §1.11 ignores the field and draws it opaque.
 
 The same object one meter across rather than two gibsons is the same document with `"unit": 32`: it spans two model units, and at `unit` 32 two model units are 2^33 gibsons, one meter (`CYBERSPACE_V2.md` puts height 34 at two meters).
 
