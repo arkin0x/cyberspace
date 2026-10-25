@@ -14,7 +14,9 @@ The self-test carries the worked example from Appendix A, and a rejection case
 for every numbered rule in §1.9 that rejects, so a port can be checked against
 the same table. Rules 9 (`extent`), 14 (`opacity`) and 15 (`constrain`)
 repair rather than reject, so they carry repair cases instead: a value in, the
-value a reader draws or walks with out.
+value a reader draws or walks with out. Rule 16 (`objects`, the objects a
+payload carries for its placements) never rejects the payload that carries it,
+so it carries cases of where each placement's object comes from instead.
 """
 
 from __future__ import annotations
@@ -265,6 +267,11 @@ def validate(payload: Any, fetched_palette: Any = None) -> dict:
 
     # 15. constrain is repaired, never validated (§1.12), for the same reason:
     # walk_constraint() says what a walker meets, and nothing here rejects.
+
+    # 16. objects is read, never validated with this payload (§1.10): each
+    # entry is checked on its own when a placement draws from it
+    # (draw_carried), and a bad one is a placeholder for that placement. So
+    # there is nothing to check here, and nothing in the field rejects.
     return payload
 
 
@@ -355,6 +362,69 @@ def stops_walker(payload: dict) -> bool:
     if c == "opaque":
         return payload.get("mode") == "solid" and drawn_opacity(payload) == OPACITY_OPAQUE
     return False
+
+
+#: §1.10: a key of `objects`, an address written as an `a` reference writes
+#: one. The pubkey is captured, because a reader ignores a key under any pubkey
+#: but that of the event the table travels in.
+_KEY = re.compile(r"33331:([0-9a-f]{64}):(.*)", re.S)
+
+
+def carried_table(payload: dict, author: str | None = None) -> dict:
+    """§1.10 and §1.9 rule 16: the objects a payload carries, keyed by address.
+
+    Never a rejection, whatever the field holds. An `objects` that is not a
+    JSON object, null included, is no table at all. A key that is not an
+    address is ignored, and so is a key under any pubkey but `author`, the
+    pubkey of the event the table travels in, when the caller passes it. The
+    values come back unchecked: each one is checked on its own, when a
+    placement draws from it (draw_carried), never with the payload that
+    carries it.
+    """
+    table = payload.get("objects")
+    if not isinstance(table, dict):
+        return {}
+    out = {}
+    for key, entry in table.items():
+        m = _KEY.fullmatch(key) if isinstance(key, str) else None
+        if not m or (author is not None and m.group(1) != author):
+            continue
+        out[key] = entry
+    return out
+
+
+def draw_carried(entry: Any) -> dict:
+    """§1.10: one object from a table, checked by §1.9 on its own.
+
+    Its own `objects`, if it has any, is ignored: a writer flattens the table
+    into the root, so an object in the table carries none, and a reader does
+    not look for one. Raises SnoError for an entry that fails, which is a
+    placeholder for each placement that names it and never a reason to reject
+    the payload that carries it.
+    """
+    if isinstance(entry, dict) and "objects" in entry:
+        entry = {k: v for k, v in entry.items() if k != "objects"}
+    return validate(entry)
+
+
+def place_from(address: str, root_table: dict, own_table: dict | None = None) -> tuple[str, Any]:
+    """§1.10: where the object a placement names comes from.
+
+    `root_table` is the table of the object being rendered and `own_table` the
+    table of the event the placing object travels in, when that is another
+    event, an object fetched as its own. The root's table is looked in first,
+    then the other, and only an address neither holds is fetched. An address a
+    table holds is never fetched, even when its entry fails: the table wins.
+
+    Returns ("table", payload), ("placeholder", why) or ("fetch", None).
+    """
+    for table in (root_table, own_table or {}):
+        if address in table:
+            try:
+                return ("table", draw_carried(table[address]))
+            except SnoError as e:
+                return ("placeholder", str(e))
+    return ("fetch", None)
 
 
 def positions(payload: dict) -> Iterator[tuple[Fraction, Fraction, Fraction]]:
@@ -516,6 +586,24 @@ APPENDIX_A = {
     "colors": [238, 235, 239, 225],
     # Wound outward: every front looks out of the solid (§1.4).
     "faces": [[0, 1, 2], [0, 3, 1], [1, 3, 2], [0, 2, 3]],
+}
+
+#: Appendix A: the tetrahedron as glass, carried by an object that places it
+#: twice and was never published. The pubkey is that of the secret key 1, a
+#: well-known test key.
+TEST_PUBKEY = "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
+GLASS = "33331:" + TEST_PUBKEY + ":glass-tetra"
+APPENDIX_A_CARRIED = {
+    "v": 2,
+    "name": "two glass tetras",
+    "unit": 0,
+    "mode": "solid",
+    "vertices": [],
+    "colors": [],
+    "faces": [],
+    "refs": [["a", GLASS]],
+    "parts": [[0, 0, 0, 0, 0, 0, 0, 0], [0, 360, 0, 0, 0, 90, 0, 0]],
+    "objects": {GLASS: {**APPENDIX_A, "name": "glass tetra", "opacity": 40, "constrain": "off"}},
 }
 
 
@@ -888,6 +976,50 @@ def _self_test() -> None:
             failures += 1
     print(f"{len(walls) + 2 * len(seen_through)} constrain cases (rule 15 never rejects), every payload accepted")
     print(f"{len(authored)} authoring cases (absent and malformed publish as opaque, off survives)")
+
+    # §1.10 and rule 16: the objects a payload carries. The field never
+    # rejects the payload that carries it, an entry is checked on its own when
+    # a placement draws from it, and an address the table holds is not fetched.
+    carried = validate(dict(APPENDIX_A_CARRIED))
+    compact = json.dumps(APPENDIX_A_CARRIED, separators=(",", ":"))
+    print(f"Appendix A, carried: validates, {len(compact.encode())} bytes compact")
+    table = carried_table(carried, TEST_PUBKEY)
+    where, glass = place_from(GLASS, table)
+    assert where == "table" and drawn_opacity(glass) == 40 and not stops_walker(glass), (where, glass)
+    OTHER = "33331:" + "cd" * 32 + ":tile"
+    places = [
+        # (what the parent carries, the address placed, the author, where it comes from, why)
+        ({GLASS: dict(APPENDIX_A)}, GLASS, TEST_PUBKEY, "table", "an entry the table holds is drawn from it"),
+        ({}, GLASS, TEST_PUBKEY, "fetch", "an empty table holds nothing, and is omitted by a publisher"),
+        ({GLASS: {**APPENDIX_A, "v": 3}}, GLASS, TEST_PUBKEY, "placeholder", "a bad entry is a placeholder, and still not fetched"),
+        ({GLASS: "not an object"}, GLASS, TEST_PUBKEY, "placeholder", "an entry that is not a payload fails rule 1"),
+        ({GLASS: {**APPENDIX_A, "objects": {OTHER: dict(APPENDIX_A)}}}, GLASS, TEST_PUBKEY, "table", "an entry's own objects are ignored"),
+        ({OTHER: dict(APPENDIX_A)}, OTHER, TEST_PUBKEY, "fetch", "a key under another pubkey is ignored, and the address fetched"),
+        ({OTHER: dict(APPENDIX_A)}, OTHER, None, "table", "a reader that does not know the author cannot tell"),
+        ({"33331:" + "AB" * 32 + ":x": dict(APPENDIX_A)}, "33331:" + "AB" * 32 + ":x", None, "fetch", "a key that is not an address is ignored"),
+        ({"glass-tetra": dict(APPENDIX_A)}, "glass-tetra", None, "fetch", "a bare d is not an address"),
+    ]
+    for objects, address, author, want, why in places:
+        payload = {**APPENDIX_A_CARRIED, "objects": objects}
+        validate(payload)  # raises, and so fails the test, if anything rejected it
+        got = place_from(address, carried_table(payload, author))[0]
+        if got != want:
+            print(f"  CARRIED: {why}: got {got}, expected {want}")
+            failures += 1
+    assert "objects" not in place_from(GLASS, {GLASS: {**APPENDIX_A, "objects": {}}})[1]
+    # A field that is not a table is read as absent, never a rejection.
+    for junk in ([], "objects", 7, True, None, [[GLASS, APPENDIX_A]]):
+        if carried_table(validate({**APPENDIX_A_CARRIED, "objects": junk})) != {}:
+            print(f"  CARRIED: objects {junk!r} should read as absent")
+            failures += 1
+    # The root's table is looked in first, then the table of the event the
+    # placing object travels in, and only what neither holds is fetched.
+    root = {GLASS: {**APPENDIX_A, "name": "root's"}}
+    own = {GLASS: {**APPENDIX_A, "name": "own"}, OTHER: dict(APPENDIX_A)}
+    assert place_from(GLASS, root, own)[1]["name"] == "root's"
+    assert place_from(OTHER, root, own)[0] == "table"
+    assert place_from("33331:" + "ef" * 32 + ":x", root, own)[0] == "fetch"
+    print(f"{len(places) + 6} carried object cases (rule 16 never rejects the payload that carries it), every payload accepted")
 
     if failures:
         raise SystemExit(1)

@@ -5,7 +5,7 @@ Title: SNO (Simple Nostr Objects)
 Status: Draft
 Mandatory: no
 Created: 2026-09-14
-Last updated: 2026-10-23
+Last updated: 2026-10-25
 Requires: `CYBERSPACE_V2.md` (spec version `2026-03-16-h34-corrected`)
 
 ## Abstract
@@ -45,6 +45,7 @@ The design goal is not to compete with glTF or USD. It is to be the three-dimens
 - **Walker:** a viewer that a client moves through a scene a step at a time, as a person walks, rather than by jumping to a place (§1.12).
 - **Constraint (`constrain`):** whether an object's faces stop a walker: `"all"`, `"opaque"`, or `"off"` for none. Absent also means none to a reader, and means "not chosen" to an authoring tool, which writes `"opaque"` (§1.12).
 - **Extent:** the half-width of the grid the object was built on, in model units. A bound, not a size (§1.8).
+- **Carried object:** an object that travels inside the payload of the object that places it, in that payload's `objects`, keyed by the address its placement names, rather than as an event of its own (§1.10).
 
 ---
 
@@ -74,6 +75,7 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | `spin` | integer | no | With `up`: the compass bearing the object's `+Z` faces, `0` to `359` (§1.7). |
 | `refs` | array | no | Other objects this one places, each named the way a nostr tag names an event (§1.10). Absent means the object places nothing. |
 | `parts` | array | no | Where each placed object stands, turns and scales, one entry per placement (§1.10). Absent means the same. |
+| `objects` | object | no | The payloads of placed objects that travel with this one rather than as events of their own, keyed by the address their `refs` entry names (§1.10). Read, never a reason to reject: malformed means absent, and each entry is checked on its own. Absent means every placed object is fetched. |
 
 `vertices` and `colors` MUST have the same length. Any field not listed here MUST be ignored by a reader, not rejected (§5).
 
@@ -103,7 +105,7 @@ A position is an exact rational, never a float. It is carried in two parts.
 
 **The float hazard (normative).** One 120th is not exactly representable in binary floating point. Two readers that compute `whole + remainder / 120.0`, one in 32-bit and one in 64-bit, will disagree in the last bits. Therefore any operation that depends on exact coincidence, which is at least welding, deduplication, equality, sorting and hashing, MUST be performed on the integer pair before any conversion to a float. A reader that welds on derived floats has given away the one guarantee the lattice makes.
 
-**Canonical form (normative).** There is exactly one way to write a given object, because a format that allows three spellings of the same thing gets three incompatible readers. A publisher MUST omit `ticks` entirely when every remainder is zero, MUST write a run of two or more zero remainders as a single negative integer rather than as repeated triples, MUST omit `extent` when it is `8`, MUST omit `opacity` when it is `100` (§1.11), and MUST NOT write `constrain` with any value but `"all"`, `"opaque"` or `"off"` (§1.12). An absent `constrain` and `"off"` are not two spellings of one object: a reader treats them alike, but an authoring tool does not, so each is canonical for what it says (§1.12). Unlike `extent` `8` and `opacity` `100`, the value authoring tools write by default, `"opaque"`, is not what absent means, so it is written and never omitted. A reader MUST accept all equivalent spellings anyway, because it will meet them.
+**Canonical form (normative).** There is exactly one way to write a given object, because a format that allows three spellings of the same thing gets three incompatible readers. A publisher MUST omit `ticks` entirely when every remainder is zero, MUST write a run of two or more zero remainders as a single negative integer rather than as repeated triples, MUST omit `extent` when it is `8`, MUST omit `opacity` when it is `100` (§1.11), MUST omit `objects` when it holds nothing (§1.10), and MUST NOT write `constrain` with any value but `"all"`, `"opaque"` or `"off"` (§1.12). An absent `constrain` and `"off"` are not two spellings of one object: a reader treats them alike, but an authoring tool does not, so each is canonical for what it says (§1.12). Unlike `extent` `8` and `opacity` `100`, the value authoring tools write by default, `"opaque"`, is not what absent means, so it is written and never omitted. A reader MUST accept all equivalent spellings anyway, because it will meet them.
 
 ### 1.3 Colors
 
@@ -300,6 +302,8 @@ One trap worth knowing, since it cannot be discovered at runtime: strfry populat
 
 A reader MUST perform all of the following before rendering, and MUST reject the whole payload if any fails. A partially valid object is not rendered partially: a face index pointing past the end of the vertex list is not a defect that degrades gracefully.
 
+The one exception is `objects` (rule 16). The objects a payload carries for its placements (§1.10) are each checked by these same rules, on their own, when a placement draws from them, and never with the payload that carries them: an object in the table that fails is a placeholder for the placements that name it, exactly as an object that is fetched and fails is a placeholder, and the payload that carries it is unaffected.
+
 1. `v` is `1` or `2`. A `type` field, if present, is ignored and never rejected on (§1.1a).
 2. `vertices`, `colors` and `faces` are arrays, and `vertices.length === colors.length`.
 3. There is no bound on `vertices.length` or `faces.length` (§1.8). The number is kept so the rules below keep their names; until 2026-09-24 it read `512` and `1024`.
@@ -318,6 +322,7 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 13. A payload with `parts` and no `vertices` of its own is valid: an object may be nothing but the arrangement of others (§1.10).
 14. `opacity`, if present, is repaired rather than validated (§1.11): a value that is not an integer in `1..100`, null included, means `100`, and an integer from `1` to `9` is drawn at `10`. It is never a reason to reject.
 15. `constrain`, if present, is read rather than validated (§1.12). `"off"` is a valid word, and means the object stops nothing. A value that is not exactly the string `"all"`, `"opaque"` or `"off"`, null included, is repaired to mean the same. It is never a reason to reject.
+16. `objects`, if present, is read rather than validated (§1.10), and is never a reason to reject this payload. A value that is not a JSON object, null included, is read as absent. A key that is not an address `33331:<64 lowercase hex>:<d>` is ignored. Each value is a payload checked by rules 1 to 15, on its own, when a placement draws from it, with any `objects` of its own ignored; one that fails is a placeholder for each placement that names it.
 
 ---
 
@@ -363,11 +368,51 @@ Positions are ticks and turns are whole degrees because everything else in this 
 
 **A missing part is a placeholder, never a rejection.** A reference that cannot be fetched, has been deleted, fails §1.9, or is deeper than the bound is drawn as a placeholder at its placement: a wireframe cube one whole unit on a side in the reader's accent is the reference behavior, and a reader MAY do better. The parent is unaffected. This is the same stance §1.3b takes for a palette that cannot be resolved, and for the same reason: another author's event is not this object's to guarantee.
 
+**An object MAY carry the objects it places (`objects`).** A placed object that has no event of its own, because its author never published it, MAY travel inside the payload that places it. `objects` is a JSON object. Each key is an address, `33331:<pubkey>:<d>`, written exactly as the `a` entry in `refs` that names it, and each value is the payload (§1.1) of the object that address names. The `refs` entry and the placements are written exactly as they would be without the table: the table says only where a reader finds the object, so that the reader need not fetch it.
+
+```json
+"refs": [
+  ["a", "33331:<pubkey hex>:cistern-atrium"],
+  ["a", "33331:<pubkey hex>:cistern-atrium-water"]
+],
+"parts": [[0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0]],
+"objects": {
+  "33331:<pubkey hex>:cistern-atrium": { "v": 2, "name": "Cistern atrium", "constrain": "all", "...": "..." },
+  "33331:<pubkey hex>:cistern-atrium-water": { "v": 2, "name": "Water", "opacity": 40, "constrain": "off", "...": "..." }
+}
+```
+
+This is a flooded room built as two objects, the stone to hold a walker and the water in the pool to let one wade in (§1.12), neither of which its author published. The two payloads are shortened here; Appendix A carries a whole one.
+
+The rules, in the order a reader meets them:
+
+- **One table, at the root.** The table that counts is the one in the object a reader is rendering: the payload of the event the reader was given, whether that is a public object (§3.1), an item in a bag (§3.2) or a hidden object (§3.4). A reader resolving a placement at any depth, of that object or of any object placed beneath it, looks the placement's address up in that table first.
+- **The table wins.** An address the table holds is drawn from the table, and a reader MUST NOT fetch it, whether or not an event exists under that address.
+- **A writer flattens the table.** Every object a build carries is in the root's table, however deep it is placed, and an object in the table carries no `objects` of its own: a publisher MUST NOT write one there, and a reader MUST ignore one it finds there. So an object placed many times, or at several depths, travels once.
+- **An object fetched as its own event keeps its own table.** A placed object that a reader fetches is not in the root's table, and an `objects` it carries is the table of that event. A reader resolving a placement looks its address up in the root's table first, then in the table of the event the placing object travels in, if that is a different event, and fetches only what neither holds.
+- **Keys are under the author's own pubkey.** A publisher MUST write only keys under the pubkey of the event the table travels in (for an object not yet published, its author's own), and a reader MUST ignore any other key, fetching that address as though the table did not hold it. An entry is drawn in place of the object its address names, so a key under another author's pubkey would let anyone draw a shape of their own as that author's object, inside a build that author never saw. A copy of another author's object carried this way is the copier's object, under the copier's own key and a `d` of the copier's choosing; how such a copy credits the original (§3.5) is open (§8).
+- **A key no placement reaches is ignored.** A reader draws only what a placement names. A publisher SHOULD NOT write a key that no placement in the build names, because it is carried to every reader and drawn by none, and omits the table when it holds nothing (§1.2).
+- **Each entry is checked on its own** (§1.9 rule 16). An entry is validated when a placement draws from it, apart from the payload that carries it. An entry that fails is a placeholder for each placement that names it, as a fetched object that fails is (above), and a reader MUST NOT fetch the address instead: the table still wins. The parent is unaffected.
+- **The field is never a reason to reject.** An `objects` that is not a JSON object, null included, is read as absent, and a key that is not an address of the form above is ignored. A reader MUST NOT reject a payload for anything in `objects`.
+- **Depth, cycles and each object's own fields are unchanged.** A placement drawn from the table counts toward the depth bound of `4` and the chain of parents exactly as a fetched one does, so an entry that places its own address, or the address of anything above it, is missing. An object in the table keeps its own `palette`, `mode`, `opacity`, `constrain` and `facecolors`, as every placed object does (above): the water in the example stays translucent and lets a walker in, and the room around it stays opaque and holds one. Nothing is merged into the parent.
+- **A reader that does not support the field** ignores it, as §1.1 requires of every field it does not recognize, fetches each address as usual, and, finding nothing, draws a placeholder. It MUST NOT reject the parent for the field.
+- **Never in the clear when meant to stay private.** A publisher MUST NOT write `objects` into an event that is public in the clear, such as a public object (§3.1) or an avatar (§3.3), when the objects in it were meant to stay private. Inside a bag the table is encrypted with everything else: an item (§3.2) is sealed with the bag, and a hidden object (§3.4) is encrypted with the bag's region key, and keeping unpublished objects private in that way is what this field is for.
+
+**Size.** The table is part of the payload, so it counts toward the event that carries it (§1.8), and the parent travels as any object does: inline in the bag, or as a hidden object of its own when it is large (§3.2, §3.4). A hidden object's payload is base64 inside its event, about 4/3 of its size, so on a relay that takes 131,072 bytes a parent and everything it carries have about 98,304 bytes between them. Measured on a kit of 204 dungeon pieces of which 13 place others, with every placed piece carried: the flooded room above is 17,925 bytes with its two pieces, and the largest, a join that places 16 pieces, is 85,397. A build too large to carry its objects is hidden in parts, or its objects are given events of their own; §8 records the alternatives.
+
+**Why the table wins.** Two reasons, the first the more important. A reader that fetches a placed object asks relays for its address, and an address that names an object nobody published, written in a payload sealed in a bag, is known only to that bag's finders: asking public relays for it tells them which names from inside bags a reader has seen, and when. A reader that draws from the table asks nobody. And what a finder sees is then what was hidden: a reader that fetched first would draw whatever the address named at that moment, if anything, and two readers of one bag could draw two different builds.
+
+**Why a field, and not a new kind of reference or a payload inside a placement.** A reference of another shape, such as `["a", <address>, <relay>, {payload}]`, is a `refs` entry that §1.9 rule 11 rejects, so every reader written before this section would refuse the whole parent rather than draw a placeholder, and a payload inside a `parts` entry fails rule 12 the same way. A field is ignored by those readers (§5), the `a` entry stays an ordinary reference, and a reader that fetches it, finding nothing, draws a placeholder, which is the one failure this section allows.
+
+**Why one table at the root, and not a table on each object.** One table carries an object that is placed in many places, at any depth, once, and one lookup answers for every depth, so a reader never has to decide which of two copies of one address wins inside one build. Only an object fetched as its own event brings a table of its own, because that table travelled in another event, signed or sealed by its own author.
+
+**A copy, not a link.** An object in the table is a copy of what its author had when the parent was written. It does not follow edits the way an `a` reference to a published object does (above): what a finder draws is what was written, until the parent's author writes the parent again. (Non-normative: the address of a carried object need not name any event, and a client MAY key a copy under a `d` of its own, such as one scoped to the parent, so that a copy that has since been changed is never taken for the object it was copied from, either by a reader that fetches the address or by its own author's tools.)
+
 **What this buys, in bytes.** An `a` reference is about 110 bytes and an `e` reference about 78; a placement is 28 at most. Twelve palm trees as twelve inline copies cost 396 vertices; as one tree and twelve placements they cost 33 vertices and about 450 bytes. The 129-square floor that motivated this cost 516 vertices pasted and 291 welded; as one tile and 129 placements it is about 3.7 KB and 4 vertices of its own, and the tile's author can repaint every floor built from it in one edit.
 
-**Groups are objects (non-normative).** A modeling tool wants to select, move and edit a group of vertices as one thing, and every such tool grows a grouping mechanism. This format has none, on purpose: a group is an object, placed. A client is expected to show an object's parts as things a person can pick (a tray of what is on the bench), isolate one, and edit it. A part that belongs to the person editing is edited in place, and because it is addressable every parent that places it follows; a part that belongs to someone else is cloned under the editor's own key and the placement repointed, which is what "editing someone else's tile" honestly is. None of that is protocol, and none of it needs to be.
+**Groups are objects (non-normative).** A modeling tool wants to select, move and edit a group of vertices as one thing, and every such tool grows a grouping mechanism. This format has none, on purpose: a group is an object, placed. A client is expected to show an object's parts as things a person can pick (a tray of what is on the bench), isolate one, and edit it. A part that belongs to the person editing is edited in place, and because it is addressable every parent that places it follows; a part that belongs to someone else is cloned under the editor's own key and the placement repointed, which is what "editing someone else's tile" honestly is. A part carried in the parent's `objects` (above) is the parent's own copy: editing it changes that parent and no other, and changes every placement of it in that parent together, because they all name one entry. None of that is protocol, and none of it needs to be.
 
-**Versioning.** `refs` and `parts` are fields whose absence has a meaning, so their addition does not bump `v` (§5). An older reader ignores them and draws the parent alone.
+**Versioning.** `refs`, `parts` and `objects` are fields whose absence has a meaning, so their addition does not bump `v` (§5). An older reader ignores them and draws the parent alone, and a reader that places objects but predates `objects` draws a placeholder where a carried object would stand.
 
 ### 1.11 Opacity
 
@@ -447,8 +492,9 @@ Positions are ticks and turns are whole degrees because everything else in this 
 - **An authoring tool**, for this section, is a client that writes an object's payload: one that makes an object, or opens one and writes its payload again, whether it signs the result or writes it unsigned, and whether as a public object (§3.1), an item in a bag, signed or unsigned (§3.2), a sealed object (§3.4) or a copy (§3.5). A modeling workshop is one; so is a builder that edits or moves a placed object, which writes that placement's payload again (an inline item as a new item, a sealed object encrypted again), an importer, a kit that publishes its pieces, and an agent or a script that publishes objects. Such a tool treats an absent field as not chosen. An authoring tool SHOULD write `"opaque"` for every object whose setting has not been chosen, and SHOULD show `"opaque"` as the object's setting before it writes the payload, so that what its user sees is what is published, and its user can choose otherwise. A tool with no screen, such as an agent's or a batch publisher's, meets this by reporting the setting it will write, or has written, wherever it reports what it publishes. This covers:
   - a new object;
   - an object published without the field, opened and written again, including one that is moved;
-  - an object made from a payload without the field, such as a kit piece, an imported file, or a copy of another author's object placed inline (§3.5), whose new payload is the copier's to set.
-- **What is carried, not written.** The default never reaches a payload the tool does not write. An item, signed or unsigned, carried exactly as it was found, such as an item kept as it was hidden (§3.2), keeps its payload exactly as found, field or no field, so that its id keeps meaning what it meant. When a bag's author writes the bag again to add or remove an item, every item it keeps is carried as found, not written: the default reaches only the items that bag write makes new. An object placed by reference (§1.10) is drawn from its author's own event, and only that author can sign it again, so a tool that writes the reference writes nothing of the object's, and the default does not reach it.
+  - an object made from a payload without the field, such as a kit piece, an imported file, or a copy of another author's object placed inline (§3.5), whose new payload is the copier's to set;
+  - an object the tool writes into another object's `objects` (§1.10), whose payload in the table is one the tool writes.
+- **What is carried, not written.** The default never reaches a payload the tool does not write. An item, signed or unsigned, carried exactly as it was found, such as an item kept as it was hidden (§3.2), keeps its payload exactly as found, field or no field, so that its id keeps meaning what it meant. When a bag's author writes the bag again to add or remove an item, every item it keeps is carried as found, not written: the default reaches only the items that bag write makes new. In the same way, an object in a table (§1.10) that the tool writes back exactly as it found it, because nobody changed it, is carried, not written. An object placed by reference (§1.10) is drawn from its author's own event, and only that author can sign it again, so a tool that writes the reference writes nothing of the object's, and the default does not reach it.
 - **A malformed value** is not a choice either. An authoring tool SHOULD treat it as not chosen, and so show and write `"opaque"` in its place.
 - **A choice is one of the three words, and it is kept.** An authoring tool MUST write the word its user chose, MUST NOT write any value but `"all"`, `"opaque"` or `"off"` whatever its user typed, and MUST keep one of those three words exactly as it found it when its user has not changed the setting. It MUST NOT write `"off"` for an object whose setting nobody chose, since `"off"` is the record of that choice. A user who wants no constraint therefore gets `"off"`, never an absent field, because the next tool to open an absent field would write `"opaque"` in its place.
 - **Avatars.** Every reader ignores the field in an avatar's payload (§3.3), so none of the bullets above applies there: a tool that writes an avatar need not write the field, MAY keep or drop one of the three words it finds, and drops any other value, since a publisher writes no malformed value anywhere.
@@ -526,7 +572,7 @@ A client that receives a `kind 33331` event whose content fails §1.9 MUST NOT r
 
 An object hidden at a place is an entry in a `kind 33330` bag, exactly as `CYBERSPACE_V2.md` §7.6 describes entries. It is carried in one of two ways:
 
-- **Inline:** an item, a `kind 3330` event, signed or unsigned, with the payload of §1 in its `content`. It MAY carry a `C` tag, which then MUST lie inside the bag's region. This is how every object was carried before 2026-09-24 and it stays the right way for small ones.
+- **Inline:** an item, a `kind 3330` event, signed or unsigned, with the payload of §1 in its `content`. It MAY carry a `C` tag, which then MUST lie inside the bag's region. This is how every object was carried before 2026-09-24 and it stays the right way for small ones. Its payload MAY carry the objects it places (`objects`, §1.10), which are then sealed with the bag.
 - **By reference:** a reference entry (`CYBERSPACE_V2.md` §7.6) naming the object's own `kind 33331` event (§3.4): `["a", "33331:<pubkey>:<d>", "<relay hint>", "<coord_hex>"]`, which follows the object as its author edits it. `33331` is addressable, so an `e` reference to it would stop resolving as soon as its author replaced it (`CYBERSPACE_V2.md` §7.6); a reference to an object uses `a`. No `kind 3330` event is involved. A `pubkey` in the address that differs from the bag's author is not a reason to reject: placing another author's object is a placement. A reader MUST fetch the referenced event and read the object from it as §3.4 says; a reference that cannot be fetched is a missing entry, dropped like an item that fails to verify, and a client SHOULD say so rather than say nothing was found.
 
 A publisher SHOULD carry a large object by reference: a bag is one event shared by everything hidden at a place, and by reference it stays small whatever the object costs. What counts as large is the publisher's judgment against the relays it publishes to (§1.8); the format draws no line. A publisher MAY carry a small object by reference too, when it wants the object to have an event of its own. (Non-normative: ONOSENDAI and cyberspace-mcp carry an object by reference when its serialized payload is over 16,384 bytes, roughly a few hundred vertices, and inline otherwise.)
@@ -555,6 +601,8 @@ An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload
 **The event MUST carry nothing that says where the object is.** No `C`, no height tag (`H`, or the `h` of `CYBERSPACE_V2.md` §8.6), no hint and no sector tag: those belong to the bag, which is what the region key protects. The event is a locked box in plain view; the bag is the note that says where the box stands and is readable only there.
 
 **One key opens the place and everything referenced from it.** The object is encrypted with the same region key that opens the bag, so a reader that has opened the bag opens every object it references with the key in hand, and a reader that has not can open neither. The cost is that the object is tied to the region: moving it to another place means re-encrypting it. A per-object key carried inside the bag would lift that and let one event be referenced from several places; §8 records it as open.
+
+**It may carry what it places.** The payload MAY carry the objects it places (`objects`, §1.10). They are encrypted with it, under the same key, and the table counts toward the size of this event rather than the bag's.
 
 **Validation is the same.** A reader that decrypts a referenced object and finds it fails §1.9 drops the entry, exactly as it drops an inline item that fails, and SHOULD say that the object was found and refused rather than that nothing was found.
 
@@ -624,7 +672,7 @@ A client MUST perform welding, deduplication and any equality test on the intege
 
 `v` is `1` or `2`, and a reader MUST support both and reject anything else. A version bump means the meaning of an existing field has changed, which is exactly what happened between the two: `v: 2` reads its Z as written and `v: 1` has it negated (§2). Nothing else differs, and nothing else should ever differ by so little: two versions are a cost, and this one buys a format that every other tool can read without a special case.
 
-A reader MUST ignore fields it does not recognize rather than rejecting them. This is what allows an optional field to be added without a version bump, and it is how `extent`, `ticks`, `up`, `spin`, `palette`, `facecolors`, `refs`, `parts`, `opacity` and `constrain` were each added to a format already in use: an older reader sees an object with whole-unit positions on a grid of 8, unoriented, in the built-in colors, every face interpolating its corners, placing nothing, fully opaque, stopping no walker, and draws something correct rather than nothing.
+A reader MUST ignore fields it does not recognize rather than rejecting them. This is what allows an optional field to be added without a version bump, and it is how `extent`, `ticks`, `up`, `spin`, `palette`, `facecolors`, `refs`, `parts`, `opacity`, `constrain` and `objects` were each added to a format already in use: an older reader sees an object with whole-unit positions on a grid of 8, unoriented, in the built-in colors, every face interpolating its corners, placing nothing, fully opaque, stopping no walker, carrying nothing, and draws something correct rather than nothing.
 
 An extension that changes how an existing field is interpreted MUST bump `v`. An extension that adds a field whose absence has a well-defined meaning MUST NOT.
 
@@ -733,7 +781,8 @@ One apparent gap is not one. SNO has per-vertex color and no material, which is 
 4. **A per-object key for a hidden object carried by reference.** §3.4 encrypts the object with the region key, which ties it to the place. A key of its own, carried inside the bag beside the reference, would let one large object be referenced from several places and moved without re-encryption, at the cost of a second key to lose.
 5. **Whether `parts` should also allow a mirror.** Eight integers place and turn and scale; a negative scale step halves, it does not mirror. A left glove from a right glove needs one more flag or a second object. Left out until someone needs it.
 6. **The rotation order.** §1.10 fixes X then Y then Z about the parent's axes. It is a convention, not a derivation; if a modeling tool in common use disagrees, the cost of matching it is one sentence now and every published object later.
-7. **Crediting a large copy privately.** §3.5 leaves the credit off a copy carried as its own hidden event (§3.4), because that event's tags are public. Carrying it inside the seal would need either a field in the payload, which every reader would then have to ignore, or a second encrypted tag on the event. Neither is decided.
+7. **Crediting a large copy privately.** §3.5 leaves the credit off a copy carried as its own hidden event (§3.4), because that event's tags are public. Carrying it inside the seal would need either a field in the payload, which every reader would then have to ignore, or a second encrypted tag on the event. Neither is decided. A copy of another author's object carried in a table (§1.10) has the same problem in a different place: it has no event of its own to carry a `q`, and the event that carries the table is the parent's, whose tags are public when the parent is.
+8. **A build too large to carry its objects.** A table counts toward the parent's event (§1.10), so a build whose objects together exceed what a relay takes cannot carry them. Two alternatives were weighed against the table and kept for later. One seals each object as a hidden object of its own (§3.4) with the bag's region key under a fresh `d`, and has the parent's `refs` name those, which removes the ceiling but publishes one event per object per placement, whose count and timing tie them to the bag. The other gives each object a key of its own (question 4), which would let finders follow its author's edits without a new seal, at the cost of a key that, once handed out, cannot be taken back.
 
 ## Appendix A: a worked example (non-normative)
 
@@ -770,6 +819,28 @@ And the same object again with all four faces one color, which is what `facecolo
 The same object as tinted glass is the first document with `"opacity": 40` added, for 13 more bytes (173 compact). A reader draws it at forty percent, or opaque if it cannot draw translucency (§1.11); a reader written before §1.11 ignores the field and draws it opaque.
 
 The same object as a solid that a walker whose client honors the field cannot pass through is the first document with `"constrain": "all"` added, for 18 more bytes (178 compact). A client that walks its viewer stops the walker at its faces (§1.12); every other reader, and every reader written before §1.12, ignores the field and draws the object exactly as before.
+
+The same object as glass, placed twice by an object that carries it (§1.10), with neither of them published. The pubkey is that of the secret key `1`, a well-known test key:
+
+```json
+{
+  "v": 2, "name": "two glass tetras", "unit": 0, "mode": "solid",
+  "vertices": [], "colors": [], "faces": [],
+  "refs": [["a", "33331:79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798:glass-tetra"]],
+  "parts": [[0, 0, 0, 0, 0, 0, 0, 0], [0, 360, 0, 0, 0, 90, 0, 0]],
+  "objects": {
+    "33331:79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798:glass-tetra": {
+      "v": 2, "name": "glass tetra", "unit": 0, "mode": "solid",
+      "vertices": [[0, 0, 0], [2, 0, 0], [1, 0, 2], [1, 2, 1]],
+      "colors": [238, 235, 239, 225],
+      "faces": [[0, 1, 2], [0, 3, 1], [1, 3, 2], [0, 2, 3]],
+      "opacity": 40, "constrain": "off"
+    }
+  }
+}
+```
+
+The parent has no geometry of its own (§1.9 rule 13) and two placements of one reference: the tetrahedron at its origin, and again three units along X, turned a quarter about Y. Both placements name the one entry in `objects`, so the object travels once, and a reader draws both from it at forty percent, lets a walker through both (§1.12), and asks no relay for the address. A reader that predates `objects` fetches the address, finds nothing, since nobody published it, and draws a placeholder at each placement. 538 bytes compact. Hidden in a bag, as an item (§3.2) or as a hidden object (§3.4), the table is encrypted with the rest of the payload; written into a public event, it would publish the glass tetrahedron in the clear, which is why §1.10 forbids that for objects meant to stay private.
 
 The same object one meter across rather than two gibsons is the same document with `"unit": 32`: it spans two model units, and at `unit` 32 two model units are 2^33 gibsons, one meter (`CYBERSPACE_V2.md` puts height 34 at two meters).
 
