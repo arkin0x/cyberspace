@@ -370,24 +370,25 @@ def stops_walker(payload: dict) -> bool:
 _KEY = re.compile(r"33331:([0-9a-f]{64}):(.*)", re.S)
 
 
-def carried_table(payload: dict, author: str | None = None) -> dict:
+def carried_table(payload: dict, author: str | None) -> dict:
     """§1.10 and §1.9 rule 16: the objects a payload carries, keyed by address.
 
     Never a rejection, whatever the field holds. An `objects` that is not a
     JSON object, null included, is no table at all. A key that is not an
     address is ignored, and so is a key under any pubkey but `author`, the
-    pubkey of the event the table travels in, when the caller passes it. The
-    values come back unchecked: each one is checked on its own, when a
-    placement draws from it (draw_carried), never with the payload that
-    carries it.
+    pubkey of the event the table travels in (for an unsigned item in a bag,
+    the bag's signer). An author of None, one the reader does not know,
+    honours no key at all, never every key. The values come back unchecked:
+    each one is checked on its own, when a placement draws from it
+    (draw_carried), never with the payload that carries it.
     """
     table = payload.get("objects")
-    if not isinstance(table, dict):
+    if author is None or not isinstance(table, dict):
         return {}
     out = {}
     for key, entry in table.items():
         m = _KEY.fullmatch(key) if isinstance(key, str) else None
-        if not m or (author is not None and m.group(1) != author):
+        if not m or m.group(1) != author:
             continue
         out[key] = entry
     return out
@@ -592,7 +593,9 @@ APPENDIX_A = {
 #: twice and was never published. The pubkey is that of the secret key 1, a
 #: well-known test key.
 TEST_PUBKEY = "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
-GLASS = "33331:" + TEST_PUBKEY + ":glass-tetra"
+#: Keyed under a `d` that says nothing about it (§1.10): readers that predate
+#: the table ask relays for every carried address.
+GLASS = "33331:" + TEST_PUBKEY + ":5e0a3c91d27f4b68"
 APPENDIX_A_CARRIED = {
     "v": 2,
     "name": "two glass tetras",
@@ -995,9 +998,10 @@ def _self_test() -> None:
         ({GLASS: "not an object"}, GLASS, TEST_PUBKEY, "placeholder", "an entry that is not a payload fails rule 1"),
         ({GLASS: {**APPENDIX_A, "objects": {OTHER: dict(APPENDIX_A)}}}, GLASS, TEST_PUBKEY, "table", "an entry's own objects are ignored"),
         ({OTHER: dict(APPENDIX_A)}, OTHER, TEST_PUBKEY, "fetch", "a key under another pubkey is ignored, and the address fetched"),
-        ({OTHER: dict(APPENDIX_A)}, OTHER, None, "table", "a reader that does not know the author cannot tell"),
-        ({"33331:" + "AB" * 32 + ":x": dict(APPENDIX_A)}, "33331:" + "AB" * 32 + ":x", None, "fetch", "a key that is not an address is ignored"),
-        ({"glass-tetra": dict(APPENDIX_A)}, "glass-tetra", None, "fetch", "a bare d is not an address"),
+        ({GLASS: dict(APPENDIX_A)}, GLASS, None, "fetch", "a reader that does not know the author honours no key, never every key"),
+        ({"33331:" + "AB" * 32 + ":x": dict(APPENDIX_A)}, "33331:" + "AB" * 32 + ":x", TEST_PUBKEY, "fetch", "a key that is not an address is ignored"),
+        ({"glass-tetra": dict(APPENDIX_A)}, "glass-tetra", TEST_PUBKEY, "fetch", "a bare d is not an address"),
+        ({"33331:" + TEST_PUBKEY + ":line\nbreak": dict(APPENDIX_A)}, "33331:" + TEST_PUBKEY + ":line\nbreak", TEST_PUBKEY, "table", "a d is any string, line breaks included"),
     ]
     for objects, address, author, want, why in places:
         payload = {**APPENDIX_A_CARRIED, "objects": objects}
@@ -1009,7 +1013,7 @@ def _self_test() -> None:
     assert "objects" not in place_from(GLASS, {GLASS: {**APPENDIX_A, "objects": {}}})[1]
     # A field that is not a table is read as absent, never a rejection.
     for junk in ([], "objects", 7, True, None, [[GLASS, APPENDIX_A]]):
-        if carried_table(validate({**APPENDIX_A_CARRIED, "objects": junk})) != {}:
+        if carried_table(validate({**APPENDIX_A_CARRIED, "objects": junk}), TEST_PUBKEY) != {}:
             print(f"  CARRIED: objects {junk!r} should read as absent")
             failures += 1
     # The root's table is looked in first, then the table of the event the
