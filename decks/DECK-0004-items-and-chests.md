@@ -28,12 +28,11 @@ This DECK writes down what ONOSENDAI (from its Keys and Chests slice of 2026-10-
 - **Item listing:** a public `kind 33340` event that names an item by its public key (§4).
 - **Rumor:** an item that carries an `id` and no signature (`CYBERSPACE_V2.md` §7.6, Rumors). A message sealed in a chest is written as one (§3.2).
 - **Forger:** whoever generated an item's keypair. In this DECK the forger is also the item event's signer, the hider.
-- **Door:** a chest that carries a `door` tag (§3.8).
-- **Room:** the aligned region of a door's height that holds the door (§3.8.1).
-- **Door secret:** 32 random bytes sealed inside a door, one per room (§3.8.1).
-- **Room bag:** a `kind 33330` bag that holds what is hidden in a room, encrypted with a key derived from the place and the door secret (§3.8.2).
+- **Door:** a chest that carries a `door` tag (§3.7).
+- **Room:** the aligned region of a door's height that holds the door (§3.7.1).
+- **Door secret:** 32 random bytes sealed inside a door, one per room (§3.7.1).
+- **Room bag:** a `kind 33330` bag that holds what is hidden in a room, encrypted with a key derived from the place and the door secret (§3.7.2).
 - **Look:** a SNO object that a chest or a door is drawn as, where it stands (§3.6).
-- **Owner copy:** a chest's plaintext sealed a second time to its own signer (§3.7).
 
 ## 1. Overview (non-normative)
 
@@ -43,8 +42,8 @@ A bag already carries any event as an item, and a reader skips kinds it does not
 |---|---|---|---|
 | `3340` | item | inside a bag, or inside a chest | §2 |
 | `3341` | chest | inside a bag, a room bag, or another chest | §3 |
-| `3341` with a `door` tag | door | inside a bag, or a room bag | §3.8 |
-| `33330` | room bag | published on its own, encrypted with a room key | §3.8.2 |
+| `3341` with a `door` tag | door | inside a bag, or a room bag | §3.7 |
+| `33330` | room bag | published on its own, encrypted with a room key | §3.7.2 |
 | `33340` | item listing | published on its own, in public | §4 |
 
 The mechanic they prove is the one most games built on Cyberspace lean on: a thing found in one place opens a sealed thing in another, with no server. An item hidden in one region can open a chest hidden a thousand kilometres away, sealed by someone who never held the item, as long as they knew its public key. The listing is how they come to know it.
@@ -164,8 +163,7 @@ A chest is a nostr event carried inline in a bag or in another chest. Like an it
 | `["C", "<coord_hex>"]` | the chest's exact coordinate, under the rules of `CYBERSPACE_V2.md` §7.6. |
 | `["look", "<SNO object payload>"]` | OPTIONAL. The object the chest is drawn as, closed (§3.6). |
 | `["look", "<SNO object payload>", "open"]` | OPTIONAL. The object it is drawn as once opened (§3.6). |
-| `["owner", "<NIP-44 v2 payload>"]` | OPTIONAL on a chest, SHOULD be present on a door. The plaintext sealed to the chest's own signer (§3.7). |
-| `["door", "<height>"]` | present only on a door, which §3.8 defines. |
+| `["door", "<height>"]` | present only on a door, which §3.7 defines. |
 
 The chest event is signed by the hider, as `CYBERSPACE_V2.md` §7.6 says every item that is not a message SHOULD be. Its signature is what vouches for the messages sealed inside it (§3.4). A chest written without one vouches for nothing, and a reader MAY drop it (`CYBERSPACE_V2.md` §7.6, Every other kind).
 
@@ -182,7 +180,7 @@ The seal follows the gift-wrap pattern of NIP-59, applied to a list of entries:
 5. `content = nip44_encrypt(plaintext, conversation_key)`.
 6. The sender's public key goes into the `lock` tag beside the lock, and the sender's secret is discarded. It is used once and MUST NOT be kept.
 
-A chest can therefore be sealed to a key whose secret the sealer does not hold, and once it is sealed nobody, the sealer included, can open it without the lock's secret, unless the sealer also wrote an owner copy (§3.7), which only the sealer's own identity opens.
+A chest can therefore be sealed to a key whose secret the sealer does not hold, and once it is sealed nobody, the sealer included, can open it without the lock's secret.
 
 **What goes in.** The entries of a chest follow the rules for the items of a bag (`CYBERSPACE_V2.md` §7.6), with the chest in the place of the bag and the chest's signer in the place of the bag's:
 
@@ -212,7 +210,7 @@ The decrypted plaintext is read as a list of entries under `CYBERSPACE_V2.md` §
 - A plaintext that is not a JSON array is a chest the reader cannot read; it SHOULD say so rather than show an empty chest.
 - Readers today do not follow references inside a chest: a reference is a relay query that opening a chest should not make on its own. A reader MAY skip references in a chest, and a writer SHOULD NOT put them there until a later revision says how they are fetched.
 
-**A chest's contents are taken, not placed.** A reader lists what an opened chest holds, for its user to take (below), and SHOULD NOT draw it in the world. Readers before 2026-10-26 drew each content at its `C` when that lay in the chest's plane and inside the region of the bag holding the chest, and otherwise where the chest stands; a hider who wants things to appear where they stand when a lock opens uses a door (§3.8). A content item still carries a `C` tag, as every item does.
+**A chest's contents are taken, not placed.** A reader lists what an opened chest holds, for its user to take (below), and SHOULD NOT draw it in the world. Readers before 2026-10-26 drew each content at its `C` when that lay in the chest's plane and inside the region of the bag holding the chest, and otherwise where the chest stands; a hider who wants things to appear where they stand when a lock opens uses a door (§3.7). A content item still carries a `C` tag, as every item does.
 
 **Taking.** Taking something out of an opened chest copies it into the reader's own keeping. A reader MAY offer to take one thing at a time and everything at once. The chest still holds it for the next reader. A taken copy of a rumor proves nothing to anyone else: it has no signature, and the chest that vouched for it is not part of the copy. A client MAY keep, with what it took, whether the author was verified when its user opened the chest, as cyberspace-mcp's `take` keeps what `open_chest` said; that record is the reader's own, and nobody else can check it.
 
@@ -235,7 +233,7 @@ A chest or a door MAY name a SNO object (DECK-0003) to be drawn as, where it sta
 
 - **The payload.** The second element is an object payload exactly as DECK-0003 §1.1 defines it: the JSON a `kind 3330` shard carries in its `content`. A reader MUST check it under DECK-0003 §1.9 and, when it fails, MUST read the chest as one without that look. A look is never a reason to drop a chest.
 - **Closed and open.** A tag with no third element is the **closed look**, and one whose third element is `open` is the **open look**. A reader takes the first well-formed tag of each, and ignores any other `look` tag, including one whose third element it does not know.
-- **Where it stands.** A look is placed as a hidden shard is placed: the origin of its payload stands at the chest's coordinate (`C`), at the middle of that gibson; one model unit is 2^`unit` gibsons (DECK-0003 §1.6); it is posed by its own payload (DECK-0003 §1.7); and it is cut at the walls of the region of the bag or room bag (§3.8) that holds the chest. This is unlike an item's `model` (§2.5), which centres a floating object on the item's point: a look's author decides where its origin falls, so a chest sits on a floor and a door fills a doorway.
+- **Where it stands.** A look is placed as a hidden shard is placed: the origin of its payload stands at the chest's coordinate (`C`), at the middle of that gibson; one model unit is 2^`unit` gibsons (DECK-0003 §1.6); it is posed by its own payload (DECK-0003 §1.7); and it is cut at the walls of the region of the bag or room bag (§3.7) that holds the chest. This is unlike an item's `model` (§2.5), which centres a floating object on the item's point: a look's author decides where its origin falls, so a chest sits on a floor and a door fills a doorway.
 - **A copy, with live parts if its author wants them.** A look is a payload, so it is fixed as the hider sealed it. It MAY place public objects by `a` reference (DECK-0003 §1.10), and those follow their authors' edits. A writer that wants a public object turned, scaled or moved writes a look whose only content is one part placing it. A look MAY carry the objects it places, where DECK-0003 allows a payload to (`objects`, §1.10), for objects its author never published.
 - **Drawing it.** A reader draws the closed look until its user has opened the chest or door, and the open look after, when there is one. With no open look, an opened door is not drawn at all, and an opened chest keeps its closed look. With no closed look, a reader draws whatever it draws for a chest.
 - **Walkers.** A reader that holds walkers at objects' faces (DECK-0003 §1.12) SHOULD hold them at a look's faces by the look's own `constrain`, as at a hidden shard's: a chest's look always, a door's closed look until its user has opened the door, and a door's open look after.
@@ -244,35 +242,19 @@ A chest or a door MAY name a SNO object (DECK-0003) to be drawn as, where it sta
 
 **Built-in looks (non-normative).** ONOSENDAI offers looks of its own, which are ordinary looks on the wire. For a door: slabs half a gibson thick, sized to the Maze Kit's standard openings (CRAWL 2 by 2, DOOR 2 by 3, HALL 4 by 6 gibsons), each with an open version. For a chest: a treasure chest a gibson across with its origin on its base, closed and with its lid up.
 
-### 3.7 The owner copy
-
-```
-["owner", "<NIP-44 v2 payload, base64>"]
-```
-
-The owner copy is the chest's plaintext sealed a second time, to the key that signs the chest, with the same one-time sender as `content` (§3.2):
-
-1. `owner_key = nip44_get_conversation_key(sender_secret, signer_pubkey)`, computed before the sender's secret is discarded;
-2. `owner = nip44_encrypt(plaintext, owner_key)`, the same plaintext that `content` seals.
-
-The signer opens it with its own identity, `nip44.decrypt(sender_pubkey, owner)`, as a person opens a chest sealed to them (§3.3). A writer SHOULD add an owner copy to a door and MAY add one to a chest. It MUST NOT seal into it anything but the plaintext of `content`. A reader that is not the chest's signer ignores the tag.
-
-**Why (non-normative).** A chest's `pubkey` says who sealed it, but holds no secret. A hider who seals a door to an item they do not hold, one chosen from an item listing (§4), could otherwise never open their own door again, and so never hide anything more in its room (§3.8.4), on that device or any other. The copy gives the sealer what the lock gives a finder, and nothing more. When the lock is the signer's own pubkey it says nothing new, and a writer MAY leave it out.
-
-### 3.8 Doors
+### 3.7 Doors
 
 A **door** is a chest that locks part of the world instead of holding things to take. What it locks is its **room**, a region of the door's own height. Whatever its author hides there at that height goes into a **room bag**, encrypted with a key that needs both the place and the door's secret. Opening the door gives the secret; the secret and the place give the room key; the room's contents then stand where they were hidden.
 
-#### 3.8.1 Shape
+#### 3.7.1 Shape
 
 A door is a `kind 3341` chest with everything §3.1 lists, and:
 
 | Field | Value |
 |---|---|
 | `["door", "<height>"]` | exactly one. Marks the chest as a door and gives its **height**: a decimal string with no sign and no leading zeros, at least 1, written as a bag's height is (`CYBERSPACE_V2.md` §8.6). |
-| `["owner", "<NIP-44 v2 payload>"]` | SHOULD be present (§3.7). |
 
-The **room** is the aligned region of the door's height whose base holds the door's `C` (`CYBERSPACE_V2.md` §4.7), in the door's plane. A door's height MUST NOT exceed the height of the bag that holds it. A door inside a room (§3.8.6) MUST have a height lower than that room's. A reader MUST drop a door whose `door` tag is missing a well-formed height or breaks either rule. A door lives in a bag or a room bag, never in a chest, whose contents are taken rather than placed: a writer MUST NOT seal a door into a chest, and a reader that finds one there MUST NOT open its room.
+The **room** is the aligned region of the door's height whose base holds the door's `C` (`CYBERSPACE_V2.md` §4.7), in the door's plane. A door's height MUST NOT exceed the height of the bag that holds it. A door inside a room (§3.7.6) MUST have a height lower than that room's. A reader MUST drop a door whose `door` tag is missing a well-formed height or breaks either rule. A door lives in a bag or a room bag, never in a chest, whose contents are taken rather than placed: a writer MUST NOT seal a door into a chest, and a reader that finds one there MUST NOT open its room.
 
 A door's plaintext (§3.2) is a list of entries holding one **room entry**:
 
@@ -280,9 +262,9 @@ A door's plaintext (§3.2) is a list of entries holding one **room entry**:
 ["room", "<door secret, 64 lowercase hex>"]
 ```
 
-The **door secret** is 32 bytes from a cryptographically secure random source, made once for each room (§3.8.5). A writer MUST NOT put anything else in a door's plaintext. A reader takes the first well-formed room entry and ignores every other entry. A reader that does not know doors skips the room entry as an element it cannot read (`CYBERSPACE_V2.md` §7.6), so it sees a chest that holds nothing it reads.
+The **door secret** is 32 bytes from a cryptographically secure random source, made once for each room (§3.7.5). A writer MUST NOT put anything else in a door's plaintext. A reader takes the first well-formed room entry and ignores every other entry. A reader that does not know doors skips the room entry as an element it cannot read (`CYBERSPACE_V2.md` §7.6), so it sees a chest that holds nothing it reads.
 
-#### 3.8.2 The room key and the room bag
+#### 3.7.2 The room key and the room bag
 
 ```
 room_key       = SHA-256( UTF-8("cyberspace:door") || location_decryption_key || door_secret )
@@ -299,52 +281,54 @@ The room bag is a `kind 33330` bag under `CYBERSPACE_V2.md` §7.6 and §8.6 in e
 
 Everything else is a bag's: items, rumors vouched for by the room bag's signer, protected items, references, and the lifecycle. A reference in a room bag names an event sealed with the room key, which is "this bag's key" in `CYBERSPACE_V2.md` §7.6 (References). Its `encrypted` tag says `cyberspace:region`, as every hidden object's does, so that a sealed object does not say whether it is behind a door. Every entry's `C` lies inside the room's region, as in any bag. A sealed comment (DECK-0006) on something in a room is encrypted with the room key, which is the "bag's region key" DECK-0006 names when the bag is a room bag, so that a reader at the place who has not opened the door cannot read it.
 
-#### 3.8.3 Opening a door
+#### 3.7.3 Opening a door
 
 1. Open the door as a chest (§3.3) and read the door secret.
-2. Take the room's location key (`CYBERSPACE_V2.md` §7.2), and derive the room key and lookup id (§3.8.2). For a door found in a bag of its own height, the location key is already in hand.
+2. Take the room's location key (`CYBERSPACE_V2.md` §7.2), and derive the room key and lookup id (§3.7.2). For a door found in a bag of its own height, the location key is already in hand.
 3. Fetch the room bag and open it as a bag.
 4. Draw its entries where they stand, as a bag's are drawn.
 
 Opening publishes nothing. A reader SHOULD draw a door that its user has not opened with its closed look (§3.6), and SHOULD show nothing of the room until then. A door whose room bag cannot be fetched opens onto an empty room, and a reader SHOULD say that the room could not be retrieved rather than that it is empty.
 
-#### 3.8.4 Hiding in a room
+#### 3.7.4 Hiding in a room
 
 A writer that hides something in a room at the room's height writes it into the room bag, not into the bag of that region: that is what the door locks. Something hidden at any other height, in the same place, goes into that height's own bag like anything hidden anywhere: a door locks one height. A room bag may hold any entry a bag may hold, chests and doors included.
 
 Note (non-normative): ONOSENDAI writes into a room bag whatever its user places inside the region of one of their doors at that door's height, and lets them leave a placement out. It also offers to move into the room what they had already hidden there before the door existed; moving an entry rewrites both bags.
 
-#### 3.8.5 More than one door to a room
+**Editing from another device (non-normative).** The door secret is sealed only to the lock. The device that sealed the door keeps the secret; any other device learns it the way a finder does, by finding the door, holding what opens it, and opening it. Once it knows the secret, a client that sees the door was signed by its own user can offer to edit the room. Nothing in the door says it is editable, and nothing needs to: the signature says who sealed it, and the secret says who can open it.
+
+#### 3.7.5 More than one door to a room
 
 A room has one door secret and one room bag. A writer MAY seal the same door secret into more than one door of the same room, each with its own lock and look, so that a room with several doorways has a door in each. A writer MUST NOT give two doors of the same height in the same region, signed by the same key, different door secrets. A reader therefore treats every door of one signer, height and region as a door to one room: opening any of them opens all of them.
 
-#### 3.8.6 Doors inside rooms
+#### 3.7.6 Doors inside rooms
 
-A room bag MAY hold a door. The inner door's height MUST be lower than the room's (§3.8.1), so its own room is a smaller region inside the outer one. A reader finds the inner door only by opening the outer door, and opens the inner room like any other (§3.8.3), with the location key of the inner door's height. Nesting is limited only by height.
+A room bag MAY hold a door. The inner door's height MUST be lower than the room's (§3.7.1), so its own room is a smaller region inside the outer one. A reader finds the inner door only by opening the outer door, and opens the inner room like any other (§3.7.3), with the location key of the inner door's height. Nesting is limited only by height.
 
-Because a door locks only its own height (§3.8.4), doors at different heights never compete for a placement: a placement at the inner door's height inside the inner room goes into the inner room bag, and one at the outer door's height into the outer. Two doors of one height in one region are one room (§3.8.5).
+Because a door locks only its own height (§3.7.4), doors at different heights never compete for a placement: a placement at the inner door's height inside the inner room goes into the inner room bag, and one at the outer door's height into the outer. Two doors of one height in one region are one room (§3.7.5).
 
 A reader MAY show how deep a door is: the number of rooms it was found inside. ONOSENDAI shows its author a door's room as an outline with one line for each level.
 
-#### 3.8.7 Changing the lock
+#### 3.7.7 Changing the lock
 
-A writer that seals a door to a different lock SHOULD rotate its room:
+Only a writer that knows the door secret can seal a door of the room to a different lock, because the new seal carries the same plaintext. One that does SHOULD rotate the room:
 
 1. make a new door secret, and so a new room key and lookup id;
 2. publish the room bag again under them, sealing every event it references again with the new room key;
-3. seal the new secret into every door of the room (§3.8.5), each to its own lock;
+3. seal the new secret into every door of the room (§3.7.5), each to its own lock;
 4. request deletion (NIP-09) of the old room bag and of the events it referenced.
 
 **Why (non-normative).** Whoever opened the door before kept its secret, and a door secret is knowledge, as an item is (§6). Rotation is the only way a new lock keeps them out of what the room holds from then on. It cannot unsee what they read, or reach copies that relays keep despite a deletion.
 
-#### 3.8.8 Removing a door
+#### 3.7.8 Removing a door
 
-A writer that removes a door either moves the room's entries into the bag of the room's region at the room's height, so that they stand where they stood and anyone at the place can find them, or removes them. It then removes the door from the bag that holds it, and requests deletion (NIP-09) of the room bag. A writer MUST NOT leave a room bag that no door names.
+A writer that removes a door either moves the room's entries into the bag of the room's region at the room's height, so that they stand where they stood and anyone at the place can find them, or removes them. It then removes the door from the bag that holds it, and requests deletion (NIP-09) of the room bag. Moving or removing the room's entries, and finding the room bag to delete it, need the door secret; removing the door itself needs only the signer and the key of the bag that holds it. A writer that knows the secret MUST NOT leave a room bag that no door names. A writer that does not can still remove the door, and the room bag then stays on relays, readable only by whoever kept its secret.
 
-#### 3.8.9 Why a door has a bag of its own (non-normative)
+#### 3.7.9 Why a door has a bag of its own (non-normative)
 
 - **Size.** A chest is one NIP-44 payload of at most 65,535 bytes, and a room built from the Maze Kit holds pieces of 7 to 93 KB. A room bag is a bag: its large entries go by reference.
-- **Hiding in a room is a bag write.** One more thing in a room rewrites the room bag, exactly as hiding it anywhere rewrites a bag. The door is untouched, and its lock is not needed to add to the room, since its writer holds the secret.
+- **Hiding in a room is a bag write.** One more thing in a room rewrites the room bag, exactly as hiding it anywhere rewrites a bag. The door is untouched, and a writer that knows the secret needs nothing else to add to the room.
 - **The region key alone opens nothing behind a door.** If a room's contents were events sealed with the region key and named only from inside the door, anyone at the place could try the region key on every recent sealed event and open the room without the lock. With the room key, they need the door.
 - **Nothing public points at the room.** Its `d` is a hash of a key that only openers hold, and it states no height and no contents. What a relay sees is that one author published two bags close together in time, as it sees of anyone who hides twice.
 - **Why the height is in the tag.** A door could take its height from the bag that holds it, but a door inside a room cannot: its room is smaller than the room that holds it.
@@ -406,18 +390,18 @@ ONOSENDAI's readers (`keyItemOf`, `chestItemOf`, `openWithSecret`, `listingOf`, 
 
 The signatures in the vectors use 32 zero bytes of BIP-340 auxiliary randomness so that the file is reproducible. A reader MUST accept any valid signature, not only these.
 
-Vectors for a door, its owner copy, its room key and its room bag, and for a chest with a look, are not in `kinds-vectors.json` yet. They follow with the first implementation.
+Vectors for a door, its room key and its room bag, and for a chest with a look, are not in `kinds-vectors.json` yet. They follow with the first implementation.
 
 ## 6. Security considerations
 
 - **An item is knowledge.** Anyone who has read an item holds it forever, and can give it to anyone by copying the secret. There is no scarcity in this DECK and no revocation. Games that need either build it on the chain later.
 - **A listing reveals an item's existence and public key.** It does not reveal where the item is hidden or let anyone open a chest sealed to it.
 - **Listings by holders.** Because the proof shows holding rather than forging, any holder can publish a listing of an item under any name and picture, and the newest listing currently wins the feed. A client that wants the forger's word to stand needs a second proof binding the listing to the original item event's signer (§7).
-- **Chest size.** A chest is one NIP-44 payload and so holds at most 65,535 bytes, much less than a bag. Large contents belong in a bag, a room (§3.8), or behind references once chests support them.
+- **Chest size.** A chest is one NIP-44 payload and so holds at most 65,535 bytes, much less than a bag. Large contents belong in a bag, a room (§3.7), or behind references once chests support them.
 - **A door holds walkers by courtesy; the seal is the lock.** Holding walkers at a closed door (§3.6) is something a reader chooses to do. Another reader walks through, and finds nothing, because what the room holds is sealed with the room key.
-- **A door secret is knowledge.** Whoever opened a door can give its secret to anyone, who can then open the room from anywhere they can compute the place's key. Rotation (§3.8.7) protects only what the room holds after it.
+- **A door secret is knowledge.** Whoever opened a door can give its secret to anyone, who can then open the room from anywhere they can compute the place's key. Rotation (§3.7.7) protects only what the room holds after it.
 - **Two bags in time.** A room bag is unlinkable to its place by its content and tags, but a relay sees when it was published. One published moments after the bag that holds its door ties the two to one author and one moment. A writer that wants to hide even that may publish them apart.
-- **The owner copy.** Whoever controls a signer's identity can open every chest and door it sealed with an owner copy (§3.7), whatever the lock.
+- **The door secret is the only way to edit a room.** A door's secret is sealed to its lock and nowhere else, so only a device that sealed the door, or has opened it, can hide more in its room, rotate it, or find its room bag. An author who loses that device and holds no copy of the item that opens the door can still remove the door, but not edit its room or delete its room bag (§3.7.8). An author who wants to keep editing keeps a copy of each key item.
 - **A look is the hider's object.** A look's live parts (§3.6) name public objects that their authors can replace or delete, so a door or chest can change its appearance after it was hidden. A look carries no secret: whoever can see the chest can read it.
 - **A message in a chest proves its author only in place.** It is a rumor, so a finder who copies it out cannot publish it as a note its hider signed, and the hider's signed items carry `-`, so a relay that honours NIP-70 refuses a copy published by anyone but the hider; a relay that does not honour it still accepts one. Neither is deniability: whoever publishes the bag with its region key, together with what opens the chest, can show what the chest held, signed by its author.
 - **A model is someone else's object.** An item's `model` names a public object that its author can replace at any time (§2.5), so what an item looks like can change after it was hidden, and an author who deletes the object leaves every item that wears it drawn without a model. A forger who wants the look fixed names an object they authored.
@@ -427,4 +411,4 @@ Vectors for a door, its owner copy, its room key and its room bag, and for a che
 
 1. **Holder versus forger.** Should a listing bind to the forger, for example with a proof over the original item event's id signed by the event's author, so that only the forger's listing is shown? Today ONOSENDAI offers listing only to the forger, but the protocol accepts any holder.
 2. **`name` or `title` on a listing.** Items and chests moved to `title` on 2026-10-09, the tag other kinds use for a human name. The listing uses `name`. One of them should change before a third client ships.
-3. **References in chests.** A chest's plaintext has the shape of a bag's, which allows references, but no reader follows them inside a chest. A room bag (§3.8.2) follows them as any bag does, so large contents can be locked behind a door today. A chest that must hold more than 65,535 bytes still needs a rule: references sealed with a key carried inside the chest, or a room bag of its own.
+3. **References in chests.** A chest's plaintext has the shape of a bag's, which allows references, but no reader follows them inside a chest. A room bag (§3.7.2) follows them as any bag does, so large contents can be locked behind a door today. A chest that must hold more than 65,535 bytes still needs a rule: references sealed with a key carried inside the chest, or a room bag of its own.
