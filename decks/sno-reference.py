@@ -11,8 +11,10 @@ Run it directly to execute the self-test:
     python3 sno-reference.py
 
 The self-test carries the worked example from Appendix A, and a rejection case
-for every numbered rule in §1.9, so a port can be checked against the same
-table.
+for every numbered rule in §1.9 that rejects, so a port can be checked against
+the same table. Rules 9 (`extent`), 14 (`opacity`) and 15 (`constrain`)
+repair rather than reject, so they carry repair cases instead: a value in, the
+value a reader draws or walks with out.
 """
 
 from __future__ import annotations
@@ -37,6 +39,20 @@ MAX_NAME = 64
 TICKS_PER_UNIT = 120
 
 MODES = ("solid", "points", "lines")
+
+#: §1.11. Opacity is a whole percent. Absent or malformed means fully opaque;
+#: a valid value below the floor is drawn at the floor, so that no object is
+#: ever wholly invisible.
+OPACITY_OPAQUE = 100
+OPACITY_FLOOR = 10
+
+#: §1.12. The two words a walker is stopped by; anything else, absent
+#: included, stops nothing, and is reported here as "none".
+WALK_CONSTRAINTS = ("all", "opaque")
+#: §1.12: the three words an author can choose; "off" is a choice of nothing.
+AUTHORED_CONSTRAINTS = ("all", "opaque", "off")
+#: §1.12: what an authoring tool writes for an object whose setting nobody chose.
+AUTHORING_DEFAULT = "opaque"
 
 
 class SnoError(ValueError):
@@ -240,6 +256,15 @@ def validate(payload: Any, fetched_palette: Any = None) -> dict:
             raise SnoError("rule 12: a turn is not whole degrees 0..359")
 
     # 13. Nothing to check: an object may be only the arrangement of others.
+
+    # 14. opacity is repaired, never validated (§1.11): whatever the field
+    # holds, the payload is accepted, and drawn_opacity() says what a reader
+    # draws it at. There is deliberately no rejection here and no rejection
+    # case in the self-test: a reader that knows the field must never draw
+    # less than one that ignores it.
+
+    # 15. constrain is repaired, never validated (§1.12), for the same reason:
+    # walk_constraint() says what a walker meets, and nothing here rejects.
     return payload
 
 
@@ -260,6 +285,76 @@ def repaired_extent(declared: Any, vertices: list, ticks: list[list[int]]) -> in
             if need > extent:
                 extent = need
     return extent
+
+
+def drawn_opacity(payload: dict) -> int:
+    """§1.11: the percent a reader draws the object at, after repair and the floor.
+
+    Absent means 100. A value that is not an integer in 1..100 (0, above 100,
+    negative, fractional, a string, a boolean, null, an array, anything) is
+    malformed and also means 100: repaired to opaque, exactly as if absent,
+    never a rejection. A valid value below 10 is drawn at 10, the floor.
+
+    This is what an object asks for. A reader that cannot draw translucency
+    MAY draw any object opaque, and an avatar (§3.3) is always drawn opaque
+    whatever this says; both are the reader's to apply, not the payload's.
+    """
+    # Strict on int: a JSON 50.0 arrives here as a float and is repaired to
+    # 100. A reader whose parser cannot tell 50.0 from 50 may draw it at 50
+    # (§1.11); the difference is in how see-through it is drawn, never in
+    # whether it is accepted.
+    value = payload.get("opacity", OPACITY_OPAQUE)
+    if not _is_int(value) or not 1 <= value <= OPACITY_OPAQUE:
+        return OPACITY_OPAQUE
+    return max(value, OPACITY_FLOOR)
+
+
+def walk_constraint(payload: dict) -> str:
+    """§1.12: "all", "opaque", or "none" for an object that stops no walker.
+
+    This is the reader's side. Only the two lowercase words that stop a
+    walker count. "off", absent, null, "ALL", a number, a boolean, an array,
+    an object, anything else: the object stops nothing, and the payload is
+    never rejected for it. "off" is a word the field has, written by an
+    author who chose nothing; a reader treats it exactly as absent.
+    """
+    value = payload.get("constrain")
+    return value if isinstance(value, str) and value in WALK_CONSTRAINTS else "none"
+
+
+def authored_constraint(payload: dict) -> str:
+    """§1.12: the value an authoring tool shows, and writes when it publishes.
+
+    This is the editor's side, and it differs from walk_constraint() on
+    purpose. "all", "opaque" and "off" are a choice and come back exactly as
+    found. Absent is treated as not chosen, and a malformed value is not a
+    choice either: both come back as "opaque", the authoring default, so a
+    tool publishes what it showed its user. A tool writes the
+    value this returns, and so never writes an absent field for an object it
+    publishes (an avatar, which every reader ignores here, may omit it).
+    """
+    value = payload.get("constrain")
+    if isinstance(value, str) and value in AUTHORED_CONSTRAINTS:
+        return value
+    return AUTHORING_DEFAULT
+
+
+def stops_walker(payload: dict) -> bool:
+    """§1.12: whether this object's own faces stop a walker.
+
+    "all" stops one in every mode and at every opacity. "opaque" stops one
+    only while the object is opaque, read from the payload and never from how
+    a reader draws it: mode "solid" and an opacity of 100 after §1.11's repair.
+    A placed object answers for itself (§1.10), and an avatar never stops a
+    walker (§3.3); both are the reader's to apply, not this function's. An
+    object with no faces has nothing to cross whatever this says.
+    """
+    c = walk_constraint(payload)
+    if c == "all":
+        return True
+    if c == "opaque":
+        return payload.get("mode") == "solid" and drawn_opacity(payload) == OPACITY_OPAQUE
+    return False
 
 
 def positions(payload: dict) -> Iterator[tuple[Fraction, Fraction, Fraction]]:
@@ -415,13 +510,12 @@ APPENDIX_A = {
     "v": 2,
     "name": "tetra",
     "unit": 0,
-    "extent": 8,
     "mode": "solid",
     "vertices": [[0, 0, 0], [2, 0, 0], [1, 0, 2], [1, 2, 1]],
-    "ticks": [-4],
     # 238 pure red, 235 pure green, 239 pure blue, 225 white, in the built-in.
     "colors": [238, 235, 239, 225],
-    "faces": [[0, 1, 2], [0, 1, 3], [1, 2, 3], [0, 2, 3]],
+    # Wound outward: every front looks out of the solid (§1.4).
+    "faces": [[0, 1, 2], [0, 3, 1], [1, 3, 2], [0, 2, 3]],
 }
 
 
@@ -672,6 +766,128 @@ def _self_test() -> None:
         except SnoError as e:
             assert str(e).startswith("rule 8c"), (why, e)
     print("face colours: an index or a run, a run repeats the index before it, absent is not colour 0")
+
+    # §1.11 and rule 14: opacity is repaired, never a rejection. Each case is a
+    # value in and the percent a reader draws with out; every payload must
+    # also validate, because nothing about opacity rejects.
+    absent = object()
+    repairs = [
+        (absent, 100, "absent is fully opaque"),
+        (100, 100, "100 is fully opaque (and a publisher omits it)"),
+        (50, 50, "a value in range is drawn as given"),
+        (10, 10, "the floor itself"),
+        (9, 10, "below the floor is drawn at the floor"),
+        (1, 10, "the faintest valid value is drawn at the floor"),
+        (0, 100, "zero is out of range: opaque, never invisible"),
+        (101, 100, "above 100 is out of range: opaque"),
+        (-5, 100, "negative: opaque"),
+        (50.5, 100, "fractional: opaque"),
+        ("50", 100, "a string: opaque"),
+        (True, 100, "a boolean is not an integer: opaque"),
+        (None, 100, "null: opaque, the way a null extent means 8"),
+        ([50], 100, "an array: opaque"),
+        (False, 100, "false is a boolean, not an integer: opaque"),
+        ({}, 100, "an object: opaque"),
+        (10 ** 100, 100, "a huge integer is out of range: opaque"),
+    ]
+    for given, drawn, why in repairs:
+        payload = dict(APPENDIX_A) if given is absent else {**APPENDIX_A, "opacity": given}
+        accepted = validate(payload)  # raises, and so fails the test, if anything rejected it
+        got = drawn_opacity(accepted)
+        if got != drawn:
+            print(f"  OPACITY: {given!r} drew at {got}, expected {drawn} ({why})")
+            failures += 1
+    print(f"{len(repairs)} opacity repair cases (rule 14 never rejects), every payload accepted")
+
+    # Why opacity is a field of the object and not a fourth palette channel:
+    # a palette entry of four numbers is refused by every reader (rule 8a).
+    try:
+        validate({**APPENDIX_A, "palette": [[255, 0, 0, 128], [0, 0, 0, 255]]})
+        raise AssertionError("a palette entry carrying alpha should be rejected")
+    except SnoError as e:
+        assert str(e).startswith("rule 8a"), e
+    print("alpha in a palette entry is still a rule 8a rejection, which is why opacity is its own field")
+
+    # §1.12 and rule 15: constrain is repaired, never a rejection. Each case is
+    # a value in, the constraint a walker meets, and whether this object's
+    # faces stop one, for the solid opaque Appendix A object; every payload
+    # must also validate, because nothing about the field rejects.
+    walls = [
+        (absent, "none", False, "absent stops nothing"),
+        ("all", "all", True, "all"),
+        ("opaque", "opaque", True, "opaque, on a solid opaque object"),
+        ("off", "none", False, "off is the author's choice of nothing: a reader reads it as absent"),
+        ("OFF", "none", False, "the words are lowercase and exact, off included"),
+        ("none", "none", False, "none is not a word the field has"),
+        ("ALL", "none", False, "the words are lowercase and exact"),
+        ("Opaque", "none", False, "the words are lowercase and exact"),
+        (" all", "none", False, "no trimming"),
+        ("", "none", False, "the empty string"),
+        (1, "none", False, "a number"),
+        (True, "none", False, "a boolean"),
+        (None, "none", False, "null"),
+        (["all"], "none", False, "an array"),
+        ({"all": True}, "none", False, "an object"),
+    ]
+    for given, met, stops, why in walls:
+        payload = dict(APPENDIX_A) if given is absent else {**APPENDIX_A, "constrain": given}
+        accepted = validate(payload)  # raises, and so fails the test, if anything rejected it
+        got = (walk_constraint(accepted), stops_walker(accepted))
+        if got != (met, stops):
+            print(f"  CONSTRAIN: {given!r} gave {got}, expected {(met, stops)} ({why})")
+            failures += 1
+    # "opaque" stops a walker only while the object is opaque: see-through
+    # objects let one through, judged from the payload alone (§1.12).
+    seen_through = [
+        ({"opacity": 99}, False, "translucent: through"),
+        ({"opacity": 5}, False, "translucent, drawn at the floor: through"),
+        ({"opacity": 100}, True, "100 is opaque (and a publisher omits it)"),
+        ({"opacity": 250}, True, "a malformed opacity is opaque (§1.11), so it holds"),
+        ({"mode": "lines"}, False, "lines can be seen through"),
+        ({"mode": "points"}, False, "points can be seen through"),
+    ]
+    for extra, stops, why in seen_through:
+        for constraint, want in (("opaque", stops), ("all", True)):
+            payload = validate({**APPENDIX_A, **extra, "constrain": constraint})
+            if stops_walker(payload) != want:
+                print(f"  CONSTRAIN {constraint} with {extra!r}: expected stops={want} ({why})")
+                failures += 1
+    # §1.12, the authoring side: what a tool shows and publishes. An author's
+    # word comes back as found; absent and malformed are not choices, and
+    # come back as the default, "opaque". A reader still reads "off" as
+    # absent, which the reader cases above check.
+    authored = [
+        (absent, "opaque", "absent: the author has not chosen, so the default"),
+        ("off", "off", "an explicit off survives, so it is never written as absent"),
+        ("all", "all", "kept as found"),
+        ("opaque", "opaque", "kept as found"),
+        ("ALL", "opaque", "malformed is not a choice"),
+        ("OFF", "opaque", "malformed is not a choice, even when it looks like off"),
+        ("Opaque", "opaque", "malformed is not a choice"),
+        (" all", "opaque", "no trimming"),
+        ("", "opaque", "the empty string is not a choice"),
+        ("none", "opaque", "none is not a word the field has"),
+        (1, "opaque", "a number is not a choice"),
+        (True, "opaque", "a boolean is not a choice"),
+        (False, "opaque", "false is not off"),
+        (None, "opaque", "null is not a choice"),
+        (["off"], "opaque", "an array is not a choice"),
+        ({"off": True}, "opaque", "an object is not a choice"),
+    ]
+    for given, want, why in authored:
+        payload = dict(APPENDIX_A) if given is absent else {**APPENDIX_A, "constrain": given}
+        got = authored_constraint(validate(payload))
+        if got != want:
+            print(f"  AUTHORED CONSTRAIN: {given!r} gave {got!r}, expected {want!r} ({why})")
+            failures += 1
+        # Whatever a tool writes, a reader must read as the tool showed it:
+        # "off" stops nothing, the other two are what they say.
+        written = validate({**APPENDIX_A, "constrain": got})
+        if walk_constraint(written) != ("none" if got == "off" else got):
+            print(f"  AUTHORED CONSTRAIN: {got!r} written is read as {walk_constraint(written)!r}")
+            failures += 1
+    print(f"{len(walls) + 2 * len(seen_through)} constrain cases (rule 15 never rejects), every payload accepted")
+    print(f"{len(authored)} authoring cases (absent and malformed publish as opaque, off survives)")
 
     if failures:
         raise SystemExit(1)

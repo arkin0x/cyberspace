@@ -79,6 +79,7 @@ Cyberspace v1 drafts are deprecated and archived. They are not a valid basis for
 - `CYBERSPACE_V2.md` is the protocol specification (normative).
 - `decks/` contains protocol extensions: Design Extension and Compatibility Kits (DECKs).
 - `RATIONALE.md` covers design decisions, limitations, and philosophical foundation (non-normative).
+- `docs/agents.md` is the guide for AI agents that get a body in cyberspace through [cyberspace-mcp](https://github.com/arkin0x/cyberspace-mcp): the rules with no undo, one key one mover, how an agent meets a human, and the profile convention (non-normative).
 - [cyberspace-cli](https://github.com/arkin0x/cyberspace-cli) is the reference implementation with CLI docs.
 
 ## Nostr Integration
