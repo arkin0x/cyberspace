@@ -780,6 +780,8 @@ idx_i = int(SHA256(HOP_RESIDUE_SAMPLE_DOMAIN || G || be32(i))) mod m
 
 The script also prints a hop that moves on all three axes with a nonzero `previous_event_id`, single primes (one at an index above 2^32), one leaf, one attempt, and budgets above h22.
 
+`hop-residue-vectors.json` (§14) carries these golden vectors, and five more hops, the 16 checks one at a time and a set of tampered proofs with their verdicts, as machine-readable values written from the reference by `hop-residue-vectors.py`.
+
 ### 5.11 Hop verification levels
 
 **Level 1: residue openings.** A verifier checks a hop's proof as follows; §8.7.1 places these steps among the other checks of a hop.
@@ -1996,7 +1998,7 @@ The chain rules are the rules that decide which movement chains are valid and wh
 
 **Golden vectors (normative):** The golden vectors in `chain-rules-2026-09-28-virtual-brackets.json`, in this repository, lock the chain rules of revision `2026-09-28-virtual-brackets`; the reference implementation (§14) generated them; a verifier conforming to that revision MUST reach every vector's verdict, its `position` (for an invalid vector, the last valid position where the identity stands frozen) and, for an invalid vector, its `invalid_at`; the file's `reasons` field names the rule that each `reason` code stands for; and a port runs every vector in full and skips none, because every signature and proof in the vectors is real and cheap to check and their only block data is the synthetic line in `line.blocks`, which a verifier uses in place of Bitcoin mainnet (DECK-0001 §1.4) when it runs the vectors and at no other time, and it MUST check DECK-0001 §5.6 before a ride's proof, because the two zero-length ride vectors carry proofs that no Level 1 check can verify.
 
-No chain-rules golden vectors lock revision `2026-10-08-residue-openings` yet. The vectors of `2026-09-28-virtual-brackets` carry version 1 hops, which this revision rejects unless they are listed in `grandfathered-v1-hops.txt` (§5.13), so they are not vectors of this revision. Until vectors whose hops carry residue openings are added, the golden vectors of §5.10 lock the hop proof of this revision.
+No chain-rules golden vectors lock revision `2026-10-08-residue-openings` yet. The vectors of `2026-09-28-virtual-brackets` carry version 1 hops, which this revision rejects unless they are listed in `grandfathered-v1-hops.txt` (§5.13), so they are not vectors of this revision. Until vectors whose hops carry residue openings are added, the golden vectors of §5.10 lock the hop proof of this revision; `hop-residue-vectors.json` (§14) carries them as machine-readable values, so that a port can test its hop proof before chain-rules vectors of this revision exist.
 
 Note (non-normative): the rulings of 2026-10-07 and 2026-10-08 were folded into `2026-09-28-virtual-brackets` rather than named as a new revision, because no verifier had shipped claiming that revision when they were made. A chain signed before 2026-10-07 can be invalid under the rulings of that day, for example because its sector tags do not match its `C`; such a chain is frozen at its last valid position like any other invalid chain (§8.7.3). A chain signed before 2026-10-08 can be invalid under the rulings of that day, for example because it forked, and a forked chain is dead from its spawn (§8.7.3, rule 4).
 
@@ -2341,6 +2343,10 @@ This repository also carries stdlib-only reference scripts that are executable s
 - `hop-residue-reference.py`: residue openings, version 2 of the hop proof (§5.9 to §5.11, §8.4): residues of a root, the method of differences, the hop primes, the seal, the re-roll price, the draw, the tag encoding and both verification levels, with golden vectors, a cross-check that its derivation reproduces the §5.7 golden `proof_hash` and `lookup_id`, and a check that each property those sections claim actually holds, including that a prover holding only part of the true residues passes Level 1 exactly when every sample lands on a residue it holds
 - `hint-reference.py`: §7.7 and the §10 rule for bags: canonical form, containment, sector tags, seeker work, malformed hints and plane preservation, locking the golden vectors of §7.7
 - `decks/landfall-reference.py`: landfall derivation (DECK-0001 §1.2)
+
+This repository also carries machine-readable golden vectors of the hop proof, written from its reference script, so that a port in any language can test itself against the same values without running Python:
+- `hop-residue-vectors.py`: the stdlib-only script that writes `hop-residue-vectors.json` from `hop-residue-reference.py`, imported by path, after checking every value against that reference, and writes a byte-identical file on every run
+- `hop-residue-vectors.json`: the golden vectors of residue openings (§5.9 to §5.13, §8.4, §8.7.1) as machine-readable values, namely seven hops with every intermediate value and their tags, the 16 Level 1 checks of the §5.7 hop one at a time, tampered proofs and version 1 hops with the verdict a verifier must reach on each, and the prices and sizes of §5.10 and §5.12, described by its own `format` field and copied unchanged by every port into its fixtures
 
 This repository also carries the golden vectors of the chain rules, copied byte for byte from the reference implementation:
 - `chain-rules-2026-09-28-virtual-brackets.json`: signed synthetic chains with their verdicts, locking chain rules revision `2026-09-28-virtual-brackets` (§8.12); its format is described in `vectors/README.md` of the reference implementation
