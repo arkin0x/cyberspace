@@ -320,7 +320,7 @@ One trap worth knowing, since it cannot be discovered at runtime: strfry populat
 
 A reader MUST perform all of the following before rendering, and MUST reject the whole payload if any fails. A partially valid object is not rendered partially: a face index pointing past the end of the vertex list is not a defect that degrades gracefully.
 
-**The one exception is `objects` (rule 16).** A payload's `objects` field holds the payloads of objects that it places (§1.10). A reader does not check those payloads together with the payload that carries them. Instead, it checks each one on its own, by these same rules, at the time a placement draws from it. A carried payload that fails is drawn as a placeholder at each placement that names it. This is exactly what happens to an object that is fetched and fails. A failing entry is never a reason to reject the payload that carries it. That payload is unaffected, and it is still drawn.
+**The one exception is `objects` (rule 16).** A payload's `objects` field holds the payloads of objects placed in this build, at any depth beneath it (§1.10). A reader does not check those payloads together with the payload that carries them. Instead, it checks each one on its own, by these same rules, at the time a placement draws from it. A carried payload that fails is drawn as a placeholder at each placement that names it. This is exactly what happens to an object that is fetched and fails. A failing entry is never a reason to reject the payload that carries it. That payload is unaffected.
 
 1. `v` is `1` or `2`. A `type` field, if present, is ignored and never rejected on (§1.1a).
 2. `vertices`, `colors` and `faces` are arrays, and `vertices.length === colors.length`.
