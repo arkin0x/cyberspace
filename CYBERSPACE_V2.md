@@ -1998,11 +1998,75 @@ The chain rules are the rules that decide which movement chains are valid and wh
 
 **Golden vectors (normative):** The golden vectors in `chain-rules-2026-09-28-virtual-brackets.json`, in this repository, lock the chain rules of revision `2026-09-28-virtual-brackets`; the reference implementation (§14) generated them; a verifier conforming to that revision MUST reach every vector's verdict, its `position` (for an invalid vector, the last valid position where the identity stands frozen) and, for an invalid vector, its `invalid_at`; the file's `reasons` field names the rule that each `reason` code stands for; and a port runs every vector in full and skips none, because every signature and proof in the vectors is real and cheap to check and their only block data is the synthetic line in `line.blocks`, which a verifier uses in place of Bitcoin mainnet (DECK-0001 §1.4) when it runs the vectors and at no other time, and it MUST check DECK-0001 §5.6 before a ride's proof, because the two zero-length ride vectors carry proofs that no Level 1 check can verify.
 
-The golden vectors in `chain-rules-2026-10-08-residue-openings.json`, in this repository, lock the chain rules of revision `2026-10-08-residue-openings` in the same way; the reference implementation (§14) generated them too. Everything the paragraph above says of the vectors of `2026-09-28-virtual-brackets` holds for them: a verifier conforming to this revision MUST reach every vector's verdict, its `position` (for an invalid vector, the last valid position where the identity stands frozen) and, for an invalid vector, its `invalid_at`; the file's `reasons` field names the rule that each `reason` code stands for; a port runs every vector in full and skips none; the synthetic line in `line.blocks` takes the place of Bitcoin mainnet when a verifier runs the vectors and at no other time; and a verifier MUST check DECK-0001 §5.6 before a ride's proof. Every hop in them other than a version 1 hop carries residue openings (§5.9 to §5.11), except where a vector removes or damages them on purpose, and every hop in them has the smallest residue count, depth and price a hop can have: `m = 8` residues in one block, a `depth` of 0, so the seal is the one leaf, and a price of `A = 1` (§5.9, §5.10), which keeps every hop cheap to check.
+**Golden vectors of `2026-10-08-residue-openings` (normative):** The golden vectors in `chain-rules-2026-10-08-residue-openings.json`, in this repository, lock the chain rules of revision `2026-10-08-residue-openings`. They do this in the same way that the file above locks revision `2026-09-28-virtual-brackets`. The reference implementation (§14) generated them too.
 
-The file also carries a test list of version 1 hops, the ids in its `grandfathered_v1_hops` field. A verifier MUST use that list in place of `grandfathered-v1-hops.txt` when it runs the vectors, and at no other time. The vectors that lock §5.13 need version 1 hops that are listed, and no real list names a synthetic event, so they bring their own: each id on the test list is a version 1 hop signed by the vectors' test key. A verifier that runs the vectors with the real list instead finds those hops unlisted and fails those vectors. The test list is not a second exemption: outside a run of the vectors, `grandfathered-v1-hops.txt` is the only list, as §5.13 says, and the test list plays for §5.13 the part that `line.blocks` plays for DECK-0001 §1.4.
+**What a chain-rules vector is:** A chain-rules vector, or golden vector of the chain rules, is one signed, synthetic movement chain, together with the verdict that the chain rules give it. The chain is signed because every event in it is a complete nostr event, with a real id and a real signature. The keys that sign the events are test keys whose derivation the file gives (`test_key`, `other_key`). The chain is synthetic because it was generated for testing, and the only block data it uses is the synthetic block line in the file's `line.blocks` field, not Bitcoin mainnet. The verdict says whether the chain is valid, at which position the identity stands, and, for an invalid chain, at which event the chain breaks. The vectors are in the file's `vectors` field. Here is one of them, with its four events and the ids in `chain` shortened to placeholders:
 
-The vectors of `2026-09-28-virtual-brackets` carry version 1 hops, which this revision rejects unless they are listed in `grandfathered-v1-hops.txt` (§5.13), so they are not vectors of this revision; and the vectors of this revision carry version 2 hops, which `2026-09-28-virtual-brackets` rejects, so they are not vectors of that one. A verifier runs the file of the revision it states. Every vector of the earlier file is also in the later file, under the same name and with the same verdict apart from event ids. The two files differ in the hops, where the two revisions differ, and in what follows from the hops: the ids of the hops and of every event after them, and the proofs of the rides after them, which are seeded by those ids. The golden vectors of §5.10, which `hop-residue-vectors.json` (§14) carries as machine-readable values, lock the hop proof itself, at sizes the chain vectors never reach.
+```json
+{
+  "name": "hop-version-1-unlisted",
+  "spec": ["5.13", "8.4", "3.2"],
+  "description": "A version 1 hop (its proof the 5.6 proof_hash of this very hop, no mn and no mp) whose id is not on the list. This revision rejects it, so the chain is invalid from it and frozen at the hop before, and the valid version 2 hop after it does not move the identity.",
+  "events": ["<spawn>", "<version 2 hop>", "<version 1 hop>", "<version 2 hop>"],
+  "expected": {
+    "valid": false,
+    "chain": ["<event id>", "<event id>", "<event id>", "<event id>"],
+    "position": "73e16910c65f371bfed61e3d953925a286c34a1fd8aaf5644b0d318448b39ba7",
+    "reason": "hop-proof",
+    "invalid_at": "f3ce377ca71bb89fbc7f343a92432dd46bf0d670e357827040f2e4653d1ed52b",
+    "invalid_index": 2
+  }
+}
+```
+
+In this vector the third event is a version 1 hop that is not listed (both terms are defined below). The chain is therefore invalid from that event. `invalid_at` is that event's id, and `invalid_index` is its index in `chain`. `position` is the position of the hop before it, where the identity stands frozen. `reason` is a code, and the file's `reasons` field says which rule each code stands for. Here the code is `hop-proof`, which the file explains as a hop that does not verify at Level 1 (§8.7.1, §5.11). An unlisted version 1 hop is one such hop.
+
+**What a conforming verifier does with them:** Everything that the paragraph above says of the vectors of `2026-09-28-virtual-brackets` holds for these vectors too:
+
+- A verifier conforming to this revision MUST reach every vector's verdict, its `position` and, for an invalid vector, its `invalid_at`. For an invalid vector, `position` is the last valid position, where the identity stands frozen.
+- The file's `reasons` field names the rule that each `reason` code stands for.
+- A port runs every vector in full and skips none.
+- The synthetic line in `line.blocks` takes the place of Bitcoin mainnet when a verifier runs the vectors, and at no other time.
+- A verifier MUST check DECK-0001 §5.6 before a ride's proof.
+
+**The hops in these vectors:** Every hop in these vectors carries residue openings, the version 2 hop proof (§5.9 to §5.11). There are two exceptions: a version 1 hop, and a hop whose openings a vector removes or damages on purpose. Every hop in these vectors also has the smallest residue count, depth and price that a hop can have (§5.9, §5.10):
+
+- `m = 8` residues, in one block;
+- a `depth` of 0, so the seal is the one leaf;
+- a price of `A = 1`.
+
+These smallest values keep every hop cheap to check.
+
+**Version 1 hops and listed hops:** A version 1 hop is a hop whose `proof` tag is the `proof_hash` of §5.6, and which carries no `mn` tag and no `mp` tag (§5.13, §8.4). This revision rejects a version 1 hop unless the hop is listed. A listed hop is a version 1 hop whose event id is on the list of version 1 hops that §5.13 exempts. Outside a run of the vectors, that list is `grandfathered-v1-hops.txt`. The `proof` of a listed hop is accepted without being recomputed, and everything else about the hop is still checked (§5.13).
+
+**The test list:** The file also carries a test list of version 1 hops. The test list is the array of event ids in the file's `grandfathered_v1_hops.ids` field:
+
+```json
+"grandfathered_v1_hops": {
+  "description": "The test list: ...",
+  "ids": ["5ee54472bf8d2e3cbf45ec3db2a127c328363b0a9adb196d0bdff3e6f5f0086b", "..."]
+}
+```
+
+A verifier MUST use the test list in place of `grandfathered-v1-hops.txt` when it runs the vectors, and at no other time.
+
+The reason is that the vectors that lock §5.13 need version 1 hops that are listed. No real list names a synthetic event, so the vectors bring their own list. Each id on the test list is a version 1 hop signed by the vectors' test key. A verifier that runs the vectors with the real list instead finds those hops unlisted, and fails those vectors.
+
+The test list is not a second exemption. Outside a run of the vectors, `grandfathered-v1-hops.txt` is the only list, as §5.13 says. The test list does for §5.13 what `line.blocks` does for DECK-0001 §1.4: each stands in for real data, and only while the vectors run.
+
+**Each revision has its own file:** Neither file is a set of vectors of the other revision.
+
+- The vectors of `2026-09-28-virtual-brackets` carry version 1 hops. This revision rejects version 1 hops unless they are listed in `grandfathered-v1-hops.txt` (§5.13). Those vectors are therefore not vectors of this revision.
+- The vectors of this revision carry version 2 hops, which `2026-09-28-virtual-brackets` rejects. These vectors are therefore not vectors of that revision.
+
+A verifier runs the file of the revision it states.
+
+**How the two files relate:** Every vector of the earlier file is also in the later file, under the same name. Its verdict is the same, apart from the event ids it names. The two files differ in the hops, because the hops are where the two revisions differ. They also differ in what follows from the hops:
+
+- the ids of the hops, and the ids of every event after them;
+- the proofs of the rides after them, because those proofs are seeded by those ids.
+
+The golden vectors of §5.10 lock the hop proof itself, at sizes that the chain vectors never reach. `hop-residue-vectors.json` (§14) carries them as machine-readable values.
 
 Note (non-normative): the rulings of 2026-10-07 and 2026-10-08 were folded into `2026-09-28-virtual-brackets` rather than named as a new revision, because no verifier had shipped claiming that revision when they were made. A chain signed before 2026-10-07 can be invalid under the rulings of that day, for example because its sector tags do not match its `C`; such a chain is frozen at its last valid position like any other invalid chain (§8.7.3). A chain signed before 2026-10-08 can be invalid under the rulings of that day, for example because it forked, and a forked chain is dead from its spawn (§8.7.3, rule 4).
 
@@ -2356,4 +2420,4 @@ These vectors are not normative. They are written from the reference script, and
 
 This repository also carries the golden vectors of the chain rules, copied byte for byte from the reference implementation:
 - `chain-rules-2026-09-28-virtual-brackets.json`: signed synthetic chains with their verdicts, locking chain rules revision `2026-09-28-virtual-brackets` (§8.12); its format is described in `vectors/README.md` of the reference implementation
-- `chain-rules-2026-10-08-residue-openings.json`: signed synthetic chains with their verdicts, locking chain rules revision `2026-10-08-residue-openings` (§8.12), with every hop other than a version 1 hop carrying residue openings, except where a vector removes or damages them on purpose, and a test list of version 1 hops that takes the place of `grandfathered-v1-hops.txt` when the vectors run; its format is described in the same `vectors/README.md`
+- `chain-rules-2026-10-08-residue-openings.json`: signed synthetic chains with their verdicts, locking chain rules revision `2026-10-08-residue-openings` (§8.12). Every hop in it carries residue openings, except a version 1 hop and a hop whose openings a vector removes or damages on purpose. The file also carries a test list of version 1 hops, which takes the place of `grandfathered-v1-hops.txt` while the vectors run. Its format is described in the same `vectors/README.md`.
