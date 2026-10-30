@@ -2040,13 +2040,13 @@ In this vector the third event is a version 1 hop that is not listed. The chain 
 
 **The hops in these vectors:** Every hop in these vectors carries residue openings, the version 2 hop proof (§5.9 to §5.11). There are two exceptions: a version 1 hop, and a hop whose openings a vector removes or damages on purpose.
 
-A verifier derives a hop's residue count `m`, its `depth` and its price `A` from the event itself (§5.9, §5.10, §8.7.1 step 6). In every hop in these vectors, those values are the smallest that a hop can have:
+A verifier derives a hop's residue count `m`, its `depth` and its price `A` from the event itself, from the hop's coordinates and its terrain height `K`, and not from its tags (§5.9, §5.10, §8.7.1 step 6). For every hop in these vectors, those values are the smallest that a hop can have:
 
 - `m = 8` residues, which fill one residue block, the 8 residues under one Merkle leaf (§5.10);
 - a `depth` of 0. The seal is the root of the Merkle tree built over the hop's leaves, and it is the value of the hop's `proof` tag. A tree of a single leaf has depth 0, and its seal is that leaf;
 - a price of `A = 1`.
 
-This holds for the version 1 hops too. Their events derive the same values, but a version 1 hop carries no residues for a verifier to check. For a hop whose openings are intact, `mp` is then 2,048 hex characters. These smallest values keep every hop cheap to check.
+With these values, the `mp` tag of a version 2 hop whose openings are intact is 2,048 hex characters: 16 openings of 64 bytes each, with no sibling hashes (§5.10). The same smallest values hold for the version 1 hops too. A verifier derives the same values from a version 1 hop's coordinates and its terrain height `K`, but a version 1 hop carries no residues for it to check. These smallest values keep every hop cheap to check.
 
 **The test list:** The file also carries a test list of version 1 hops. The test list is the array of event ids in the file's `grandfathered_v1_hops.ids` field:
 
