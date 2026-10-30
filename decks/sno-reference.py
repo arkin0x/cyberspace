@@ -378,7 +378,7 @@ def carried_table(payload: dict, author: str | None) -> dict:
     address is ignored, and so is a key under any pubkey but `author`, the
     pubkey of the event the table travels in (for an unsigned item in a bag,
     the bag's signer). An author of None, one the reader does not know,
-    honours no key at all, never every key. The values come back unchecked:
+    honors no key at all, never every key. The values come back unchecked:
     each one is checked on its own, when a placement draws from it
     (draw_carried), never with the payload that carries it.
     """
@@ -998,7 +998,7 @@ def _self_test() -> None:
         ({GLASS: "not an object"}, GLASS, TEST_PUBKEY, "placeholder", "an entry that is not a payload fails rule 1"),
         ({GLASS: {**APPENDIX_A, "objects": {OTHER: dict(APPENDIX_A)}}}, GLASS, TEST_PUBKEY, "table", "an entry's own objects are ignored"),
         ({OTHER: dict(APPENDIX_A)}, OTHER, TEST_PUBKEY, "fetch", "a key under another pubkey is ignored, and the address fetched"),
-        ({GLASS: dict(APPENDIX_A)}, GLASS, None, "fetch", "a reader that does not know the author honours no key, never every key"),
+        ({GLASS: dict(APPENDIX_A)}, GLASS, None, "fetch", "a reader that does not know the author honors no key, never every key"),
         ({"33331:" + "AB" * 32 + ":x": dict(APPENDIX_A)}, "33331:" + "AB" * 32 + ":x", TEST_PUBKEY, "fetch", "a key that is not an address is ignored"),
         ({"glass-tetra": dict(APPENDIX_A)}, "glass-tetra", TEST_PUBKEY, "fetch", "a bare d is not an address"),
         ({"33331:" + TEST_PUBKEY + ":line\nbreak": dict(APPENDIX_A)}, "33331:" + TEST_PUBKEY + ":line\nbreak", TEST_PUBKEY, "table", "a d is any string, line breaks included"),
