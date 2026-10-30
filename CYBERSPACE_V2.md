@@ -780,7 +780,7 @@ idx_i = int(SHA256(HOP_RESIDUE_SAMPLE_DOMAIN || G || be32(i))) mod m
 
 The script also prints a hop that moves on all three axes with a nonzero `previous_event_id`, single primes (one at an index above 2^32), one leaf, one attempt, and budgets above h22.
 
-`hop-residue-vectors.json` (§14) carries these golden vectors, and five more hops, the 16 checks one at a time and a set of tampered proofs with their verdicts, as machine-readable values written from the reference by `hop-residue-vectors.py`.
+`hop-residue-vectors.json` (§14) carries these golden vectors as machine-readable values, so that a port in any language can test itself against them without running Python: the single values above, the §5.7 hop and six more hops with every value a prover computes on the way to its tags, the 16 Level 1 checks (§5.11) of the §5.7 hop one at a time, and that hop's tags changed one way at a time, each with the verdict Level 1 reaches. The file is not normative. It is written from the reference by `hop-residue-vectors.py`, and where it disagrees with this text, the text is right and the file is a bug.
 
 ### 5.11 Hop verification levels
 
@@ -2345,8 +2345,10 @@ This repository also carries stdlib-only reference scripts that are executable s
 - `decks/landfall-reference.py`: landfall derivation (DECK-0001 §1.2)
 
 This repository also carries machine-readable golden vectors of the hop proof, written from its reference script, so that a port in any language can test itself against the same values without running Python:
-- `hop-residue-vectors.py`: the stdlib-only script that writes `hop-residue-vectors.json` from `hop-residue-reference.py`, imported by path, after checking every value against that reference, and writes a byte-identical file on every run
-- `hop-residue-vectors.json`: the golden vectors of residue openings (§5.9 to §5.13, §8.4, §8.7.1) as machine-readable values, namely seven hops with every intermediate value and their tags, the 16 Level 1 checks of the §5.7 hop one at a time, tampered proofs and version 1 hops with the verdict a verifier must reach on each, and the prices and sizes of §5.10 and §5.12, described by its own `format` field and copied unchanged by every port into its fixtures
+- `hop-residue-vectors.py`: the stdlib-only script that imports `hop-residue-reference.py` by path, checks every value against it and produces `hop-residue-vectors.json`, byte for byte the same on every run; with `--check` it reports whether the file on disk is what it would produce, and it refuses to run when the reference's SHA-256 is not the one it records, so the file's provenance never goes stale
+- `hop-residue-vectors.json`: the golden vectors of residue openings (§5.9 to §5.13, §8.4, §8.7.1, §8.8) as machine-readable values, namely the single values the reference prints, seven hops with every intermediate value and their tags, the 16 Level 1 checks of the §5.7 hop one at a time, tampered proofs and version 1 hops with the verdict §5.11 and §8.7.1 give each, and the prices and sizes of §5.10 and §5.12, described by its own `format` field and copied unchanged by every port into its fixtures
+
+These vectors are not normative. They are written from the reference script, and where they disagree with the text of this specification, the text is right and the file is a bug.
 
 This repository also carries the golden vectors of the chain rules, copied byte for byte from the reference implementation:
 - `chain-rules-2026-09-28-virtual-brackets.json`: signed synthetic chains with their verdicts, locking chain rules revision `2026-09-28-virtual-brackets` (§8.12); its format is described in `vectors/README.md` of the reference implementation

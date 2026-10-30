@@ -8,15 +8,22 @@ construction as one JSON file, so that every port, in any language, tests itself
 same values without running Python: each port copies hop-residue-vectors.json unchanged into its
 fixtures and records the spec commit and the file's SHA-256 in its test.
 
-The file holds five groups:
+The file is not normative. It is written from the reference, and where it disagrees with the
+text of CYBERSPACE_V2.md, the text is right and the file is a bug.
 
+The file holds these groups:
+
+  * single: the single values the reference prints (hop primes, one root modulo p_0, one leaf,
+    one attempt), and a hop prime at an index above 2^32 beside the one it would wrap to
   * prover: seven hops, each with every intermediate value a prover computes (geometry, primes,
-    residues, the seal, the price, the draw) and its final proof, mn and mp tag values
+    each root and hop_n modulo p_0, residues, the seal, the attempt that meets the price with
+    its seed, g_base and r_g, the draw) and its final proof, mn and mp tag values
   * checks: the 16 Level 1 checks of the section 5.7 hop, one at a time, so that a port can
     test each check on its own and name the one that failed
-  * verifier: the section 5.7 hop's tags with one change each, every one with the verdict a
-    Level 1 verifier must reach, two accepted controls among them, and version 1 hops judged
-    against a grandfathered list that each vector carries itself
+  * verifier: the section 5.7 hop's tags changed one way at a time, every one with the verdict
+    section 5.11 gives it, two accepted controls among them
+  * grandfathered_v1: version 1 hops judged against a grandfathered list that each vector
+    carries itself
   * prices and sizes: B(h) for h from 0 to 60, A for sample height sets, and m, depth and the
     mp length for h_max from 0 to 47
   * provenance: the spec commit, the reference's SHA-256, this generator's name
@@ -28,10 +35,12 @@ primes and combines the four roots with pairing modulo p, which section 5.9 stat
 value. It checks that shortcut against the reference: for every hop but the h16 one, its tags
 must equal the reference's prove() exactly, and for the h16 hop a sample of residues must equal
 hop_n mod p computed from the exact hop_n. Every prover vector must pass the reference's Level 1
-verify_hop, every hop but the h16 one its Level 2 audit_hop, and every verifier vector must
-reach its verdict under the reference's verify_hop.
+verify_hop, every hop but the h16 one its Level 2 audit_hop, and every verifier vector that
+carries all three tags must reach its verdict under the reference's verify_hop.
 
-The output is deterministic: running this script again writes a byte-identical file.
+The script refuses to run when the reference's SHA-256 is not the one it records, so the
+provenance in the file is never stale. The output is deterministic: running this script again
+writes a byte-identical file.
 
 Usage:
   python3 -I hop-residue-vectors.py            writes hop-residue-vectors.json next to this file
@@ -136,6 +145,9 @@ def find_k_zero(x0: int, y0: int, z0: int, plane: int):
 def hop_cases():
     zero, alice = bytes(32), bytes(range(32))
     kx, ky, kz = find_k_zero(E, E, E, 0)
+    pz = next(z for z in range(E + 7100, E + 8192, 8)
+              if ref.terrain_k(E + 5003, E + 6000, z, 1) != ref.terrain_k(E + 5003, E + 6000, z, 0))
+    k1, k0 = ref.terrain_k(E + 5003, E + 6000, pz, 1), ref.terrain_k(E + 5003, E + 6000, pz, 0)
     return [
         ("golden-5.7",
          "The movement of section 5.7, (0, 0, 0) -> (4104, 0, 0) on plane 0, with "
@@ -168,10 +180,13 @@ def hop_cases():
          (kx, ky, kz, 1), (kx, ky, kz, 0)),
         ("into-plane-1",
          "A hop that moves on x and z and crosses from plane 0 into plane 1, so K is derived "
-         "with the plane bit set. previous_event_id is SHA-256 of the ASCII label "
+         f"with the plane bit set: K is {k1} here, and the same point on plane 0 has K = {k0}, "
+         "so a port that drops the plane bit gets a different K. The destination's z is the "
+         "first, counting up from Earth's center + 7100 in steps of 8, at which the two planes "
+         "give different K. previous_event_id is SHA-256 of the ASCII label "
          "'hop-residue-vectors into plane 1'.",
          label_id("hop-residue-vectors into plane 1"),
-         (E + 5000, E + 6000, E + 7000, 0), (E + 5003, E + 6000, E + 7100, 1)),
+         (E + 5000, E + 6000, E + 7000, 0), (E + 5003, E + 6000, pz, 1)),
         ("h16-one-axis",
          "A hop at h16 on x alone, near Earth's center, large enough that every level of a "
          "port's residue engine above the trivial ones is exercised. previous_event_id is "
@@ -195,6 +210,28 @@ def residues_of(prev: bytes, axes, temporal, m: int):
             cx, cy, cz, ct = (r % p for r in reduced)
             out.append(ref.pair_mod(ref.pair_mod(ref.pair_mod(cx, cy, p), cz, p), ct, p))
     return out
+
+
+def attempt_parts(prev: bytes, seal: bytes, nonce: int):
+    """The reference's attempt() with its intermediate values: seed, g_base, r_g and G."""
+    seed = sha256(ref.HOP_RESIDUE_GRIND_DOMAIN + prev + seal + be64(nonce))
+    g_base = ((int.from_bytes(seed, "big") % (1 << ref.AXIS_BITS)) >> ref.HOP_GRIND_HEIGHT) << ref.HOP_GRIND_HEIGHT
+    p0 = ref.hop_prime(prev, 0)
+    r_g = ref.residue_engine(g_base, ref.HOP_GRIND_HEIGHT, p0)
+    assert r_g == ref.compute_subtree_cantor(g_base, ref.HOP_GRIND_HEIGHT) % p0
+    G = sha256(ref.HOP_RESIDUE_GRIND_DOMAIN + seed + be64(r_g))
+    assert G == ref.attempt(prev, seal, nonce)
+    return {"nonce": num(nonce), "seed": seed.hex(), "g_base": dec(g_base), "r_g": dec(r_g), "G": G.hex()}
+
+
+def roots_mod_p0(prev: bytes, axes, temporal, r0: int):
+    """Each root modulo p_0, by the reference's residue tree, and the three pairings to hop_n mod p_0."""
+    p0 = ref.hop_prime(prev, 0)
+    cx, cy, cz = (ref.residue_tree(base, h, p0) for base, h in axes)
+    ct = ref.residue_tree(temporal[0], temporal[1], p0)
+    hop = ref.pair_mod(ref.pair_mod(ref.pair_mod(cx, cy, p0), cz, p0), ct, p0)
+    assert hop == r0 == ref.hop_residue(axes, temporal, p0)
+    return {"x": dec(cx), "y": dec(cy), "z": dec(cz), "t": dec(ct), "hop_n": dec(hop)}
 
 
 def build_hop(name, description, prev, src_xyzp, dst_xyzp):
@@ -244,10 +281,12 @@ def build_hop(name, description, prev, src_xyzp, dst_xyzp):
         "primes_sha256": sha256(b"".join(be64(p) for p in primes)).hex(),
         "residues_first_8": [dec(r) for r in residues[:8]],
         "residues_sha256": sha256(b"".join(be64(r) for r in residues)).hex(),
+        "roots_mod_p0": roots_mod_p0(prev, axes, temporal, residues[0]),
         "leaf_0": levels[0][0].hex(),
         "seal": seal.hex(),
         "nonce": num(nonce),
         "G": G.hex(),
+        "attempt": attempt_parts(prev, seal, nonce),
         "attempt_nonce_0": ref.attempt(prev, seal, 0).hex(),
         "indices": [num(i) for i in indices],
         "tags": {"proof": proof, "mn": mn, "mp": mp},
@@ -390,11 +429,66 @@ def verifier_vectors(s):
          f"G of nonce {s['nonce']}.",
          {"proof": proof, "mn": alt_mn, "mp": mp}, "reject")
 
+    # Lax hex: each mn below is 16 characters that Python's int(s, 16) reads as the golden nonce,
+    # which meets the price, so only the form check of section 8.4 rejects them.
+    for name, bad_mn, what in (("mn-0x-prefix", "0x" + mn[2:], "a '0x' prefix"),
+                               ("mn-plus-sign", "+" + mn[1:], "a leading '+'"),
+                               ("mn-underscore", mn[:4] + "_" + mn[5:], "an '_' between digits")):
+        assert len(bad_mn) == 16 and int(bad_mn, 16) == s["nonce"]
+        case(name, f"mn is 16 characters with {what}, which a lenient hex parser reads as nonce "
+             f"{s['nonce']}, the golden nonce; it is not 16 lowercase hex digits.",
+             {"proof": proof, "mn": bad_mn, "mp": mp}, "reject")
+    case("mp-letter-g", "mp with its last character replaced by 'g'; the same length otherwise.",
+         {"proof": proof, "mn": mn, "mp": mp[:-1] + "g"}, "reject")
+    case("proof-with-space", "proof with its first character replaced by a space; still 64 characters.",
+         {"proof": " " + proof[1:], "mn": mn, "mp": mp}, "reject")
+    case("mn-missing", "The golden proof and mp, and no mn tag.", {"proof": proof, "mp": mp}, "reject")
+    case("mp-missing", "The golden proof and mn, and no mp tag.", {"proof": proof, "mn": mn}, "reject")
+
+    # Failures past sample 0.
+    last = ref.HOP_SAMPLES - 1
+    flipped_last = list(s["openings"][last][0])
+    flipped_last[s["indices"][last] % B] ^= 1
+    openings = list(s["openings"])
+    openings[last] = (flipped_last, openings[last][1])
+    case("last-sampled-residue-flipped",
+         f"In opening {last}, the last one, the sampled residue has its lowest bit flipped; "
+         f"openings 0 to {last - 1} are untouched and pass.",
+         {"proof": proof, "mn": mn, "mp": ref.encode_tags(seal, s["nonce"], openings)[2]}, "reject")
+
+    mid, level = 7, s["depth"] // 2
+    path = list(s["openings"][mid][1])
+    path[level] = path[level][:-1] + bytes([path[level][-1] ^ 1])
+    openings = list(s["openings"])
+    openings[mid] = (openings[mid][0], path)
+    case("middle-sibling-flipped",
+         f"In opening {mid}, sibling {level} (counting from 0 at the leaf level) has the lowest "
+         "bit of its last byte flipped, so its residue check passes and its path misses the seal.",
+         {"proof": proof, "mn": mn, "mp": ref.encode_tags(seal, s["nonce"], openings)[2]}, "reject")
+
+    a, b = 3, 4
+    assert s["indices"][a] // B != s["indices"][b] // B
+    openings = list(s["openings"])
+    openings[a], openings[b] = openings[b], openings[a]
+    case("two-openings-swapped",
+         f"Openings {a} and {b}, of different blocks, change places; each is a true opening, "
+         "in the wrong slot.",
+         {"proof": proof, "mn": mn, "mp": ref.encode_tags(seal, s["nonce"], openings)[2]}, "reject")
+
     other_prev = bytes(range(32))
-    case("copied-to-another-previous-event-id",
+    case("copied-to-another-previous-event-id-misses-price",
          "The section 5.7 hop's tags unchanged, on a hop with the same c and C whose "
-         "previous_event_id is the bytes 0x00 to 0x1f.",
+         "previous_event_id is the bytes 0x00 to 0x1f; under that previous_event_id the golden "
+         "nonce misses the price.",
          {"proof": proof, "mn": mn, "mp": mp}, "reject", other_prev)
+    regrind = next(n for n in range(1 << 20) if ref.meets_price(ref.attempt(other_prev, seal, n), A))
+    case("copied-to-another-previous-event-id-reground",
+         "The section 5.7 hop's seal and mp, on a hop with the same c and C whose "
+         f"previous_event_id is the bytes 0x00 to 0x1f, with mn re-ground to nonce {regrind}, the "
+         "first that meets the price under that previous_event_id: it passes the price and fails "
+         "at the openings, because the primes, leaves and draw all change with the "
+         "previous_event_id.",
+         {"proof": proof, "mn": be64(regrind).hex(), "mp": mp}, "reject", other_prev)
 
     rng = random.Random("hop-residue-vectors fabricated")
     junk = [rng.getrandbits(61) for _ in range(s["m"])]
@@ -410,13 +504,22 @@ def verifier_vectors(s):
 
     out = []
     for name, description, prev_id, tags, expected in cases:
-        verdict = ref.verify_hop(prev_id, src, dst, tags["proof"], tags["mn"], tags["mp"])
-        failure = first_failure(prev_id, src, dst, tags["proof"], tags["mn"], tags["mp"])
+        if all(k in tags for k in ("proof", "mn", "mp")):
+            verdict = ref.verify_hop(prev_id, src, dst, tags["proof"], tags["mn"], tags["mp"])
+            failure = first_failure(prev_id, src, dst, tags["proof"], tags["mn"], tags["mp"])
+        else:
+            verdict, failure = False, {"step": "form"}      # a hop with mn or mp missing (8.7.1 step 7)
         assert verdict == (expected == "accept") == (failure is None), name
         out.append({"name": name, "description": description, "previous_event_id": prev_id.hex(),
                     "c": coord_hex(src), "C": coord_hex(dst), "tags": tags,
                     "expected": expected, "first_failure": failure})
-    assert out[-1]["first_failure"] == {"step": "residue", "sample": 0}
+    failures = {v["name"]: v["first_failure"] for v in out}
+    assert failures["fabricated-commitment"] == {"step": "residue", "sample": 0}
+    assert failures["last-sampled-residue-flipped"] == {"step": "residue", "sample": last}
+    assert failures["middle-sibling-flipped"] == {"step": "path", "sample": mid}
+    assert failures["two-openings-swapped"]["sample"] == a
+    assert failures["copied-to-another-previous-event-id-misses-price"] == {"step": "price"}
+    assert failures["copied-to-another-previous-event-id-reground"]["step"] in ("residue", "path")
     return out
 
 
@@ -437,14 +540,18 @@ def parse_grandfathered(text: str):
     return ids
 
 
-def v1_verdict(event_id: str, tags, listed: str) -> str:
-    """Section 8.7.1 step 7 for a hop without mn and mp: its proof is accepted without
-    recomputation when its id is listed and the proof is 32-byte lowercase hex, and the hop is
-    rejected otherwise."""
-    assert "mn" not in tags and "mp" not in tags
-    if event_id in parse_grandfathered(listed) and ref.is_lower_hex(tags["proof"], 64):
-        return "accept"
-    return "reject"
+def v1_verdict(event_id: str, tags, listed: str, depth: int) -> str:
+    """Section 8.7.1 step 7 for a hop without both mn and mp: its proof is accepted without
+    recomputation when its id is listed, the proof is 32-byte lowercase hex and any mn or mp it
+    carries is well formed (section 8.8); an unlisted hop missing mn or mp is rejected."""
+    assert not ("mn" in tags and "mp" in tags)
+    if event_id not in parse_grandfathered(listed) or not ref.is_lower_hex(tags["proof"], 64):
+        return "reject"
+    if "mn" in tags and not ref.is_lower_hex(tags["mn"], 16):
+        return "reject"
+    if "mp" in tags and not ref.is_lower_hex(tags["mp"], ref.HOP_SAMPLES * ref.opening_width(depth)):
+        return "reject"
+    return "accept"
 
 
 def v1_vectors(s):
@@ -463,11 +570,22 @@ def v1_vectors(s):
          "the id only on a comment line, which names nothing. A version 1 hop that is not "
          "listed is rejected (section 5.13).",
          header + f"{V1_OTHER_ID}\n# {V1_STAND_IN_ID}\n", "reject"),
+        ("version-1-listed-with-mn",
+         "The listed version 1 hop, also carrying one well-formed mn tag (the golden mn) and no "
+         "mp. A listed hop MAY lack mn and mp, and a tag it may lack appears exactly once when "
+         "it is carried (section 8.8); its proof is still accepted without steps 8 to 11 of "
+         "section 8.7.1, so the mn is never checked against it.",
+         header + f"{V1_OTHER_ID}\n{V1_STAND_IN_ID} the section 5.7 movement, version 1\n", "accept"),
+        ("version-1-listed-with-mp",
+         "The listed version 1 hop, also carrying one well-formed mp tag (the golden mp, of the "
+         "width section 8.4 gives this hop) and no mn; accepted for the same reason.",
+         header + f"{V1_OTHER_ID}\n{V1_STAND_IN_ID} the section 5.7 movement, version 1\n", "accept"),
     ]
+    extra = {"version-1-listed-with-mn": {"mn": s["mn"]}, "version-1-listed-with-mp": {"mp": s["mp"]}}
     out = []
     for name, description, listed, expected in lists:
-        tags = {"proof": v1}
-        assert v1_verdict(V1_STAND_IN_ID, tags, listed) == expected, name
+        tags = {"proof": v1, **extra.get(name, {})}
+        assert v1_verdict(V1_STAND_IN_ID, tags, listed, s["depth"]) == expected, name
         out.append({"name": name, "description": description, "event_id": V1_STAND_IN_ID,
                     "previous_event_id": s["prev"].hex(), "c": coord_hex(s["src"]),
                     "C": coord_hex(s["dst"]), "tags": tags, "grandfathered_v1_hops": listed,
@@ -500,6 +618,45 @@ def sizes():
 
 
 # ------------------------------------------------------------- the file
+def single():
+    """The single values the reference prints under 'golden vectors', asserted against the
+    values it prints, and p_j at j = 2^32 + 1 beside p_1, which a port that truncates j to 32
+    bits computes in its place."""
+    zero, alice = bytes(32), bytes(range(32))
+    p0 = ref.hop_prime(zero, 0)
+    printed = [
+        ("hop_prime", {"previous_event_id": zero.hex(), "j": 0}, ref.hop_prime(zero, 0),
+         2501841973170584791),
+        ("hop_prime", {"previous_event_id": zero.hex(), "j": 1}, ref.hop_prime(zero, 1),
+         2618389119072288907),
+        ("hop_prime", {"previous_event_id": alice.hex(), "j": (1 << 32) + 7},
+         ref.hop_prime(alice, (1 << 32) + 7), 2312994185035543211),
+        ("compute_subtree_cantor mod p_0", {"base": "0", "height": 13, "previous_event_id": zero.hex()},
+         ref.residue_engine(0, 13, p0), 1029284475922672212),
+    ]
+    out = []
+    for function, args, value, want in printed:
+        assert value == want, (function, args)
+        out.append({"function": function, "arguments": args, "value": dec(value)})
+    assert ref.compute_subtree_cantor(0, 13) % p0 == 1029284475922672212
+    leaf = ref.leaf_hash(zero, 0, range(8)).hex()
+    assert leaf == "00c942b65989da9b328046529a5a562f5b84c8ea7e8efede74327049ef56980c"
+    out.append({"function": "leaf_hash", "arguments": {"previous_event_id": zero.hex(), "block": 0,
+                                                        "residues": [dec(r) for r in range(8)]},
+                "value": leaf})
+    G = ref.attempt(zero, zero, 0).hex()
+    assert G == "1439c95b252433fb12119e3c1cf65b6c15e951cb29e45b072bdece84d9695ea0"
+    out.append({"function": "attempt", "arguments": {"previous_event_id": zero.hex(),
+                                                      "seal": zero.hex(), "nonce": 0}, "value": G})
+    wide, narrow = ref.hop_prime(alice, (1 << 32) + 1), ref.hop_prime(alice, 1)
+    assert wide != narrow
+    out.append({"function": "hop_prime", "arguments": {"previous_event_id": alice.hex(), "j": (1 << 32) + 1},
+                "value": dec(wide),
+                "note": "differs from hop_prime at j = 1 (" + dec(narrow) + "), the prime a port "
+                        "computes if it truncates j to 32 bits; be64(j) carries all 64 bits"})
+    return out
+
+
 def constants():
     return {
         "HOP_RESIDUE_PRIME_DOMAIN": ref.HOP_RESIDUE_PRIME_DOMAIN.decode("ascii"),
@@ -534,12 +691,18 @@ FORMAT = [
     "In verifier, a tag missing from tags is missing from the event. first_failure names the "
     "first check that fails when the steps of section 5.11 run in order (form, price, then for "
     "each sample in ascending i its residue and then its path); a port that orders its checks "
-    "differently must still reach expected, and may fail at a different step.",
+    "differently reaches the same expected verdict, and may fail at a different step. A "
+    "vector with mn or mp missing fails at form (section 8.7.1 step 7).",
     "In grandfathered_v1, event_id is a stand-in, SHA-256 of an ASCII label rather than the "
     "NIP-01 hash of a signed event, because the vector tests only the list lookup of section "
     "8.7.1 step 7, and grandfathered_v1_hops is the text of a list in the format of "
     "grandfathered-v1-hops.txt that the vector injects in place of the real one. expected is "
     "the verdict on the hop's proof; the rest of the hop is checked as for any other hop.",
+    "In prover, roots_mod_p0 gives each axis root and the temporal root modulo p_0, and hop_n "
+    "modulo p_0, which is r_0; attempt gives the seed, g_base, r_g and G of the attempt whose "
+    "nonce meets the price.",
+    "In single, each entry names the reference function and its arguments, as the reference "
+    "prints them, with ids written as hex.",
 ]
 
 
@@ -565,9 +728,12 @@ def build():
         reference_sha = hashlib.sha256(f.read()).hexdigest()
     return {
         "description": "Golden vectors of residue openings, version 2 of the hop proof "
-                       "(CYBERSPACE_V2 sections 5.9 to 5.13, 8.4, 8.7.1, 8.8), generated by "
-                       f"{GENERATOR_NAME} from {REFERENCE_NAME}. A port copies this file "
-                       "unchanged into its fixtures and must reproduce every value.",
+                       "(CYBERSPACE_V2 sections 5.9 to 5.13, 8.4, 8.7.1, 8.8), written by "
+                       f"{GENERATOR_NAME} from {REFERENCE_NAME}. This file is not normative: "
+                       "it is written from the reference, and where it disagrees with the text "
+                       "of CYBERSPACE_V2.md, the text is right and the file is a bug. A port "
+                       "copies it unchanged into its fixtures and tests that it reproduces every "
+                       "value.",
         "provenance": {
             "spec_commit": SPEC_COMMIT,
             "reference": REFERENCE_NAME,
@@ -577,6 +743,7 @@ def build():
         },
         "format": FORMAT,
         "constants": constants(),
+        "single": single(),
         "prover": hops,
         "checks": checks_of("golden-5.7", golden),
         "verifier": verifier_vectors(golden),
