@@ -39,7 +39,7 @@ Doors and looks (§3.6, §3.7) are written down ahead of the clients. As of ONOS
 - **Room bag:** a `kind 33330` bag that holds what is hidden in a room at the room's height. It is encrypted with the room key, and it carries no public tag that says where it is, at what height, or what it holds (§3.7.2).
 - **SNO object payload:** the JSON object that DECK-0003 §1.1 defines for one 3D object: its vertices, colors and faces, and some optional fields. A `kind 3330` shard carries one in its `content`. A small payload looks like `{"v":2,"name":"Panel","unit":0,"mode":"solid","vertices":[...],"colors":[...],"faces":[...]}`.
 - **Look:** a SNO object payload carried in a chest's `look` tag, which a reader draws where the chest stands. The **closed look**, `["look", "<payload>"]`, is drawn until the chest or door is opened. The **open look**, `["look", "<payload>", "open"]`, is drawn after that (§3.6).
-- **Address, ref and placement:** as DECK-0003 defines them. An **address** names an addressable event the way a nostr `a` tag does, and an object's address is `33331:<pubkey hex>:<d>`. A **ref** is one entry of an object's `refs` list, such as `["a", "33331:<pubkey hex>:<d>"]`, and names one object that the object places. A **placement** is one entry of its `parts` list: eight integers that say which ref is placed, where its origin stands, how it turns, and how it scales (DECK-0003 §1.10).
+- **Address, ref and placement:** as DECK-0003 defines them. An **address** names an addressable event the way a nostr `a` tag does, and an object's address is `33331:<pubkey hex>:<d>`. A **ref** is one entry of an object's `refs` list, such as `["a", "33331:<pubkey hex>:<d>"]`, and names one object that the object places. A **placement** is one entry in an object's `parts` list. It is eight integers, in this order: the index of the ref that is placed; where the placed object's origin stands, as X, Y and Z in ticks, where one tick is one 120th of a model unit (DECK-0003 §1.2); its turn about X, Y and Z, in whole degrees; and its scale step. For example, `[0, 240, 0, 0, 0, 90, 0, 0]` places ref `0` with its origin 240 ticks (two units) along X, turns it 90 degrees about Y, and keeps its own scale (DECK-0003 §1.10).
 - **Objects table (`objects`):** an optional field of a SNO object payload (DECK-0003 §1.10). It is a JSON object. Each key is the address that an `a` ref names, such as `"33331:<pubkey hex>:0d4b8f1e2c97a356"`, and each value is the payload of the object at that address. A reader draws a placed object from the table instead of fetching it. An object whose payload travels this way is a **carried object**. A reader honors only the keys under one pubkey, the **pubkey that counts** for the table: the pubkey that the reader can verify as the author of the event the table travels in (DECK-0003 §1.10 gives it for each kind of event).
 - **Walker:** a viewer that a reader moves through the world a step at a time, as a person walks. A payload's `constrain` field, `"all"`, `"opaque"` or `"off"`, says whether its faces stop a walker (DECK-0003 §1.12).
 
@@ -216,7 +216,7 @@ The decrypted plaintext is read as a list of entries under `CYBERSPACE_V2.md` §
 - An unsigned item is kept. A reader identifies it by its canonical id, whatever `id` it carries, so that a claimed id cannot stand in for another item's. Its `pubkey` is a claim, and a reader MUST NOT present it as verified unless the chest vouches for it, as the next rule says.
 - **Rumors in a chest:** A message rumor, or a hidden audio rumor, is vouched for by the chest that holds it when all three of these hold: the rumor's `pubkey` equals the chest's own `pubkey`; the rumor's `id` is its canonical id; and the chest's own authorship is verified, because the chest is signed and its signature verifies. A reader that keeps a vouched-for rumor MUST attribute its content to the chest's signer, and MAY present that authorship as verified. Reason: the chest's signature covers its `content`, which decrypts to exactly one list, in which this rumor's `pubkey` is the chest's own. This is the rule of `CYBERSPACE_V2.md` §7.6 ("Inside an item"), and it applies at every depth.
 - **The chest's own signer, never the bag's:** The key that vouches for a rumor is the `pubkey` of the chest the rumor is in. It is never the author of the bag that holds the chest, and never the signer of an outer chest. A chest inside another chest may have been sealed by someone else, for example when a hider seals a copy of a chest they took into a chest of their own; a rumor inside it that names the bag's author is a claim.
-- **A chest that is a claim vouches for nothing:** When a chest's own authorship is not verified, every rumor inside it has a `pubkey` that is a claim. `CYBERSPACE_V2.md` §7.6 also counts a chest that is itself a rumor vouched for by what holds it; writers do not write one (§3.1), and since writers write only messages and hidden audio as rumors, a reader MAY read an unsigned chest, or a rumor of any kind other than `1` and `1063`, as an unsigned item whose `pubkey` is a claim. ONOSENDAI and cyberspace-mcp drop an unsigned chest found directly in a bag, and keep one found inside another chest as a claim, so that nothing inside it is vouched for.
+- **A chest that is a claim vouches for nothing:** When a chest's own authorship is not verified, every rumor inside it has a `pubkey` that is a claim. `CYBERSPACE_V2.md` §7.6 also counts a chest that is itself a rumor: such a chest is vouched for by what holds it. Writers do not write such a chest (§3.1). Writers write only messages and hidden audio as rumors. A reader therefore MAY read an unsigned chest, or a rumor of any kind other than `1` and `1063`, as an unsigned item whose `pubkey` is a claim. ONOSENDAI and cyberspace-mcp drop an unsigned chest found directly in a bag. They keep an unsigned chest found inside another chest, as a claim, so that nothing inside it is vouched for.
 - **Signed messages:** A reader MUST still accept a signed message whose signature verifies, because messages sealed into chests before 2026-10-20 are signed. Its author is a fact on the strength of its own signature.
 - A reader MUST NOT drop an item for carrying `-` or for lacking it.
 - A chest MAY hold items of any kind, including items (§2) and other chests. The one exception is a door, which is never sealed into a chest (§3.7.1). A chest holding the item that opens the next chest is a chain.
@@ -229,11 +229,12 @@ Note (non-normative): readers before 2026-10-26 drew a chest's contents in the w
 
 **Taking:** Taking something out of an opened chest copies it into the reader's own keeping. A reader MAY offer to take one thing at a time, and to take everything at once. Taking removes nothing: the chest still holds what was taken, for the next reader. A taken copy of a rumor proves nothing to anyone else. It has no signature, and the chest that vouched for it is not part of the copy. A client MAY keep, with what it took, whether the author was verified when its user opened the chest. cyberspace-mcp's `take` does this: it keeps what `open_chest` said. That record is the reader's own, and nobody else can check it.
 
-**Taking an object that carries its parts:** This rule applies wherever DECK-0003 lets an object payload carry the objects it places, in an objects table (`objects`, DECK-0003 §1.10). A reader honors a table entry only when its key is under the pubkey that counts for that table, the verifiable author of the event the table travels in (DECK-0003 §1.10). That pubkey is not the taker's, unless the taker wrote the object. Suppose a taker copies such an object out of a chest, and later hides the copy under their own key. Every key in the copy's table would still be under the original author's pubkey, so a reader would ignore every entry, and the copy would lose every carried part. A reader that copies such an object into its user's keeping SHOULD therefore re-key the table under its user's pubkey:
+**Taking an object that carries its parts:** This rule applies wherever DECK-0003 lets an object payload carry the objects it places, in an objects table (`objects`, DECK-0003 §1.10). A reader honors a table entry only when its key is under the pubkey that counts for that table, the verifiable author of the event the table travels in (DECK-0003 §1.10). That pubkey is not the taker's, unless the taker is that author. Suppose a taker copies such an object out of a chest, and later hides the copy under their own key. Every key in the copy's table would still be under the original author's pubkey, so a reader would ignore every entry, and the copy would lose every carried part. A reader that copies such an object into its user's keeping SHOULD therefore re-key the table under its user's pubkey:
 
 - each carried object gets an address of its own, `33331:<user pubkey hex>:<d>`, with a fresh `d`, such as 16 random hex characters;
 - the table's key for that object becomes the new address;
-- every `refs` entry that named the old address is rewritten to name the new one.
+- every `refs` entry that named the old address is rewritten to name the new one;
+- the table's keys are then written again in code point order (DECK-0003 §1.2).
 
 For example, a taker re-keys the ref `["a", "33331:<hider pubkey hex>:0d4b8f1e2c97a356"]`, and the table key `"33331:<hider pubkey hex>:0d4b8f1e2c97a356"`, to `["a", "33331:<taker pubkey hex>:5e0a3c91d27f4b68"]` and `"33331:<taker pubkey hex>:5e0a3c91d27f4b68"`. An object placed by an address that is not in the table is a link, which follows its author's edits, and is left as it is.
 
@@ -262,8 +263,8 @@ A `look` tag with two elements is the closed look. A `look` tag whose third elem
 
 **Which tags count:** A reader picks the closed look and the open look by the shape of the tags alone, before it reads any payload:
 
-- A `look` tag is **well-formed** when its second element is a string, and it either has exactly two elements or has the string `open` as its third element.
-- A well-formed `look` tag with exactly two elements is a closed look. A well-formed `look` tag whose third element is `open` is an open look.
+- A `look` tag is **well-formed** when its second element is a string, and it has either exactly two elements, or exactly three elements with the string `open` as the third.
+- A well-formed `look` tag with exactly two elements is a closed look. A well-formed `look` tag with exactly three elements, the third being `open`, is an open look.
 - The first well-formed closed look is the one that counts, and so is the first well-formed open look. A reader ignores every other `look` tag.
 
 A `look` tag whose third element is a word the reader does not know, such as `["look", "<payload>", "ajar"]`, is neither a closed look nor an open look, so it never counts.
@@ -294,7 +295,7 @@ A writer that wants a public object turned, scaled or moved writes a look whose 
 }
 ```
 
-A look MAY also carry objects that its author never published, in an objects table (`objects`, DECK-0003 §1.10), wherever DECK-0003 allows a payload to carry one. The pubkey that counts for a look's table is, as DECK-0003 §1.10 says of every table, the pubkey that the reader can verify as the author of the event that the table travels in. A look travels in the chest event, so that pubkey is the signer of the chest, or of the door when the chest is a door. The carried objects are then copies, drawn as they were when the hider sealed the chest.
+A look MAY also carry objects that its author never published, in an objects table (`objects`, DECK-0003 §1.10), wherever DECK-0003 allows a payload to carry one. DECK-0003 §1.10 gives every table one pubkey that counts: the pubkey that the reader can verify as the author of the event that the table travels in. A look travels in the chest event, so for a look's table that pubkey is the chest's signer. A door is a chest, so for a door's look it is the door's signer. A chest whose signature does not verify has no pubkey that counts, so a reader honors no key in its look's table. It never uses the signer of an outer chest. The carried objects are then copies, drawn as they were when the hider sealed the chest.
 
 Note (non-normative): whether a look is a copy or a live placement follows where its author took the object from, as DECK-0003 §1.10 describes for parts. An object taken from the author's own workshop becomes a look that is the object itself, with any parts its author never published carried in its objects table. An object picked from the feed becomes a look whose only content is one placement of the public object. That look can be turned and scaled, and it still follows its author's edits.
 
@@ -308,11 +309,11 @@ Note (non-normative): whether a look is a copy or a live placement follows where
 
 A closed door therefore stops a walker who has not opened it, as far as its closed look's `constrain` says. §6 explains why this is a courtesy and not a lock.
 
-**Size:** A look rides inside the bag with everything else the bag holds. Every rewrite of the bag therefore carries the look again. A writer SHOULD keep looks small. (Non-normative: ONOSENDAI refuses a look over 16,384 bytes. That is the size above which it hides a shard by reference instead of inline, DECK-0003 §3.2.)
+**Size:** A look rides inside the bag with everything else the bag holds. Every rewrite of the bag therefore carries the look again. A writer SHOULD keep looks small. (Non-normative: ONOSENDAI's design refuses a look over 16,384 bytes. That is the size above which it hides a shard by reference instead of inline, DECK-0003 §3.2.)
 
 **Older readers:** A reader that does not know `look` draws the chest as it always has.
 
-**Built-in looks (non-normative):** ONOSENDAI offers looks of its own. When it writes one of them, it writes an ordinary look, with the whole payload in the `look` tag, like any other look. As of ONOSENDAI `7a3ceec` it has two, each with an open version:
+**Built-in looks (non-normative):** ONOSENDAI offers looks of its own. When it writes one of them, it will write an ordinary look, with the whole payload in the `look` tag, like any other look. As of ONOSENDAI `7a3ceec` it has two, each with an open version:
 
 - for a chest, a treasure chest about one gibson across, with its origin at the middle of its base, drawn closed and drawn with its lid up;
 - for a door, a slab half a gibson thick that fills the Maze Kit's standard door opening, 2 by 3 gibsons.
@@ -327,7 +328,7 @@ What a door locks is its **room**: the region of the door's own height that hold
 
 Opening the door gives the reader the door secret. The door secret and the place together give the room key. With the room key, the reader opens the room bag, and the room's contents then stand where they were hidden (§3.7.3).
 
-Note (non-normative): an example. A Maze Kit tile is 16 gibsons on a side, which is exactly one aligned region of height 4 (2^4 = 16). A door hidden in that tile with height 4 locks the tile at height 4. A statue that the door's author then hides in the tile at height 4 goes into the room bag, and appears only to someone who opens the door. A statue hidden in the same tile at height 6 goes into the ordinary bag of height 6, and anyone who computes that bag's key finds it.
+Note (non-normative): an example. A Maze Kit tile placed on the grid is 16 gibsons on a side, which is exactly one aligned region of height 4 (2^4 = 16). A door hidden in that tile with height 4 locks the tile at height 4. A statue that the door's author then hides in the tile at height 4 goes into the room bag, and appears only to someone who opens the door. A statue hidden in the same tile at height 6 goes into the ordinary bag of height 6, and anyone who computes that bag's key finds it.
 
 #### 3.7.1 Shape
 
@@ -459,7 +460,9 @@ Only a writer that knows the door secret can seal a door of the room to a differ
 
 #### 3.7.8 Removing a door
 
-**One of several doors:** When a room has more than one door (§3.7.5), removing one of them removes only that door event, from the bag that holds it. The room's entries stay in the room bag, and the room bag stays where it is, as long as any other door still opens the room. The reason is that the other doors still open the room, and whoever holds what opens them keeps access to the room.
+**One of several doors:** When a room has more than one door (§3.7.5), removing one of them removes only that door event, from the bag that holds it. The room's entries stay in the room bag, and the room bag stays published, as long as any other door still opens the room. The reason is that moving the entries out would show them to everyone at the place, and removing them would take them from the holders of the other doors' keys, although those doors still stand.
+
+Note (non-normative): removing a door does not shut out anyone who already opened it, because they keep the door secret. A writer that removes a door to shut those people out should also rotate the room (§3.7.7).
 
 **The last door:** A writer that removes the last door of a room first deals with the room's entries, in one of two ways:
 
@@ -474,7 +477,7 @@ A writer that knows the door secret MUST NOT leave behind a room bag that no doo
 
 #### 3.7.9 Why a door has a bag of its own (non-normative)
 
-- **Size:** A chest is one NIP-44 payload, and holds at most 65,535 bytes. A room built from the Maze Kit's pieces takes 7 to 93 KB. A room bag is a bag, so its large entries go by reference, as any bag's do.
+- **Size:** A chest is one NIP-44 payload, and holds at most 65,535 bytes. A room built from the Maze Kit holds pieces of 7 to 93 KB each. A room bag is a bag, so its large entries go by reference, as any bag's do.
 - **Hiding in a room is a bag write:** Hiding one more thing in a room rewrites the room bag, exactly as hiding something anywhere rewrites a bag. The door itself is untouched. A writer that knows the door secret needs nothing else to add to the room.
 - **The region key alone opens nothing behind a door:** Suppose a room's contents were events sealed with the region key, and named only from inside the door. Anyone at the place could then try the region key on every recent sealed event, and open the room's contents without the lock. With the room key, they need the door.
 - **Nothing public points at the room:** A room bag's `d` is a hash of a key that only openers hold. The room bag states no height and no contents. What a relay sees is that one author published two bags close together in time, which it sees of anyone who hides things twice.
