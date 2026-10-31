@@ -2003,7 +2003,7 @@ The chain rules are the rules that decide which movement chains are valid and wh
 **What a chain-rules vector is:** A chain-rules vector, or golden vector of the chain rules, is one signed, synthetic movement chain, together with the verdict that the chain rules give it.
 
 - **Signed** means that every event in the chain is a complete nostr event, with a real id and a real signature. The events are signed with test keys. The file gives the derivation of each key (`test_key`, `other_key`), and it also gives the secret key of `test_key`.
-- **Synthetic** means that the chain was generated for testing and uses no Bitcoin data. Its only block data is the synthetic block line: eight made-up blocks, each with a height, a block hash and a Merkle root, in the file's `line.blocks` field. A verifier uses that line in place of Bitcoin mainnet (DECK-0001 §1.4) when it runs the vectors.
+- **Synthetic** means that the chain was generated for testing. Most events in these chains have nothing to do with Bitcoin. The exceptions are the hyperspace actions of DECK-0001: boarding the line (`enter-hyperspace`) and riding it (`hyperjump`, a ride). Those actions point at blocks on the Bitcoin block line (DECK-0001 §1.4). In these vectors they point at eight made-up blocks instead of real Bitcoin blocks. The made-up blocks are listed in the file's `line.blocks` field, called the synthetic block line, each with a height, a block hash and a Merkle root. A verifier uses that line in place of Bitcoin mainnet when it runs the vectors. As a result the vectors are self-contained, and every verifier gets the same answer without fetching Bitcoin data.
 
 The verdict says whether the chain is valid, at which position the identity stands, and, for an invalid chain, at which event the chain breaks. The vectors are in the file's `vectors` field.
 
@@ -2035,15 +2035,15 @@ In this vector the third event is a version 1 hop that is not listed. The chain 
 - A verifier conforming to this revision MUST reach every vector's verdict, its `position` and, for an invalid vector, its `invalid_at`. For an invalid vector, `position` is the last valid position, where the identity stands frozen.
 - The file's `reasons` field names the rule that each `reason` code stands for.
 - A port runs every vector in full and skips none.
-- The synthetic line in `line.blocks` takes the place of Bitcoin mainnet when a verifier runs the vectors, and at no other time.
+- For the hyperspace actions of DECK-0001, the synthetic block line in `line.blocks` takes the place of Bitcoin mainnet when a verifier runs the vectors, and at no other time.
 - A verifier MUST check DECK-0001 §5.6 before a ride's proof.
 
 **The hops in these vectors:** Every hop in these vectors carries residue openings, the version 2 hop proof (§5.9 to §5.11). There are two exceptions: a version 1 hop, and a hop whose openings a vector removes or damages on purpose.
 
 A verifier derives a hop's residue count `m`, its `depth` and its price `A` from the event itself, from the hop's coordinates and its terrain height `K`, and not from its tags (§5.9, §5.10, §8.7.1 step 6). For every hop in these vectors, those values are the smallest that a hop can have:
 
-- `m = 8` residues, which fill one residue block, the 8 residues under one Merkle leaf (§5.10);
-- a `depth` of 0. The seal is the root of the Merkle tree built over the hop's leaves, and it is the value of the hop's `proof` tag. A tree of a single leaf has depth 0, and its seal is that leaf;
+- `m = 8` residues, which fill one residue block (§5.10). A residue block is a group of 8 residues that the hop proof hashes into one leaf of its own Merkle tree. It has nothing to do with Bitcoin blocks;
+- a `depth` of 0. The seal is the root of the hop proof's Merkle tree, built over its residue leaves, and it is the value of the hop's `proof` tag. A tree of a single leaf has depth 0, and its seal is that leaf;
 - a price of `A = 1`.
 
 With these values, the `mp` tag of a version 2 hop whose openings are intact is 2,048 hex characters: 16 openings of 64 bytes each, with no sibling hashes (§5.10). The same smallest values hold for the version 1 hops too. A verifier derives the same values from a version 1 hop's coordinates and its terrain height `K`, but a version 1 hop carries no residues for it to check. These smallest values keep every hop cheap to check.
@@ -2061,7 +2061,7 @@ A verifier MUST use the test list in place of `grandfathered-v1-hops.txt` when i
 
 The reason is that the vectors that lock §5.13 need version 1 hops that are listed. No real list names a synthetic event, so the vectors bring their own list. Each id on the test list is a version 1 hop signed by the vectors' test key. A verifier that runs the vectors with the real list instead finds those hops unlisted, and fails those vectors.
 
-The test list is not a second exemption. Outside a run of the vectors, `grandfathered-v1-hops.txt` is the only list, as §5.13 says. The test list does for §5.13 what `line.blocks` does for DECK-0001 §1.4: each stands in for real data, and only while the vectors run.
+The test list is not a second exemption. Outside a run of the vectors, `grandfathered-v1-hops.txt` is the only list, as §5.13 says. The test list does for §5.13 what `line.blocks` does for DECK-0001 §1.4. The test list stands in for `grandfathered-v1-hops.txt`. `line.blocks` stands in for the Bitcoin block line that the hyperspace actions point at. Each does so only while the vectors run.
 
 **Each revision has its own file:** Neither file is a set of vectors of the other revision.
 
