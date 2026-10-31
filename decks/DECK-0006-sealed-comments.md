@@ -5,7 +5,7 @@ Title: Sealed comments on hidden things
 Status: Draft
 Mandatory: no
 Created: 2026-10-15
-Last updated: 2026-10-22
+Last updated: 2026-10-31
 Requires: `CYBERSPACE_V2.md` §7.2, §7.6 and §8.6; NIP-22; Fanfares NIP FF-1 (derived-key events)
 
 ## Abstract
@@ -28,6 +28,8 @@ This DECK writes down what ONOSENDAI (`src/lib/comments.ts`) and cyberspace-mcp'
 | `["k", "<parent kind>"]` | the parent's kind |
 | `["p", "<parent author>"]` | the parent's author |
 | `["encrypted", "aes-256-gcm", "<payload base64>", "cyberspace:region"]` | exactly one. The words, encrypted with the bag's region key (`CYBERSPACE_V2.md` §7.2) under the cipher of §7.6. |
+
+When the bag is a room bag (DECK-0004 §3.7), "the bag's region key" in this DECK means that bag's room key, which needs both the place and the door's secret (DECK-0004 §3.7.2).
 
 A sealed comment carries no `d` tag, as FF-1 requires of derived-key events. The fourth element of `encrypted` stands where FF-1 puts a key service URL: `cyberspace:region` says the key is derived from a place, and a reader MUST NOT make a network request for it.
 
