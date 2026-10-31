@@ -1544,7 +1544,7 @@ A bag MAY say in public what it holds, by kind and count, so that a seeker knows
   - `cashu`: a Cashu token written in a message's text
   - `nft`: a nonfungible.cash claim link written in a message's text, `https://nonfungible.cash/claim/<id>#<key>`, where `id` is 32 lowercase hex characters and `key` is 43 base64url characters that encode 32 bytes, so its last character is one of `AEIMQUYcgkosw048`. The scheme and host are compared without regard to case, as in any URL; the id and key are exact. A link glued to the end of a word, or standing inside another URL's path or query, is not counted. Each distinct link in a message counts once.
   - `audio`: hidden audio (`kind 1063`, DECK-0007). It was added after the kinds above, so it is written after them.
-  - `door`: a door (a `kind 3341` with a `door` tag, DECK-0004 §3.7). It was added after `audio`, so it is written after it. A door is counted as `door`, never as `chest`, and what its room holds is never counted, in the bag that holds the door or in the room bag, which carries no `contents` tags.
+  - `door`: a door, which is a chest (`kind 3341`) that carries a `door` tag (DECK-0004 §3.7). It was added after `audio`, so it is written after it. A door is counted as `door`. It is never also counted as `chest`. What a door's room holds is never counted. It is not counted in the bag that holds the door, and it is not counted in the room bag, because a room bag carries no `contents` tags (§8.6).
 - `count` is a decimal string, a positive integer with no sign and no leading zeros (the rules of §10).
 - A message that holds a token or a link is also counted as a message, so `message` is at least the number of messages that carry them.
 - A bag MUST carry at most one `contents` tag per kind, and SHOULD write them in the order above. A kind the bag does not hold is left out; a count of zero is never written.
@@ -1563,7 +1563,7 @@ What holding buys is latency, and only latency:
 
 - reading content published anywhere in the region at any height without per-item work, where a passerby's interactive scan reaches roughly h16 (§7.3);
 - writing at any height in the region without rebuilding a tree;
-- deriving a two-factor key, `KDF(location_decryption_key || owner_secret)`, for content that must be both found by presence and unlocked by the holder. DECK-0004's doors use this construction for the key of a room (DECK-0004 §3.7.2).
+- deriving a two-factor key, `KDF(location_decryption_key || owner_secret)`, for content that must be both found by presence and unlocked by the holder. DECK-0004 uses this construction for the key of a room behind a door. There the secret is the door's secret, and the KDF is SHA-256 over a domain prefix and the two keys (DECK-0004 §3.7.2).
 
 **"Without rebuilding a tree" is not "at once", and earlier drafts of this section said "at once" (non-normative).** A holder skips the tree build and still pays the combine, which operates on numbers of `85 × 2^h` bits and is measured at 0.76 to 1.03 times a full axis build. Holding therefore buys about **4.9 times**, roughly two heights, not an instant answer: a held key at h34 is still on the order of hours on a desktop. That is a large and real advantage over not holding, and it is a latency advantage rather than a capability one, exactly as the rest of this section says. §6.12 works the same arithmetic from the other side, and `docs/what-can-be-sold.md` works through what both mean for anyone building on this.
 
@@ -1669,7 +1669,7 @@ Optional tags:
 - Sector tags `X`, `Y`, `Z`, `S`: required on a bag that carries a `hint` tag, for each axis whose hint height is at most 30 (§7.7, §10); MUST NOT appear otherwise
 - `contents` tags: `["contents", "<kind>", "<count>"]`, the hider's public statement of what the bag holds, by kind (`shard`, `message`, `key`, `chest`, `cashu`, `nft`, `audio`, `door`) and count, or `["contents", "cashu"]` alone to say only that money is inside (§7.7 Contents)
 
-A **room bag** (DECK-0004 §3.7.2), whose key comes from a place and a door together, carries none of these optional tags.
+A **room bag** (DECK-0004 §3.7.2) carries none of these optional tags. A room bag is a bag that holds what is hidden behind a door, and its key comes from a place and the door's secret together. Nothing public may say where a room bag is, at what height, or what it holds.
 
 Content: MAY carry plaintext meant for humans, a riddle (§7.7). The protocol does not interpret it.
 
