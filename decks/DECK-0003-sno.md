@@ -465,9 +465,9 @@ The rules follow. They are listed in the order a reader comes to them when it re
   - an item in a bag (§3.2) that is signed: the item's signer;
   - an item in a bag that is not signed: the bag's signer, never the pubkey the item claims (§6, "Objects are not attribution");
   - a look on a chest or a door (DECK-0004 §3.6), which travels in a `look` tag of the chest event: the chest's signer, which for a door is the door's signer;
-  - a chest whose signature does not verify: none, so its look's table is honored for no key;
+  - a chest whose authorship is not verified (CYBERSPACE_V2.md §7.6): none, so its look's table is honored for no key;
   - an item in a chest (DECK-0004 §3.4) that is signed: the item's signer;
-  - an item in a chest that is not signed: none;
+  - an item in a chest whose authorship is not verified: none;
   - a placed object fetched by `a`: the pubkey its address names, which is its event's signer;
   - a placed object fetched by `e`: the signer of the event fetched.
 
