@@ -43,8 +43,6 @@ Doors and looks (§3.6, §3.7) are written down ahead of the clients. As of ONOS
 - **Objects table (`objects`):** an optional field of a SNO object payload (DECK-0003 §1.10). It is a JSON object. Each key is the address that an `a` ref names, such as `"33331:<pubkey hex>:0d4b8f1e2c97a356"`, and each value is the payload of the object at that address. A reader draws a placed object from the table instead of fetching it. An object whose payload travels this way is a **carried object**. A reader honors only the keys under one pubkey, the **pubkey that counts** for the table: the pubkey that the reader can verify as the author of the event the table travels in (DECK-0003 §1.10 gives it for each kind of event).
 - **Walker:** a viewer that a reader moves through the world a step at a time, as a person walks. A payload's `constrain` field, `"all"`, `"opaque"` or `"off"`, says whether its faces stop a walker (DECK-0003 §1.12).
 
-Note (non-normative): the objects table and carried objects are added to DECK-0003 §1.10 by cyberspace PR #81, which was under review when doors and looks were written down. This DECK uses that PR's words for them. The rules in this DECK that mention the objects table (§3.4, §3.6) apply to no payload until that revision of DECK-0003 is merged.
-
 ## 1. Overview (non-normative)
 
 A bag already carries any event as an item, and a reader skips kinds it does not know (`CYBERSPACE_V2.md` §7.6). This DECK adds two such kinds and one public kind:
