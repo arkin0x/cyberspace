@@ -114,7 +114,7 @@ Copy the result here unchanged, and into every implementation's tests unchanged.
 
 ### Region strings: `region-prefix-vectors.json`
 
-**What it is.** 48 region strings, as a link or a relay path carries them: `www.onosendai.tech/C/<hex>` in ONOSENDAI and `relay.onosendai.tech/<hex>` for a speakeasy, which name exactly the same region (speakeasy ruling D7, 2026-11-04). 29 are valid, and each of those has its region and points inside and outside it; 19 are invalid. The file's own `format` field describes every entry.
+**What it is.** 64 region strings, as a link or a relay path carries them: `www.onosendai.tech/C/<hex>` in ONOSENDAI and `relay.onosendai.tech/<hex>` for a speakeasy, which name exactly the same region (speakeasy ruling D7, 2026-11-04). 43 are valid, and each of those has its region and points inside and outside it; 21 are invalid. The file's own `format` field describes every entry.
 
 **What a region string is.** After one percent-decode, trimming whitespace, dropping trailing slashes and one leading `0x`, and lowercasing, it is 1 to 64 hex characters. n characters fix the top 4n bits of a coordinate, so under the bit layout of §2.2 (x84 y84 z84 x83 ... z0, then the plane bit) the region is every coordinate whose 64-hex form starts with them. That is an aligned box in the hint form of §7.7, one height per axis, and a cube only when n is a multiple of 3. A prefix of 1 to 63 characters never fixes the plane bit, the lowest, so its box is the same in both planes; 64 characters name one gibson in its own plane. `CYBERSPACE_V2.md` defines the bit layout and the hint box, but not the string, so this file follows ONOSENDAI's route.
 
