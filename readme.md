@@ -82,6 +82,36 @@ Cyberspace v1 drafts are deprecated and archived. They are not a valid basis for
 - `docs/agents.md` is the guide for AI agents that get a body in cyberspace through [cyberspace-mcp](https://github.com/arkin0x/cyberspace-mcp): the rules with no undo, one key one mover, how an agent meets a human, and the profile convention (non-normative).
 - [cyberspace-cli](https://github.com/arkin0x/cyberspace-cli) is the reference implementation with CLI docs.
 
+## Test vectors
+
+The vector files sit at the root of this repository, and `CYBERSPACE_V2.md` §14 lists them all. The golden vectors of the chain rules, `chain-rules-<revision>.json`, are normative (§8.12); their format is described in `vectors/README.md` of cyberspace-cli.
+
+### Real chains: `chain-rules-2026-10-08-residue-openings-real.json`
+
+**What it is.** Twelve real movement chains (439 events), read from `wss://cyberspace.nostr1.com` on 2026-11-04, each with its verdict under chain rules revision `2026-10-08-residue-openings`: 9 valid, and 3 invalid at index 2 with reason `sidestep-proof` (a version 1 sidestep on no list, §6.15). Every event is a complete NIP-01 event, exactly as its author signed and published it, never re-signed or altered. The file has the format of `chain-rules-2026-10-08-residue-openings.json`, except that each vector names its own `identity`, and there is no `line` and no test list.
+
+**How it was built.** A read-only fetcher took every kind 3333 event of the twelve identities from the relay; it answers NIP-42 AUTH with a throwaway key that signs nothing else. Each vector keeps every spawn of its identity and every event whose `e genesis` names the newest spawn, which are all the events resolution reads (§8.7.3). A chain that rides is cut before its first ride, because a ride cannot be checked without Bitcoin mainnet's block line. Five vectors are cut this way, and their names end in `-before-first-ride`. The later events are left out, and no event is changed.
+
+**Where the verdicts come from.** The reference implementation, cyberspace-cli at `5103c62` (`cyberspace_core.chain.verify_chain`), run with the real exemption lists of this repository at `9210d6d` (`grandfathered-v1-hops.txt`, `grandfathered-v2-sidesteps.txt`, `decks/grandfathered-v1-hyperjumps.txt`) and no block line.
+
+**How to run it.** Unlike the normative file, a verifier runs these vectors with the real exemption lists and no block line, and resolves each chain for the vector's `identity`. No Bitcoin data is needed.
+
+**Every implementation agrees on every entry.** cyberspace-relay, ONOSENDAI, cyberspace-cli and cyberspace-mcp all test against this one file. Each runs every vector in full and reaches every vector's `expected`. A disagreement is a bug, in the implementation or in the reference. It gets reported and fixed, never skipped. The file is not normative: where a verdict disagrees with `CYBERSPACE_V2.md`, the text is right, and the file is regenerated.
+
+**How to regenerate it.** The tools are in [cyberspace-relay](https://github.com/arkin0x/cyberspace-relay), in `server/regiongate/testdata/tools/`. A new read is a new snapshot, since the relay may hold newer events. Before you run it, update the read date and the reference commit that `build-real-vectors.py` writes into each vector's `source` and into the file's `description`.
+
+```bash
+# read only: every kind 3333 event of each identity in the file (needs nostr-tools)
+node fetch-chains.mjs wss://cyberspace.nostr1.com chains.jsonl <identity>...
+# the reference at the commit the file names (needs coincurve)
+mkdir cli && git -C cyberspace-cli archive 5103c62 src | tar -x -C cli
+python -I build-real-vectors.py cli/src chains.jsonl chain-rules-2026-10-08-residue-openings-real.json
+# check that the reference reaches every verdict
+python -I reference-verdicts.py cli/src chain-rules-2026-10-08-residue-openings-real.json --real-lists
+```
+
+Copy the result here unchanged, and into every implementation's tests unchanged.
+
 ## Nostr Integration
 
 Cyberspace events conform to NIP-01:
