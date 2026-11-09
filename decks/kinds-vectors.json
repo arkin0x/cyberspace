@@ -603,7 +603,7 @@
           "c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724"
         ],
         "sealed": {
-          "plaintext": "{\"pubkey\":\"d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c\",\"created_at\":1791800000,\"kind\":3341,\"content\":\"AiTubdmI6dx1PE+FWmDc24kMlt1kbQhLum4CWvj1DPPZlq6yr3omoFTM1Pbsl2C/TmNCTPGsXeT7Cugh2Gnw+zcgWUXh4Nafo12KW7g6V12fD3C22wzUiRRSUeh8PhNVX85n36e0LoItjsA/l1VyPRFqPBnC3kkqyUec0mNUyu2Js6AKZNL+zwOAQKoaMB/acpVLXUOwlgkWrSK9L48aitEuGQ==\",\"tags\":[[\"C\",\"c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724\"],[\"title\",\"Door\"],[\"lock\",\"17f2f2753715a844de39c398f3e6b112d36b61a2ad6a38d9a75a93579d35dec9\",\"59abe616d5f01b12a1c59177be5040fd5cd0818220693d889707d6e4273613d8\"],[\"requires\",\"Vapor Key\"],[\"door\",\"4\"],[\"-\"]],\"id\":\"5a42ff54c2f34c79132c82b8898ac4ce4d4a6a72646c4cccdbdf7d71869e55e9\",\"sig\":\"1b297ff8cf3a7d844225b24011fddb725871aeb828a21373fd95f808ddd8cd4eb581a6147c1cd38fd9434d64cd96621f0a5d63d16aa2693b76af650eb955b093\"}",
+          "plaintext": "{\"pubkey\":\"d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c\",\"created_at\":1791800000,\"kind\":3341,\"content\":\"AiTubdmI6dx1PE+FWmDc24kMlt1kbQhLum4CWvj1DPPZlq6yr3omoFTM1Pbsl2C/TmNCTPGsXeT7Cugh2Gnw+zcgWUXh4Nafo12KW7g6V12fD3C22wzUiRRSUeh8PhNVX85n36e0LoItjsA/l1VyPRFqPBnC3kkqyUec0mNUyu2Js6AKZNL+zwOAQKoaMB/acpVLXUOwlgkWrSK9L48aitEuGQ==\",\"tags\":[[\"C\",\"c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724\"],[\"title\",\"Door\"],[\"lock\",\"17f2f2753715a844de39c398f3e6b112d36b61a2ad6a38d9a75a93579d35dec9\",\"59abe616d5f01b12a1c59177be5040fd5cd0818220693d889707d6e4273613d8\"],[\"requires\",\"Vapor Key\"],[\"door\",\"12\"],[\"-\"]],\"id\":\"59180480b24179dff9fc50a95b28decb007a3ff77fc81436c40a261f92586a7d\",\"sig\":\"d37b951ffa250cfed823f7aac5806bf7a0aee03a3494d2471e2c3f05fa63830497f9b85ec66531b24b4116bd87453e06236279781773055b03d0f9c3ae377856\"}",
           "aes_nonce": "a3faf12805711806f15453d7",
           "event": {
             "pubkey": "d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c",
@@ -618,7 +618,7 @@
               [
                 "encrypted",
                 "aes-256-gcm",
-                "o/rxKAVxGAbxVFPXwLeeK7bRGH614RyEoKQlC1LedvvKoZ2++/kN6JHh7Q10QU26BvEQlWcRKJaCuKvcnmrdzK/IVJI9tqcMWqzlBfQH/qzjfOjgkFcUlJMNYbuO4EvUpHKqRhlU5anDZGqOdfwwM6Npq0/fTEzua42/POR51rCZfyeu/AOE24DvyCncNM/DqbpGL9omdoZEPTSm0Wz2C3AP+POkZIxvgPuJ7Ja4Hgzo/iinA2HAJ8KKbhZCxmWBSn7hSxAkeYKdHVsXbq0Rs4E/C8gAUrtAWFqASAb0uB96k07mcSuUm5l3VQnOc0H6BGLMS6UYiFpdxxfXx7e44ZI7Nr93U1Vms+N+dHizgdDvpPiPdSJafnfEIjljGXkjIntoNUGUtMm2UVaJd2MmZiRoyw905+s3SGgzX3EsaXAax3Dxa2+7y+TcViM9CvQ0USUU/ZXY9UeFynrzui4JdZCO3RblQ4e10qY4/u3VM3G61qxzWNvd3DpJI54yehQeJg1MpkpEtXHzlhNO4Y3cn7EYW5hEUE9/RmuNvXkxdec3N1EGdr8hjcdNdrmt6M74vFdSzpJwh1YFIAbsO6nRnhF6naqbvRcPIXWuN9T2QzPzcMBA0NeDczvIj+4gcek0bVlaC6A8/IfYPaahXBkUTq22mkY2ljfdiGR6gxahptmkQon5QWs4zkt75Oyfd1IOzl7XfXQOzB0RBBi+AGFzHRiF000DJsWeLYnW0oknNnuCv9tGcIyqRdRoQYHtbrRHvKmj4dj0m8yfH905L0lKs0hXgQ8qz36pz+KlPYOfzowGf6wvNIm61pkejOsxpYzx3yiAw9LKqhH5sRXjB/3jW52fcvDpfe1NK/miYsg7osOOz/YBII93n960d2/VOAgf1MqjQWsl2F+27YZpJUATFic9mvv5SmJqkC2goRfHrNWwwS3aWtJbwyI9aDxSb3zpq0KR59klr0mOfhv2snYek176S9cieGX6rxXb7PjuCiAfThzUKnvKW2twqc+DUBHX2gDBfd+CrUeSGSJxuCB9BGfItlf4sWntMUJxu1YDVVk7m0b11OpZkTN8jIwp9wqdJr+/KROWd0kSwgrGGIdhWGdkuEKBJPq1IU8HZbU3vJjt8tmW/66ZeGfdYKXuxqVO2YRScJI=",
+                "o/rxKAVxGAbxVFPXwLeeK7bRGH614RyEoKQlC1LedvvKoZ2++/kN6JHh7Q10QU26BvEQlWcRKJaCuKvcnmrdzK/IVJI9tqcMWqzlBfQH/qzjfOjgkFcUlJMNYbuO4EvUpHKqRhlU5anDZGqOdfwwM6Npq0/fTEzua42/POR51rCZfyeu/AOE24DvyCncNM/DqbpGL9omdoZEPTSm0Wz2C3AP+POkZIxvgPuJ7Ja4Hgzo/iinA2HAJ8KKbhZCxmWBSn7hSxAkeYKdHVsXbq0Rs4E/C8gAUrtAWFqASAb0uB96k07mcSuUm5l3VQnOc0H6BGLMS6UYiFpdxxfXx7e44ZI7Nr93U1Vms+N+dHizgdDvpPiPdSJafnfEIjljGXkjIntoNUGUtMm2UVaJd2MmZiRoyw905+s3SGgzX3EsaXAax3Dxa2+7y+TcViM9CvQ0USUU/ZXY9UeFynrzui4JdZCO3RblQ4e10qY4/u3VM3G61qxzWNvd3DpJI54yehQeJg1MpkpEtXHzlhNO4Y3cn7EYW5hEUE9/RmuNvXkxdec3N1EGdr8hjcdNdrmt6M74vFdSzpJwh1YFIAbsO6nRnhF6naqbvRcPIXWuN9T2QzPzcMBA0NeDczvIj+4gcek0bVlaC6A8/IfYPaahXBkUTq22mkY2ljfdiGR6gxahptmkQon5QWs4zkt75Oyfd1IOzl7XfXQOzB0RBBi+AGFzHRiF000DJsWeLYnW0oknNnuCv9tGcIyqRdRoQYHtbrRHvKmj4dj0m8yfH905L0lKs0hXgQ8qz36pz+KlPYOfzowGf6wvNIm61pkejOsxpYzx3yiAw9LKqhH5tAWcdoqaVJLgcoHnNuALM+G1NsU4/JWPw6VRdIhyy9DpIDrePVMYhpOiTTF2gw+w69A9IRZERHZpm/ipSm44x33yoEeR+oOxwXPVUYJWwCYzLjJcPmbn7lqJ9N8koRzRLRLzsiRNkQqhGYZ0cmKr+xaKvKq9VnRLG0jWc3yaX2siopyIBRrSjQXGLIreqkKZTyoguiVzVDvP4wH0vj61ZUtw6VYEAAg7kkKj2bxelGZ82ot1+QieJ+vpL0CQJU0WnwzISNFkXW5i7xeHdvizckYBNO1nus3q89+CoMHqD0H823laNeJymz7rJPUV",
                 "cyberspace:region"
               ],
               [
@@ -626,8 +626,8 @@
                 "This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech"
               ]
             ],
-            "id": "0d3c2eb8d1665fe241c84fc81ec0e868b59ad6a30df7cce44db8ff16272843dd",
-            "sig": "6e1bbd203d205998a1f3101fae94ac79bb7ffbca4ad177c3435b3583439be4427819ae17c27ffd391ec1da30e33cfddbd78d0fece7e0b433ac343fb7b8ddef19"
+            "id": "009e76294fc8307bdb928c5c468e0b052248c0a0818fed5200e0abd3772fe984",
+            "sig": "5d96876b9db8bdc6f42f839e9b6ebbccfb9ab0f59dad6588dfe91f80e56e844f7e928ed74709cb2181ecc2da4cb563289bc2715f87236c3ba53ee6a424c0269d"
           }
         },
         "why": "a door is never carried by reference"

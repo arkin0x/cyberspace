@@ -452,9 +452,9 @@ A reader MAY show how deep a door is, as the number of rooms it was found inside
 Only a writer that knows the door secret can seal a door of the room to a different lock. The reason is that the new seal carries the same plaintext, the room entry, so the writer must know the secret it holds. A writer that does this SHOULD rotate the room:
 
 1. Make a new door secret. That gives a new room key and a new room lookup id.
-2. Publish the room bag again under the new key and the new lookup id. Seal every event it references again, with the new room key.
+2. Publish the room bag again under the new key and the new lookup id. Seal every event it references again, with the new room key, each as a new event with a fresh `d`: a new sealed entry (`CYBERSPACE_V2.md` §7.6, Sealed entries), or a new hidden object (DECK-0003 §3.4). A writer MUST NOT re-seal one by replacing the event at its old address. The old addresses are known to everyone the rotation shuts out, who would see each replacement arrive and could tie the new room to the old one by them.
 3. Seal the new door secret into every door of the room (§3.7.5), each to its own lock.
-4. Request deletion (NIP-09) of the old room bag, and of the events it referenced.
+4. Request deletion (NIP-09) of the old room bag, and of the events it referenced. Old sealed entries are emptied first, as `CYBERSPACE_V2.md` §7.6 (Sealed entries, Retracting) says.
 
 **Why rotate (non-normative):** Whoever opened the door before the change kept its secret. A door secret is knowledge, as an item is (§6). Rotation is the only way that a new lock keeps those earlier openers out of what the room holds from then on. Rotation does not take back what they already read. It also does not reach copies that relays keep despite a deletion request.
 
@@ -466,7 +466,7 @@ Note (non-normative): removing a door does not shut out anyone who already opene
 
 **The last door:** A writer that removes the last door of a room first deals with the room's entries, in one of two ways:
 
-- it moves them into the ordinary bag of the room's region at the room's height, so that they stand where they stood and anyone who reaches the place can find them; or
+- it moves them into the ordinary bag of the room's region at the room's height, so that they stand where they stood and anyone who reaches the place can find them. An entry that the room bag carried in a sealed entry moves inline, or into a new sealed entry sealed with the region key and a fresh `d`, never by re-sealing the old one at its address; or
 - it removes them.
 
 It then removes the door from the bag that holds the door, and requests deletion (NIP-09) of the room bag and of every sealed entry the room bag named.
@@ -540,7 +540,7 @@ ONOSENDAI's readers (`keyItemOf`, `chestItemOf`, `openWithSecret`, `listingOf`, 
 
 The signatures in the vectors use 32 zero bytes of BIP-340 auxiliary randomness so that the file is reproducible. A reader MUST accept any valid signature, not only these.
 
-`kinds-vectors.json` does not yet hold vectors for a door, a room key, a room bag, or a chest with a look. They will be added with the first implementation that writes them.
+The `sealed_entries` section of `kinds-vectors.json` (`CYBERSPACE_V2.md` §7.6) holds a room key and a room lookup id derived from a door secret, a room bag sealed with that room key, and a door, carried in a sealed entry as a vector that readers refuse (`reject.door`). `kinds-vectors.json` does not yet hold a door that opens that room inline, or a chest with a look. They will be added with the first implementation that writes them.
 
 ## 6. Security considerations
 

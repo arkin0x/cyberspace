@@ -166,7 +166,9 @@ const nested = await sealEntry('nested', sealedMessage.event, regionKey, hiderSk
 const doorSender = key('door sender')
 const doorPlain = JSON.stringify([['room', hex(doorSecret)]])
 const doorSeal = nip44.encrypt(doorPlain, nip44.utils.getConversationKey(doorSender, item), nonce32('door'))
-const door = sign({ pubkey: hider, created_at: T, kind: 3341, content: doorSeal, tags: [['C', C], ['title', 'Door'], ['lock', item, getPublicKey(doorSender)], ['requires', 'Vapor Key'], ['door', '4'], ['-']] }, hiderSk)
+const door = sign({ pubkey: hider, created_at: T, kind: 3341, content: doorSeal, tags: [['C', C], ['title', 'Door'], ['lock', item, getPublicKey(doorSender)], ['requires', 'Vapor Key'], ['door', '12'], ['-']] }, hiderSk)
+// Height 12, the bag's own: a reader that wrongly opened this door would
+// derive the room key above from the bag's key and reach the room bag.
 const sealedDoor = await sealEntry('door', door, regionKey, hiderSk)
 
 const utf8 = (s) => Buffer.byteLength(s, 'utf8')
