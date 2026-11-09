@@ -42,6 +42,7 @@ For extended design rationale and philosophical discussion, see [`RATIONALE.md`]
   - [2.2 Bit layout (normative)](#22-bit-layout-normative)
   - [2.3 Reference pseudocode](#23-reference-pseudocode)
   - [2.4 Two planes: dataspace and ideaspace](#24-two-planes-dataspace-and-ideaspace)
+  - [2.5 Hex prefixes (normative)](#25-hex-prefixes-normative)
 - [3. Identity Is Location](#3-identity-is-location)
   - [3.1 Your key is your coordinate](#31-your-key-is-your-coordinate)
   - [3.2 The spawn event](#32-the-spawn-event)
@@ -235,6 +236,47 @@ The plane bit creates two overlapping coordinate spaces:
 - **Ideaspace (plane = 1):** Has no physical mapping. The same X/Y/Z values are purely abstract positions. Ideaspace is where things exist that have no physical counterpart.
 
 Both planes share the same mathematical properties. Movement costs, encryption, and discovery all work identically. They differ only in whether the coordinates have a physical-world interpretation.
+
+### 2.5 Hex prefixes (normative)
+
+A coordinate is written as 64 lowercase hex characters: the 256-bit integer of §2.2, most significant character first, as `coord_hex` is written everywhere in this document. A string of 1 to 64 hex characters names a **prefix region**: every coordinate whose 64-character form starts with that string. At 64 characters the string is one coordinate, and its prefix region is that coordinate alone.
+
+A prefix region is not the region of §4.7 and §7.6. It has no key. Below 64 characters it has no plane and is a cube only when the length of the string is a multiple of 3.
+
+**The prefix region of a string (normative):**
+- A string of `n` hex characters, with `n` from 1 to 63, fixes the top `4n` bits of the coordinate and leaves every lower bit free. Its prefix region is every coordinate whose hex starts with it.
+- Under the interleaving of §2.2 the top bits belong, in order, to `x84`, `y84`, `z84`, `x83`, `y83`, `z83` and so on, so each axis keeps its own number of free low bits, its height. The prefix region is therefore an aligned box in the form of §7.7, one height per axis. The heights are equal, and the box is a cube, only when `n` is a multiple of 3. One character leaves heights `(x, y, z) = (83, 84, 84)`; 63 characters leave one free bit per axis, `(x, y, z) = (1, 1, 1)`.
+- The plane bit is the lowest bit of the coordinate, and only the 64th character reaches it. A string of 1 to 63 characters therefore never fixes the plane: its prefix region is the same box in dataspace and in ideaspace, and a coordinate in either plane is inside it. This is where a prefix region differs from a hint box, which lies on one plane.
+- A string of 64 hex characters is one coordinate. Its prefix region is one Gibson, every height 0, in the plane its lowest bit selects.
+
+Padding a string with `0` to 64 characters gives the lowest coordinate in its prefix region, and padding it with `f` gives the highest. Because each axis takes its bits from fixed positions, the two decode (§2.3) to the minimum and maximum of each axis. The parameter of the function below is a string in canonical form, the result of **Reading a string** below, never raw input:
+
+```python
+def prefix_region(hex_str: str):
+    # hex_str: canonical form (1 to 64 characters, each 0-9 or a-f)
+    lo = coord_to_xyz(int(hex_str.ljust(64, "0"), 16))
+    hi = coord_to_xyz(int(hex_str.ljust(64, "f"), 16))
+    axes = [(lo[i], hi[i]) for i in range(3)]       # inclusive min and max of x, y, z
+    plane = lo[3] if len(hex_str) == 64 else None   # None: either plane
+    return axes, plane
+```
+
+The height of an axis is `h` where `2^h = max - min + 1`. A coordinate is inside the prefix region exactly when every axis lies within its minimum and maximum and, for 64 characters, the plane is the same.
+
+**Why the plane stays open:** Read literally, a string names every coordinate whose hex starts with it, and that reading needs no rule beyond §2.2. An application that needs one plane, such as a relay that serves only dataspace, takes the plane from something other than the string, because no string shorter than 64 characters carries the plane bit.
+
+**Reading a string (normative):** The input is the string exactly as it was written in the link, path or other text, before any decoding. An implementation that can see only a path its framework has already percent-decoded MAY start at step 2, but only when that decoding is exactly step 1 (UTF-8, `+` kept, a malformed escape or invalid UTF-8 rejected). Otherwise it MUST read the raw path, for example Go's `URL.EscapedPath()`. A path is never decoded twice. The input is read in this order, and each step is applied once:
+1. Percent-decode it once (RFC 3986 §2.1). Each `%` followed by two hex digits, in either case (`%2f` and `%2F` are the same), is the one byte those digits give. Every other character stands for its UTF-8 bytes, and a `+` stays a `+`. The resulting bytes are read as UTF-8. A `%` that is not followed by two hex digits, or bytes that are not valid UTF-8, make the string invalid. What the decoding produces is not decoded again, so `%2561` becomes `%61`, which is invalid.
+2. Trim whitespace from both ends. Whitespace here is exactly U+0009, U+000A, U+000B, U+000C, U+000D, U+0020, U+00A0, U+1680, U+2000 to U+200A, U+2028, U+2029, U+202F, U+205F, U+3000 and U+FEFF. No other code point is trimmed; in particular U+0085, U+180E and U+200B are not.
+3. Remove every `/` at the end.
+4. Remove one leading `0x` or `0X`.
+5. Convert upper-case ASCII letters to lower case.
+
+The result MUST be 1 to 64 characters, each one of `0` to `9` and `a` to `f`. Otherwise the string is invalid and names no prefix region. Because the steps run once and in this order, whitespace inside the string, whitespace before a trailing `/`, a leading `/`, a second `0x`, a sign and full-width letters all make a string invalid. The result is the string's canonical form, and two strings name the same prefix region exactly when their canonical forms are equal. An implementation that writes such a string SHOULD write its canonical form.
+
+**Why the reading is lenient:** A string arrives typed by hand, copied from a page or carried in a URL path, so it can come with upper case, a `0x`, trailing slashes, surrounding whitespace or percent-encoding. Accepting each of these lets every such spelling reach the same prefix region. The steps are fixed and ordered so that a relay and a client given the same string agree on whether it names a prefix region and on which one it names.
+
+**Conformance:** `region-prefix-vectors.json` at the root of this repository (§14) is the conformance test for this section. It holds strings, valid and invalid, and for each valid one its canonical form, its prefix region per axis and coordinates inside and outside it. An implementation of this section tests itself against every entry. Like the other vectors in this repository it is not normative: where the file disagrees with this text, the text is right and the file is a bug.
 
 ---
 
@@ -2543,4 +2585,4 @@ This repository also carries real chains, read from a public relay, with the ver
 - `chain-rules-2026-10-08-residue-openings-real.json`: twelve real movement chains, every event exactly as its author signed and published it, each with the verdict the reference implementation gives it under chain rules revision `2026-10-08-residue-openings` (§8.12), with the real exemption lists of this repository and no block line. Every implementation of that revision tests against this one file. Like `hop-residue-vectors.json`, it is not normative: where a verdict in it disagrees with the text of this specification, the text is right and the file is a bug. `readme.md` describes how it was built, where its verdicts come from and how to regenerate it.
 
 This repository also carries the region strings that clients and relays share:
-- `region-prefix-vectors.json`: 68 region strings, the hex of a link such as `www.onosendai.tech/C/<hex>` or a relay path such as `relay.onosendai.tech/<hex>`, each valid or invalid. A valid one of n characters fixes the top 4n bits of a coordinate (§2.2), so it names the aligned box (§7.7) of every coordinate whose hex starts with it, with no plane for 1 to 63 characters and one Gibson in its own plane for 64. Each valid entry gives the box per axis and points inside and outside it. It is written from ONOSENDAI's route code and is not normative: this document defines the bit layout and the box, not the string, and where the file disagrees with this text, the text is right. `readme.md` describes it.
+- `region-prefix-vectors.json`: 68 region strings, the hex of a link such as `www.onosendai.tech/C/<hex>` or a relay path such as `relay.onosendai.tech/<hex>`, each valid or invalid. A valid one of n characters fixes the top 4n bits of a coordinate (§2.2), so it names the aligned box (§7.7) of every coordinate whose hex starts with it, with no plane for 1 to 63 characters and one Gibson in its own plane for 64. Each valid entry gives the box per axis and points inside and outside it. §2.5 defines the string, and this file is its conformance test. It is written from ONOSENDAI's route code and is not normative: where the file disagrees with this text, the text is right. `readme.md` describes it.
