@@ -41,7 +41,7 @@ The words are at most 2,000 characters, trimmed, and not empty.
 |---|---|
 | an inline item of the bag | `e` = the item's lineage id (§2.2), which is its event id unless it has been moved, `k` = its kind (`3330`, `1`, `3340`, `3341`, ...), `p` = its author |
 | an item hidden by reference to a sealed object | `e` = the referenced event's id, `a` = its address when the reference is an `a` reference, `k` = its kind, `p` = its author |
-| an item carried in a sealed entry (`kind 33333`, `CYBERSPACE_V2.md` §7.6) | as an inline item: the item's own lineage id, kind and author, never the sealed entry's id, address or kind. A sealed entry is only where the item is stored, so a comment stays under the item when its writer moves it from the bag into a sealed entry, or back (`CYBERSPACE_V2.md` §7.6, Sealed entries, Reading rule 6). |
+| an item carried in a sealed entry (`kind 33335`, `CYBERSPACE_V2.md` §7.6) | as an inline item: the item's own lineage id, kind and author, never the sealed entry's id, address or kind. A sealed entry is only where the item is stored, so a comment stays under the item when its writer moves it from the bag into a sealed entry, or back (`CYBERSPACE_V2.md` §7.6, Sealed entries, Reading rule 6). |
 | an item inside a chest (DECK-0004 §3) | as an inline item, with that item's id, kind and author. For an unsigned item, such as a message written as a rumor, the id is its canonical id, which is how readers identify it (DECK-0004 §3.4). |
 | another comment (a reply) | `e` = the comment's id, `k` = `1111`, `p` = the comment's author |
 

@@ -1,6 +1,6 @@
 // Golden vectors for DECK-0004 (items, chests, item listings), DECK-0005
 // (local chat), DECK-0006 (sealed comments), DECK-0007 (hidden audio) and the
-// sealed entries of CYBERSPACE_V2.md §7.6 (kind 33333). Deterministic: every key is
+// sealed entries of CYBERSPACE_V2.md §7.6 (kind 33335). Deterministic: every key is
 // SHA-256 of a label, every nonce is fixed, and every BIP-340 signature uses
 // 32 zero bytes of auxiliary randomness. A reader MUST accept any valid
 // signature; the fixed aux only makes these files reproducible. The message
@@ -118,11 +118,11 @@ const audioGains = [[10.5, 16.5, 16.5], [16.5, 16.5, 16.5], [21.25, 16.5, 16.5],
   .map((listener) => ({ listener, gain: Number(gain(audioSource, listener, 32, audioRadius).toFixed(12)) }))
 
 // CYBERSPACE_V2.md §7.6 (Sealed entries): bag entries carried by reference
-// as kind 33333 events. Each payload is exactly the entry the bag would
+// as kind 33335 events. Each payload is exactly the entry the bag would
 // otherwise hold inline: the key item and the message above, unchanged. The
 // `d` of each sealed entry is fixed here only to make the file reproducible; a
 // real writer draws it at random for every placement.
-const SEALED_KIND = 33333
+const SEALED_KIND = 33335
 const SEALED_PREVIEW = 'This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech'
 const sealedD = (label) => hex(sha(`cyberspace vectors sealed entry d: ${label}`)).slice(0, 32)
 async function aesGcmOpen(k, payloadB64) {

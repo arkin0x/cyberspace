@@ -69,7 +69,7 @@ The design record for this category, and for why the base protocol defines holdi
 These kinds are defined in `../CYBERSPACE_V2.md`, not in a DECK. They are listed here so that no DECK allocates them.
 - `kind 3333`: a movement action (§8.1).
 - `kind 33330`: a bag (§7.6, §8.6).
-- `kind 33333`: a sealed entry, one bag entry carried by reference as its own event, sealed with the bag's key (§7.6, Sealed entries).
+- `kind 33335`: a sealed entry, one bag entry carried by reference as its own event, sealed with the bag's key (§7.6, Sealed entries).
 - `kind 11333`: an avatar (§8.10).
 
 ## Reserved kinds
