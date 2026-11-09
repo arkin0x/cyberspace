@@ -112,6 +112,16 @@ python -I reference-verdicts.py cli/src chain-rules-2026-10-08-residue-openings-
 
 Copy the result here unchanged, and into every implementation's tests unchanged.
 
+### Region strings: `region-prefix-vectors.json`
+
+**What it is.** 68 region strings, as a link or a relay path carries them: `www.onosendai.tech/C/<hex>` in ONOSENDAI and `relay.onosendai.tech/<hex>` for a speakeasy, which name exactly the same region (speakeasy ruling D7, 2026-11-04). 44 are valid, and each of those has its region and points inside and outside it; 24 are invalid. The file's own `format` field describes every entry.
+
+**What a region string is.** After one percent-decode, trimming whitespace, dropping trailing slashes and one leading `0x`, and lowercasing, it is 1 to 64 hex characters. n characters fix the top 4n bits of a coordinate, so under the bit layout of §2.2 (x84 y84 z84 x83 ... z0, then the plane bit) the region is every coordinate whose 64-hex form starts with them. That is an aligned box in the hint form of §7.7, one height per axis, and a cube only when n is a multiple of 3. A prefix of 1 to 63 characters never fixes the plane bit, the lowest, so its box is the same in both planes; 64 characters name one Gibson in its own plane. `CYBERSPACE_V2.md` defines the bit layout and the hint box, but not the string, so this file follows ONOSENDAI's route.
+
+**How it was built.** From ONOSENDAI's own route code, `src/lib/coordRoute.ts` at origin/v2 `366e9df` (`parseCoordRoute`, `prefixRegion`, `coordPlace`, `placeHex`, over cyberspace-core `5587818`), by `onosendai-region-vectors.ts` in [cyberspace-relay](https://github.com/arkin0x/cyberspace-relay) `server/regiongate/testdata/tools/`. Each box was also checked against the §2.3 pseudocode alone: its min and max per axis are `coord_to_xyz` of the hex padded with `0` and with `f`.
+
+**Every implementation agrees on every entry.** ONOSENDAI and cyberspace-relay test against this one file, byte for byte. Like the other vectors here it is not normative: where it disagrees with `CYBERSPACE_V2.md`, the text is right and the file is regenerated. To regenerate it, follow the comment at the top of the tool, then copy the result here unchanged, and into every implementation's tests unchanged.
+
 ## Nostr Integration
 
 Cyberspace events conform to NIP-01:
