@@ -1,13 +1,13 @@
 {
- "description": "Region strings: what relay.onosendai.tech/<hex> and www.onosendai.tech/C/<hex> name, so a speakeasy URL and an ONOSENDAI link agree on the region (speakeasy ruling D7, 2026-11-04). Written from ONOSENDAI's own route code; this file is not normative. CYBERSPACE_V2.md defines the bit layout (section 2.2) and the hint box (section 7.7) but no region string; where a value here disagrees with that text, the text is right and the file is a bug.",
+ "description": "Region strings: what relay.onosendai.tech/<hex> and www.onosendai.tech/C/<hex> name, so a speakeasy URL and an ONOSENDAI link agree on the region (speakeasy ruling D7, 2026-11-04). Written from ONOSENDAI's own route code; this file is not normative. CYBERSPACE_V2.md section 2.5 defines the region string (a prefix region) and names this file its conformance test; where a value here disagrees with that text, the text is right and the file is a bug.",
  "format": [
   "input: the text after \"/C/\" in an ONOSENDAI path, or after \"/\" in a relay path, exactly as it appears in the URL (percent-encoding included).",
-  "Reading an input: percent-decode it once (decodeURIComponent; on a malformed escape keep the text undecoded); trim whitespace as JavaScript String.prototype.trim does; drop every trailing \"/\"; drop one leading \"0x\" or \"0X\"; lowercase. The result must be 1 to 64 hex characters, or the input is invalid (valid: false, and nothing else is given).",
+  "Reading an input: percent-decode it once (decodeURIComponent; on a malformed escape, or bytes that are not valid UTF-8, keep the text undecoded, which then cannot be hex); trim whitespace as JavaScript String.prototype.trim does; drop every trailing \"/\"; drop one leading \"0x\" or \"0X\"; lowercase. The result must be 1 to 64 hex characters, or the input is invalid (valid: false, and nothing else is given).",
   "hex: the result. kind: \"prefix\" for 1 to 63 characters, \"full\" for 64.",
   "A prefix of n characters fixes the top 4n bits of the coordinate (CYBERSPACE_V2.md section 2.2: x84 y84 z84 x83 ... z0, then the plane bit), so it names the aligned box of every coordinate whose 64-hex form starts with hex. Each axis keeps its own number of free low bits, its height; the heights are equal (a cube) only when n is a multiple of 3. The plane bit is the coordinate's lowest bit, so a prefix never fixes it: plane is null, and the box is the same in both planes.",
-  "A full coordinate is one gibson (every height 0) in the plane its lowest bit names.",
+  "A full coordinate is one Gibson (every height 0) in the plane its lowest bit names.",
   "region: per axis, min and max (inclusive) as decimal integers, height, and size = 2^height = max - min + 1; plane is 0, 1, or null for either plane. A coordinate is inside exactly when its 64-hex form starts with hex: each axis in [min, max], and, when plane is not null, the same plane.",
-  "inside and outside: coordinates as 64 lowercase hex characters with their axes as decimal integers and their plane, each one inside or outside the region. outside always holds one gibson past each face of the box where the space continues, and the box corner with the lowest and with the highest fixed bit flipped; for a full coordinate, also the same gibson in the other plane."
+  "inside and outside: coordinates as 64 lowercase hex characters with their axes as decimal integers and their plane, each one inside or outside the region. outside always holds one Gibson past each face of the box where the space continues, and the box corner with the lowest and with the highest fixed bit flipped; for a full coordinate, also the same Gibson in the other plane."
  ],
  "provenance": {
   "onosendai_commit": "366e9df290a78de0128d917cf310256ad7aa21d4",
@@ -1265,7 +1265,7 @@
   {
    "name": "full-plane-1",
    "input": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9f",
-   "note": "64 characters: one gibson, the plane fixed by the last bit (1, ideaspace).",
+   "note": "64 characters: one Gibson, the plane fixed by the last bit (1, ideaspace).",
    "valid": true,
    "kind": "full",
    "hex": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9f",
@@ -1361,7 +1361,7 @@
   {
    "name": "full-plane-0",
    "input": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9e",
-   "note": "64 characters: one gibson, plane 0 (dataspace).",
+   "note": "64 characters: one Gibson, plane 0 (dataspace).",
    "valid": true,
    "kind": "full",
    "hex": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9e",
@@ -2358,7 +2358,7 @@
   {
    "name": "full-0x-prefix",
    "input": "0xa1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9f",
-   "note": "0x and 64 characters: one gibson.",
+   "note": "0x and 64 characters: one Gibson.",
    "valid": true,
    "kind": "full",
    "hex": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9f",
@@ -2848,6 +2848,137 @@
    "name": "encoded-slash",
    "input": "abc%2F",
    "note": "An encoded trailing slash decodes to a slash, which is then dropped.",
+   "valid": true,
+   "kind": "prefix",
+   "hex": "abc",
+   "region": {
+    "plane": null,
+    "x": {
+     "min": "26596368031521841843535872",
+     "max": "29014219670751100192948223",
+     "height": 81,
+     "size": "2417851639229258349412352"
+    },
+    "y": {
+     "min": "14507109835375550096474112",
+     "max": "16924961474604808445886463",
+     "height": 81,
+     "size": "2417851639229258349412352"
+    },
+    "z": {
+     "min": "24178516392292583494123520",
+     "max": "26596368031521841843535871",
+     "height": 81,
+     "size": "2417851639229258349412352"
+    }
+   },
+   "inside": [
+    {
+     "coord": "abc0000000000000000000000000000000000000000000000000000000000000",
+     "x": "26596368031521841843535872",
+     "y": "14507109835375550096474112",
+     "z": "24178516392292583494123520",
+     "plane": 0
+    },
+    {
+     "coord": "abc0000000000000000000000000000000000000000000000000000000000001",
+     "x": "26596368031521841843535872",
+     "y": "14507109835375550096474112",
+     "z": "24178516392292583494123520",
+     "plane": 1
+    },
+    {
+     "coord": "abcffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe",
+     "x": "29014219670751100192948223",
+     "y": "16924961474604808445886463",
+     "z": "26596368031521841843535871",
+     "plane": 0
+    },
+    {
+     "coord": "abcfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+     "x": "29014219670751100192948223",
+     "y": "16924961474604808445886463",
+     "z": "26596368031521841843535871",
+     "plane": 1
+    },
+    {
+     "coord": "abce000000000000000000000000000000000000000000000000000000000000",
+     "x": "27805293851136471018242048",
+     "y": "15716035654990179271180288",
+     "z": "25387442211907212668829696",
+     "plane": 0
+    },
+    {
+     "coord": "abc779b97f4a7c15f39cc0605cedc8341082276bf3a27251f86c6a11d0c18e95",
+     "x": "27633090778280009404205588",
+     "y": "16090170796652178108523657",
+     "z": "26539011091005080324851374",
+     "plane": 1
+    }
+   ],
+   "outside": [
+    {
+     "coord": "ab89249249249249249249249249249249249249249249249249249249249248",
+     "x": "26596368031521841843535871",
+     "y": "14507109835375550096474112",
+     "z": "24178516392292583494123520",
+     "plane": 0
+    },
+    {
+     "coord": "b986db6db6db6db6db6db6db6db6db6db6db6db6db6db6db6db6db6db6db6db6",
+     "x": "29014219670751100192948224",
+     "y": "16924961474604808445886463",
+     "z": "26596368031521841843535871",
+     "plane": 0
+    },
+    {
+     "coord": "aae4924924924924924924924924924924924924924924924924924924924924",
+     "x": "26596368031521841843535872",
+     "y": "14507109835375550096474111",
+     "z": "24178516392292583494123520",
+     "plane": 0
+    },
+    {
+     "coord": "abeb6db6db6db6db6db6db6db6db6db6db6db6db6db6db6db6db6db6db6db6da",
+     "x": "29014219670751100192948223",
+     "y": "16924961474604808445886464",
+     "z": "26596368031521841843535871",
+     "plane": 0
+    },
+    {
+     "coord": "ab52492492492492492492492492492492492492492492492492492492492492",
+     "x": "26596368031521841843535872",
+     "y": "14507109835375550096474112",
+     "z": "24178516392292583494123519",
+     "plane": 0
+    },
+    {
+     "coord": "abddb6db6db6db6db6db6db6db6db6db6db6db6db6db6db6db6db6db6db6db6c",
+     "x": "29014219670751100192948223",
+     "y": "16924961474604808445886463",
+     "z": "26596368031521841843535872",
+     "plane": 0
+    },
+    {
+     "coord": "abd0000000000000000000000000000000000000000000000000000000000000",
+     "x": "26596368031521841843535872",
+     "y": "14507109835375550096474112",
+     "z": "26596368031521841843535872",
+     "plane": 0
+    },
+    {
+     "coord": "2bc0000000000000000000000000000000000000000000000000000000000000",
+     "x": "7253554917687775048237056",
+     "y": "14507109835375550096474112",
+     "z": "24178516392292583494123520",
+     "plane": 0
+    }
+   ]
+  },
+  {
+   "name": "encoded-slash-lower",
+   "input": "abc%2f",
+   "note": "An escape takes its two hex digits in either case: %2f is %2F, a slash, which is then dropped.",
    "valid": true,
    "kind": "prefix",
    "hex": "abc",
@@ -5412,6 +5543,24 @@
    "name": "invalid-bad-escape",
    "input": "%zzabc",
    "note": "A malformed escape: the text is read undecoded, and % is not hex.",
+   "valid": false
+  },
+  {
+   "name": "invalid-truncated-escape",
+   "input": "abc%2",
+   "note": "A % followed by only one hex digit is a malformed escape: the text is read undecoded, and % is not hex.",
+   "valid": false
+  },
+  {
+   "name": "invalid-utf8-lone-lead",
+   "input": "%C2abc",
+   "note": "C2 is a UTF-8 lead byte with no continuation byte after it, so the decoded bytes are not valid UTF-8: the text is read undecoded, and % is not hex.",
+   "valid": false
+  },
+  {
+   "name": "invalid-utf8-ff",
+   "input": "%FFabc",
+   "note": "The byte FF never occurs in UTF-8, so the decoded bytes are not valid UTF-8: the text is read undecoded, and % is not hex.",
    "valid": false
   },
   {
