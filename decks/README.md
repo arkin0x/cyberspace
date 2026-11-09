@@ -63,7 +63,14 @@ The design record for this category, and for why the base protocol defines holdi
 - `DECK-0005-local-chat.md`: Local chat. Defines `kind 23330`, the ephemeral chat envelope (a bag in the ephemeral range, sealed to the speaker's room), and `kind 23333`, the chat line inside it, an unsigned rumor bound to the envelope's signer.
 - `DECK-0006-sealed-comments.md`: Sealed comments. NIP-22 `kind 1111` comments on hidden things, with the words encrypted to the bag's region key as an FF-1 derived-key event.
 - `DECK-0007-hidden-audio.md`: Hidden audio. Defines `kind 1063` as a bag item, a NIP-94 file event naming an encrypted file on Blossom and carrying its key, written as an unsigned rumor; and how it is heard in space: full inside a sphere about its source, fading to silence at the walls of its region, looping or played once on entering the sphere.
-- `kinds-vectors.json` and `kinds-vectors.mjs`: deterministic test vectors for DECK-0004, DECK-0005, DECK-0006 and DECK-0007, and the script that produces them (needs `nostr-tools` 2.x).
+- `kinds-vectors.json` and `kinds-vectors.mjs`: deterministic test vectors for DECK-0004, DECK-0005, DECK-0006 and DECK-0007, and for the sealed entries of `../CYBERSPACE_V2.md` §7.6, and the script that produces them (needs `nostr-tools` 2.x).
+
+## Kinds defined by the base spec
+These kinds are defined in `../CYBERSPACE_V2.md`, not in a DECK. They are listed here so that no DECK allocates them.
+- `kind 3333`: a movement action (§8.1).
+- `kind 33330`: a bag (§7.6, §8.6).
+- `kind 33335`: a sealed entry, one bag entry carried by reference as its own event, sealed with the bag's key (§7.6, Sealed entries).
+- `kind 11333`: an avatar (§8.10).
 
 ## Reserved kinds
 - `kind 33332`: public shards, shards published in the open rather than hidden in a bag. Reserved, not yet specified. (The archived v1 spec used 33332 for v1 shards; those events carry v1 tags and are not this.)

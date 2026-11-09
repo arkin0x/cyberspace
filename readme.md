@@ -117,6 +117,7 @@ Copy the result here unchanged, and into every implementation's tests unchanged.
 Cyberspace events conform to NIP-01:
 - **Action events** (spawn, hop, sidestep): `kind: 3333`
 - **Location-encrypted content events**: `kind: 33330`
+- **Sealed bag entries** (one entry of a bag, published by reference): `kind: 33335`
 - **DECKs** define additional event kinds and structures
 
 Being built on a decentralized, permissionless system, knowledge of global state is not possible. Just as in physical reality.

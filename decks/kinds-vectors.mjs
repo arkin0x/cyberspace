@@ -1,5 +1,6 @@
 // Golden vectors for DECK-0004 (items, chests, item listings), DECK-0005
-// (local chat), DECK-0006 (sealed comments) and DECK-0007 (hidden audio). Deterministic: every key is
+// (local chat), DECK-0006 (sealed comments), DECK-0007 (hidden audio) and the
+// sealed entries of CYBERSPACE_V2.md §7.6 (kind 33335). Deterministic: every key is
 // SHA-256 of a label, every nonce is fixed, and every BIP-340 signature uses
 // 32 zero bytes of auxiliary randomness. A reader MUST accept any valid
 // signature; the fixed aux only makes these files reproducible. The message
@@ -116,6 +117,63 @@ const audioRadius = Math.min(6, ...audioSource.map((v) => Math.min(v, 32 - v)))
 const audioGains = [[10.5, 16.5, 16.5], [16.5, 16.5, 16.5], [21.25, 16.5, 16.5], [26.75, 16.5, 16.5], [32, 16.5, 16.5], [0, 16.5, 16.5], [10.5, 26.5, 26.5], [33, 16.5, 16.5]]
   .map((listener) => ({ listener, gain: Number(gain(audioSource, listener, 32, audioRadius).toFixed(12)) }))
 
+// CYBERSPACE_V2.md §7.6 (Sealed entries): bag entries carried by reference
+// as kind 33335 events. Each payload is exactly the entry the bag would
+// otherwise hold inline: the key item and the message above, unchanged. The
+// `d` of each sealed entry is fixed here only to make the file reproducible; a
+// real writer draws it at random for every placement.
+const SEALED_KIND = 33335
+const SEALED_PREVIEW = 'This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech'
+const sealedD = (label) => hex(sha(`cyberspace vectors sealed entry d: ${label}`)).slice(0, 32)
+async function aesGcmOpen(k, payloadB64) {
+  const raw = Buffer.from(payloadB64, 'base64')
+  const ck = await webcrypto.subtle.importKey('raw', k, 'AES-GCM', false, ['decrypt'])
+  return new TextDecoder().decode(await webcrypto.subtle.decrypt({ name: 'AES-GCM', iv: raw.subarray(0, 12) }, ck, raw.subarray(12)))
+}
+async function sealEntry(label, entry, k, sk) {
+  const plaintext = JSON.stringify(entry)
+  const payload = await aesGcm(k, nonce12(`sealed entry: ${label}`), plaintext)
+  if (await aesGcmOpen(k, payload) !== plaintext) throw new Error(`sealed entry ${label} does not open`)
+  const event = sign({ pubkey: getPublicKey(sk), created_at: T, kind: SEALED_KIND, content: SEALED_PREVIEW, tags: [['d', sealedD(label)], ['encrypted', 'aes-256-gcm', payload, 'cyberspace:region'], ['alt', SEALED_PREVIEW]] }, sk)
+  return { plaintext, aes_nonce: hex(nonce12(`sealed entry: ${label}`)), event }
+}
+const addressOf = (e) => `${e.kind}:${e.pubkey}:${e.tags.find((t) => t[0] === 'd')[1]}`
+const RELAY = 'wss://cyberspace.nostr1.com'
+
+// An ordinary bag: the chest inline, the key item and the message by reference.
+const sealedKey = await sealEntry('key item', keyItem, regionKey, hiderSk)
+const sealedMessage = await sealEntry('message', message, regionKey, hiderSk)
+const bagEntries = [chest, ['a', addressOf(sealedKey.event), RELAY, C], ['a', addressOf(sealedMessage.event), '', C]]
+const bagPlain = JSON.stringify(bagEntries)
+const bagPayload = await aesGcm(regionKey, nonce12('bag with sealed entries'), bagPlain)
+const bag = sign({ pubkey: hider, created_at: T + 1, kind: 33330, content: '', tags: [['d', lookupId], ['encrypted', 'aes-256-gcm', bagPayload], ['version', '2'], ['H', '12'], ['contents', 'message', '1'], ['contents', 'key', '1'], ['contents', 'chest', '1']] }, hiderSk)
+
+// A room bag (DECK-0004 §3.7.2): the room key seals the room bag and every
+// sealed entry it names.
+const doorSecret = key('door secret')
+const roomKey = new Uint8Array(sha(Buffer.concat([Buffer.from('cyberspace:door', 'utf8'), Buffer.from(regionKey), Buffer.from(doorSecret)])))
+const roomLookupId = hex(sha(roomKey))
+const roomMessage = rumorOf({ pubkey: hider, created_at: T, kind: 1, content: 'Behind the door, by reference.', tags: [['C', C], ['-']] })
+const sealedRoom = await sealEntry('room message', roomMessage, roomKey, hiderSk)
+const roomPlain = JSON.stringify([['a', addressOf(sealedRoom.event), RELAY, C]])
+const roomPayload = await aesGcm(roomKey, nonce12('room bag with a sealed entry'), roomPlain)
+const roomBag = sign({ pubkey: hider, created_at: T + 1, kind: 33330, content: '', tags: [['d', roomLookupId], ['encrypted', 'aes-256-gcm', roomPayload], ['version', '2']] }, hiderSk)
+if (await aesGcmOpen(regionKey, roomBag.tags[1][2]).catch(() => null) !== null) throw new Error('the region key must not open the room bag')
+
+// Entries a reader MUST drop.
+const foreign = await sealEntry('foreign signer', rumorOf({ pubkey: speaker, created_at: T, kind: 1, content: 'Not the hider.', tags: [['C', C], ['-']] }), regionKey, speakerSk)
+const nested = await sealEntry('nested', sealedMessage.event, regionKey, hiderSk)
+const doorSender = key('door sender')
+const doorPlain = JSON.stringify([['room', hex(doorSecret)]])
+const doorSeal = nip44.encrypt(doorPlain, nip44.utils.getConversationKey(doorSender, item), nonce32('door'))
+const door = sign({ pubkey: hider, created_at: T, kind: 3341, content: doorSeal, tags: [['C', C], ['title', 'Door'], ['lock', item, getPublicKey(doorSender)], ['requires', 'Vapor Key'], ['door', '12'], ['-']] }, hiderSk)
+// Height 12, the bag's own: a reader that wrongly opened this door would
+// derive the room key above from the bag's key and reach the room bag.
+const sealedDoor = await sealEntry('door', door, regionKey, hiderSk)
+
+const utf8 = (s) => Buffer.byteLength(s, 'utf8')
+const refKey = JSON.stringify(bagEntries[1])
+
 console.log(JSON.stringify({
   note: 'Deterministic vectors. Keys are SHA-256("cyberspace vectors: <label>"); AES-GCM nonces are the first 12 bytes and the NIP-44 nonce all 32 bytes of SHA-256("cyberspace vectors nonce: <label>"); BIP-340 aux randomness is 32 zero bytes. Readers MUST accept any valid signature.',
   keys: { hider_secret: hex(hiderSk), hider, item_secret: hex(itemSk), item, chest_sender_secret: hex(senderSk), chest_sender: sender, speaker_secret: hex(speakerSk), speaker, region_key: hex(regionKey), lookup_id: lookupId },
@@ -127,5 +185,26 @@ console.log(JSON.stringify({
   audio: {
     file_hex: audioFile.toString('hex'), file_key: hex(audioKey), file_nonce: hex(audioNonce), ciphertext_hex: audioCipher.toString('hex'), item: audioItem,
     gain: { region_height: 5, side: 32, source: audioSource, fade: 6, radius: audioRadius, samples: audioGains },
+  },
+  sealed_entries: {
+    note: 'CYBERSPACE_V2.md §7.6, Sealed entries. Each payload is exactly the entry the bag would otherwise hold inline. The fixed d values stand in for the random d a real writer draws for every placement.',
+    key_item: sealedKey,
+    message: sealedMessage,
+    bag: { plaintext: bagPlain, aes_nonce: hex(nonce12('bag with sealed entries')), event: bag, reads_as: [chest.id, keyItem.id, message.id] },
+    room: {
+      door_secret: hex(doorSecret), room_key: hex(roomKey), room_lookup_id: roomLookupId,
+      message: sealedRoom,
+      bag: { plaintext: roomPlain, aes_nonce: hex(nonce12('room bag with a sealed entry')), event: roomBag, reads_as: [roomMessage.id] },
+    },
+    reject: {
+      foreign_signer: { reference: ['a', addressOf(foreign.event), '', C], sealed: foreign, why: 'the sealed entry is not signed by the bag\'s signer' },
+      nested: { reference: ['a', addressOf(nested.event), '', C], sealed: nested, why: 'the payload is itself a sealed entry' },
+      door: { reference: ['a', addressOf(sealedDoor.event), '', C], sealed: sealedDoor, why: 'a door is never carried by reference' },
+    },
+    sizes: {
+      key_item_inline_bytes: utf8(JSON.stringify(keyItem)),
+      key_item_reference_bytes: utf8(refKey),
+      key_item_reference_in_bag_bytes: Math.ceil(utf8(refKey) * 4 / 3),
+    },
   },
 }, null, 2))

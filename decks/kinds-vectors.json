@@ -347,5 +347,296 @@
         }
       ]
     }
+  },
+  "sealed_entries": {
+    "note": "CYBERSPACE_V2.md §7.6, Sealed entries. Each payload is exactly the entry the bag would otherwise hold inline. The fixed d values stand in for the random d a real writer draws for every placement.",
+    "key_item": {
+      "plaintext": "{\"pubkey\":\"d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c\",\"created_at\":1791800000,\"kind\":3340,\"content\":\"Opens the vault under the bridge.\",\"tags\":[[\"C\",\"c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724\"],[\"title\",\"Vapor Key\"],[\"item\",\"17f2f2753715a844de39c398f3e6b112d36b61a2ad6a38d9a75a93579d35dec9\"],[\"secret\",\"4f8306d60d55ea6a851ca01de3131aa06a1c97ffdc53903fd51173f73c033c5b\"],[\"-\"]],\"id\":\"546b4bcae23a41111e1172fd833278e498a2bb549332873d0ef3dbb9c68740b1\",\"sig\":\"d7920b9808b3fe4ff9821e9f8f533c8738b6c4f964b8c1b50b2f1657bdca075857f4ae7609d370985d65b8c124a5b65828b131fed04a956cb1445186c1d27241\"}",
+      "aes_nonce": "97f96547f56cfcaae30ee0aa",
+      "event": {
+        "pubkey": "d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c",
+        "created_at": 1791800000,
+        "kind": 33335,
+        "content": "This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech",
+        "tags": [
+          [
+            "d",
+            "8cd8c91c7fe29332151ad6dbcb863c97"
+          ],
+          [
+            "encrypted",
+            "aes-256-gcm",
+            "l/llR/Vs/KrjDuCq2Frf4XJmzpkxmZ0UpXbR0RIPLsNuUNT8aFyywk1w1IyN6Px9AnWuy9NoxtNdQxLO4ZEGulKtcN+bTO6wbUpfEO8ztq03HZVc6mnfpaleGv0DvtyyYwDsTp+qePo8KsDpl4PcNRZdf5+AHCetYW08paRE0BQxZ7FGm8h60SnPgRwXF7jZS8Qf0K+Ad1MY1QFqPjpDEk0/uiE0L3E52fwvqRjMOxHfQ2W9RI/2v5RdZWZdk9OK7al2+oq3LE7hPvJXlBJWoYpNq4l4xmVuoZTVYiVLwHSC8dLgOuL38OraLEi1+2jjiNrlikeIq5p7RM+vS7kyckANK/0UoLbfzP7Dw89bMSR3VepMEhgEacFMJ4EIHryHTU7/1Kki7JuiMhf4W7nnVWLYmZ6m6V8Go92FlBCZNw/vB5f0FSpXpl7ZlEDBqu0NIhNBWYvMj6i299dWDqoBY/QHvy1A5i4Whts4iGoglxBZcng66PWc8QnGXYaRn7CsUFzJwMibyMB3zwTn03HOOE2XoBw83pYO8ZnZeK9CrnkuZ8dl5qq8xo+rodu8o1uh4q/J+mdi3gxYvlFkqcfGX15ROx56DmYdbxMwgxP/jWEmba/oNO0vkvkpA/YFT/HOR11E8bfXUaTKJoAjJfUR2DlQWX7pYjT0GbUyC15l23dNSbDxH9hBCb116LXGLXKlR1/P0VP5A92ZmaUhrllFdZHX/3GHFOn3BO9I9BwltUltR0U4GDeK6nHqjUA5yVnHa2qFE7sszo9lWex4c44f9AE/mElrE+O39XJiDfzK9dizobgKXrGXXbmJzMMT2CEySTSse+RjodFkEH/J6u7PQmXTGBtnuUfNxz1XFZ6XvdcS4kZF",
+            "cyberspace:region"
+          ],
+          [
+            "alt",
+            "This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech"
+          ]
+        ],
+        "id": "d9468ce02e66648658c63b767331a61d25d742c3930edb20ab848b7d3978e5d2",
+        "sig": "a893476fdfd1dcb134dc8b8f36519ef49699b8a768ead2a8733c47f585f59958ec1a6e2b0ad923b53c3df695f77bc7bf3d0106237a879909845e8a3732170bac"
+      }
+    },
+    "message": {
+      "plaintext": "{\"pubkey\":\"d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c\",\"created_at\":1791800000,\"kind\":1,\"content\":\"You found the secret sauce.\",\"tags\":[[\"C\",\"c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724\"],[\"-\"]],\"id\":\"01fab6a847da4985548bc7ccaeb207979305ae9b2c2aaff273ed90b07202657b\"}",
+      "aes_nonce": "95636f6300b45471687ebbdb",
+      "event": {
+        "pubkey": "d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c",
+        "created_at": 1791800000,
+        "kind": 33335,
+        "content": "This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech",
+        "tags": [
+          [
+            "d",
+            "42708e003321d2ebaf7233f55a0bbb7a"
+          ],
+          [
+            "encrypted",
+            "aes-256-gcm",
+            "lWNvYwC0VHFofrvbfd0PGFucdUYyCNJwSI5e0wI9h6xc2ywxossLnnYXaygJ4PXZwGoFf0CLLYX8T2koFfnx8hDWijmcRSo06pKq1Gu4FPZKYICWg8cNgqqbjzcTKMB6dYDHBaP2iddCCg2B2uePYJW6XBdWOZ8KysGz8Z22pz7+BekqZNu9tuGJHc8yAwnLvp2FlVFknJWASwcAlIgqrk/HaDtvnmFqYjmLoFZVoXzy3hqx5FD9DIxdgcQVpVX4qyQbwBqR/Ng+o+RBa87uikE2XQI7WubrTpfw6XAs9LRco7MJ4Oy+cMLC705d1V+UQHb1cigevZB8dR0H+jZ8lSntc2UbwLERCDpzbD1Q/5HYk5rrnwpn9cUGRQHfOc6AAkzZJEqA99aVULoSW16MZzlPpSWgEvzFNUOUGzvRaTxKMufUTdeL8e7xYMrji428PV8=",
+            "cyberspace:region"
+          ],
+          [
+            "alt",
+            "This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech"
+          ]
+        ],
+        "id": "840ff2c72509ff4d8aaa952dc5f5631f5fc59876062e281c0ece4408607d4cb8",
+        "sig": "467ef306eae5590325f850107ab22c481cc7b9f48dc7b3bba58a9f0aba769ca5466b6d2ae5baaa58d9a9b480931edee5c8abec0d69ca8a3b6e142ed305b0be40"
+      }
+    },
+    "bag": {
+      "plaintext": "[{\"pubkey\":\"d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c\",\"created_at\":1791800000,\"kind\":3341,\"content\":\"Aj53VnBosTD89j4J6T8BkDzykESyWQ70Qgle1pmLb3mG89MyvcA0TBQG1p+htsBoWFzofXyzCgbAQchT2qkp0zSQ7BhX0pKnQPNtOA/QNwGLt6t+QqI9VuR/LWQkbGPa/fIXDzoLI/lEG2x5OWg3v/l06VZUsUNpxAO97KdnbmjsNTQUbhb1L/QYF7eBT+KI+xPJ606A5DaAtcgHMf3tGj4h3L4u8xKe0PdF7CNo6SApLI6Pq5gzXPuVBRFXboAwJVgX9jIy6XSnXFQ8l6V8Ms3sFQLmN4CRuFj/2xr7jWf+qw6GJZEy8Wz4+v2HNPnBf3i/Bf1GqQ7j1zZPhd1GfSr4O73l0F3TPKmT915akiQyGThbHKvsFTy2k3zKdTdK2HKZjWKX/v+HC1UhEKjLtCn9MbXRfCjihyehNKx6272sAJnVVsKdvEysv3QD7hetXe1xgBnSl4WYLqVUhGqFn1SyK/qkFzwsn6GEV5WvIw7i00BRIoMs/eKfPfcMNG7aMHc8\",\"tags\":[[\"C\",\"c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724\"],[\"title\",\"Vault\"],[\"lock\",\"17f2f2753715a844de39c398f3e6b112d36b61a2ad6a38d9a75a93579d35dec9\",\"01854685ad151dd2c88dcc9f271a9069ded309507df8d29b6fdb02959d4e559a\"],[\"requires\",\"Vapor Key\"],[\"-\"]],\"id\":\"c58f497210ad3d398b3532d84744dab330aefdcfd21b1287090ddbc960ffaab1\",\"sig\":\"8cc0b1b3c0a43c5dd7091cf1d8492e9082e5001e359a8819718a3f53097fe9c9efa50be4b0589035ba9f907a277c1d5a5a0c11efa93d7ecf0b4928cb0f4c5c20\"},[\"a\",\"33335:d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c:8cd8c91c7fe29332151ad6dbcb863c97\",\"wss://cyberspace.nostr1.com\",\"c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724\"],[\"a\",\"33335:d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c:42708e003321d2ebaf7233f55a0bbb7a\",\"\",\"c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724\"]]",
+      "aes_nonce": "5e12ecfd7652922d8a71dd7b",
+      "event": {
+        "pubkey": "d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c",
+        "created_at": 1791800001,
+        "kind": 33330,
+        "content": "",
+        "tags": [
+          [
+            "d",
+            "1ad7a804c105d12654735c650cc3c5e1b4e46a86e79701e22d396f3ea375a91c"
+          ],
+          [
+            "encrypted",
+            "aes-256-gcm",
+            "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"
+          ],
+          [
+            "version",
+            "2"
+          ],
+          [
+            "H",
+            "12"
+          ],
+          [
+            "contents",
+            "message",
+            "1"
+          ],
+          [
+            "contents",
+            "key",
+            "1"
+          ],
+          [
+            "contents",
+            "chest",
+            "1"
+          ]
+        ],
+        "id": "c3e765ec4ee06838f482e5f6cebabf009d976c8d2ad13dd7344de97c78dee276",
+        "sig": "3d037d2a0b05f2da7d5049fd17de0b3f05c2cf4f29a9fd332311176c25736d6610d1172ac7e0d345adbc718fc4cce8bb153f3f372d4c1254d2aabb9c35c31861"
+      },
+      "reads_as": [
+        "c58f497210ad3d398b3532d84744dab330aefdcfd21b1287090ddbc960ffaab1",
+        "546b4bcae23a41111e1172fd833278e498a2bb549332873d0ef3dbb9c68740b1",
+        "01fab6a847da4985548bc7ccaeb207979305ae9b2c2aaff273ed90b07202657b"
+      ]
+    },
+    "room": {
+      "door_secret": "d2783c856451b06510dd491931353f08d070cf13d9087de1830c674e98860b94",
+      "room_key": "5bf6de2b1f0ba2f077b748dc374748c717bbc583d86906fe8d2ab3aaff2a5cd9",
+      "room_lookup_id": "0b0e73f34bc4f6da41d94476157edd71f3e2c65d540d87be6381700386200c1f",
+      "message": {
+        "plaintext": "{\"pubkey\":\"d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c\",\"created_at\":1791800000,\"kind\":1,\"content\":\"Behind the door, by reference.\",\"tags\":[[\"C\",\"c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724\"],[\"-\"]],\"id\":\"24cdb4148bcd8212b919a6851a128b76303f2549afda18923932be2bb17dd987\"}",
+        "aes_nonce": "0e2f14cf48500df42b21362d",
+        "event": {
+          "pubkey": "d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c",
+          "created_at": 1791800000,
+          "kind": 33335,
+          "content": "This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech",
+          "tags": [
+            [
+              "d",
+              "80225885e39ec543a4deeb11c326a6e4"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "Di8Uz0hQDfQrITYtrKEJJ6u8/9u/pfHa/k7xNhT9LFVBTF8qvdAjk+2pzSVpzeOiS0EaKrxEaHQMB/3srrJxISuy4ATXjxAEzmJfS5Pu8+LMiMqjeJp93NYpeNdSOwPU6bI0itGkZzymfII6PUW5nlxweAWR5aalRdPAxhznAbg/3DQrEbBbddYCHNRI2H96uzJQwN5E3h6bbNEaeyeyHsy3W+tmoW0Q6fiukdnavfaGVngPI+Tlc0PC0o7+CWjptV9zg3jZ/ozDZBYNJXG+1Bb3nI5otQDHinXo4CQ7eOdAtsDV6k0jQdj1lk1J1z0xVdzj49HFF9bVSIC3Yn9VxgOgrSF0VUWQPjaXpOD6xKO84icoouYtnVMAx+aG2fEOgjPV9+BRuZuFeopJV5k3G2OjtAf5zdZ+BIY97x++b2LK8K3XWfEdaVp6Ysk2le88OYEzi5E=",
+              "cyberspace:region"
+            ],
+            [
+              "alt",
+              "This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech"
+            ]
+          ],
+          "id": "90ae208451b28bd718d983c37bc6ecda27d00cd5d5bbf410d2d64c70671316e6",
+          "sig": "8305dd3be796efeed711efcb5d5363a790fdb181800ed5de1f91821c0217ee3e95620dd0f64ee2aa996bc744b975b56bba4a1dd60a026efb6bb0a423d83d206c"
+        }
+      },
+      "bag": {
+        "plaintext": "[[\"a\",\"33335:d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c:80225885e39ec543a4deeb11c326a6e4\",\"wss://cyberspace.nostr1.com\",\"c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724\"]]",
+        "aes_nonce": "ca5b179ff3fbe9def3c2ac2e",
+        "event": {
+          "pubkey": "d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c",
+          "created_at": 1791800001,
+          "kind": 33330,
+          "content": "",
+          "tags": [
+            [
+              "d",
+              "0b0e73f34bc4f6da41d94476157edd71f3e2c65d540d87be6381700386200c1f"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "ylsXn/P76d7zwqwuYVUiieqS1MeEBLQqhTtm3eZfYgNQzrOmMQ0Ei6LlNiRliknTgmFqthyT47JqrbFzSpuWazo7wA8n+IfX+N1Q5OIp3LXCdx94MBhr7n97Jjag0vD3rkz9orcV8/0f8et/8UYO7f2Q79e8OLvEySLgaOq9XbdVaSzNzIhSnd8VSiLomdMUK3QE0lFgyqdR8ShfXTDOG07cVpXwpKibrE+UI51Vwzz9JkzenMRTyeAZTmCsC7ioUSTC3rclxYriOKp6gbaSANz1NqnqwizXMUYai9V7E0enFq7kJbeZHIpea3/dNQ=="
+            ],
+            [
+              "version",
+              "2"
+            ]
+          ],
+          "id": "7c4ec59430aebfd0881d1aecfb31495ee4a663a122a3820830c76c2b34d00530",
+          "sig": "609488496e895aceef173cc36cac340353f7cbf39d538bf0fbe1fb76a44d9c796d3a3735aafba1ba8de63e71c659c5182a36224a93468e673b9466d20e686c7a"
+        },
+        "reads_as": [
+          "24cdb4148bcd8212b919a6851a128b76303f2549afda18923932be2bb17dd987"
+        ]
+      }
+    },
+    "reject": {
+      "foreign_signer": {
+        "reference": [
+          "a",
+          "33335:dcb25695efbeb5383fe529652dc549ab087aabcbde7e1a6c6e92d46e02594e9b:824260cf9e3fba78f7ef26319b60a6ae",
+          "",
+          "c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724"
+        ],
+        "sealed": {
+          "plaintext": "{\"pubkey\":\"dcb25695efbeb5383fe529652dc549ab087aabcbde7e1a6c6e92d46e02594e9b\",\"created_at\":1791800000,\"kind\":1,\"content\":\"Not the hider.\",\"tags\":[[\"C\",\"c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724\"],[\"-\"]],\"id\":\"dc1572c9216647c8ad16f6f98d578ff6c5ad99fd20363fcc88ee7096bb329b19\"}",
+          "aes_nonce": "f3398a164befeeeacb257872",
+          "event": {
+            "pubkey": "dcb25695efbeb5383fe529652dc549ab087aabcbde7e1a6c6e92d46e02594e9b",
+            "created_at": 1791800000,
+            "kind": 33335,
+            "content": "This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech",
+            "tags": [
+              [
+                "d",
+                "824260cf9e3fba78f7ef26319b60a6ae"
+              ],
+              [
+                "encrypted",
+                "aes-256-gcm",
+                "8zmKFkvv7urLJXhyirUQ8qsstIO58abG6r0f/7Y8/0mw4yU83DhAH/xojEO1aRxy0Ql4fXvfWJ3YkLwcVh9TwvTBaChhMmbuwC5ja7+G+IdU8en+jIZvXSIFgvrpVQx5KmkVPoQQhB/CpuynziMAa1tw5e0BkdRsSOA1/FHJk8fD9fGYRxqg0jxWXrQRnbYEcf6hI4Jrxd0wnyZPrgY9WczTaZaShTEhxtf/gcFlVnEbNBOrwOCKRtS6uwNRVlZgJNDJVzqGCu9QTmvE3ZPtngg5AM/SnSc4SkigL5YD84Nn8osm3BbhumSJpf2swWJdrVpWNX6LY/ZfVNKlZJOrwu09OHR/119Rbx6M0nEqI8wIhZjQ5t9lbvw5xF7x3Ae4rUGiL2ApOmTbMlloiunuPLk+iCXJNjoKAas12TkPYgFnR/TwNQ==",
+                "cyberspace:region"
+              ],
+              [
+                "alt",
+                "This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech"
+              ]
+            ],
+            "id": "69278bd0d27ca9fb9da32946fb9b0730014390dfe089a5fb9a1b39286a1351d7",
+            "sig": "f9231081f160a64e27332891ad0399556ce11105f6161d3f342f64f5906770d4e908e02fa2abe01c13ab361569a3efdefceed9b70f6c3d562b452742f9e6b45c"
+          }
+        },
+        "why": "the sealed entry is not signed by the bag's signer"
+      },
+      "nested": {
+        "reference": [
+          "a",
+          "33335:d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c:a16165b88e7c4cd85369160fcbfbd492",
+          "",
+          "c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724"
+        ],
+        "sealed": {
+          "plaintext": "{\"pubkey\":\"d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c\",\"created_at\":1791800000,\"kind\":33335,\"content\":\"This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech\",\"tags\":[[\"d\",\"42708e003321d2ebaf7233f55a0bbb7a\"],[\"encrypted\",\"aes-256-gcm\",\"lWNvYwC0VHFofrvbfd0PGFucdUYyCNJwSI5e0wI9h6xc2ywxossLnnYXaygJ4PXZwGoFf0CLLYX8T2koFfnx8hDWijmcRSo06pKq1Gu4FPZKYICWg8cNgqqbjzcTKMB6dYDHBaP2iddCCg2B2uePYJW6XBdWOZ8KysGz8Z22pz7+BekqZNu9tuGJHc8yAwnLvp2FlVFknJWASwcAlIgqrk/HaDtvnmFqYjmLoFZVoXzy3hqx5FD9DIxdgcQVpVX4qyQbwBqR/Ng+o+RBa87uikE2XQI7WubrTpfw6XAs9LRco7MJ4Oy+cMLC705d1V+UQHb1cigevZB8dR0H+jZ8lSntc2UbwLERCDpzbD1Q/5HYk5rrnwpn9cUGRQHfOc6AAkzZJEqA99aVULoSW16MZzlPpSWgEvzFNUOUGzvRaTxKMufUTdeL8e7xYMrji428PV8=\",\"cyberspace:region\"],[\"alt\",\"This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech\"]],\"id\":\"840ff2c72509ff4d8aaa952dc5f5631f5fc59876062e281c0ece4408607d4cb8\",\"sig\":\"467ef306eae5590325f850107ab22c481cc7b9f48dc7b3bba58a9f0aba769ca5466b6d2ae5baaa58d9a9b480931edee5c8abec0d69ca8a3b6e142ed305b0be40\"}",
+          "aes_nonce": "9600fbed2c925aa2da2cf2ab",
+          "event": {
+            "pubkey": "d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c",
+            "created_at": 1791800000,
+            "kind": 33335,
+            "content": "This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech",
+            "tags": [
+              [
+                "d",
+                "a16165b88e7c4cd85369160fcbfbd492"
+              ],
+              [
+                "encrypted",
+                "aes-256-gcm",
+                "lgD77SySWqLaLPKr8/j+Tfa6O+HzpqFZ0Ob1FF0+UV0Is5CHnYVfR/UkTHeW7+tpSvAPU+lDA+Q4wQ71qL3YjVaIKfOHjsbPUu24Fqjd+jg/qEKXJQiVH2x8vVqFBYzZ5QoxWB4fIGfkxF/mUkgjH4Czz0qTDPVL7MJyTv8Yqxx8mB8X3UWd2vVEQgc+xIbivU3SLWixbWwl9l29WAcivG+YrZYVgurMlBpAjoGSv1oz3MCXshD30ysBwMWNOZS1P572cNOYlTUO36HcLJBVFqXr5Y62FkkADv9Rcx3ZHqmGOO5RNqBdmfDO+pOJGQ/ycezw4QXtYXNvi78zTeMV6azpKU0mCOejlKU30GJK6V3eOgvP68fZ1cWGOvfeOhYysLmg75PmYJlXz0rIDDlUbzArLSYqTzcOdEaMN3phHcOjjiJnCPrs2z+VSz6RxBvmI4XYwDGRRMilU4Yentiii7f9SqYE37cCiOBExBauabS86/QPDVqOBN3i4XAhCtVOCsCk/Psad0Jkpu2wAlb59bZDF5LAeu6ZDY8EnZEfPZ7HsDelGkWeDo/9A/58/JOhPhW4+xMoZ9ToHxi827kS5EgPA8t5tyAeTucp36qom949vAi9mFqwvFCRECLvvHn5bhHzBmBXSLj90PJMIJzpX6MB11KyWX5HjcfurRh2ZihfG1pUTr1Nccw3VCmwJDVf2aykQqMAbQ17gatVe4Ngzt0I+Ez2pB52ZMNwdWqzSPmydm55Fh//VXViWIKN+0G5200a3in6/gKj0f0CYenhx8MWopSXAVi+R2u46M+lh+GLWWo6DhQkb/4iYfoQDXD251s9VNpegIzUn65phCKknln+MfFs7S15RmpxIjWHDSkE4i/c5O9wsLmkjZTO/NwDPemDP6NrEjZxZWvM1bdjQrzG6fc1Oe1pMu2Q4sGz7Q43TmJ4lPLGvsKT323RKIY5jgFUk8CVJTfYY/RjY6xXkKfORK2o3ex+UKyXLOjr5hfM/qq0pptnscfucFixpQmEG9E0mfzGbudiosVUpLPVvLoF8D1jPVgrafcZgTgDFULVMUdbmCkRgZ3MGznXK7txSIESDEo8FiqIO0/YD6ur+0+EsjhtD379vCdBBx/SnXw/kpV1MIWyK0KF0p1XCW15a93OngadKDdpcY0/YJsQ4R3ZNjRM6i553ZlEBCLfiFSVTW2vCA2NCD2FVLiRn+OniwqnPXbcbafIwt85zIBK1xADJ0cPMMYVbmyQ4WjWdopXWSWrPWmsjxr91ZA3ZJTKyNpbL5HE5aF0B+J3Bcd1rvJBcbZCC5zL0et/L+SBcdZ5DImLs94dG//6VO4tvziOBlYGJDjP2YSj52oiGe+vbn9BHtWNs1GH1A2rwy5qgFhvrDIG0Z/CjhYGY8bvVtoakE83G9OTaAt/y9tA7DltvRV+tXp3hcKPm1EZQQXctRIx+/UXJLUsCiUTa0u1Tg==",
+                "cyberspace:region"
+              ],
+              [
+                "alt",
+                "This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech"
+              ]
+            ],
+            "id": "3f68f71ee87662fbe0c3abee3ca42da819ff3d3f1defd66f16b39b2aded6f706",
+            "sig": "676468c19108b0567ec617b541ccf036f997d51c8d1e0ccc3629818aa303066bdcfe7b7b13cca8a517a56a0350bf500f0996fbfad4f035ead2f85dfe013b2f9c"
+          }
+        },
+        "why": "the payload is itself a sealed entry"
+      },
+      "door": {
+        "reference": [
+          "a",
+          "33335:d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c:92cead3aa8ef03ff4370cce0ebe7a1e8",
+          "",
+          "c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724"
+        ],
+        "sealed": {
+          "plaintext": "{\"pubkey\":\"d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c\",\"created_at\":1791800000,\"kind\":3341,\"content\":\"AiTubdmI6dx1PE+FWmDc24kMlt1kbQhLum4CWvj1DPPZlq6yr3omoFTM1Pbsl2C/TmNCTPGsXeT7Cugh2Gnw+zcgWUXh4Nafo12KW7g6V12fD3C22wzUiRRSUeh8PhNVX85n36e0LoItjsA/l1VyPRFqPBnC3kkqyUec0mNUyu2Js6AKZNL+zwOAQKoaMB/acpVLXUOwlgkWrSK9L48aitEuGQ==\",\"tags\":[[\"C\",\"c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724\"],[\"title\",\"Door\"],[\"lock\",\"17f2f2753715a844de39c398f3e6b112d36b61a2ad6a38d9a75a93579d35dec9\",\"59abe616d5f01b12a1c59177be5040fd5cd0818220693d889707d6e4273613d8\"],[\"requires\",\"Vapor Key\"],[\"door\",\"12\"],[\"-\"]],\"id\":\"59180480b24179dff9fc50a95b28decb007a3ff77fc81436c40a261f92586a7d\",\"sig\":\"d37b951ffa250cfed823f7aac5806bf7a0aee03a3494d2471e2c3f05fa63830497f9b85ec66531b24b4116bd87453e06236279781773055b03d0f9c3ae377856\"}",
+          "aes_nonce": "a3faf12805711806f15453d7",
+          "event": {
+            "pubkey": "d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c",
+            "created_at": 1791800000,
+            "kind": 33335,
+            "content": "This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech",
+            "tags": [
+              [
+                "d",
+                "92cead3aa8ef03ff4370cce0ebe7a1e8"
+              ],
+              [
+                "encrypted",
+                "aes-256-gcm",
+                "o/rxKAVxGAbxVFPXwLeeK7bRGH614RyEoKQlC1LedvvKoZ2++/kN6JHh7Q10QU26BvEQlWcRKJaCuKvcnmrdzK/IVJI9tqcMWqzlBfQH/qzjfOjgkFcUlJMNYbuO4EvUpHKqRhlU5anDZGqOdfwwM6Npq0/fTEzua42/POR51rCZfyeu/AOE24DvyCncNM/DqbpGL9omdoZEPTSm0Wz2C3AP+POkZIxvgPuJ7Ja4Hgzo/iinA2HAJ8KKbhZCxmWBSn7hSxAkeYKdHVsXbq0Rs4E/C8gAUrtAWFqASAb0uB96k07mcSuUm5l3VQnOc0H6BGLMS6UYiFpdxxfXx7e44ZI7Nr93U1Vms+N+dHizgdDvpPiPdSJafnfEIjljGXkjIntoNUGUtMm2UVaJd2MmZiRoyw905+s3SGgzX3EsaXAax3Dxa2+7y+TcViM9CvQ0USUU/ZXY9UeFynrzui4JdZCO3RblQ4e10qY4/u3VM3G61qxzWNvd3DpJI54yehQeJg1MpkpEtXHzlhNO4Y3cn7EYW5hEUE9/RmuNvXkxdec3N1EGdr8hjcdNdrmt6M74vFdSzpJwh1YFIAbsO6nRnhF6naqbvRcPIXWuN9T2QzPzcMBA0NeDczvIj+4gcek0bVlaC6A8/IfYPaahXBkUTq22mkY2ljfdiGR6gxahptmkQon5QWs4zkt75Oyfd1IOzl7XfXQOzB0RBBi+AGFzHRiF000DJsWeLYnW0oknNnuCv9tGcIyqRdRoQYHtbrRHvKmj4dj0m8yfH905L0lKs0hXgQ8qz36pz+KlPYOfzowGf6wvNIm61pkejOsxpYzx3yiAw9LKqhH5tAWcdoqaVJLgcoHnNuALM+G1NsU4/JWPw6VRdIhyy9DpIDrePVMYhpOiTTF2gw+w69A9IRZERHZpm/ipSm44x33yoEeR+oOxwXPVUYJWwCYzLjJcPmbn7lqJ9N8koRzRLRLzsiRNkQqhGYZ0cmKr+xaKvKq9VnRLG0jWc3yaX2siopyIBRrSjQXGLIreqkKZTyoguiVzVDvP4wH0vj61ZUtw6VYEAAg7kkKj2bxelGZ82ot1+QieJ+vpL0CQJU0WnwzISNFkXW5i7xeHdvizckYBNO1nus3q89+CoMHqD0H823laNeJymz7rJPUV",
+                "cyberspace:region"
+              ],
+              [
+                "alt",
+                "This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech"
+              ]
+            ],
+            "id": "009e76294fc8307bdb928c5c468e0b052248c0a0818fed5200e0abd3772fe984",
+            "sig": "5d96876b9db8bdc6f42f839e9b6ebbccfb9ab0f59dad6588dfe91f80e56e844f7e928ed74709cb2181ecc2da4cb563289bc2715f87236c3ba53ee6a424c0269d"
+          }
+        },
+        "why": "a door is never carried by reference"
+      }
+    },
+    "sizes": {
+      "key_item_inline_bytes": 632,
+      "key_item_reference_bytes": 208,
+      "key_item_reference_in_bag_bytes": 278
+    }
   }
 }

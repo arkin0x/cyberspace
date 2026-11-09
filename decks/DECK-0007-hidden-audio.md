@@ -5,7 +5,7 @@ Title: Hidden audio
 Status: Draft
 Mandatory: no
 Created: 2026-10-23
-Last updated: 2026-10-23
+Last updated: 2026-11-09
 Requires: `CYBERSPACE_V2.md` §2 (coordinates), §7.2 (region keys), §7.6 (the bag) and §7.7 (contents); DECK-0004 §3 (chests); NIP-01, NIP-70, NIP-94; Blossom BUD-01 and BUD-02
 
 ## Abstract
@@ -42,7 +42,7 @@ Everything in Cyberspace v2 is encrypted to a bag unless there is a reason other
 
 ### 2.1 Shape
 
-The item is a NIP-94 file metadata event carried inline in a bag's list of entries (`CYBERSPACE_V2.md` §7.6) or a chest's (DECK-0004 §3). Its file tags are NIP-94's. Its encryption tags are the ones NIP-17 gives an encrypted file message (`kind 15`), so a client that knows either NIP reads most of it.
+The item is a NIP-94 file metadata event carried inline in a bag's list of entries (`CYBERSPACE_V2.md` §7.6) or a chest's (DECK-0004 §3). It MAY instead be carried in a sealed entry that a bag names (`CYBERSPACE_V2.md` §7.6, Sealed entries), still as a rumor. It is never referenced as a `kind 1063` event of its own, which feed clients would show as a file post. Its file tags are NIP-94's. Its encryption tags are the ones NIP-17 gives an encrypted file message (`kind 15`), so a client that knows either NIP reads most of it.
 
 | Field | Value |
 |---|---|

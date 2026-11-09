@@ -5,7 +5,7 @@ Title: Items, Chests and Doors
 Status: Draft
 Mandatory: no
 Created: 2026-10-15
-Last updated: 2026-10-31
+Last updated: 2026-11-09
 Requires: `CYBERSPACE_V2.md` §7.2 (keys), §7.6 (the bag) and §8.6 (its event); DECK-0003 (SNO objects, for looks, and its objects table, §1.10, for carried parts); NIP-01, NIP-09, NIP-44 v2, NIP-70, NIP-92; BIP-340
 
 ## Abstract
@@ -65,7 +65,7 @@ A door is not a new kind: it is a chest with one more tag. A room bag is not a n
 
 ### 2.1 Shape
 
-An item is a nostr event carried inline in a bag's list of entries (`CYBERSPACE_V2.md` §7.6) or in a chest's (§3). It MUST NOT be published on its own: its `secret` tag is the item, and an item published to a relay is an item given to everyone who reads the relay.
+An item is a nostr event carried inline in a bag's list of entries (`CYBERSPACE_V2.md` §7.6) or in a chest's (§3). It MUST NOT be published on its own: its `secret` tag is the item, and an item published to a relay is an item given to everyone who reads the relay. A bag MAY carry it in a sealed entry (`CYBERSPACE_V2.md` §7.6, Sealed entries). That is not publishing it on its own: the sealed entry is encrypted with the bag's key, so the secret reaches exactly the readers who would have found the item inline.
 
 | Field | Value |
 |---|---|
@@ -163,7 +163,7 @@ The box is centred on the item's place. Nothing about the box or the object is l
 
 ### 3.1 Shape
 
-A chest is a nostr event carried inline in a bag or in another chest. Like an item, it is never published on its own.
+A chest is a nostr event carried inline in a bag or in another chest. Like an item, it is never published on its own. Like an item, a bag MAY carry it in a sealed entry (`CYBERSPACE_V2.md` §7.6, Sealed entries), which is not publishing it on its own. Its contents stay sealed to its lock inside the sealed entry, so it is exactly as private there as inline.
 
 | Field | Value |
 |---|---|
@@ -346,7 +346,7 @@ A door is a `kind 3341` chest. It carries everything §3.1 lists for a chest: th
 - A door inside a room (§3.7.6) MUST have a height lower than that room's. Its own room is then a smaller region inside the room that holds it.
 - A reader MUST drop a door whose `door` tag lacks a well-formed height, or that breaks either rule above.
 
-**Where a door may be:** A door lives in a bag or in a room bag. It never lives in a chest. A writer MUST NOT seal a door into a chest. A reader that finds a door inside a chest MUST NOT open its room. The reason is that a chest's contents are taken, not placed (§3.4), while a door locks a place in the world.
+**Where a door may be:** A door lives in a bag or in a room bag, inline. It never lives in a chest, and never in a sealed entry (`CYBERSPACE_V2.md` §7.6, Sealed entries). A reader that finds a door in a sealed entry MUST NOT open its room. The reason is that a door is how its room is found: a door that a reader could not fetch would lose the whole room without a trace. A writer MUST NOT seal a door into a chest. A reader that finds a door inside a chest MUST NOT open its room. The reason is that a chest's contents are taken, not placed (§3.4), while a door locks a place in the world.
 
 **The plaintext:** A door's sealed plaintext (§3.2) is a list of entries that holds exactly one entry, the **room entry**:
 
@@ -400,7 +400,7 @@ A room bag as published therefore has only the required tags of `CYBERSPACE_V2.m
 
 **Everything else is a bag's:** A room bag holds items, rumors, protected items and references exactly as any bag does, and it follows a bag's lifecycle (`CYBERSPACE_V2.md` §7.6). A rumor in a room bag is vouched for by the room bag's signer, as a rumor in any bag is vouched for by that bag's signer.
 
-**References:** A reference in a room bag names an event sealed with the room key. The room key is what `CYBERSPACE_V2.md` §7.6 (References) calls "this bag's key" when the bag is a room bag. The referenced event's `encrypted` tag still says `cyberspace:region`, as every hidden object's does. The reason is that a sealed object should not say whether it is behind a door. `cyberspace:region` still means what it always means: the key is derived, and is never fetched.
+**References:** A reference in a room bag names an event sealed with the room key. The room key is what `CYBERSPACE_V2.md` §7.6 (References) calls "this bag's key" when the bag is a room bag. That includes every sealed entry (`kind 33335`, `CYBERSPACE_V2.md` §7.6, Sealed entries) a room bag names, at every depth of nesting: a sealed entry named by the room bag of an inner room is sealed with the inner room's key. A sealed entry is signed by the room bag's signer, which is the door's signer. The referenced event's `encrypted` tag still says `cyberspace:region`, as every hidden object's does. The reason is that a sealed object should not say whether it is behind a door. `cyberspace:region` still means what it always means: the key is derived, and is never fetched.
 
 **Coordinates:** Every entry's `C` lies inside the room's region, just as every entry of any bag lies inside that bag's region.
 
@@ -452,9 +452,9 @@ A reader MAY show how deep a door is, as the number of rooms it was found inside
 Only a writer that knows the door secret can seal a door of the room to a different lock. The reason is that the new seal carries the same plaintext, the room entry, so the writer must know the secret it holds. A writer that does this SHOULD rotate the room:
 
 1. Make a new door secret. That gives a new room key and a new room lookup id.
-2. Publish the room bag again under the new key and the new lookup id. Seal every event it references again, with the new room key.
+2. Publish the room bag again under the new key and the new lookup id. Seal every event it references again, with the new room key, each as a new event with a fresh `d`: a new sealed entry (`CYBERSPACE_V2.md` §7.6, Sealed entries), or a new hidden object (DECK-0003 §3.4). A writer MUST NOT re-seal one by replacing the event at its old address. The old addresses are known to everyone the rotation shuts out, who would see each replacement arrive and could tie the new room to the old one by them. (Non-normative: re-sealing a hidden `kind 33331` object with a fresh `d` changes its address, so comments threaded to its old address no longer attach to it. Sealed entries do not have this cost, because readers identify the item inside them, not the sealed entry. The trade-off is deliberate: unlinkability comes first.)
 3. Seal the new door secret into every door of the room (§3.7.5), each to its own lock.
-4. Request deletion (NIP-09) of the old room bag, and of the events it referenced.
+4. Request deletion (NIP-09) of the old room bag, and of the events it referenced. Old sealed entries are emptied first, as `CYBERSPACE_V2.md` §7.6 (Sealed entries, Retracting) says.
 
 **Why rotate (non-normative):** Whoever opened the door before the change kept its secret. A door secret is knowledge, as an item is (§6). Rotation is the only way that a new lock keeps those earlier openers out of what the room holds from then on. Rotation does not take back what they already read. It also does not reach copies that relays keep despite a deletion request.
 
@@ -466,10 +466,10 @@ Note (non-normative): removing a door does not shut out anyone who already opene
 
 **The last door:** A writer that removes the last door of a room first deals with the room's entries, in one of two ways:
 
-- it moves them into the ordinary bag of the room's region at the room's height, so that they stand where they stood and anyone who reaches the place can find them; or
+- it moves them into the ordinary bag of the room's region at the room's height, so that they stand where they stood and anyone who reaches the place can find them. An entry that the room bag carried in a sealed entry moves inline, or into a new sealed entry sealed with the region key and a fresh `d`, never by re-sealing the old one at its address; or
 - it removes them.
 
-It then removes the door from the bag that holds the door, and requests deletion (NIP-09) of the room bag.
+It then removes the door from the bag that holds the door, and requests deletion (NIP-09) of the room bag and of every sealed entry the room bag named.
 
 **What each step needs:** Moving or removing the room's entries needs the door secret. So does finding the room bag in order to delete it. Removing the door itself needs only the door's signing key and the key of the bag that holds the door.
 
@@ -540,7 +540,7 @@ ONOSENDAI's readers (`keyItemOf`, `chestItemOf`, `openWithSecret`, `listingOf`, 
 
 The signatures in the vectors use 32 zero bytes of BIP-340 auxiliary randomness so that the file is reproducible. A reader MUST accept any valid signature, not only these.
 
-`kinds-vectors.json` does not yet hold vectors for a door, a room key, a room bag, or a chest with a look. They will be added with the first implementation that writes them.
+The `sealed_entries` section of `kinds-vectors.json` (`CYBERSPACE_V2.md` §7.6) holds a room key and a room lookup id derived from a door secret, a room bag sealed with that room key, and a door, carried in a sealed entry as a vector that readers refuse (`reject.door`). `kinds-vectors.json` does not yet hold a door that opens that room inline, or a chest with a look. They will be added with the first implementation that writes them.
 
 ## 6. Security considerations
 
