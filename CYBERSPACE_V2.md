@@ -239,18 +239,21 @@ Both planes share the same mathematical properties. Movement costs, encryption, 
 
 ### 2.5 Hex prefixes (normative)
 
-A coordinate is written as 64 lowercase hex characters: the 256-bit integer of §2.2, most significant character first, as `coord_hex` is written everywhere in this document. A shorter string of hex characters names a **region**: every coordinate whose 64-character form starts with that string.
+A coordinate is written as 64 lowercase hex characters: the 256-bit integer of §2.2, most significant character first, as `coord_hex` is written everywhere in this document. A string of 1 to 64 hex characters names a **prefix region**: every coordinate whose 64-character form starts with that string. At 64 characters the string is one coordinate, and its prefix region is that coordinate alone.
 
-**The region of a prefix (normative):**
-- A string of `n` hex characters, with `n` from 1 to 63, fixes the top `4n` bits of the coordinate and leaves every lower bit free. It names the region of every coordinate whose hex starts with it.
-- Under the interleaving of §2.2 the top bits belong, in order, to `x84`, `y84`, `z84`, `x83`, `y83`, `z83` and so on, so each axis keeps its own number of free low bits, its height. The region is therefore an aligned box in the form of §7.7, one height per axis. The heights are equal, and the box is a cube, only when `n` is a multiple of 3. One character leaves heights `(83, 84, 84)`; 63 characters leave one free bit per axis, heights `(1, 1, 1)`.
-- The plane bit is the lowest bit of the coordinate, and only the 64th character reaches it. A prefix of 1 to 63 characters therefore never fixes the plane: its region is the same box in dataspace and in ideaspace, and a coordinate in either plane is inside it. This is where the region differs from a hint box, which lies on one plane.
-- A string of 64 hex characters is a whole coordinate. It names one Gibson, every height 0, in the plane its lowest bit selects.
+A prefix region is not the region of §4.7 and §7.6. It has no key. Below 64 characters it has no plane, and it is a cube only when the length of the string is a multiple of 3. It is a set of coordinates and nothing more.
 
-Padding a prefix with `0` to 64 characters gives the lowest coordinate in its region, and padding it with `f` gives the highest. Because each axis takes its bits from fixed positions, the two decode (§2.3) to the minimum and maximum of each axis:
+**The prefix region of a string (normative):**
+- A string of `n` hex characters, with `n` from 1 to 63, fixes the top `4n` bits of the coordinate and leaves every lower bit free. Its prefix region is every coordinate whose hex starts with it.
+- Under the interleaving of §2.2 the top bits belong, in order, to `x84`, `y84`, `z84`, `x83`, `y83`, `z83` and so on, so each axis keeps its own number of free low bits, its height. The prefix region is therefore an aligned box in the form of §7.7, one height per axis. The heights are equal, and the box is a cube, only when `n` is a multiple of 3. One character leaves heights `(x, y, z) = (83, 84, 84)`; 63 characters leave one free bit per axis, `(x, y, z) = (1, 1, 1)`.
+- The plane bit is the lowest bit of the coordinate, and only the 64th character reaches it. A string of 1 to 63 characters therefore never fixes the plane: its prefix region is the same box in dataspace and in ideaspace, and a coordinate in either plane is inside it. This is where a prefix region differs from a hint box, which lies on one plane.
+- A string of 64 hex characters is one coordinate. Its prefix region is one Gibson, every height 0, in the plane its lowest bit selects.
+
+Padding a string with `0` to 64 characters gives the lowest coordinate in its prefix region, and padding it with `f` gives the highest. Because each axis takes its bits from fixed positions, the two decode (§2.3) to the minimum and maximum of each axis. The parameter of the function below is a string in canonical form, the result of **Reading a string** below, never raw input:
 
 ```python
 def prefix_region(hex_str: str):
+    # hex_str: canonical form (1 to 64 characters, each 0-9 or a-f)
     lo = coord_to_xyz(int(hex_str.ljust(64, "0"), 16))
     hi = coord_to_xyz(int(hex_str.ljust(64, "f"), 16))
     axes = [(lo[i], hi[i]) for i in range(3)]       # inclusive min and max of x, y, z
@@ -258,22 +261,22 @@ def prefix_region(hex_str: str):
     return axes, plane
 ```
 
-The height of an axis is `h` where `2^h = max - min + 1`. A coordinate is inside the region exactly when every axis lies within its minimum and maximum and, for 64 characters, the plane is the same.
+The height of an axis is `h` where `2^h = max - min + 1`. A coordinate is inside the prefix region exactly when every axis lies within its minimum and maximum and, for 64 characters, the plane is the same.
 
-**Why the plane stays open:** Read literally, a prefix names every coordinate whose hex starts with it, and that reading needs no rule beyond §2.2. The plane bit is the last bit of the layout, so a prefix shorter than 64 characters cannot reach it. A reader that wants one plane narrows the region by the plane itself; the string does not say which.
+**Why the plane stays open:** Read literally, a string names every coordinate whose hex starts with it, and that reading needs no rule beyond §2.2. An application that needs one plane, such as a relay that serves only dataspace, takes the plane from something other than the string, because no string shorter than 64 characters carries the plane bit.
 
-**Reading a string (normative):** A string as it appears in a link, a path or other text is read in this order, and each step is applied once:
-1. Percent-decode it once (RFC 3986 §2.1): each `%` followed by two hex digits is one byte, and the bytes are read as UTF-8. A `+` stays a `+`. A `%` that is not followed by two hex digits, or bytes that are not valid UTF-8, make the string invalid. What the decoding produces is not decoded again, so `%2561` becomes `%61`, which is invalid.
+**Reading a string (normative):** The input is the string exactly as it was written in the link, path or other text, before any decoding. A path that a server framework has already percent-decoded has had step 1 applied, and MUST NOT be decoded again: an implementation that reads such a path starts at step 2. The input is read in this order, and each step is applied once:
+1. Percent-decode it once (RFC 3986 §2.1). Each `%` followed by two hex digits, in either case (`%2f` and `%2F` are the same), is the one byte those digits give. Every other character stands for its UTF-8 bytes, and a `+` stays a `+`. The resulting bytes are read as UTF-8. A `%` that is not followed by two hex digits, or bytes that are not valid UTF-8, make the string invalid. What the decoding produces is not decoded again, so `%2561` becomes `%61`, which is invalid.
 2. Trim whitespace from both ends. Whitespace here is exactly U+0009, U+000A, U+000B, U+000C, U+000D, U+0020, U+00A0, U+1680, U+2000 to U+200A, U+2028, U+2029, U+202F, U+205F, U+3000 and U+FEFF. No other code point is trimmed; in particular U+0085, U+180E and U+200B are not.
 3. Remove every `/` at the end.
 4. Remove one leading `0x` or `0X`.
 5. Convert upper-case ASCII letters to lower case.
 
-The result MUST be 1 to 64 characters, each one of `0` to `9` and `a` to `f`. Otherwise the string is invalid and names no region. Because the steps run once and in this order, whitespace inside the string, whitespace before a trailing `/`, a leading `/`, a second `0x`, a sign and full-width letters all make a string invalid. The result is the string's canonical form, and two strings name the same region exactly when their canonical forms are equal. An implementation that writes a region string SHOULD write its canonical form.
+The result MUST be 1 to 64 characters, each one of `0` to `9` and `a` to `f`. Otherwise the string is invalid and names no prefix region. Because the steps run once and in this order, whitespace inside the string, whitespace before a trailing `/`, a leading `/`, a second `0x`, a sign and full-width letters all make a string invalid. The result is the string's canonical form, and two strings name the same prefix region exactly when their canonical forms are equal. An implementation that writes such a string SHOULD write its canonical form.
 
-**Why the reading is lenient:** A string arrives typed by hand, copied from a page or carried in a URL path, so it can come with upper case, a `0x`, trailing slashes, surrounding whitespace or percent-encoding. Accepting each of these lets every such spelling reach the same region. The steps are fixed and ordered so that a relay and a client given the same string agree on whether it names a region and on which region it names.
+**Why the reading is lenient:** A string arrives typed by hand, copied from a page or carried in a URL path, so it can come with upper case, a `0x`, trailing slashes, surrounding whitespace or percent-encoding. Accepting each of these lets every such spelling reach the same prefix region. The steps are fixed and ordered so that a relay and a client given the same string agree on whether it names a prefix region and on which one it names.
 
-**Conformance:** `region-prefix-vectors.json` at the root of this repository (§14) is the conformance test for this section. It holds 64 strings, valid and invalid, and for each valid one its canonical form, its region per axis and coordinates inside and outside it. An implementation of this section tests itself against every entry. Like the other vectors in this repository it is not normative: where the file disagrees with this text, the text is right and the file is a bug.
+**Conformance:** `region-prefix-vectors.json` at the root of this repository (§14) is the conformance test for this section. It holds strings, valid and invalid, and for each valid one its canonical form, its prefix region per axis and coordinates inside and outside it. An implementation of this section tests itself against every entry. Like the other vectors in this repository it is not normative: where the file disagrees with this text, the text is right and the file is a bug.
 
 ---
 
