@@ -241,7 +241,7 @@ Both planes share the same mathematical properties. Movement costs, encryption, 
 
 A coordinate is written as 64 lowercase hex characters: the 256-bit integer of §2.2, most significant character first, as `coord_hex` is written everywhere in this document. A string of 1 to 64 hex characters names a **prefix region**: every coordinate whose 64-character form starts with that string. At 64 characters the string is one coordinate, and its prefix region is that coordinate alone.
 
-A prefix region is not the region of §4.7 and §7.6. It has no key. Below 64 characters it has no plane, and it is a cube only when the length of the string is a multiple of 3. It is a set of coordinates and nothing more.
+A prefix region is not the region of §4.7 and §7.6. It has no key. Below 64 characters it has no plane and is a cube only when the length of the string is a multiple of 3.
 
 **The prefix region of a string (normative):**
 - A string of `n` hex characters, with `n` from 1 to 63, fixes the top `4n` bits of the coordinate and leaves every lower bit free. Its prefix region is every coordinate whose hex starts with it.
@@ -265,7 +265,7 @@ The height of an axis is `h` where `2^h = max - min + 1`. A coordinate is inside
 
 **Why the plane stays open:** Read literally, a string names every coordinate whose hex starts with it, and that reading needs no rule beyond §2.2. An application that needs one plane, such as a relay that serves only dataspace, takes the plane from something other than the string, because no string shorter than 64 characters carries the plane bit.
 
-**Reading a string (normative):** The input is the string exactly as it was written in the link, path or other text, before any decoding. A path that a server framework has already percent-decoded has had step 1 applied, and MUST NOT be decoded again: an implementation that reads such a path starts at step 2. The input is read in this order, and each step is applied once:
+**Reading a string (normative):** The input is the string exactly as it was written in the link, path or other text, before any decoding. An implementation that can see only a path its framework has already percent-decoded MAY start at step 2, but only when that decoding is exactly step 1 (UTF-8, `+` kept, a malformed escape or invalid UTF-8 rejected). Otherwise it MUST read the raw path, for example Go's `URL.EscapedPath()`. A path is never decoded twice. The input is read in this order, and each step is applied once:
 1. Percent-decode it once (RFC 3986 §2.1). Each `%` followed by two hex digits, in either case (`%2f` and `%2F` are the same), is the one byte those digits give. Every other character stands for its UTF-8 bytes, and a `+` stays a `+`. The resulting bytes are read as UTF-8. A `%` that is not followed by two hex digits, or bytes that are not valid UTF-8, make the string invalid. What the decoding produces is not decoded again, so `%2561` becomes `%61`, which is invalid.
 2. Trim whitespace from both ends. Whitespace here is exactly U+0009, U+000A, U+000B, U+000C, U+000D, U+0020, U+00A0, U+1680, U+2000 to U+200A, U+2028, U+2029, U+202F, U+205F, U+3000 and U+FEFF. No other code point is trimmed; in particular U+0085, U+180E and U+200B are not.
 3. Remove every `/` at the end.
