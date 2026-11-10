@@ -635,17 +635,20 @@ export function readOrientation(tags) {
   }
   let spin = 0
   if (s) {
-    if (s.length < 2 || !isDecimal(s[1]) || Number(s[1]) > 359) return null
+    if (s.length !== 2 || !isDecimal(s[1]) || Number(s[1]) > 359) return null
     spin = Number(s[1])
   }
   const up = u !== undefined
   return { turn, up, spin: up ? spin : 0 }
 }
 
-/** One quarter turn in the payload's frame, right-handed positive about X, Y and Z. */
+/** One quarter turn, positive about X, Y and Z by the maps of §5.7, in Cyberspace's axes. */
 const QUARTER = [([x, y, z]) => [x, -z, y], ([x, y, z]) => [z, y, -x], ([x, y, z]) => [-y, x, z]]
 
-/** A point of the bloom, in ticks, turned: X turns first, then Y, then Z (§5.7). */
+/** A point of the payload, in ticks, placed into Cyberspace's axes (its Z negated, DECK-0003 §2). */
+export const intoCyberspace = (p) => [p[0], p[1], 0 - p[2]]
+
+/** A point in Cyberspace's axes, turned: X turns first, then Y, then Z (§5.7). */
 export function turnPoint(p, turn) {
   let q = [p[0], p[1], p[2]]
   for (let a = 0; a < 3; a++) for (let k = 0; k < turn[a]; k++) q = QUARTER[a](q)

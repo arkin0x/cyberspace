@@ -28,7 +28,7 @@ This DECK defines SEEDO completely enough for a second implementation, three eve
 | Weather | the hash of the block that drives each generation, never the planted block's own (§4.3) |
 | Terroir | terrain `K` and its four nibbles at the seed's scale (§4.4) |
 | The bloom | a SNO payload computed by every reader, unit = the seed's scale (§5) |
-| How a bloom stands | the seed's `turn`, `up` and `spin` tags, applied to the drawn bloom after its payload, never to the payload (§5.7) |
+| How a bloom stands | the seed's `turn`, `up` and `spin` tags, applied in Cyberspace's axes to the drawn bloom after its payload, never to the payload (§5.7) |
 | Reference implementation | `decks/seeds-reference.mjs`, the prototype's core with this DECK's changes |
 | Vectors | `decks/seeds-vectors.json`, produced by `decks/seeds-vectors.mjs` (§11) |
 
@@ -510,30 +510,33 @@ A seed MAY say how its bloom stands, with three tags (§8.2). They mirror the wa
 
 | Tag | Meaning | When absent |
 |---|---|---|
-| `["turn", "<x>", "<y>", "<z>"]` | The bloom's quarter turns about its `X`, `Y` and `Z` axes: three decimals under `CYBERSPACE_V2.md` §10, each from `0` to `3` | `0`, `0`, `0` |
-| `["up"]` | The bloom stands on Earth, as an object with `up: true` does (DECK-0003 §1.7). A reader ignores any further elements of the tag | it stands on Cyberspace's axes |
-| `["spin", "<bearing>"]` | The compass bearing the bloom's `+Z` faces once it stands on Earth: a decimal under §10 from `0` to `359`, clockwise from north (DECK-0003 §1.7) | `0` |
+| `["turn", "<x>", "<y>", "<z>"]` | The bloom's quarter turns about the `X`, `Y` and `Z` axes of Cyberspace: exactly three decimals under `CYBERSPACE_V2.md` §10, each from `0` to `3` | `0`, `0`, `0` |
+| `["up"]` | The bloom stands on Earth, as an object with `up: true` does (DECK-0003 §1.7). A writer writes the tag with nothing after `up`; a reader ignores any further elements | it stands on Cyberspace's axes |
+| `["spin", "<bearing>"]` | The compass bearing the bloom's front faces once it stands on Earth: exactly one decimal under §10 from `0` to `359`, clockwise from north (DECK-0003 §1.7) | `0` |
 
-**Reading the tags (normative).** Where a seed carries more than one tag of a name, a reader reads the first (§8.2). A reader MUST skip, as a seed it cannot read, a seed whose `turn` is present and is not exactly three such decimals, or whose `spin` is present and is not such a decimal from `0` to `359`, whether or not it carries `up`: as DECK-0003 §1.7 says of a payload, a nonsense bearing is malformed even where the bearing is unused. A reader MUST ignore the value of `spin` on a seed without `up`.
+**Reading the tags (normative).** Where a seed carries more than one tag of a name, a reader reads the first (§8.2). A reader MUST skip, as a seed it cannot read, a seed whose `turn` is present and is not exactly three such decimals, or whose `spin` is present and is not exactly one such decimal from `0` to `359`, whether or not it carries `up`: as DECK-0003 §1.7 says of a payload, a nonsense bearing is malformed even where the bearing is unused. A reader MUST ignore the value of `spin` on a seed without `up`.
 
-**Drawing (normative).** A reader draws a seed's bloom in three steps, and every reader draws the same bloom, facing the same way:
+**Drawing (normative).** A reader draws a seed's bloom in four steps, and every reader draws the same bloom, facing the same way:
 
 1. **The payload.** It grows and draws the bloom exactly as §4 and §5.1 to §5.5 say. The tags of this section never enter growth, the payload or its hash: two seeds of one DNA, at one coordinate, height and scale, that differ only in these tags grow the identical payload.
-2. **The turn.** It turns every point of the payload, in ticks, in the payload's own frame (DECK-0003 §1.2: right-handed, `+Y` up), about the bloom's origin: first `x` quarter turns about `X`, then `y` about `Y`, then `z` about `Z`. Each is a right-handed positive quarter turn:
+2. **Into Cyberspace's axes.** It places the payload into Cyberspace exactly as DECK-0003 §2 places every object: every point's `Z` negated, so the payload's `+Z` (toward the viewer) is Cyberspace's `-Z`, and Cyberspace's `+Z` is the direction of the black sun. Every step below is in Cyberspace's axes, in which `+Y` is up, and in which ONOSENDAI turns and stands every shard it places.
+3. **The turn.** It turns every point, in ticks, about the bloom's origin: first `x` quarter turns about `X`, then `y` about `Y`, then `z` about `Z`. Each quarter turn is the map:
    - about `X`: `(x, y, z)` becomes `(x, -z, y)`;
    - about `Y`: `(x, y, z)` becomes `(z, y, -x)`;
    - about `Z`: `(x, y, z)` becomes `(-y, x, z)`.
 
-   A quarter turn takes whole ticks to whole ticks, so nothing is rounded. It keeps every point within the 64 units of §3.8, because that bound is a cube. It is a proper rotation, so every face keeps its winding and its front (DECK-0003 §1.4). Faces and colors are carried with their points unchanged.
-3. **Standing on Earth.** If the seed carries `up` and its `C` is in dataspace (plane `0`), the reader stands the turned bloom at its `C` exactly as DECK-0003 §1.7 stands an object with `up: true` and that `spin`: its `+Y` along the local up, its `+Z` facing the bearing `spin`. Ideaspace (plane `1`) has no Earth: a reader MUST ignore `up` and `spin` on a seed whose `C` is in ideaspace. Without `up`, the turned bloom's axes are Cyberspace's axes, its `+Y` up.
+   A quarter turn takes whole ticks to whole ticks, so nothing is rounded. It keeps every point within the 64 units of §3.8, because that bound is a cube. It is a rotation, so it keeps every face's front where step 2 put it (DECK-0003 §1.4, §2). Faces and colors are carried with their points unchanged.
+4. **Standing on Earth.** If the seed carries `up` and its `C` is in dataspace (plane `0`), the reader stands the turned bloom at its `C` as DECK-0003 §1.7 stands an object with `up: true` and that `spin`, in Cyberspace's axes: the bloom's `+Y` along the local up (the geodetic normal), its `+Z` facing the compass bearing `spin`, and its `+X` to the right of that facing, which at `spin` `0` is local east. Ideaspace (plane `1`) has no Earth: a reader MUST ignore `up` and `spin` on a seed whose `C` is in ideaspace. Without `up`, the turned bloom stands on Cyberspace's axes, its `+Y` up.
 
-The bloom's **up** is its `+Y` and its **front** is its `+Z`, both after the turn. A client that lets a planter turn a seed or stand it on Earth SHOULD show both directions, labelled, while the seed is being aimed, so the planter sees which way the bloom will grow and face before the seed is mined.
+The bloom's **up** is its `+Y` and its **front** is its `+Z`, both in Cyberspace's axes after the turn: the front is the payload's `-Z` turned. A client that lets a planter turn a seed or stand it on Earth SHOULD show both directions, labelled, while the seed is being aimed, so the planter sees which way the bloom will grow and face before the seed is mined.
 
 **Changing how a bloom stands.** These tags are part of the seed event, so the work on the seed's id commits to them. Turning a seed, standing it on Earth or giving it another spin is therefore a change to the seed: a new event, a new planting, which needs new work (§7) and starts again from day 0, as §4.2 says of a move.
 
 **Why tags, and not lines of the DNA (non-normative).** One DNA is planted by many people at many places; how a bloom stands belongs to one planting. A line of SEEDO would change the payload, its hash and the DNA's id, and every planting of that DNA would stand the same way. A tag of the seed changes none of them.
 
 **Why a `turn` tag, when shards have none (non-normative).** DECK-0003 has no turn field: a client turns a shard by turning its geometry before it publishes it (ONOSENDAI's TURN does, by arkinox's choice of 2026-09-27), and every reader then draws the turned geometry. A bloom's geometry is never published; every reader computes it. Its turn therefore travels with the seed, as a tag, and every reader applies it. `up` and `spin` are the shard's own fields, written as tags for the same reason.
+
+**Why Cyberspace's axes (non-normative).** A client places, turns and stands every object in Cyberspace's axes after the negation of DECK-0003 §2, as ONOSENDAI does. Defining the turn and the front in those same axes means a client's own TURN control writes its quarter turns into the tag as they are, and a bloom with `spin` `0` faces north exactly as a shard with `spin` `0` placed by the same client does. DECK-0003 §1.7 says `+Z` points north without saying on which side of the §2 negation; this section says it for blooms, and the reading is ONOSENDAI's for shards.
 
 ---
 
@@ -704,9 +707,9 @@ A seed is an item carried in a bag's list of entries (`CYBERSPACE_V2.md` §7.6) 
 | `["scale", "<u>"]` | OPTIONAL. The scale, `0` to `84`, in decimal. Absent means `0` |
 | `["C", "<coord_hex>"]` | exactly one. Where the seed is planted, under the rules of `CYBERSPACE_V2.md` §7.6. A seed needs an exact coordinate, because its terroir depends on it |
 | `["title", "<name>"]` | OPTIONAL. The planter's name for this planting, at most 64 characters |
-| `["turn", "<x>", "<y>", "<z>"]` | OPTIONAL. The bloom's quarter turns about `X`, `Y` and `Z`, each `0` to `3` (§5.7). Absent means none |
+| `["turn", "<x>", "<y>", "<z>"]` | OPTIONAL. The bloom's quarter turns about Cyberspace's `X`, `Y` and `Z`, each `0` to `3` (§5.7). Absent means none |
 | `["up"]` | OPTIONAL. The bloom stands on Earth, in dataspace only (§5.7) |
-| `["spin", "<bearing>"]` | OPTIONAL. The bearing of the bloom's `+Z` on Earth, `0` to `359` (§5.7). Read only with `up` |
+| `["spin", "<bearing>"]` | OPTIONAL. The bearing of the bloom's front on Earth, `0` to `359` (§5.7). Read only with `up` |
 | `["nonce", "<n>", "<target>"]` | exactly one. NIP-13: the planting's work. `<target>` is at least the DNA's price (§7) |
 | `["-"]` | the NIP-70 protected marker. MUST be present (`CYBERSPACE_V2.md` §7.6, Protected items) |
 | `["d", "<64 lowercase hex>"]` | present only on a seed that has been moved: its lineage (DECK-0006 §2.2) |
@@ -794,7 +797,7 @@ SEEDO's expression grammar and integer semantics (§3.4) and its fixed-point ari
 | `mixing` | four written parents (unmined: publishing a DNA is free) and ten mixes, each mined to the mix floor, each anchored at a clock block, with its event, settling, commit height, outcome block, `mix_hash`, mix word, every gene's draw and the child's text: two children of one pair, their grandchild with a `name` tag, the same grandchild committed before its parents resolved (refused), a name tag that tries to add a rule (refused), coral with itself, a refused pair of species, a sterile hybrid and its refused mix, and a `hybrid` tag on one species (ignored); and the growth of a seed of the first child |
 | `seeds` | five seeds as events, with the written DNA published without a caps tag that one of them plants: a planting of the fiddlehead (21 bits), of the first mixed child (21 bits) and of a DNA at the free caps (16 bits), each mined to its DNA's price; and two plantings of the fiddlehead that a reader skips, one with a committed target of 16 and one whose target says 21 on an id with fewer than 21 leading zero bits |
 | `price` | the price of ten sets of caps, four of them invalid |
-| `orientation` | sixteen sets of seed tags read under §5.7 (`turn`, `up`, `spin`), eight of them malformed, and one small bloom (the fiddlehead halfway through day 1) with its points in ticks, then turned by six sets of quarter turns: what step 2 of §5.7 draws, while the payload and its hash stay those of the `growth` section |
+| `orientation` | seventeen sets of seed tags read under §5.7 (`turn`, `up`, `spin`), nine of them malformed, and one small bloom (the fiddlehead halfway through day 1) with its points in ticks of the payload, the same points in Cyberspace's axes, and those turned by six sets of quarter turns: what steps 2 and 3 of §5.7 draw, while the payload and its hash stay those of the `growth` section |
 
 Some single values, for a quick check:
 

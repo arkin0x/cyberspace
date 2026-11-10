@@ -996,12 +996,13 @@ const settleClock = (createdAt) => { for (let c = 970410; c <= LAST; c++) if (S.
     [['spin', '90.0']],
     [['spin']],
     [['turn', '2', '2', '2'], ['turn', 'x', 'y', 'z']],
+    [['spin', '90', 'x']],
   ]
   out.orientation = {
-    note: 'A seed\'s orientation tags (DECK-0008 §5.7, §8.2), read: null means a malformed tag, and the reader skips the seed. Then the points of one small bloom (the fiddlehead halfway through day 1, at coordA, planted at 970,400), in ticks of the payload\'s frame, and the same points turned by quarter turns about X, then Y, then Z. The payload and its hash never change; only how the bloom is drawn does.',
+    note: 'A seed\'s orientation tags (DECK-0008 §5.7, §8.2), read: null means a malformed tag, and the reader skips the seed. Then the points of one small bloom (the fiddlehead halfway through day 1, at coordA, planted at 970,400): `points` in ticks of the payload\'s frame, `in_cyberspace` the same points placed into Cyberspace\'s axes (Z negated, DECK-0003 §2), and `turned` those turned by quarter turns about X, then Y, then Z, in Cyberspace\'s axes. The payload and its hash never change; only how the bloom is drawn does.',
     tags: tags.map((t) => ({ tags: t, read: S.readOrientation(t) })),
-    bloom: { dna: 'fiddlehead', coord: coordA, planted: P0, clock: P0 + 144 + 72, caps: CAPS, sno_sha256: S.sha256hex(Buffer.from(g.json)), points },
-    turned: [[1, 0, 0], [0, 1, 0], [0, 0, 1], [2, 0, 0], [1, 2, 3], [3, 3, 3]].map((turn) => ({ turn, points: points.map((p) => S.turnPoint(p, turn)) })),
+    bloom: { dna: 'fiddlehead', coord: coordA, planted: P0, clock: P0 + 144 + 72, caps: CAPS, sno_sha256: S.sha256hex(Buffer.from(g.json)), points, in_cyberspace: points.map(S.intoCyberspace) },
+    turned: [[1, 0, 0], [0, 1, 0], [0, 0, 1], [2, 0, 0], [1, 2, 3], [3, 3, 3]].map((turn) => ({ turn, points: points.map((p) => S.turnPoint(S.intoCyberspace(p), turn)) })),
   }
 }
 

@@ -8005,7 +8005,7 @@
   ]
  },
  "orientation": {
-  "note": "A seed's orientation tags (DECK-0008 §5.7, §8.2), read: null means a malformed tag, and the reader skips the seed. Then the points of one small bloom (the fiddlehead halfway through day 1, at coordA, planted at 970,400), in ticks of the payload's frame, and the same points turned by quarter turns about X, then Y, then Z. The payload and its hash never change; only how the bloom is drawn does.",
+  "note": "A seed's orientation tags (DECK-0008 §5.7, §8.2), read: null means a malformed tag, and the reader skips the seed. Then the points of one small bloom (the fiddlehead halfway through day 1, at coordA, planted at 970,400): `points` in ticks of the payload's frame, `in_cyberspace` the same points placed into Cyberspace's axes (Z negated, DECK-0003 §2), and `turned` those turned by quarter turns about X, then Y, then Z, in Cyberspace's axes. The payload and its hash never change; only how the bloom is drawn does.",
   "tags": [
    {
     "tags": [],
@@ -8241,6 +8241,16 @@
      "up": false,
      "spin": 0
     }
+   },
+   {
+    "tags": [
+     [
+      "spin",
+      "90",
+      "x"
+     ]
+    ],
+    "read": null
    }
   ],
   "bloom": {
@@ -8315,6 +8325,68 @@
      31,
      -11
     ]
+   ],
+   "in_cyberspace": [
+    [
+     42,
+     0,
+     0
+    ],
+    [
+     -42,
+     0,
+     0
+    ],
+    [
+     0,
+     42,
+     0
+    ],
+    [
+     0,
+     -42,
+     0
+    ],
+    [
+     0,
+     0,
+     -42
+    ],
+    [
+     0,
+     0,
+     42
+    ],
+    [
+     0,
+     0,
+     -21
+    ],
+    [
+     18,
+     0,
+     11
+    ],
+    [
+     -19,
+     0,
+     11
+    ],
+    [
+     0,
+     31,
+     -21
+    ],
+    [
+     18,
+     31,
+     11
+    ],
+    [
+     -19,
+     31,
+     11
+    ]
    ]
   },
   "turned": [
@@ -8347,42 +8419,42 @@
      ],
      [
       0,
-      -42,
-      0
-     ],
-     [
-      0,
       42,
       0
      ],
      [
       0,
-      -21,
-      0
-     ],
-     [
-      18,
-      11,
-      0
-     ],
-     [
-      -19,
-      11,
+      -42,
       0
      ],
      [
       0,
-      -21,
+      21,
+      0
+     ],
+     [
+      18,
+      -11,
+      0
+     ],
+     [
+      -19,
+      -11,
+      0
+     ],
+     [
+      0,
+      21,
       31
      ],
      [
       18,
-      11,
+      -11,
       31
      ],
      [
       -19,
-      11,
+      -11,
       31
      ]
     ]
@@ -8415,42 +8487,42 @@
       0
      ],
      [
-      42,
-      0,
-      0
-     ],
-     [
       -42,
       0,
       0
      ],
      [
-      21,
+      42,
       0,
       0
      ],
      [
-      -11,
+      -21,
+      0,
+      0
+     ],
+     [
+      11,
       0,
       -18
      ],
      [
-      -11,
+      11,
       0,
       19
      ],
      [
-      21,
+      -21,
       31,
       0
      ],
      [
-      -11,
+      11,
       31,
       -18
      ],
      [
-      -11,
+      11,
       31,
       19
      ]
@@ -8486,42 +8558,42 @@
      [
       0,
       0,
-      42
-     ],
-     [
-      0,
-      0,
       -42
      ],
      [
       0,
       0,
-      21
+      42
+     ],
+     [
+      0,
+      0,
+      -21
      ],
      [
       0,
       18,
-      -11
+      11
      ],
      [
       0,
       -19,
-      -11
+      11
      ],
      [
       -31,
       0,
-      21
+      -21
      ],
      [
       -31,
       18,
-      -11
+      11
      ],
      [
       -31,
       -19,
-      -11
+      11
      ]
     ]
    },
@@ -8555,42 +8627,42 @@
      [
       0,
       0,
-      -42
-     ],
-     [
-      0,
-      0,
       42
      ],
      [
       0,
       0,
-      -21
+      -42
+     ],
+     [
+      0,
+      0,
+      21
      ],
      [
       18,
       0,
-      11
+      -11
      ],
      [
       -19,
       0,
-      11
+      -11
      ],
      [
       0,
       -31,
-      -21
+      21
      ],
      [
       18,
       -31,
-      11
+      -11
      ],
      [
       -19,
       -31,
-      11
+      -11
      ]
     ]
    },
@@ -8622,42 +8694,42 @@
       42
      ],
      [
-      -42,
-      0,
-      0
-     ],
-     [
       42,
       0,
       0
      ],
      [
-      -21,
+      -42,
       0,
       0
      ],
      [
-      11,
+      21,
+      0,
+      0
+     ],
+     [
+      -11,
       18,
       0
      ],
      [
-      11,
+      -11,
       -19,
       0
      ],
      [
-      -21,
+      21,
       0,
       -31
      ],
      [
-      11,
+      -11,
       18,
       -31
      ],
      [
-      11,
+      -11,
       -19,
       -31
      ]
@@ -8691,42 +8763,42 @@
       0
      ],
      [
-      42,
-      0,
-      0
-     ],
-     [
       -42,
       0,
       0
      ],
      [
-      21,
+      42,
       0,
       0
      ],
      [
-      -11,
+      -21,
+      0,
+      0
+     ],
+     [
+      11,
       0,
       18
      ],
      [
-      -11,
+      11,
       0,
       -19
      ],
      [
-      21,
+      -21,
       -31,
       0
      ],
      [
-      -11,
+      11,
       -31,
       18
      ],
      [
-      -11,
+      11,
       -31,
       -19
      ]
