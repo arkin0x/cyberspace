@@ -160,7 +160,7 @@ specified in `docs/HEADER-BLOBS.md` of the `nth` repository.
 
 **A header is only as trustworthy as the `H` it hashes to (MUST).** A reader MUST take a block's time or bits from a verified header only when it accepts that anchor's `H`: either it has checked the anchor under §2.3 (for example against the header blobs of §2.4 with their embedded checkpoints, or against its own block source), or the anchor is signed by a publisher the reader trusts. A header that hashes to an `H` the reader has not accepted proves nothing about Bitcoin, because anyone can hash a header of their own making.
 
-**Proof of work (SHOULD).** A reader that takes times from anchors it has not checked under §2.3 SHOULD also check that the header's hash, read as a 256-bit number, does not exceed the target its `bits` encode, and that this target is no easier than a minimum difficulty the reader sets for itself (for example, a floor well below recent mainnet difficulty). Without the floor a forger could simply set easy `bits`. With it, a forged header costs real mining work, although less than a full check under §2.3 would demand.
+**Proof of work (SHOULD).** A reader that takes times from anchors it has not checked under §2.3 SHOULD also check that the header's hash, read as a big-endian 256-bit number from its display hex (the same reading as §1.1), does not exceed the target its `bits` encode, and that this target is no easier than a minimum difficulty the reader sets for itself (for example, a floor well below recent mainnet difficulty). A header whose `bits` have the compact sign bit (`0x00800000`) set, or encode a target of zero, fails this check. Without the floor a forger could simply set easy `bits`. With it, a forged header costs real mining work, although less than a full check under §2.3 would demand.
 
 **Timestamps come only from verified headers (MUST).** A reader that needs a block's time or difficulty bits MUST take them from a header that passed the verification above and whose `H` it accepts, or from its own block source. It MUST NOT take them from an anchor's `created_at`, its `content`, or any other tag.
 
@@ -168,9 +168,9 @@ specified in `docs/HEADER-BLOBS.md` of the `nth` repository.
 
 **More than one anchor per block (normative).** A publisher MAY publish a second anchor for a block it has already anchored, for example to add the `header` tag to a block anchored before the tag existed. Anchors valid under §2.3 that name the same `B` and the same `H` describe the same stop. A reader MUST NOT treat them as competing blocks. It MAY keep either one, except that a reader that needs the header SHOULD keep an anchor whose header verifies over an equivalent one without it. Two valid anchors at one `B` compete only when their `H` values differ.
 
-**Never order by `created_at` (MUST NOT).** A reader MUST NOT infer the tip of the line, or the order of blocks, from anchors' `created_at`. Height `B` and the `P` linkage give the order, and the tip is the highest `B` on a chain the reader accepts.
+**Never order by `created_at` (MUST NOT).** A reader MUST NOT infer the tip of the line, or the order of blocks, from anchors' `created_at`. Height `B` and the `P` linkage give the order, and the tip is the highest `B` on a chain the reader accepts. A reader MAY use the newest anchors as a hint for where to start reading, so long as the tip it settles on comes from `B` and `P`.
 
-**Why (non-normative):** A second anchor for a block is signed after the first, so it carries a newer `created_at` than anchors of higher blocks. Anchors republished or backfilled in bulk also share one `created_at` by the thousand. "The newest anchors" are therefore not "the highest blocks". NTH dates a second anchor one second after the block's first anchor, so it never poses as the newest, but a reader cannot rely on every publisher doing so.
+**Why (non-normative):** A second anchor for a block is signed after the first, so it carries a newer `created_at` than anchors of higher blocks. Anchors republished or backfilled in bulk also share one `created_at` by the thousand. "The newest anchors" are therefore not "the highest blocks". NTH dates a second anchor one second after its last archived signing of that block, so it never poses as the newest, but a reader cannot rely on every publisher doing so.
 
 **Publishers (non-normative):** A publisher should run the same check before signing, and refuse to sign a header that does not hash to the `H` it is about to sign. NTH does.
 
@@ -188,7 +188,7 @@ specified in `docs/HEADER-BLOBS.md` of the `nth` repository.
 | bits | `0x17020093` |
 | nonce | `1009511781` |
 
-`sha256(sha256(header_bytes))`, reversed, equals `H` above, so the header verifies. For the proof-of-work check, `bits` `0x17020093` encodes the target `0000000000000000000200930000000000000000000000000000000000000000`, and `H` read as a 256-bit number does not exceed it.
+`sha256(sha256(header_bytes))`, reversed, equals `H` above, so the header verifies. For the proof-of-work check, `bits` `0x17020093` encodes the target `0000000000000000000200930000000000000000000000000000000000000000`, and `H`, read as a big-endian 256-bit number, does not exceed it. The sign bit of `0x17020093` is clear.
 
 **Negative vector.** Flip the lowest bit of byte 68, the first byte of the time field, which changes the time by one second:
 
