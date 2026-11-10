@@ -75,11 +75,11 @@ Comments are rooted on the bag (§1), so they follow a move only while the item 
 2. Parse each comment's root (`A`), parent (`e`, else `a`) and parent kind (`k`), and drop a comment that lacks any of them.
 3. Decrypt the `encrypted` payload with the bag's region key. A payload that does not open is a comment this reader cannot read; it shows the placeholder, and it is not an error.
 4. A decrypted payload that begins with `{` and parses as an object with string `item` and `text` fields is the form of §2.1; any other payload is the words themselves.
-5. Thread: a comment whose `k` is not `1111` and whose parent is the item (by its lineage id, §2.2, or by address) is top-level under that item; a comment whose `k` is `1111` hangs under the comment it names; a reply whose parent is not present is left out.
+5. Thread: a comment whose `k` is not `1111` and whose parent is the item (by its lineage id, §2.2, or by address) is top-level under that item; a comment whose `k` is `1111` hangs under the comment it names; a reply whose parent is not present is left out. A top-level comment on an item that the reader does not show in the plane it is reading (`CYBERSPACE_V2.md` §7.6, Planes) is left out in the same way.
 
 A reader MUST verify each comment's signature, as for any event, before treating its words as its author's.
 
-**The plane:** A comment carries no `C`. It is shown where the item it answers is shown, which is in that item's plane (`CYBERSPACE_V2.md` §7.6, Planes), and a reply is shown under its parent. A bag holds the entries of both planes, so the query of step 1 returns comments on items of both. A reader shows a top-level comment only under an item it shows in the plane it is reading, and leaves out the rest by step 5, as it leaves out a reply whose parent is not present. A comment on an entry that names no plane is shown in both planes, with the entry.
+**The plane:** A comment carries no `C`. It is shown where the item it answers is shown, which is in that item's plane (`CYBERSPACE_V2.md` §7.6, Planes), and a reply is shown under its parent. A bag holds the entries of both planes, so the query of step 1 returns comments on items of both. A reader shows a top-level comment only under an item it shows in the plane it is reading, and leaves out the rest (step 5). A comment on an entry that names no plane is shown in both planes, with the entry.
 
 ## 4. Test vectors
 

@@ -369,7 +369,7 @@ room_lookup_id = SHA-256( room_key )
 
 - `||` is byte concatenation.
 - `UTF-8("cyberspace:door")` is the 15 bytes of that ASCII string. It is a domain prefix. It keeps a room key apart from any other hash that might be taken of the same two keys.
-- `location_decryption_key` is the 32-byte location key of the room's region, computed as `CYBERSPACE_V2.md` §7.2 computes it for any aligned region. It is the same key that encrypts every ordinary bag of that region. It is also the same in both planes (`CYBERSPACE_V2.md` §7.2): the room's region and the region with the same X, Y, Z and height in the other plane share it. Two rooms in those two regions are still two rooms, because each has its own door secret (§3.7.5).
+- `location_decryption_key` is the 32-byte location key of the room's region, computed as `CYBERSPACE_V2.md` §7.2 computes it for any aligned region. It is the same key that encrypts every ordinary bag of that region. It is also the key of the region's twin, the region with the same X, Y, Z and height in the other plane (`CYBERSPACE_V2.md` §7.2). A room in the region and a room in its twin are two rooms only because each has its own door secret, so a writer never uses one door secret in both (§3.7.5).
 - `door_secret` is the door secret's 32 bytes, not its 64 hex characters.
 - The input to the first hash is therefore 79 bytes long, and both outputs are 32 bytes. Written in a tag, `room_lookup_id` is 64 lowercase hex characters, as every bag's `d` is (`CYBERSPACE_V2.md` §7.2).
 
@@ -404,7 +404,9 @@ A room bag as published therefore has only the required tags of `CYBERSPACE_V2.m
 
 **Coordinates:** Every entry's `C` lies inside the room's region, just as every entry of any bag lies inside that bag's region.
 
-**One plane:** A room is in its door's plane (§3.7.1), so a room bag holds one plane, not two. This is where a room bag differs from an ordinary bag, which holds both (`CYBERSPACE_V2.md` §7.6, Planes). Every entry's `C` MUST be in the room's plane. A reader MUST drop an entry whose `C` is in the other plane, because it lies outside the room. A reader shows an entry without a `C` in the room's plane, because the door says which plane the room is in.
+**One plane:** A room is in its door's plane (§3.7.1), so a room bag holds one plane, not two. This is where a room bag differs from an ordinary bag, which holds a region and its twin (`CYBERSPACE_V2.md` §7.6, Planes). Every entry's `C` MUST be in the room's plane. A reader MUST drop an entry whose `C` is in the other plane, because it lies outside the room. A reader shows an entry without a `C` in the room's plane, because the door says which plane the room is in.
+
+A writer MUST NOT write into a room bag an entry whose `C` is in the other plane. A writer that rewrites a room bag and finds such an entry drops it, as invalid. An ordinary bag's writer differs: it carries the other plane forward (`CYBERSPACE_V2.md` §7.6, Planes). The reason is that a room has no other plane: an entry in the other plane lies outside the room, no reader shows it, and carrying it forward only spends the room bag's size on a placement nobody can see.
 
 **Comments:** A sealed comment (DECK-0006) on something in a room is encrypted with the room key. When the bag is a room bag, the room key is what DECK-0006 calls the "bag's region key". The reason is that a reader who has reached the place, but has not opened the door, must not be able to read comments on what the door hides.
 
@@ -423,7 +425,7 @@ A door whose room bag cannot be fetched opens onto an empty room. A reader SHOUL
 
 A writer that hides something in a room, at the room's height, writes it into the room bag. It does not write it into the ordinary bag of that region and height. What the room bag holds is what the door locks.
 
-A writer that hides something in the same place at any other height writes it into that height's own bag, like anything hidden anywhere. So does a writer that hides something at the room's height in the region with the same X, Y and Z in the other plane: it writes into the ordinary bag of that region and height, which holds both planes (`CYBERSPACE_V2.md` §7.6, Planes), because a door locks only its own plane. A door locks one height only. For example, beside a door of height 4, a shard hidden in the room at height 4 goes into the room bag. A shard hidden at the same coordinate at height 6 goes into the ordinary bag of height 6.
+A writer that hides something in the same place at any other height writes it into that height's own bag, like anything hidden anywhere. So does a writer that hides something at the room's height in the room's twin, the region with the same X, Y and Z in the other plane: it writes into the ordinary bag of the region and its twin at that height (`CYBERSPACE_V2.md` §7.6, Planes), because a door locks only its own plane. A door locks one height only. For example, beside a door of height 4, a shard hidden in the room at height 4 goes into the room bag. A shard hidden at the same coordinate at height 6 goes into the ordinary bag of height 6.
 
 A room bag may hold any entry that a bag may hold, including chests and doors.
 
@@ -437,7 +439,9 @@ A room has one door secret and one room bag. A writer MAY seal the same door sec
 
 A writer MUST NOT give two doors different door secrets when the two doors have the same height, stand in the same region in the same plane, and are signed by the same key. The reason is that the room bag's address comes from the door secret. Two doors of one room with different secrets would name two different room bags, and the place would have two rooms at one height.
 
-A reader therefore treats every door with the same signer, the same height, the same region and the same plane as a door to one room. Opening any of them opens all of them. In the example above, a finder who opens the north door with the silver key finds the east door open too. A door in the region with the same X, Y and Z in the other plane locks a different room, even when its signer and height are the same.
+A writer MUST NOT seal one door secret into doors in different planes. A region and its twin in the other plane share one location key (`CYBERSPACE_V2.md` §7.2), so one door secret would give the room in the region and the room in its twin the same room key and the same room lookup id. The two rooms would then be one room bag, and each would show the other's entries as invalid (§3.7.2, One plane). A writer that makes a door in a region whose twin already has a door of its own makes a new door secret for it.
+
+A reader therefore treats every door with the same signer, the same height, the same region and the same plane as a door to one room. Opening any of them opens all of them. In the example above, a finder who opens the north door with the silver key finds the east door open too. A door in the room's twin, the region with the same X, Y and Z in the other plane, locks a different room, with a door secret of its own, even when its signer and height are the same.
 
 #### 3.7.6 Doors inside rooms
 
