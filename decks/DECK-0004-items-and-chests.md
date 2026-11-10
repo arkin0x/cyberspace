@@ -5,12 +5,12 @@ Title: Items, Chests and Doors
 Status: Draft
 Mandatory: no
 Created: 2026-10-15
-Last updated: 2026-11-09
+Last updated: 2026-11-10
 Requires: `CYBERSPACE_V2.md` §7.2 (keys), §7.6 (the bag) and §8.6 (its event); DECK-0003 (SNO objects, for looks, and its objects table, §1.10, for carried parts); NIP-01, NIP-09, NIP-44 v2, NIP-70, NIP-92; BIP-340
 
 ## Abstract
 
-An **item** is a keypair hidden at a place. Whoever reads it holds its private key, and holding the key is owning the item. A **chest** is a list of things sealed to one public key: an item's, so that it opens only for whoever holds that item, or a person's, so that it is a gift. An **item listing** puts an item's name, picture and public key in public, never its private key, so that anyone can seal a chest to an item they have never held.
+An **item** is a keypair hidden at a place. Whoever reads it holds its private key, and holding the key is owning the item. A **chest** is a list of things sealed to one public key: an item's, so that it opens only for whoever holds that item, or a person's, so that it is a gift. A region key or a room key can also be a **lock**: a chest sealed to the public key derived from it opens for whoever carries that key (§3.8). An **item listing** puts an item's name, picture and public key in public, never its private key, so that anyone can seal a chest to an item they have never held.
 
 Items and chests ride inside bags (`CYBERSPACE_V2.md` §7.6) as ordinary inline items, so a chest hidden at a place has two gates: the place, which a reader must reach to find the chest at all, and the lock, which a reader must hold to open it. Nothing here touches the movement chain. Reading an item and opening a chest are local acts.
 
@@ -18,20 +18,24 @@ A **door** is a chest that locks part of the world, instead of holding things to
 
 This DECK writes down what ONOSENDAI (from its Keys and Chests slice of 2026-10-09, PRs #252, #275 and #331) and cyberspace-mcp already do, so that a third client can read and write the same things.
 
-Doors and looks (§3.6, §3.7) are written down ahead of the clients. As of ONOSENDAI `7a3ceec`, ONOSENDAI reads the `door` tag and draws chests and doors in built-in looks. No client yet writes a door, a room bag or a look of its own.
+Doors and looks (§3.6, §3.7) are written down ahead of the clients. As of ONOSENDAI `7a3ceec`, ONOSENDAI reads the `door` tag and draws chests and doors in built-in looks. No client yet writes a door, a room bag or a look of its own. A region or a room as a lock (§3.8) is also written down ahead of the clients.
 
 ## Terms
 
 - **Item:** an inline bag item of `kind 3340` whose `secret` tag holds a secp256k1 private key (§2).
-- **Item public key:** the BIP-340 x-only public key of an item's secret. It is the item's identity and the lock a chest names.
+- **Item public key:** the BIP-340 x-only public key of an item's secret. It is the item's identity, and a lock a chest can name.
 - **Holding an item:** knowing its secret. There is no other kind of ownership.
 - **Chest:** an inline bag item of `kind 3341` whose content is a NIP-44 v2 payload sealed to a lock (§3).
-- **Lock:** the public key a chest is sealed to, an item's or a person's.
+- **Lock:** the public key a chest or a door is sealed to. It is an item's public key, a person's, or the public key derived from a region key or a room key, which is that key's lock (§3.8). A chest or a door is **locked** until its reader opens it with what the lock asks for, and **open** after that.
+- **Key:** what a lock asks for, one of three kinds: a **region key**, a **room key**, or a **key item** (an item, §2). A lock may instead be a person's public key, which only that person's signer opens (§3.3).
+- **Lock secret:** the secp256k1 secret key derived from a region key or a room key. Its public key is that key's lock (§3.8.1).
+- **Keyring:** the keys a reader's user **carries**: the region keys it has computed and kept, the room keys of the rooms it has opened or built, and the items it holds (§2.2). A client keeps its keyring in local storage that is never published.
 - **Item listing:** a public `kind 33340` event that names an item by its public key (§4).
 - **Rumor:** an item that carries an `id` and no signature (`CYBERSPACE_V2.md` §7.6, Rumors). A message sealed in a chest is written as one (§3.2).
 - **Forger:** whoever generated an item's keypair. In this DECK the forger is also the item event's signer, the hider.
 - **Region:** an aligned region (`CYBERSPACE_V2.md` §4): a cube 2^h gibsons on each side, in one plane, whose lowest coordinate on each axis is a multiple of 2^h. The number h is the region's **height**. For example, a region of height 4 is 16 by 16 by 16 gibsons.
 - **Location key:** the `location_decryption_key` of `CYBERSPACE_V2.md` §7.2. It is 32 bytes: the SHA-256 of the region's integer, `region_n`, written as big-endian bytes with no leading zero bytes. Every ordinary bag of a region is encrypted with that region's location key, so whoever computes the key can read those bags.
+- **Region key:** the name players see for a location key. The two names mean the same 32 bytes: the key of one aligned region at one height (§3.8.2).
 - **Door:** a chest that carries a `door` tag, such as `["door", "4"]`. The number in the tag is the door's height (§3.7).
 - **Room:** the region of a door's height that contains the door's coordinate. A door with `["door", "4"]` has a room 16 gibsons on each side (§3.7.1).
 - **Door secret:** 32 random bytes sealed inside a door, in its one plaintext entry, `["room", "<64 lowercase hex>"]`. A room has one door secret, shared by every door of the room (§3.7.1, §3.7.5).
@@ -59,7 +63,7 @@ A bag already carries any event as an item, and a reader skips kinds it does not
 
 The mechanic they prove is the one most games built on Cyberspace lean on: a thing found in one place opens a sealed thing in another, with no server. An item hidden in one region can open a chest hidden a thousand kilometres away, sealed by someone who never held the item, as long as they knew its public key. The listing is how they come to know it.
 
-A door is not a new kind: it is a chest with one more tag. A room bag is not a new kind either: it is an ordinary `kind 33330` bag (`CYBERSPACE_V2.md` §8.6) whose key comes from a place and a door together.
+A door is not a new kind: it is a chest with one more tag. A room bag is not a new kind either: it is an ordinary `kind 33330` bag (`CYBERSPACE_V2.md` §8.6) whose key comes from a place and a door together. Nor is the lock of a region or a room: it is a public key, and a chest or a door sealed to it is an ordinary chest or door (§3.8).
 
 ## 2. The item: `kind 3340` (normative)
 
@@ -204,9 +208,10 @@ A chest can therefore be sealed to a key whose secret the sealer does not hold, 
 ### 3.3 Opening
 
 - **With an item:** `conversation_key = nip44_get_conversation_key(item_secret, sender_pubkey)`, which is the same key as in §3.2 by the symmetry of ECDH, then `nip44_decrypt(content, conversation_key)`.
+- **With a region key or a room key:** derive the lock secret from the key (§3.8.1), then open as with an item, with the lock secret in place of the item's secret.
 - **With a person's identity:** the person's signer decrypts the payload from the sender, `nip44.decrypt(sender_pubkey, content)`, as NIP-07 and NIP-46 both phrase it.
 
-A reader SHOULD offer to open a chest when its user holds an item whose public key is the lock, or when the lock is the user's own pubkey; a held item SHOULD win, because opening with it needs no signer. Opening is local and publishes nothing.
+A reader SHOULD offer to open a chest when its user holds an item whose public key is the lock, when its user carries a region key or a room key whose lock is the lock (§3.8.4), or when the lock is the user's own pubkey; a held item or a carried key SHOULD win, because opening with either needs no signer. Opening is local and publishes nothing.
 
 ### 3.4 Contents
 
@@ -327,6 +332,8 @@ A **door** is a chest that locks part of the world instead of holding things to 
 What a door locks is its **room**: the region of the door's own height that holds the door. Whatever the door's author hides in the room, at the room's height, goes into a **room bag**. A room bag is an ordinary bag (`CYBERSPACE_V2.md` §7.6) with a different key. Its key needs two things together. The first is the place, which gives the location key of the room's region. The second is the **door secret**, which is sealed inside the door.
 
 Opening the door gives the reader the door secret. The door secret and the place together give the room key. With the room key, the reader opens the room bag, and the room's contents then stand where they were hidden (§3.7.3).
+
+In the words of §3.8, a door is a lock in front of a room: the room asks for its region key plus one more key, the one the door's lock asks for, which is most often a key item. A door sealed to the lock of a region or a room (§3.8) is the same door with a different second key, and its room key is still the region key and the door secret together (§3.7.2).
 
 Note (non-normative): an example. A Maze Kit tile placed on the grid is 16 gibsons on a side, which is exactly one aligned region of height 4 (2^4 = 16). A door hidden in that tile with height 4 locks the tile at height 4. A statue that the door's author then hides in the tile at height 4 goes into the room bag, and appears only to someone who opens the door. A statue hidden in the same tile at height 6 goes into the ordinary bag of height 6, and anyone who computes that bag's key finds it.
 
@@ -483,6 +490,101 @@ A writer that knows the door secret MUST NOT leave behind a room bag that no doo
 - **Nothing public points at the room:** A room bag's `d` is a hash of a key that only openers hold. The room bag states no height and no contents. What a relay sees is that one author published two bags close together in time, which it sees of anyone who hides things twice.
 - **Why the height is in the tag:** A door at the top level could take its height from the bag that holds it. A door inside a room cannot, because its room is smaller than the room that holds it. Every door therefore states its own height.
 
+### 3.8 A region or a room as a lock
+
+A region key or a room key can be a lock. A chest or a door sealed to the lock of a region opens for whoever carries that region's key, and one sealed to the lock of a room opens for whoever carries that room's key. The lock is a public key derived from the key (§3.8.1). Sealing to it is §3.2 and opening with it is §3.3, unchanged. Only the way a reader finds the matching secret is new (§3.8.4).
+
+Note (non-normative): an example. A door in a cistern is sealed to the lock of a region of height 4 somewhere else, and its `requires` label is a riddle about that region. A finder who has never computed that region's key sees the door closed, with the riddle. A finder who carries the key sees that the door can be opened, and opens it with that key.
+
+#### 3.8.1 The lock of a key
+
+```
+lock_secret = SHA-256( UTF-8("cyberspace:lock") || key )
+lock        = BIP-340 x-only public key of lock_secret
+```
+
+- `||` is byte concatenation.
+- `key` is 32 bytes: a region key (the location key of `CYBERSPACE_V2.md` §7.2) or a room key (§3.7.2). It is the key's 32 bytes, not its 64 hex characters.
+- `UTF-8("cyberspace:lock")` is the 15 bytes of that ASCII string. It is a domain prefix. The input to the hash is therefore 47 bytes long.
+- `lock_secret` is read as a 256-bit big-endian integer. It is a valid lock secret only when it is nonzero and below the order of the secp256k1 group, `n = FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364141`. That is the rule §2.1 sets for an item's secret.
+- When `lock_secret` is zero or not below `n`, the key has no lock. A writer MUST NOT seal to it, and a reader leaves that key out of its lock map (§3.8.4). The chance of this is below 1 in 2^127 for each key.
+- `lock` is the x coordinate of `lock_secret · G`, 32 bytes. A `lock` tag writes it as 64 lowercase hex characters, exactly as it writes an item's public key (§3.1).
+- The lock secret is the hash itself, used as it is, also when `lock_secret · G` has an odd y coordinate. NIP-44's conversation key depends only on the x coordinate of the shared point, so the secret opens the chest either way, as an item's secret does.
+
+**Why a separate secret, and not the key itself:** A region key and a room key are AES-256-GCM keys (`CYBERSPACE_V2.md` §7.6). Using the same 32 bytes as an elliptic-curve secret would put one key into two algorithms. The domain prefix keeps them apart, the way `cyberspace:door` keeps a room key apart from other hashes of the same inputs (§3.7.2). The hash is also one way. The lock secret opens only what is sealed to the lock: the key cannot be computed from it, so neither the region's bags nor the room bag can be opened with it.
+
+**Why refuse instead of reducing:** Reducing the hash modulo `n` would also give a secret. Refusing keeps the lock secret exactly what §2.1 accepts as an item's secret. Every reader can then open a region's or a room's lock on the path it already uses for an item, and every secp256k1 library accepts the secret with no special case. The cost is that about one key in 2^127 has no lock.
+
+**Why one prefix for both kinds of key:** A region key and a room key are both 32-byte bag keys, and a reader that carries either finds its lock the same way. One prefix means one derivation. It also means that a lock does not say which kind of key it asks for (§3.8.6).
+
+#### 3.8.2 Which region
+
+A region key is the key of one aligned region at one height. Its lock is that region's lock and no other.
+
+**Height:** The regions of different heights that contain one point have different keys (`CYBERSPACE_V2.md` §4.6, §4.7), so they have different locks. A chest sealed to the lock of the region of height 4 around a point does not open with the key of the region of height 5 around the same point. A writer chooses one region at one height, and only that region's key opens the chest.
+
+**Plane:** The key does not depend on the plane. `region_n` is computed from X, Y and Z alone (`CYBERSPACE_V2.md` §4.7), so a region in dataspace and the region with the same X, Y, Z and height in ideaspace have one key, and so one lock. A lock names a key, not a plane. The two regions cost the same work, so this gives nobody a key they could not compute anyway.
+
+**Cubes only:** In this section a region key is the key of an aligned cube of height at least 1, a region a bag can be encrypted to (`CYBERSPACE_V2.md` §7.6). A movement's region whose axes have different heights (`CYBERSPACE_V2.md` §4.7) is not one. A reader need not derive locks from the keys of such regions, so a writer SHOULD NOT seal to their locks.
+
+Note (non-normative): ONOSENDAI keeps a region key when its user opens something in that region, when one of its user's hops crosses the region, or when its user buys the key. A region in which nothing is hidden at the lock's height is therefore rarely carried, and a lock that asks for it rarely opens. A writer who locks a chest or a door to a region can hide something in that region at that height too, so that whoever finds it carries the key away.
+
+#### 3.8.3 Sealing and opening
+
+**Sealing:** A writer seals a chest or a door to a region's or a room's lock exactly as §3.2 seals one to an item's public key, with a fresh one-time sender. The `lock` tag holds the lock and the sender's public key. Nothing else in the event changes. A door sealed to a region's lock is a door like any other (§3.7.1), and its room key is the room key of §3.7.2.
+
+A writer computes the lock from the key, so it ordinarily carries the key. A lock is a public key and can be passed on like one, so a writer can also seal to a lock that someone else computed. This DECK defines no listing for locks.
+
+**The `requires` label:** A writer SHOULD write a `requires` label (§3.1) on a chest or a door sealed to a region's or a room's lock, because nothing else tells a finder what the lock asks for. The label is the hider's hint, such as a name or a riddle, and it need not be exact. A writer MUST NOT put the key or the lock secret in the label, or anywhere else in the chest.
+
+**Opening:** A reader that carries the key derives the lock secret (§3.8.1) and opens the chest with it as §3.3 opens a chest with an item:
+
+```
+conversation_key = nip44_get_conversation_key( lock_secret, sender_pubkey )
+plaintext        = nip44_decrypt( content, conversation_key )
+```
+
+A door opened this way gives the reader its door secret, and the reader goes on as §3.7.3 says. Opening is local and publishes nothing.
+
+#### 3.8.4 Finding the key a lock asks for
+
+A reader matches locks on its own device, against the keys its user carries, and asks the relays nothing to do it.
+
+- **The lock map:** A reader keeps a map from each lock to the key it came from, for every key on its user's keyring. For a key item, the lock is the item's public key, as §3.3 already uses it. For a region key or a room key, it is the key's lock (§3.8.1). A reader computes each lock once, when the key joins the keyring, and SHOULD store it with the key. Each costs one SHA-256 and one point multiplication.
+- **Matching:** For each chest or door it finds, the reader looks up the chest's lock, the first value of its `lock` tag, in the lock map. When the lock is there, the reader SHOULD offer to open the chest with the key it maps to (§3.3). That is one lookup for each chest, and nothing leaves the device.
+- **Only the lock decides:** A reader MUST NOT use the `requires` label to choose a key, or to decide whether a chest can be opened. The label is the hider's text (§6). It is shown to the user, and plays no part in matching.
+- **Which key fitted:** A reader MAY tell its user which key fitted, from its own keyring: a region, with where it is and when it was kept; a room; or an item.
+- **Nothing published:** The keyring and the lock map stay on the device. A reader SHOULD NOT ask relays about its locks. Matching needs nothing from them, and such a query would tell a relay which keys its user carries.
+
+**Why match on the device:** The chest is an entry of a bag the reader has already opened, so its `lock` tag is already in hand. Matching it against locks the reader computed costs no request and tells nobody anything. Asking a relay instead would publish the user's keyring.
+
+**What an older reader sees:** A reader that does not know this section has no entry in its map for a region's or a room's lock. It shows the chest or the door closed, with its `requires` label, and offers no way to open it. Nothing is misread.
+
+#### 3.8.5 A room as a lock
+
+A room key's lock is derived exactly as a region key's (§3.8.1). A chest or a door sealed to a room's lock opens for whoever carries that room's key: whoever has opened one of the room's doors, and the room's author.
+
+- **Chains:** Rooms can therefore lead to rooms. A door to room B, hidden anywhere, may be sealed to the lock of room A. A finder who has opened room A carries its room key, and room B's door opens for them. Room A may stand anywhere, at any height, and nothing about room B's door says where.
+- **AND inside a lock, OR across doors:** A room key needs both the region key and the door secret (§3.7.2), so whoever carries a room key has had both. A room with several doors (§3.7.5) opens through any of them, so a room with one door sealed to a key item and another sealed to a region's lock opens for a finder who holds either.
+- **Rotation:** Rotating room A (§3.7.7) gives it a new room key, and so a new lock. A chest or a door sealed to the old lock still opens with the old room key, and not with the new one. A writer that rotates a room whose lock it has used SHOULD seal those chests and doors again, to the new lock.
+- **Room keys do not change:** This section derives a lock from a room key. It changes nothing about the room key, the room bag or the door (§3.7.2).
+
+#### 3.8.6 What a `lock` tag reveals (non-normative)
+
+A `lock` tag does not say whether its lock is an item's, a person's, a region's or a room's. The argument:
+
+1. **Who sees the tag:** A chest or a door is an entry of a bag or a room bag. Only a reader that holds that bag's key sees its `lock` tag. A relay sees ciphertext.
+2. **A lock looks like any public key:** A region's or a room's lock is the public key of a SHA-256 output. An item's public key is the public key of a random secret, and a person's is the public key of theirs. To anyone who does not know the region key or the room key, a SHA-256 output is as random as any secret, so the three kinds of public key are drawn alike, and only someone who can try the right key can tell a lock from the others. The sender key beside the lock is fresh for every seal, and says nothing either.
+3. **What elimination gives:** A reader can check whether a lock is a listed item (§4), or the pubkey of a person who has published events. A lock that is neither is an unlisted item, a person who has published nothing, a region, a room, or a decoy. Elimination can narrow the kind. It never names the region or the room.
+4. **What a guess gives:** A reader who suspects a region can compute that region's key, derive its lock and compare. That costs the region's work, which is the same work as finding a bag there, and it confirms only the region guessed. A room's lock cannot be guessed this way, because its key needs a door secret, 32 random bytes.
+5. **What the label gives:** The `requires` label is the hider's text, and may say outright that a region is wanted. That is the hider's choice, and the protocol reveals nothing beyond it.
+
+A `lock` tag therefore shows that a chest is locked to a region only to a reader who already has that region's key or does its work, and to whoever the hider tells in the label.
+
+### 3.9 Secret rooms (reserved)
+
+This section is reserved for secret rooms: rooms with no door in front of them, which open for whoever arrives carrying the keys they name. They are not yet defined.
+
 ## 4. The item listing: `kind 33340` (normative)
 
 ### 4.1 Purpose
@@ -542,6 +644,14 @@ The signatures in the vectors use 32 zero bytes of BIP-340 auxiliary randomness 
 
 The `sealed_entries` section of `kinds-vectors.json` (`CYBERSPACE_V2.md` §7.6) holds a room key and a room lookup id derived from a door secret, a room bag sealed with that room key, and a door, carried in a sealed entry as a vector that readers refuse (`reject.door`). `kinds-vectors.json` does not yet hold a door that opens that room inline, or a chest with a look. They will be added with the first implementation that writes them.
 
+**Locks (§3.8):** The `locks` section of `kinds-vectors.json` holds a region of height 4, computed from a dataspace coordinate as `CYBERSPACE_V2.md` §2.3, §4.6, §4.7 and §7.2 compute it: the coordinate, the region's base, its `region_n`, its location key and lookup id, the 47 bytes the lock hash takes, the lock secret and the lock. It also holds:
+
+- the region of height 5 around the same coordinate, whose key and lock differ;
+- a chest sealed to the height 4 region's lock, with its plaintext, NIP-44 nonce and conversation key. It opens with the lock secret, and it does not open with the region key used as a secret;
+- a room key of the height 4 region, with its door secret, its room lookup id, and its lock.
+
+`kinds-vectors.mjs` checks each of these as it writes them, and every value was also checked by a separate implementation written from this section. No client has been checked against them yet.
+
 ## 6. Security considerations
 
 - **An item is knowledge:** Anyone who has read an item holds it forever, and can give it to anyone by copying the secret. There is no scarcity in this DECK and no revocation. Games that need either build it on the chain later.
@@ -556,6 +666,11 @@ The `sealed_entries` section of `kinds-vectors.json` (`CYBERSPACE_V2.md` §7.6) 
 - **A message in a chest proves its author only in place:** It is a rumor, so a finder who copies it out cannot publish it as a note its hider signed, and the hider's signed items carry `-`, so a relay that honours NIP-70 refuses a copy published by anyone but the hider; a relay that does not honour it still accepts one. Neither is deniability: whoever publishes the bag with its region key, together with what opens the chest, can show what the chest held, signed by its author.
 - **A model is someone else's object:** An item's `model` names a public object that its author can replace at any time (§2.5), so what an item looks like can change after it was hidden, and an author who deletes the object leaves every item that wears it drawn without a model. A forger who wants the look fixed names an object they authored.
 - **The `requires` label is the hider's text:** It is shown to readers who cannot open the chest and may say anything; it is data, never an instruction.
+- **A region's lock proves knowledge, not travel:** A region key costs the same to compute from anywhere as it does by going there (`CYBERSPACE_V2.md` §7.1). A chest sealed to a region's lock (§3.8) opens for whoever has done that region's work, or was given its key. A lock that asks for a region asks whether its reader knows the region's key, not whether they went there.
+- **Keys are deeds, and deeds can be shared:** A region key, a room key and a lock secret are 32 bytes each, and anyone can hand one to anyone, as with an item. Handing over a region key also opens the region's bags. Handing over a lock secret opens only what is sealed to that lock, because the key cannot be computed from it (§3.8.1). A door whose key has been shared can be rotated (§3.7.7). A region's key never changes.
+- **A lock names a key, not a place:** A chest or a door sealed to a region's lock opens for that key's holders wherever it stands. A finder who copies such a chest and hides the copy elsewhere moves the lock with it. A chest sealed to the lock of the region of the bag that holds it opens for everyone who can see it, because seeing it took that key.
+- **Decoys:** A `requires` label may name a region while the chest is sealed to a random key, or to another region's lock, or to the same region at another height. A reader that carries the named key can tell, because its lock map has no match (§3.8.4). A reader that does not carry it cannot.
+- **A lock confirms a guess:** Whoever suspects which region a lock asks for can confirm it by computing that region's key and comparing locks (§3.8.6). That costs the region's work, the same work as finding a bag there. Without a guess, a lock says nothing about where its region is.
 
 ## 7. Open questions (non-normative)
 
