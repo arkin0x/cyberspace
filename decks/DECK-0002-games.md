@@ -15,14 +15,15 @@ A **game** in cyberspace is played inside a virtual bracket (`CYBERSPACE_V2.md` 
 This DECK says those things, and as little else as it can. It defines:
 
 - how a client enters a game and leaves it (§2, §7), which is the base protocol's bracket and nothing new, with the client's duties written down;
+- a game's **entry point**, where a player appears in the game by virtue of entering it, with no action published for the arrival (§2.2);
 - how a game writes a position inside the game, when it has positions (§3);
 - two recommended game actions, `teleport` and `move`, so that any client can draw a player's path through any game that uses them without knowing that game (§4);
 - where a game's world is and how a client reads it: the bags the game's pubkey seals to the game's region (§5);
 - that play between two chain actions may stay on the player's device (§6).
 
-It defines no new event kind and no new tag. A game is its pubkey (`CYBERSPACE_V2.md` §8.11.1, arkinox's ruling of 2026-10-02): there is no game event, and no registry of games. Everything else a game does, its rules, its mechanics, its scoring, its controls, is the game's own, and §8 records each part this DECK leaves to games and why.
+It defines no new event kind, and one tag, `entry`, which a game puts on one item of its own world. A game is its pubkey (`CYBERSPACE_V2.md` §8.11.1, arkinox's ruling of 2026-10-02): there is no game event, and no registry of games. Everything else a game does, its rules, its mechanics, its scoring, its controls, is the game's own, and §8 records each part this DECK leaves to games and why.
 
-The first game shaped to this DECK is the tutorial dungeon of ONOSENDAI's first-arrival tutorial (§9): a newcomer enters a game, is teleported through the game into a small dungeon built for it, meets a mechanic cyberspace does not have, and leaves to stand exactly where they entered.
+The first game shaped to this DECK is the tutorial dungeon of ONOSENDAI's first-arrival tutorial (§9): a newcomer enters a game, appears in a small dungeon built for it, far from where they stand, meets a mechanic cyberspace does not have, and leaves to stand exactly where they entered.
 
 ## Terms
 
@@ -31,6 +32,7 @@ The first game shaped to this DECK is the tutorial dungeon of ONOSENDAI's first-
 - **Bracket:** the stretch of the player's chain from their `enter-virtual` action to the `exit-virtual` action that closes it (`CYBERSPACE_V2.md` §8.11).
 - **Base position:** where the player stands in cyberspace for the whole bracket: the `c` of their `enter-virtual` action, which its `C` repeats (`CYBERSPACE_V2.md` §8.11.4, rule 1).
 - **Game position:** where the player is inside the game, for a game that has positions (§3). It is never a position in cyberspace.
+- **Entry point:** where a player appears in the game by virtue of entering it (§2.2). It is a game position, and it is not the game's spawn or respawn point in play.
 - **Game action:** a virtual action (`CYBERSPACE_V2.md` §8.11.2): any event inside a bracket.
 - **World:** what a game draws for its players: the items of the bags its game key seals to its region (§5).
 - **In-game mode:** a client's state while its own player is inside a bracket of a game the client implements: it draws the game, and its controls make game actions (§2.3).
@@ -41,8 +43,8 @@ The first game shaped to this DECK is the tutorial dungeon of ONOSENDAI's first-
 | Step | What the player's client does | Published on the player's chain | Defined in |
 |---|---|---|---|
 | Enter | Publishes `enter-virtual` naming the game and its region, from where the player stands | `enter-virtual` | `CYBERSPACE_V2.md` §8.11.1; this DECK §2 |
-| Arrive | Puts the player at their first game position, as the game's rules say | `teleport` (§4.1), when the game has positions | §3, §4 |
 | Draw | Reads the world from the game's bags in the region, and draws it in place of cyberspace | nothing | §5 |
+| Arrive | Shows the player at the game's entry point, by virtue of having entered | nothing | §2.2 |
 | Play | Moves the player by the game's own rules | the game actions the game wants on the record; the rest stays on the device | §4, §6 |
 | Leave | Publishes `exit-virtual`, and returns the player to the view they had when they entered | `exit-virtual` | `CYBERSPACE_V2.md` §8.11.3; this DECK §7 |
 
@@ -64,11 +66,29 @@ A client MUST NOT enter a game while a bracket is open on its player's chain. An
 
 A client SHOULD NOT enter a game from a chain it knows to be invalid, or from an identity that has no chain yet. On an invalid chain the entry counts for nothing; an identity with no chain has no position to hold, and spawns first (`CYBERSPACE_V2.md` §3.2).
 
-### 2.2 Where the player starts inside the game
+### 2.2 The entry point (normative for games that have positions)
 
-The `enter-virtual` action does not move the player, and its `C` is the base position, not a place in the game (`CYBERSPACE_V2.md` §8.11.1). A game that has positions puts its player at their first game position with its first game action, a `teleport` (§4.1), signed right after the entry. The game's rules say which position that is.
+A game's **entry point** is where a player appears in the game by virtue of entering it. Entering is the whole arrival:
 
-**Why a `teleport` action and not a tag on the entry (non-normative):** The base protocol allows a game to say where its player starts in a tag of its own on the `enter-virtual` action. This DECK uses an action instead, for three reasons. The entry stays exactly the base event, read by every verifier, with nothing on it that only a game reads. The arrival is the same primitive a game uses for every later jump (a pad, a portal, a restart), so one shape covers all of them. And the arrival has an event id of its own, which a game can name when it needs to say "from the moment this player arrived".
+- **No action is published for the arrival.** The `enter-virtual` action is the only event the player signs to enter. A client that has read the game's world (§5) shows the player at the entry point from that moment, and the player's game position is the entry point until a game action moves them (§4).
+- **Nothing changes in the base protocol.** The `enter-virtual` action does not move the player, and its `C` is the base position, not a place in the game (`CYBERSPACE_V2.md` §8.11.1). The player's position in cyberspace stays exactly where they entered from, held by the bracket until the `exit-virtual` action restores it (`CYBERSPACE_V2.md` §8.11.4, rules 1 and 2). Appearing at the entry point only shows where the player is in the game.
+- **No base action is allowed inside the bracket**, for the arrival or for anything after it: a `hop`, `sidestep`, `enter-hyperspace`, `hyperjump` or `enter-virtual` signed inside a bracket is invalid, and the chain is invalid from it (`CYBERSPACE_V2.md` §8.11.4, rule 3). Getting a player to the entry point never needs one.
+
+**Where the entry point is written.** The entry point is the `C` of the item of the game's world (§5.1) that carries an `entry` tag:
+
+| Tag | Value |
+|---|---|
+| `["entry"]` | on one item of the world, of any kind: a shard drawn at the place of arrival, for example. Its `C` is the entry point. The tag has no value; any further elements are ignored. |
+
+- A game's world SHOULD carry exactly one item with the `entry` tag.
+- When more than one item carries it, the entry point is the `C` of the first of them in the bag's list, the same order that decides which of two copies of an item counts (`CYBERSPACE_V2.md` §7.6).
+- When no item carries it, the entry point is the centre of the region: on each axis, its base plus `2^(H - 1)`, where `H` is the region's height (for `H` = 0, the base itself).
+
+The entry point lies inside the region, because every item's `C` lies inside its bag's region (`CYBERSPACE_V2.md` §7.6), and the world's bag is sealed to the region (§5.1).
+
+**The entry point is not a spawn point in play.** Where a game starts a round, restarts a player who fell, or revives one who lost, is the game's own rule, and none of those needs to be the entry point. The entry point says only where a player appears when they enter.
+
+**Why a tag on an item of the world (non-normative):** A game is its pubkey, and there is no game event (arkinox, 2026-10-02), so the entry point needs a home that already exists. The world is the one place every client already reads, with the key it already has, and a game moves its entry point by republishing its bag, as it changes anything else in its world. A tag on an item costs one tag, sealed with everything else, and readers that know nothing of games ignore it, as they ignore any tag they do not read. A tag on the `enter-virtual` action, which the base protocol allows, would have let every player write their own arrival; the entry point is the game's to set.
 
 ### 2.3 In-game mode
 
@@ -85,7 +105,8 @@ A client that does not implement the game whose bracket is open on its player's 
 A game position is written as a coordinate in the form of `CYBERSPACE_V2.md` §2.2: 32-byte lowercase hex, the same encoding as any `C` tag. A game that has positions:
 
 - SHOULD keep every game position inside its region. Its world is read from its region (§5) and drawn there, so positions inside the region are in the same frame as the world, at true scale, one gibson to a gibson.
-- writes a game position in the `C` tag of a game action, and where the action says where the player came from, in its `c` tag (§4).
+- writes a game position in the `C` tag of a game action, and where the action says where the player came from, in its `c` tag (§4);
+- has an entry point (§2.2), the player's game position from the moment they enter until a game action moves them.
 
 A game position is never a position in cyberspace. The base protocol holds the player at the base position for the whole bracket whatever coordinates the game's actions carry (`CYBERSPACE_V2.md` §8.11.4, rules 1 and 4). A client that draws game positions outside in-game mode, for example when it shows another player's chain, SHOULD draw them differently from positions in cyberspace, so a viewer never mistakes play inside a game for travel (`CYBERSPACE_V2.md` §8.11.7).
 
@@ -109,9 +130,9 @@ The game put the player at a game position, with no path between where they were
 | `["e", "<spawn id>", "", "genesis"]` | exactly one, as for any game action |
 | `["e", "<previous id>", "", "previous"]` | exactly one, as for any game action |
 | `["C", "<coord hex>"]` | exactly one: the game position the player is now at |
-| `["c", "<coord hex>"]` | optional: the game position the player left. Absent on the arrival right after the entry (§2.2), where the player came from no game position |
+| `["c", "<coord hex>"]` | optional: the game position the player left |
 
-Whether a teleport is allowed is the game's to decide: a pad the player stood on, a portal, the arrival, a restart. A game that checks its players checks its own teleports.
+Whether a teleport is allowed is the game's to decide: a pad the player stood on, a portal, a restart. Entering the game is never one: the player appears at the entry point with no action (§2.2). A game that checks its players checks its own teleports.
 
 ### 4.2 `move`
 
@@ -161,7 +182,7 @@ One consequence follows, and it is deliberate. A game's world is in cyberspace a
 
 ## 6. Play kept on the device (permitted)
 
-A client MAY move its player inside a game without publishing every step. Between two game actions on the chain, where the player is inside the game is the client's and the game's business: it is never a position in cyberspace, it never reaches any chain, and no verifier reads it. The chain holds the game actions the game wants on the record: the arrival, the teleports, a checkpoint, a result.
+A client MAY move its player inside a game without publishing every step. Between two game actions on the chain, where the player is inside the game is the client's and the game's business: it is never a position in cyberspace, it never reaches any chain, and no verifier reads it. The chain holds the game actions the game wants on the record: the teleports, a checkpoint, a result.
 
 This is the base protocol's permission for live play off the chain (`CYBERSPACE_V2.md` §8.11.7) applied to a single player. Play kept on the device is not verified by anyone, so a modified client can walk through a game's walls. For a casual game played alone that spoils only the cheater's own game. A game whose outcomes matter checks the actions that are on the chain, or runs a live arbiter (§8).
 
@@ -175,7 +196,7 @@ A client leaves a game by publishing an `exit-virtual` action on its player's ch
 - The client SHOULD return its player to the view they had when they entered: the same place, the same zoom, the same direction of look, and the same mode of movement. The protocol restores the position (`CYBERSPACE_V2.md` §8.11.4, rule 2); the view is the client's to restore, and a player who comes back to a different view does not feel they came back to where they were.
 - A client MAY leave a game at any moment, the middle of play included: an `exit-virtual` action is always valid (`CYBERSPACE_V2.md` §8.11.6). What leaving means inside the game, for a game with stakes, is the game's rule (`CYBERSPACE_V2.md` §8.11.7).
 
-**Coming back to an open bracket.** A chain whose head is inside a bracket says, by itself, which game holds the player and where they entered from (`CYBERSPACE_V2.md` §8.11.4, rule 7). A client that reloads, or that opens on such a chain, and implements the game SHOULD offer both to go back into the game and to leave it. It builds the exit from the chain alone: the open `enter-virtual` action gives the entry id and the base position. A client that does not implement the game says that a game holds the player and signs no base action (§2.3).
+**Coming back to an open bracket.** A chain whose head is inside a bracket says, by itself, which game holds the player and where they entered from (`CYBERSPACE_V2.md` §8.11.4, rule 7). A client that reloads, or that opens on such a chain, and implements the game SHOULD offer both to go back into the game and to leave it. It builds the exit from the chain alone: the open `enter-virtual` action gives the entry id and the base position. Going back in, it shows the player at the game position of the last `teleport` or `move` in the bracket, or at the entry point when there is none. A client that does not implement the game says that a game holds the player and signs no base action (§2.3).
 
 **Who may publish the exit.** The base protocol lets the identity's own client publish an exit at any time. A client SHOULD publish an exit only for a game it implements, or when its player asks to leave a game it does not implement and has been told that the game may count leaving this way against them.
 
@@ -188,11 +209,12 @@ The owner's direction for this DECK (2026-11-07) is to keep it minimal: most of 
 | Entering and leaving | DECK (§2, §7), which is the base bracket | Every game needs it, and every client must do it the same way for chains to stay valid. The DECK adds only the client's duties: confirm the head, never nest, restore the view. |
 | What a game is | Base protocol: a pubkey | Ruled 2026-10-02: there is no game event. The DECK adds nothing. |
 | Advertising a game, a list of games | Neither (outside the protocol) | The base protocol already says a game SHOULD advertise its region by no fixed mechanism (§8.11.7). A link, a door, a tutorial or a web page is enough to start one. |
-| Where the player starts | Game logic, through a DECK action shape (§2.2, §4.1) | Which position is the game's choice; how it is written (a `teleport` right after the entry) is shared, so every client can draw the arrival. |
+| Where the player appears on entering | DECK: the entry point, an `entry` tag on an item of the world (§2.2) | Owner's ruling 2026-11-10: entering shows the player at the game's entry point by virtue of entering, with no action published and nothing changed in the base protocol. Every client must find it the same way. |
+| Where the player starts, restarts or revives in play | Game logic | Distinct from the entry point (owner, 2026-11-10). |
 | How positions are written | DECK (§3) | One encoding, cyberspace coordinates inside the region, lets any client draw any game's path and its world in one frame. |
-| `teleport` and `move` | DECK, as recommended shapes (§4) | The two ways anything changes position. Every client can draw them without knowing the game. |
+| `teleport` and `move` | DECK, as recommended shapes (§4); games add their own names | The two ways anything changes position inside a game, a pad's jump for example. Every client can draw them without knowing the game (owner, 2026-11-10). |
 | Every other action (pick up, open, attack, score, win) | Game logic | It means something only inside one game. A game names it, and the base protocol already accepts any name that is not reserved. |
-| Where the world is | DECK (§5) | Every client that draws a game needs to find its world the same way. It reuses bags and region keys, so it costs no new kind and no new key. |
+| Where the world is | DECK (§5) | Every client that draws a game needs to find its world the same way. It reuses bags and region keys, so it costs no new kind and no new key. Its being visible from the region in cyberspace is accepted for now (owner, 2026-11-10). |
 | What an item of the world means (a pad, a goal, a door) | Game logic | A teleport pad in one game is a trap in another. The world carries shapes; the rules say what they do. |
 | Physics: gravity, speed, jump height, collision | Game logic | The racer, the dungeon and a card game want different physics, or none. A game may borrow a client's movement, and a client may hold a player at the faces of world shards whose `constrain` is not `off` (DECK-0003 §1.12), but that is the game's choice, not a rule of this DECK. |
 | Controls: keys, onscreen buttons, pads | Game logic, and each client's own | The base protocol reserved control definitions for this DECK (§8.11.7). They are left out until two games need the same controls: a client draws controls for the games it implements, and nothing on the wire needs them. |
@@ -207,13 +229,13 @@ The owner's direction for this DECK (2026-11-07) is to keep it minimal: most of 
 A newcomer to ONOSENDAI finishes the first-arrival tutorial and chooses the dungeon. The tutorial game's pubkey is `G`; its region is a cube of height 6 (64 gibsons on a side) whose base is `R`; the newcomer stands at `P`, where their last hop left them.
 
 1. Their client confirms the head and signs the entry: `A` `enter-virtual`, `c` and `C` both `P`, `region` `R` with height `6`, and `p` `G` marked `game`.
-2. It signs the arrival: `A` `teleport`, `C` the dungeon's start, a game position inside the region. The dungeon is far from `P`; the newcomer got there through the game, not across cyberspace.
-3. It reads the world: the bags signed by `G` with `d` equal to the `lookup_id` of the region, opened with the region key. It draws their shards, a sealed stone chamber and a teleport pad, in place of cyberspace.
+2. It reads the world: the bags signed by `G` with `d` equal to the `lookup_id` of the region, opened with the region key. It draws their shards, a sealed stone chamber and a teleport pad, in place of cyberspace.
+3. It shows the newcomer at the entry point: the `C` of the world's item with the `entry` tag, a small marker on the chamber's floor. Nothing is signed for it. The dungeon is far from `P`; the newcomer appears there through the game, not across cyberspace, and on the chain they still stand at `P`.
 4. The newcomer walks the chamber. The steps stay on their device (§6). The walls hold them, because the game's rules say they do.
 5. They step onto the pad. The game's rule is that the pad sends them to a second chamber nothing connects to the first, and their client signs `A` `teleport`, with `c` the pad and `C` the second chamber.
 6. They choose EXIT GAME. Their client signs `A` `exit-virtual`, `e` entry naming step 1, `C` `P`, and an optional `c` with their last game position. The view comes back to exactly what it was before step 1.
 
-On the relays, their chain now reads: a hop to `P`, then `enter-virtual`, `teleport`, `teleport`, `exit-virtual`, all at base position `P`. Every verifier finds it valid; a client that knows this DECK can draw the two teleports inside the dungeon; a client that knows nothing of games draws the newcomer standing at `P` the whole time.
+On the relays, their chain now reads: a hop to `P`, then `enter-virtual`, `teleport`, `exit-virtual`, all at base position `P`. Every verifier finds it valid; a client that knows this DECK can draw the newcomer at the entry point and the pad's teleport inside the dungeon; a client that knows nothing of games draws the newcomer standing at `P` the whole time.
 
 The entry, in full:
 
@@ -239,18 +261,34 @@ The entry, in full:
 }
 ```
 
-The arrival:
+The entry point, an item inside the world's bag (a shard item, `kind 3330`, signed by `G`), with the `entry` tag:
+
+```json
+{
+  "kind": 3330,
+  "pubkey": "<G>",
+  "created_at": 1794300006,
+  "tags": [
+    ["C", "<the entry point, inside R>"],
+    ["entry"]
+  ],
+  "content": "<the marker's SNO payload>"
+}
+```
+
+The pad's teleport:
 
 ```json
 {
   "kind": 3333,
   "pubkey": "<newcomer>",
-  "created_at": 1794300001,
+  "created_at": 1794300042,
   "tags": [
     ["A", "teleport"],
     ["e", "<spawn id>", "", "genesis"],
     ["e", "<id of the entry>", "", "previous"],
-    ["C", "<the dungeon's start, inside R>"]
+    ["c", "<the pad, inside R>"],
+    ["C", "<the second chamber, inside R>"]
   ],
   "content": ""
 }
