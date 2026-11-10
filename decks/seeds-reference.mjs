@@ -596,6 +596,13 @@ export function workOk(ev, bits) {
   if (!t || !isDecimal(t[2]) || Number(t[2]) < bits) return false
   return leadingZeroBits(ev.id) >= bits
 }
+// DECK-0008 §8.2: before resolving a seed's DNA, a reader skips a seed whose committed target is missing,
+// malformed or below the base price, or whose id has fewer leading zero bits than its committed target.
+export function seedPrecheck(ev) {
+  const t = ev.tags.find((x) => x[0] === 'nonce')
+  if (!t || !isDecimal(t[2]) || Number(t[2]) < PRICE.base) return false
+  return leadingZeroBits(ev.id) >= Number(t[2])
+}
 // NIP-01 event id and NIP-13 difficulty
 export const eventId = (ev) => sha256hex(Buffer.from(JSON.stringify([0, ev.pubkey, ev.created_at, ev.kind, ev.tags, ev.content]), 'utf8'))
 export function leadingZeroBits(hex) { let n = 0; for (const ch of hex) { const v = parseInt(ch, 16); if (v === 0) { n += 4; continue } n += Math.clz32(v) - 28; break } return n }
