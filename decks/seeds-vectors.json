@@ -1,0 +1,3570 @@
+{
+ "note": "Golden vectors for DECK-0008 (Seeds), produced by seeds-vectors.mjs from seeds-reference.mjs. Not normative: where this file disagrees with DECK-0008, the DECK is right. Block hashes are written as block explorers display them. DNA events are unsigned stand-ins whose ids carry their NIP-13 work; a real DNA event is signed. SNO hashes are SHA-256 of the compact JSON of the bloom payload (DECK-0008 §5.4), keys in the order v, name, unit, extent, mode, vertices, ticks, colors, faces.",
+ "constants": {
+  "TICK": 120,
+  "STEP": 12,
+  "ONE": 16384,
+  "N": 144,
+  "CLOCK_DEPTH": 6,
+  "MIX_DELAY": 36,
+  "MIX_DEPTH_MAX": 8,
+  "CLAMP_MARGIN": 7200,
+  "limits": {
+   "rules": 40,
+   "params": 4,
+   "value": 1000000,
+   "stack": 64,
+   "region": 64
+  },
+  "TERRAIN_DOMAIN_V2": "CYBERSPACE_TERRAIN_K_V2",
+  "TERROIR_DOMAIN": "CYBERSPACE_SEED_TERROIR_V1",
+  "MIX_DOMAIN": "CYBERSPACE_SEED_MIX_V1",
+  "price": {
+   "base": 16,
+   "caps": {
+    "vertices": {
+     "free": 2048,
+     "max": 65536
+    },
+    "symbols": {
+     "free": 2048,
+     "max": 65536
+    },
+    "generations": {
+     "free": 32,
+     "max": 1024
+    }
+   }
+  }
+ },
+ "primitives": {
+  "sin_table_sha256": "3cd592a0f9bc9e7681de76cd4331e6d4ef66898aa2125ac840d8d04d24b00afe",
+  "isin": {
+   "0": 0,
+   "1": 286,
+   "45": 11585,
+   "90": 16384,
+   "91": 16382,
+   "135": 11585,
+   "180": 0,
+   "181": -286,
+   "270": -16384,
+   "300": -14189,
+   "359": -286,
+   "360": 0,
+   "725": 1428,
+   "-30": -8192
+  },
+  "icos": {
+   "0": 16384,
+   "30": 14189,
+   "90": 0,
+   "180": -16384,
+   "-90": 0
+  },
+  "isqrt": {
+   "0": 0,
+   "1": 1,
+   "2": 1,
+   "3": 1,
+   "4": 2,
+   "15": 3,
+   "16": 4,
+   "17": 4,
+   "268435455": 16383,
+   "268435456": 16384,
+   "805306368": 28377
+  },
+  "mix32": {
+   "0": 0,
+   "1": 1753845952,
+   "2166136261": 1947474976,
+   "4294967295": 1734902346
+  },
+  "word": {
+   "block_height": 970544,
+   "block_hash": "000000000000000000018e2630954cf08dd01574789ddf0a802fc034e1b6ba74",
+   "word": 3401466007,
+   "W": 68,
+   "w_first_8": [
+    48,
+    76,
+    52,
+    64,
+    1,
+    78,
+    45,
+    19
+   ]
+  }
+ },
+ "terroir": [
+  {
+   "what": "spec §5.7 destination (4104, 0, 0), plane 0",
+   "coord": "0000000000000000000000000000000000000000000000000000008000001000",
+   "scale": 0,
+   "K": 11,
+   "n0": 0,
+   "n1": 15,
+   "n2": 15,
+   "n3": 13,
+   "pl": 0
+  },
+  {
+   "what": "(4096, 0, 0), plane 0",
+   "coord": "0000000000000000000000000000000000000000000000000000008000000000",
+   "scale": 0,
+   "K": 14,
+   "n0": 13,
+   "n1": 15,
+   "n2": 15,
+   "n3": 13,
+   "pl": 0
+  },
+  {
+   "what": "(4103, 0, 0): the same 8-gibson cell as 4096",
+   "coord": "0000000000000000000000000000000000000000000000000000008000000248",
+   "scale": 0,
+   "K": 14,
+   "n0": 13,
+   "n1": 15,
+   "n2": 15,
+   "n3": 13,
+   "pl": 0
+  },
+  {
+   "what": "(4104, 0, 0), plane 1",
+   "coord": "0000000000000000000000000000000000000000000000000000008000001001",
+   "scale": 0,
+   "K": 6,
+   "n0": 10,
+   "n1": 2,
+   "n2": 1,
+   "n3": 12,
+   "pl": 1
+  },
+  {
+   "what": "(4104, 0, 0) at scale 4",
+   "coord": "0000000000000000000000000000000000000000000000000000008000001000",
+   "scale": 4,
+   "K": 8,
+   "n0": 6,
+   "n1": 1,
+   "n2": 11,
+   "n3": 10,
+   "pl": 0
+  },
+  {
+   "what": "coordA",
+   "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+   "scale": 0,
+   "K": 8,
+   "n0": 10,
+   "n1": 14,
+   "n2": 0,
+   "n3": 11,
+   "pl": 1
+  },
+  {
+   "what": "coordA",
+   "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+   "scale": 4,
+   "K": 6,
+   "n0": 8,
+   "n1": 8,
+   "n2": 11,
+   "n3": 2,
+   "pl": 1
+  },
+  {
+   "what": "coordA",
+   "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+   "scale": 8,
+   "K": 6,
+   "n0": 8,
+   "n1": 2,
+   "n2": 2,
+   "n3": 7,
+   "pl": 1
+  },
+  {
+   "what": "coordA",
+   "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+   "scale": 12,
+   "K": 9,
+   "n0": 2,
+   "n1": 7,
+   "n2": 14,
+   "n3": 9,
+   "pl": 1
+  },
+  {
+   "what": "coordA",
+   "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+   "scale": 30,
+   "K": 9,
+   "n0": 5,
+   "n1": 15,
+   "n2": 10,
+   "n3": 2,
+   "pl": 1
+  },
+  {
+   "what": "coordA",
+   "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+   "scale": 84,
+   "K": 9,
+   "n0": 1,
+   "n1": 13,
+   "n2": 2,
+   "n3": 15,
+   "pl": 1
+  },
+  {
+   "what": "coordB",
+   "coord": "c4e2a0f8d6b4927085e3c1a9f7d5b3917fe5c3a1b9d7f5e3c1a9b7d5f3e1c9a0",
+   "scale": 0,
+   "K": 7,
+   "n0": 5,
+   "n1": 4,
+   "n2": 5,
+   "n3": 5,
+   "pl": 0
+  }
+ ],
+ "expressions": {
+  "dna": "dna exprs\nlet a = -7 / 2\nlet b = -7 % 3\nlet c = 7 % -3\nlet d = 5 / 0\nlet e = 5 % 0\nlet f = 1000 * 1000 * 3\nlet h = 0 - 999999 - 5\nlet i = 2 + 3 * 4 < 15 and not 0\nlet j = (2 + 3) * 4\nlet k = 9999999\nlet m = - - 3\nlet o = 7 / -2\nlet q = 1 or 0 and 0\nlet r = not 2 == 2\nlet s = size + hue + tone\nlet t = K * 100 + n0 + n1 + n2 + n3 + pl\naxiom F",
+  "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+  "scale": 0,
+  "values": {
+   "a": -3,
+   "b": 2,
+   "c": 1,
+   "d": 0,
+   "e": 0,
+   "f": 1000000,
+   "h": -1000000,
+   "i": 1,
+   "j": 20,
+   "k": 1000000,
+   "m": 3,
+   "o": -3,
+   "q": 1,
+   "r": 0,
+   "s": 100,
+   "t": 836
+  }
+ },
+ "rejected": [
+  {
+   "why": "a parameter that shadows a gene",
+   "dna": "dna x\ngene curl 1 1 in 0..9\naxiom A(1)\nA(curl) -> A(curl)",
+   "error_in_reference": "line 4: parameter \"curl\" is not a free name"
+  },
+  {
+   "why": "a parameter that shadows a builtin",
+   "dna": "dna x\naxiom A(1)\nA(K) -> A(K)",
+   "error_in_reference": "line 3: parameter \"K\" is not a free name"
+  },
+  {
+   "why": "two axioms",
+   "dna": "dna x\naxiom F\naxiom F",
+   "error_in_reference": "line 3: a second \"axiom\" line"
+  },
+  {
+   "why": "a gene range that runs high to low",
+   "dna": "dna x\ngene leaf 3 3 in 6..1\naxiom F",
+   "error_in_reference": "line 2: a gene range runs low to high"
+  },
+  {
+   "why": "a gene value past 1,000,000",
+   "dna": "dna x\ngene leaf 3 2000000 in 1..6\naxiom F",
+   "error_in_reference": "line 2: gene values are within 1,000,000"
+  },
+  {
+   "why": "an unknown name",
+   "dna": "dna x\nlet a = zz + 1\naxiom F",
+   "error_in_reference": "line 2: unknown name \"zz\""
+  },
+  {
+   "why": "a let that reads g",
+   "dna": "dna x\nlet a = g + 1\naxiom F",
+   "error_in_reference": "line 2: unknown name \"g\""
+  },
+  {
+   "why": "two comparisons in a row",
+   "dna": "dna x\nlet a = 1 < 2 < 3\naxiom F",
+   "error_in_reference": "line 2: unexpected \"<\""
+  },
+  {
+   "why": "a space before an argument list",
+   "dna": "dna x\naxiom F (2)",
+   "error_in_reference": "line 2: \"(\" is not a symbol"
+  },
+  {
+   "why": "an empty argument",
+   "dna": "dna x\naxiom F(1,,2)",
+   "error_in_reference": "line 2: expression ends early"
+  },
+  {
+   "why": "five arguments",
+   "dna": "dna x\naxiom A(1,2,3,4,5)",
+   "error_in_reference": "line 2: more than 4 parameters"
+  },
+  {
+   "why": "two arrows",
+   "dna": "dna x\naxiom A\nA -> B -> C",
+   "error_in_reference": "line 3: a rule has exactly one \"->\""
+  },
+  {
+   "why": "no axiom",
+   "dna": "dna x\nangle 9",
+   "error_in_reference": "no axiom"
+  },
+  {
+   "why": "a keyword as a name",
+   "dna": "dna x\nlet chance = 1\naxiom F",
+   "error_in_reference": "line 2: name \"chance\" is taken"
+  },
+  {
+   "why": "a non-ASCII letter outside a comment",
+   "dna": "dna x\nlet é = 1\naxiom F",
+   "error_in_reference": "line 2: only printable ASCII outside comments and names"
+  },
+  {
+   "why": "a number that is not whole",
+   "dna": "dna x\nangle 2.5\naxiom F",
+   "error_in_reference": "line 2: angle is a whole number"
+  },
+  {
+   "why": "an unknown line",
+   "dna": "dna x\nbloom 3\naxiom F",
+   "error_in_reference": "line 2: unknown line \"bloom\""
+  },
+  {
+   "why": "a rule that starts with a digit",
+   "dna": "dna x\naxiom F\n3 -> F",
+   "error_in_reference": "line 3: a rule starts with a symbol"
+  },
+  {
+   "why": "a condition without \"if\"",
+   "dna": "dna x\naxiom A(1)\nA(n) n > 0 -> A(n)",
+   "error_in_reference": "line 3: expected \"if\" or \"chance\""
+  },
+  {
+   "why": "more than 40 rules",
+   "dna": "dna x\naxiom A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A\nA -> A",
+   "error_in_reference": "more than 40 rules"
+  }
+ ],
+ "accepted": [
+  {
+   "why": "a turtle symbol as a rule head, two parameters",
+   "dna": "dna x\naxiom !(1, 4)\n!(t, m) if t < m -> !(t+1, m)",
+   "name": "x",
+   "genes": [
+    [
+     "size",
+     100,
+     50,
+     200
+    ],
+    [
+     "hue",
+     0,
+     0,
+     23
+    ],
+    [
+     "tone",
+     0,
+     -4,
+     4
+    ]
+   ]
+  },
+  {
+   "why": "an empty argument list",
+   "dna": "dna x\naxiom F()",
+   "name": "x",
+   "genes": [
+    [
+     "size",
+     100,
+     50,
+     200
+    ],
+    [
+     "hue",
+     0,
+     0,
+     23
+    ],
+    [
+     "tone",
+     0,
+     -4,
+     4
+    ]
+   ]
+  },
+  {
+   "why": "a \"seed\" line in place of \"dna\"",
+   "dna": "seed old name\naxiom F",
+   "name": "old name",
+   "genes": [
+    [
+     "size",
+     100,
+     50,
+     200
+    ],
+    [
+     "hue",
+     0,
+     0,
+     23
+    ],
+    [
+     "tone",
+     0,
+     -4,
+     4
+    ]
+   ]
+  },
+  {
+   "why": "planting lines, which a reader ignores in a DNA event",
+   "dna": "dna x\nplanted 970400\nscale 0\naxiom F",
+   "name": "x",
+   "genes": [
+    [
+     "size",
+     100,
+     50,
+     200
+    ],
+    [
+     "hue",
+     0,
+     0,
+     23
+    ],
+    [
+     "tone",
+     0,
+     -4,
+     4
+    ]
+   ]
+  },
+  {
+   "why": "a declared standard gene outside its standard range is clamped to it",
+   "dna": "dna x\ngene size 500 20 in 1..900\naxiom F",
+   "name": "x",
+   "genes": [
+    [
+     "size",
+     210,
+     10,
+     400
+    ],
+    [
+     "hue",
+     0,
+     0,
+     23
+    ],
+    [
+     "tone",
+     0,
+     -4,
+     4
+    ]
+   ]
+  },
+  {
+   "why": "a hash inside a name starts a comment",
+   "dna": "dna my#1 fern\naxiom F",
+   "name": "my",
+   "genes": [
+    [
+     "size",
+     100,
+     50,
+     200
+    ],
+    [
+     "hue",
+     0,
+     0,
+     23
+    ],
+    [
+     "tone",
+     0,
+     -4,
+     4
+    ]
+   ]
+  }
+ ],
+ "growth": {
+  "blocks_per_generation": 144,
+  "dnas": {
+   "fiddlehead": "dna     fiddlehead\nspecies fern\nmutate  4\n\n# genome: two alleles each, ! marks dominant\n# standard genes (every DNA has them; the turtle applies them)\ngene size    180  170  in 50..200  # giant, recessive\ngene hue     0!   0!   in 0..23    # keeps the green\n# species genes\ngene curl    22   20   in 2..30    # how tightly a new node coils (recessive)\ngene span    7!   5    in 3..12    # how long a pinna gets\ngene leaf    3    3    in 1..6     # leaflet size\ngene gap     4    3!   in 2..7     # space between nodes\n\n# growth rules\nangle 8\n# terroir: K is the terrain (0..16), n0..n3 its nibbles, finest to coarsest\nlet lean  = curl + n0 % 7          # fine texture adds a little coil\nlet reach = span + K / 4 - 2       # richer terrain, longer pinnae\nlet fan   = 55 + n1 * 2            # pinna angle\naxiom '(203) O(2) !(2) A(0)\n\n# the tip adds one node a day, with a pair of pinnae\nA(k) if k < 27 -> '(171) F(gap) [ +(fan) P(reach - k/3) ] [ -(fan) P(reach - k/3) ] ^(lean) A(k+1)\n# every coil relaxes a little each day, so the frond unfurls behind its tip\n^(a) if a > 0 -> ^(a - 2)\n# each pinna adds a leaflet pair a day; weather sometimes stops it early\nP(n) if n > 0 chance 92 -> '(173) F(2) [ +(55) '(174) L(leaf) ] [ -(55) '(174) L(leaf) ] &(3) P(n-1)\nP(n) -> '(175) L(leaf+1)",
+   "sword fern": "dna     sword fern\nspecies fern\nmutate  4\n\n# genome: two alleles each, ! marks dominant\n# standard genes (every DNA has them; the turtle applies them)\ngene size    70!  75!  in 50..200  # small, dominant\ngene hue     6    6    in 0..23    # green turned blue, recessive\n# species genes\ngene curl    6!   5!   in 2..30    # how tightly a new node coils (loose is dominant)\ngene span    10   9!   in 3..12    # how long a pinna gets\ngene leaf    2!   4    in 1..6     # leaflet size\ngene gap     5!   5    in 2..7     # space between nodes\n\n# growth rules\nangle 8\n# terroir: K is the terrain (0..16), n0..n3 its nibbles, finest to coarsest\nlet lean  = curl + n0 % 7          # fine texture adds a little coil\nlet reach = span + K / 4 - 2       # richer terrain, longer pinnae\nlet fan   = 55 + n1 * 2            # pinna angle\naxiom '(203) O(2) !(2) A(0)\n\n# the tip adds one node a day, with a pair of pinnae\nA(k) if k < 27 -> '(171) F(gap) [ +(fan) P(reach - k/3) ] [ -(fan) P(reach - k/3) ] ^(lean) A(k+1)\n# every coil relaxes a little each day, so the frond unfurls behind its tip\n^(a) if a > 0 -> ^(a - 2)\n# each pinna adds a leaflet pair a day; weather sometimes stops it early\nP(n) if n > 0 chance 92 -> '(173) F(2) [ +(55) '(174) L(leaf) ] [ -(55) '(174) L(leaf) ] &(3) P(n-1)\nP(n) -> '(175) L(leaf+1)",
+   "oak": "dna     oak\nspecies tree\nmutate  3\n\n# genome: two alleles each, ! marks dominant\n# standard genes (every DNA has them; the turtle applies them)\ngene tone    1!   1    in -4..4    # a shade lighter\ngene hue     0!   0!   in 0..23    # leaves stay green\n# species genes\ngene spread  38!  30   in 10..60   # branch angle\ngene droop   -4!  -4!  in -8..8    # bend down (+) or reach up (-)\ngene fork    22   30!  in 5..50    # chance a tip forks today\ngene leaf    5!   3    in 2..8     # leaf size\ngene trunk   4!   3    in 1..9     # days of bare trunk before the crown\n\n# growth rules\nangle 25\n# terroir: K is the terrain (0..16), n0..n3 its nibbles, finest to coarsest\nlet forks = fork + K - 8           # richer terrain, more forks\nlet open  = spread + n2 - 7        # middle-scale soil opens or closes the crown\naxiom '(203) O(3) !(2, 10) S(trunk)\n\n# the trunk rises first, then becomes a crown\nS(n) if n > 0 -> '(122) F(6) /(137) S(n-1)\nS(n) -> A(4)\n# a tip grows one internode a day; some days it forks in two\nA(v) if v > 0 chance forks -> '(122) F(4) [ &(open) !(1, v*2) A(v-1) ] /(137) [ &(open) !(1, v*2) A(v-1) ]\nA(v) -> '(122) F(3) T(droop) [ ^(40) '(173) L(leaf) ] /(137) A(v)\n# wood thickens a little each day, up to its limit\n!(t, m) if t < m -> !(t+1, m)",
+   "willow": "dna     willow\nspecies tree\nmutate  3\n\n# genome: two alleles each, ! marks dominant\n# standard genes (every DNA has them; the turtle applies them)\ngene tone    -2   -3   in -4..4    # darker\ngene hue     23   23   in 0..23    # one family toward yellow, recessive\n# species genes\ngene spread  32   28   in 10..60   # branch angle\ngene droop   8    7    in -8..8    # bend down (+) or reach up (-)\ngene fork    26   24   in 5..50    # chance a tip forks today\ngene leaf    4    4    in 2..8     # leaf size\ngene trunk   7    6    in 1..9     # days of bare trunk before the crown\n\n# growth rules\nangle 25\n# terroir: K is the terrain (0..16), n0..n3 its nibbles, finest to coarsest\nlet forks = fork + K - 8           # richer terrain, more forks\nlet open  = spread + n2 - 7        # middle-scale soil opens or closes the crown\naxiom '(203) O(3) !(2, 10) S(trunk)\n\n# the trunk rises first, then becomes a crown\nS(n) if n > 0 -> '(122) F(6) /(137) S(n-1)\nS(n) -> A(4)\n# a tip grows one internode a day; some days it forks in two\nA(v) if v > 0 chance forks -> '(122) F(4) [ &(open) !(1, v*2) A(v-1) ] /(137) [ &(open) !(1, v*2) A(v-1) ]\nA(v) -> '(122) F(3) T(droop) [ ^(40) '(173) L(leaf) ] /(137) A(v)\n# wood thickens a little each day, up to its limit\n!(t, m) if t < m -> !(t+1, m)",
+   "coral": "dna     coral\nspecies coral\nmutate  5\n\n# standard genes (every DNA has them; the turtle applies them)\ngene hue     0!   12   in 0..23    # magenta, hiding a green; mix coral with coral to find it\n# species genes\ngene split   22!  15   in 5..50    # chance a tip splits today\ngene twist   40   70!  in 0..120   # roll between segments\ngene life    18!  14   in 8..26    # growing days before a tip closes\n\nangle 30\nlet lean = n1 * 3                  # terroir: the current leans with the soil\nlet rest = 20 + K + n0             # poor terrain, more resting days\naxiom '(250) O(4) !(3) C(0)\n\n# a polyp tip grows on most days, sometimes splits, sometimes rests; old tips close with a bead\nC(k) if k < life chance split -> '(75+k/5) F(2) [ +(20+w/3) &(lean/3) C(k+1) ] /(twist) [ -(20+w/4) C(k+1) ]\nC(k) if k < life chance 100 - rest -> '(75+k/5) F(2) /(twist) ^(w/8) C(k+1)\nC(k) if k >= life -> '(79) O(2)",
+   "crystal": "dna     crystal\nspecies crystal\nmutate  2\n\n# standard genes (every DNA has them; the turtle applies them)\ngene hue     0!   5    in 0..23    # cyan, hiding a violet\n# species genes\ngene arm     5!   4    in 3..8     # cell size\ngene bud     35   50!  in 0..90    # chance, per day, that every arm buds\n\nangle 90\nlet step  = arm + n0 % 3           # terroir: fine texture sets the cell size\nlet calm  = 45 + K * 2 + n3        # days are calm enough to grow when W < calm\nlet reach = 2 + n2 % 3             # side arm length\naxiom '(15) O(3) !(4) X\n\n# six arms on a cubic lattice. W is one roll per day for the whole crystal, so it stays symmetric\nX -> [ Y(0) ] [ +(90) Y(0) ] [ -(90) Y(0) ] [ ^(90) Y(0) ] [ &(90) Y(0) ] [ |(0) Y(0) ]\nY(k) if k < 16 and W < bud * calm / 100 -> '(12) F(step) O(1) [ +(90) Z(reach) ] [ -(90) Z(reach) ] [ ^(90) Z(reach-1) ] Y(k+1)\nY(k) if k < 16 and W < calm -> '(12) F(step) O(1) Y(k+1)\nZ(n) if n > 0 and W < calm -> '(14) F(step/2) O(1) Z(n-1)"
+  },
+  "cases": [
+   {
+    "what": "day 0, the planted block itself",
+    "dna": "fiddlehead",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 970400,
+    "age": 0,
+    "generation": 0,
+    "symbols": 4,
+    "vertices": 6,
+    "faces": 8,
+    "sno_bytes": 299,
+    "sno_sha256": "4764aa4d16b449ff7301fd5bb598daf05de1b6f19fb16bdffa7ac5667566a602",
+    "weather_blocks": [],
+    "sno": {
+     "v": 2,
+     "name": "fiddlehead",
+     "unit": 0,
+     "extent": 1,
+     "mode": "solid",
+     "vertices": [
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       -1,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       -1,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       -1
+      ]
+     ],
+     "ticks": [
+      [
+       42,
+       0,
+       0
+      ],
+      [
+       78,
+       0,
+       0
+      ],
+      [
+       0,
+       42,
+       0
+      ],
+      [
+       0,
+       78,
+       0
+      ],
+      [
+       0,
+       0,
+       42
+      ],
+      [
+       0,
+       0,
+       78
+      ]
+     ],
+     "colors": [
+      203,
+      203,
+      203,
+      203,
+      203,
+      203
+     ],
+     "faces": [
+      [
+       0,
+       2,
+       4
+      ],
+      [
+       2,
+       1,
+       4
+      ],
+      [
+       1,
+       3,
+       4
+      ],
+      [
+       3,
+       0,
+       4
+      ],
+      [
+       2,
+       0,
+       5
+      ],
+      [
+       1,
+       2,
+       5
+      ],
+      [
+       3,
+       1,
+       5
+      ],
+      [
+       0,
+       3,
+       5
+      ]
+     ]
+    }
+   },
+   {
+    "what": "halfway through day 1: generation 1, its new symbols half grown",
+    "dna": "fiddlehead",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 970616,
+    "age": 216,
+    "generation": 1,
+    "symbols": 15,
+    "vertices": 12,
+    "faces": 14,
+    "sno_bytes": 498,
+    "sno_sha256": "2eee1333aa25bd0d0b66d5445dd5d9cfd8c880ad08c73e038408e5f95201efa3",
+    "weather_blocks": [
+     970544
+    ]
+   },
+   {
+    "what": "day 10",
+    "dna": "fiddlehead",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 971840,
+    "age": 1440,
+    "generation": 10,
+    "symbols": 931,
+    "vertices": 858,
+    "faces": 626,
+    "sno_bytes": 29175,
+    "sno_sha256": "b6327e4363854abac6d1c4adc5475e30210ec972b80685ab707bd47266ba92f4",
+    "weather_blocks": [
+     970544,
+     970688,
+     970832,
+     970976,
+     971120,
+     971264,
+     971408,
+     971552,
+     971696,
+     971840
+    ]
+   },
+   {
+    "what": "day 30 and 6 blocks",
+    "dna": "fiddlehead",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 974726,
+    "age": 4326,
+    "generation": 30,
+    "symbols": 1954,
+    "vertices": 2106,
+    "faces": 1508,
+    "sno_bytes": 75176,
+    "sno_sha256": "438902f6f31616f6f8e00f0581d277ee2652d8ea9163564c0949d2e96ee8b463",
+    "weather_blocks": [
+     970544,
+     970688,
+     970832,
+     970976,
+     971120,
+     971264,
+     971408,
+     971552,
+     971696,
+     971840,
+     971984,
+     972128,
+     972272,
+     972416,
+     972560,
+     972704,
+     972848,
+     972992,
+     973136,
+     973280,
+     973424,
+     973568,
+     973712,
+     973856,
+     974000,
+     974144,
+     974288,
+     974432,
+     974576,
+     974720
+    ]
+   },
+   {
+    "what": "day 0, the planted block itself",
+    "dna": "sword fern",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 970400,
+    "age": 0,
+    "generation": 0,
+    "symbols": 4,
+    "vertices": 6,
+    "faces": 8,
+    "sno_bytes": 302,
+    "sno_sha256": "341c6e331b9869c875586b1f766a3f32f52ea18ab5916005d976b89ee50c5e0e",
+    "weather_blocks": [],
+    "sno": {
+     "v": 2,
+     "name": "sword fern",
+     "unit": 0,
+     "extent": 1,
+     "mode": "solid",
+     "vertices": [
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       -1,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       -1,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       -1
+      ]
+     ],
+     "ticks": [
+      [
+       17,
+       0,
+       0
+      ],
+      [
+       103,
+       0,
+       0
+      ],
+      [
+       0,
+       17,
+       0
+      ],
+      [
+       0,
+       103,
+       0
+      ],
+      [
+       0,
+       0,
+       17
+      ],
+      [
+       0,
+       0,
+       103
+      ]
+     ],
+     "colors": [
+      203,
+      203,
+      203,
+      203,
+      203,
+      203
+     ],
+     "faces": [
+      [
+       0,
+       2,
+       4
+      ],
+      [
+       2,
+       1,
+       4
+      ],
+      [
+       1,
+       3,
+       4
+      ],
+      [
+       3,
+       0,
+       4
+      ],
+      [
+       2,
+       0,
+       5
+      ],
+      [
+       1,
+       2,
+       5
+      ],
+      [
+       3,
+       1,
+       5
+      ],
+      [
+       0,
+       3,
+       5
+      ]
+     ]
+    }
+   },
+   {
+    "what": "halfway through day 1: generation 1, its new symbols half grown",
+    "dna": "sword fern",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 970616,
+    "age": 216,
+    "generation": 1,
+    "symbols": 15,
+    "vertices": 12,
+    "faces": 14,
+    "sno_bytes": 491,
+    "sno_sha256": "29137a1015a8354b3dda28dac5b611d0b6db90d12d21afd6aa70088b115562bd",
+    "weather_blocks": [
+     970544
+    ]
+   },
+   {
+    "what": "day 10",
+    "dna": "sword fern",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 971840,
+    "age": 1440,
+    "generation": 10,
+    "symbols": 992,
+    "vertices": 868,
+    "faces": 634,
+    "sno_bytes": 29320,
+    "sno_sha256": "1151a7cae415ea42bc7f84f93464e387859facad6c605acb6b1208e675ddaaf3",
+    "weather_blocks": [
+     970544,
+     970688,
+     970832,
+     970976,
+     971120,
+     971264,
+     971408,
+     971552,
+     971696,
+     971840
+    ]
+   },
+   {
+    "what": "day 30 and 6 blocks",
+    "dna": "sword fern",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 974726,
+    "age": 4326,
+    "generation": 30,
+    "symbols": 2929,
+    "vertices": 3156,
+    "faces": 2258,
+    "sno_bytes": 111292,
+    "sno_sha256": "90c4561cab1a5157f24a27c80b72600aa33886060176e2273c1fc6ef6be3ac54",
+    "weather_blocks": [
+     970544,
+     970688,
+     970832,
+     970976,
+     971120,
+     971264,
+     971408,
+     971552,
+     971696,
+     971840,
+     971984,
+     972128,
+     972272,
+     972416,
+     972560,
+     972704,
+     972848,
+     972992,
+     973136,
+     973280,
+     973424,
+     973568,
+     973712,
+     973856,
+     974000,
+     974144,
+     974288,
+     974432,
+     974576,
+     974720
+    ]
+   },
+   {
+    "what": "day 0, the planted block itself",
+    "dna": "oak",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 970400,
+    "age": 0,
+    "generation": 0,
+    "symbols": 4,
+    "vertices": 6,
+    "faces": 8,
+    "sno_bytes": 292,
+    "sno_sha256": "2a239999a554a67f4db847f6280d18481d29b8b0d1f71c5ca1616315c0ce4fd2",
+    "weather_blocks": [],
+    "sno": {
+     "v": 2,
+     "name": "oak",
+     "unit": 0,
+     "extent": 1,
+     "mode": "solid",
+     "vertices": [
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       -1,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       -1,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       -1
+      ]
+     ],
+     "ticks": [
+      [
+       36,
+       0,
+       0
+      ],
+      [
+       84,
+       0,
+       0
+      ],
+      [
+       0,
+       36,
+       0
+      ],
+      [
+       0,
+       84,
+       0
+      ],
+      [
+       0,
+       0,
+       36
+      ],
+      [
+       0,
+       0,
+       84
+      ]
+     ],
+     "colors": [
+      203,
+      203,
+      203,
+      203,
+      203,
+      203
+     ],
+     "faces": [
+      [
+       0,
+       2,
+       4
+      ],
+      [
+       2,
+       1,
+       4
+      ],
+      [
+       1,
+       3,
+       4
+      ],
+      [
+       3,
+       0,
+       4
+      ],
+      [
+       2,
+       0,
+       5
+      ],
+      [
+       1,
+       2,
+       5
+      ],
+      [
+       3,
+       1,
+       5
+      ],
+      [
+       0,
+       3,
+       5
+      ]
+     ]
+    }
+   },
+   {
+    "what": "halfway through day 1: generation 1, its new symbols half grown",
+    "dna": "oak",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 970616,
+    "age": 216,
+    "generation": 1,
+    "symbols": 7,
+    "vertices": 12,
+    "faces": 14,
+    "sno_bytes": 491,
+    "sno_sha256": "246c9bd3be76c78719297b857ee8c21af3f3737f5abd3d60da46fd94aa161c42",
+    "weather_blocks": [
+     970544
+    ]
+   },
+   {
+    "what": "day 10",
+    "dna": "oak",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 971840,
+    "age": 1440,
+    "generation": 10,
+    "symbols": 64,
+    "vertices": 70,
+    "faces": 64,
+    "sno_bytes": 2419,
+    "sno_sha256": "fbe7c0bd225717bbd4d380782c00c99b0a06070d757e7bbd52821d5a66bed22f",
+    "weather_blocks": [
+     970544,
+     970688,
+     970832,
+     970976,
+     971120,
+     971264,
+     971408,
+     971552,
+     971696,
+     971840
+    ]
+   },
+   {
+    "what": "day 30 and 6 blocks",
+    "dna": "oak",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 974726,
+    "age": 4326,
+    "generation": 30,
+    "symbols": 1951,
+    "vertices": 2070,
+    "faces": 1682,
+    "sno_bytes": 76276,
+    "sno_sha256": "5b839d2bb1516e124705cad8bac44dd0e5262b1dd3ba9662abdddbb7f716d6eb",
+    "weather_blocks": [
+     970544,
+     970688,
+     970832,
+     970976,
+     971120,
+     971264,
+     971408,
+     971552,
+     971696,
+     971840,
+     971984,
+     972128,
+     972272,
+     972416,
+     972560,
+     972704,
+     972848,
+     972992,
+     973136,
+     973280,
+     973424,
+     973568,
+     973712,
+     973856,
+     974000,
+     974144,
+     974288,
+     974432,
+     974576,
+     974720
+    ]
+   },
+   {
+    "what": "day 0, the planted block itself",
+    "dna": "willow",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 970400,
+    "age": 0,
+    "generation": 0,
+    "symbols": 4,
+    "vertices": 6,
+    "faces": 8,
+    "sno_bytes": 295,
+    "sno_sha256": "348c30362481e60ca630d50bec7cd4bc7e7aa5a73bad11ba1957b4f6f1fe13a1",
+    "weather_blocks": [],
+    "sno": {
+     "v": 2,
+     "name": "willow",
+     "unit": 0,
+     "extent": 1,
+     "mode": "solid",
+     "vertices": [
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       -1,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       -1,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       -1
+      ]
+     ],
+     "ticks": [
+      [
+       36,
+       0,
+       0
+      ],
+      [
+       84,
+       0,
+       0
+      ],
+      [
+       0,
+       36,
+       0
+      ],
+      [
+       0,
+       84,
+       0
+      ],
+      [
+       0,
+       0,
+       36
+      ],
+      [
+       0,
+       0,
+       84
+      ]
+     ],
+     "colors": [
+      203,
+      203,
+      203,
+      203,
+      203,
+      203
+     ],
+     "faces": [
+      [
+       0,
+       2,
+       4
+      ],
+      [
+       2,
+       1,
+       4
+      ],
+      [
+       1,
+       3,
+       4
+      ],
+      [
+       3,
+       0,
+       4
+      ],
+      [
+       2,
+       0,
+       5
+      ],
+      [
+       1,
+       2,
+       5
+      ],
+      [
+       3,
+       1,
+       5
+      ],
+      [
+       0,
+       3,
+       5
+      ]
+     ]
+    }
+   },
+   {
+    "what": "halfway through day 1: generation 1, its new symbols half grown",
+    "dna": "willow",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 970616,
+    "age": 216,
+    "generation": 1,
+    "symbols": 7,
+    "vertices": 12,
+    "faces": 14,
+    "sno_bytes": 494,
+    "sno_sha256": "18f08aa3cb47037ca699b2396c29c376e3c545d2e8ca1cc174795993840b54ce",
+    "weather_blocks": [
+     970544
+    ]
+   },
+   {
+    "what": "day 10",
+    "dna": "willow",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 971840,
+    "age": 1440,
+    "generation": 10,
+    "symbols": 49,
+    "vertices": 62,
+    "faces": 60,
+    "sno_bytes": 2195,
+    "sno_sha256": "886cc23f26b1c610b0f88746f9b6475ddcf410dcf5888773c1cbead2adc66a3b",
+    "weather_blocks": [
+     970544,
+     970688,
+     970832,
+     970976,
+     971120,
+     971264,
+     971408,
+     971552,
+     971696,
+     971840
+    ]
+   },
+   {
+    "what": "day 30 and 6 blocks",
+    "dna": "willow",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 974726,
+    "age": 4326,
+    "generation": 30,
+    "symbols": 1084,
+    "vertices": 1134,
+    "faces": 932,
+    "sno_bytes": 40874,
+    "sno_sha256": "f0301e0835e9a07f210981914a0335130963390764e0c6e72627545696e6eb2e",
+    "weather_blocks": [
+     970544,
+     970688,
+     970832,
+     970976,
+     971120,
+     971264,
+     971408,
+     971552,
+     971696,
+     971840,
+     971984,
+     972128,
+     972272,
+     972416,
+     972560,
+     972704,
+     972848,
+     972992,
+     973136,
+     973280,
+     973424,
+     973568,
+     973712,
+     973856,
+     974000,
+     974144,
+     974288,
+     974432,
+     974576,
+     974720
+    ]
+   },
+   {
+    "what": "day 0, the planted block itself",
+    "dna": "coral",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 970400,
+    "age": 0,
+    "generation": 0,
+    "symbols": 4,
+    "vertices": 6,
+    "faces": 8,
+    "sno_bytes": 294,
+    "sno_sha256": "797b3ba4184bc6fcf6285172dd70982cb061933177fa70bbddb564cd6ecfbd96",
+    "weather_blocks": [],
+    "sno": {
+     "v": 2,
+     "name": "coral",
+     "unit": 0,
+     "extent": 1,
+     "mode": "solid",
+     "vertices": [
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       -1,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       -1,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       -1
+      ]
+     ],
+     "ticks": [
+      [
+       48,
+       0,
+       0
+      ],
+      [
+       72,
+       0,
+       0
+      ],
+      [
+       0,
+       48,
+       0
+      ],
+      [
+       0,
+       72,
+       0
+      ],
+      [
+       0,
+       0,
+       48
+      ],
+      [
+       0,
+       0,
+       72
+      ]
+     ],
+     "colors": [
+      250,
+      250,
+      250,
+      250,
+      250,
+      250
+     ],
+     "faces": [
+      [
+       0,
+       2,
+       4
+      ],
+      [
+       2,
+       1,
+       4
+      ],
+      [
+       1,
+       3,
+       4
+      ],
+      [
+       3,
+       0,
+       4
+      ],
+      [
+       2,
+       0,
+       5
+      ],
+      [
+       1,
+       2,
+       5
+      ],
+      [
+       3,
+       1,
+       5
+      ],
+      [
+       0,
+       3,
+       5
+      ]
+     ]
+    }
+   },
+   {
+    "what": "halfway through day 1: generation 1, its new symbols half grown",
+    "dna": "coral",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 970616,
+    "age": 216,
+    "generation": 1,
+    "symbols": 4,
+    "vertices": 6,
+    "faces": 8,
+    "sno_bytes": 294,
+    "sno_sha256": "797b3ba4184bc6fcf6285172dd70982cb061933177fa70bbddb564cd6ecfbd96",
+    "weather_blocks": [
+     970544
+    ]
+   },
+   {
+    "what": "day 10",
+    "dna": "coral",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 971840,
+    "age": 1440,
+    "generation": 10,
+    "symbols": 38,
+    "vertices": 24,
+    "faces": 26,
+    "sno_bytes": 904,
+    "sno_sha256": "9333130489d0e8fd6e6a9a0373bb10262603cfc372aa32b3fd9ff5237d0e6207",
+    "weather_blocks": [
+     970544,
+     970688,
+     970832,
+     970976,
+     971120,
+     971264,
+     971408,
+     971552,
+     971696,
+     971840
+    ]
+   },
+   {
+    "what": "day 30 and 6 blocks",
+    "dna": "coral",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 974726,
+    "age": 4326,
+    "generation": 30,
+    "symbols": 2687,
+    "vertices": 2724,
+    "faces": 2836,
+    "sno_bytes": 106393,
+    "sno_sha256": "604441e70dc26bb39e879e81c4c89d993387b561228dcc46bb3d65798f2190e5",
+    "weather_blocks": [
+     970544,
+     970688,
+     970832,
+     970976,
+     971120,
+     971264,
+     971408,
+     971552,
+     971696,
+     971840,
+     971984,
+     972128,
+     972272,
+     972416,
+     972560,
+     972704,
+     972848,
+     972992,
+     973136,
+     973280,
+     973424,
+     973568,
+     973712,
+     973856,
+     974000,
+     974144,
+     974288,
+     974432,
+     974576,
+     974720
+    ]
+   },
+   {
+    "what": "day 0, the planted block itself",
+    "dna": "crystal",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 970400,
+    "age": 0,
+    "generation": 0,
+    "symbols": 4,
+    "vertices": 6,
+    "faces": 8,
+    "sno_bytes": 290,
+    "sno_sha256": "2599a8eaf632c66b057b438c5838a02c5bb91e654ff02bf466be867de692bb74",
+    "weather_blocks": [],
+    "sno": {
+     "v": 2,
+     "name": "crystal",
+     "unit": 0,
+     "extent": 1,
+     "mode": "solid",
+     "vertices": [
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       -1,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       -1,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       -1
+      ]
+     ],
+     "ticks": [
+      [
+       36,
+       0,
+       0
+      ],
+      [
+       84,
+       0,
+       0
+      ],
+      [
+       0,
+       36,
+       0
+      ],
+      [
+       0,
+       84,
+       0
+      ],
+      [
+       0,
+       0,
+       36
+      ],
+      [
+       0,
+       0,
+       84
+      ]
+     ],
+     "colors": [
+      15,
+      15,
+      15,
+      15,
+      15,
+      15
+     ],
+     "faces": [
+      [
+       0,
+       2,
+       4
+      ],
+      [
+       2,
+       1,
+       4
+      ],
+      [
+       1,
+       3,
+       4
+      ],
+      [
+       3,
+       0,
+       4
+      ],
+      [
+       2,
+       0,
+       5
+      ],
+      [
+       1,
+       2,
+       5
+      ],
+      [
+       3,
+       1,
+       5
+      ],
+      [
+       0,
+       3,
+       5
+      ]
+     ]
+    }
+   },
+   {
+    "what": "halfway through day 1: generation 1, its new symbols half grown",
+    "dna": "crystal",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 970616,
+    "age": 216,
+    "generation": 1,
+    "symbols": 26,
+    "vertices": 6,
+    "faces": 8,
+    "sno_bytes": 290,
+    "sno_sha256": "2599a8eaf632c66b057b438c5838a02c5bb91e654ff02bf466be867de692bb74",
+    "weather_blocks": [
+     970544
+    ]
+   },
+   {
+    "what": "day 10",
+    "dna": "crystal",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 971840,
+    "age": 1440,
+    "generation": 10,
+    "symbols": 656,
+    "vertices": 942,
+    "faces": 1100,
+    "sno_bytes": 36577,
+    "sno_sha256": "a8908d47d89f55ba2eac2e5de1f81084baad479cf1e9863f723be6bf61d5ee75",
+    "weather_blocks": [
+     970544,
+     970688,
+     970832,
+     970976,
+     971120,
+     971264,
+     971408,
+     971552,
+     971696,
+     971840
+    ]
+   },
+   {
+    "what": "day 30 and 6 blocks",
+    "dna": "crystal",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 974726,
+    "age": 4326,
+    "generation": 30,
+    "symbols": 1610,
+    "vertices": 4038,
+    "faces": 4712,
+    "sno_bytes": 168598,
+    "sno_sha256": "f0252ccc372cd51c436c9531b3b9958ebaece50b72019433bcc3e20bc39f5417",
+    "weather_blocks": [
+     970544,
+     970688,
+     970832,
+     970976,
+     971120,
+     971264,
+     971408,
+     971552,
+     971696,
+     971840,
+     971984,
+     972128,
+     972272,
+     972416,
+     972560,
+     972704,
+     972848,
+     972992,
+     973136,
+     973280,
+     973424,
+     973568,
+     973712,
+     973856,
+     974000,
+     974144,
+     974288,
+     974432,
+     974576,
+     974720
+    ]
+   },
+   {
+    "what": "a planted height the clock has not reached",
+    "dna": "fiddlehead",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970500,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 970400,
+    "age": -100,
+    "generation": 0,
+    "symbols": 4,
+    "vertices": 6,
+    "faces": 8,
+    "sno_bytes": 299,
+    "sno_sha256": "4764aa4d16b449ff7301fd5bb598daf05de1b6f19fb16bdffa7ac5667566a602",
+    "weather_blocks": []
+   },
+   {
+    "what": "day 1 exactly: generation 1 appears with its new symbols at length 0",
+    "dna": "fiddlehead",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 970544,
+    "age": 144,
+    "generation": 1,
+    "symbols": 15,
+    "vertices": 6,
+    "faces": 8,
+    "sno_bytes": 299,
+    "sno_sha256": "4764aa4d16b449ff7301fd5bb598daf05de1b6f19fb16bdffa7ac5667566a602",
+    "weather_blocks": [
+     970544
+    ],
+    "sno": {
+     "v": 2,
+     "name": "fiddlehead",
+     "unit": 0,
+     "extent": 1,
+     "mode": "solid",
+     "vertices": [
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       -1,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       -1,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       -1
+      ]
+     ],
+     "ticks": [
+      [
+       42,
+       0,
+       0
+      ],
+      [
+       78,
+       0,
+       0
+      ],
+      [
+       0,
+       42,
+       0
+      ],
+      [
+       0,
+       78,
+       0
+      ],
+      [
+       0,
+       0,
+       42
+      ],
+      [
+       0,
+       0,
+       78
+      ]
+     ],
+     "colors": [
+      203,
+      203,
+      203,
+      203,
+      203,
+      203
+     ],
+     "faces": [
+      [
+       0,
+       2,
+       4
+      ],
+      [
+       2,
+       1,
+       4
+      ],
+      [
+       1,
+       3,
+       4
+      ],
+      [
+       3,
+       0,
+       4
+      ],
+      [
+       2,
+       0,
+       5
+      ],
+      [
+       1,
+       2,
+       5
+      ],
+      [
+       3,
+       1,
+       5
+      ],
+      [
+       0,
+       3,
+       5
+      ]
+     ]
+    }
+   },
+   {
+    "what": "another place: only terroir differs",
+    "dna": "fiddlehead",
+    "coord": "c4e2a0f8d6b4927085e3c1a9f7d5b3917fe5c3a1b9d7f5e3c1a9b7d5f3e1c9a0",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 974726,
+    "age": 4326,
+    "generation": 30,
+    "symbols": 1707,
+    "vertices": 1840,
+    "faces": 1318,
+    "sno_bytes": 65426,
+    "sno_sha256": "5f30f426425aff165eb19a519ec788d6aa87ac75d81dffea5a8f8ae2052e62e9",
+    "weather_blocks": [
+     970544,
+     970688,
+     970832,
+     970976,
+     971120,
+     971264,
+     971408,
+     971552,
+     971696,
+     971840,
+     971984,
+     972128,
+     972272,
+     972416,
+     972560,
+     972704,
+     972848,
+     972992,
+     973136,
+     973280,
+     973424,
+     973568,
+     973712,
+     973856,
+     974000,
+     974144,
+     974288,
+     974432,
+     974576,
+     974720
+    ]
+   },
+   {
+    "what": "scale 4: SNO unit 4 and terroir on cells 16 times wider",
+    "dna": "fiddlehead",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 4,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 974726,
+    "age": 4326,
+    "generation": 30,
+    "symbols": 1707,
+    "vertices": 1840,
+    "faces": 1318,
+    "sno_bytes": 65428,
+    "sno_sha256": "cbf5696d6988b373bded997e964f31a12cfdf1a20417a347c73a3d580c061e9a",
+    "weather_blocks": [
+     970544,
+     970688,
+     970832,
+     970976,
+     971120,
+     971264,
+     971408,
+     971552,
+     971696,
+     971840,
+     971984,
+     972128,
+     972272,
+     972416,
+     972560,
+     972704,
+     972848,
+     972992,
+     973136,
+     973280,
+     973424,
+     973568,
+     973712,
+     973856,
+     974000,
+     974144,
+     974288,
+     974432,
+     974576,
+     974720
+    ]
+   },
+   {
+    "what": "the base caps, at the base price",
+    "dna": "crystal",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 2048,
+     "symbols": 2048,
+     "generations": 32
+    },
+    "clock": 974726,
+    "age": 4326,
+    "generation": 30,
+    "symbols": 1610,
+    "vertices": 2046,
+    "faces": 2388,
+    "sno_bytes": 83307,
+    "sno_sha256": "cedb980bd669dc5c2c94d25861d357769e52a20345d36752f9162d79c737541b",
+    "weather_blocks": [
+     970544,
+     970688,
+     970832,
+     970976,
+     971120,
+     971264,
+     971408,
+     971552,
+     971696,
+     971840,
+     971984,
+     972128,
+     972272,
+     972416,
+     972560,
+     972704,
+     972848,
+     972992,
+     973136,
+     973280,
+     973424,
+     973568,
+     973712,
+     973856,
+     974000,
+     974144,
+     974288,
+     974432,
+     974576,
+     974720
+    ]
+   },
+   {
+    "what": "small caps: 512 vertices, 300 symbols, 8 generations",
+    "dna": "sword fern",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 512,
+     "symbols": 300,
+     "generations": 8
+    },
+    "clock": 974726,
+    "age": 4326,
+    "generation": 8,
+    "symbols": 295,
+    "vertices": 296,
+    "faces": 222,
+    "sno_bytes": 9818,
+    "sno_sha256": "dbf6815bfbbb3cc1daa69eec47c9ee920449bed1afffc15e8b38284f47182cc3",
+    "weather_blocks": [
+     970544,
+     970688,
+     970832,
+     970976,
+     971120,
+     971264,
+     971408,
+     971552
+    ]
+   }
+  ]
+ },
+ "clamp": {
+  "margin_seconds": 7200,
+  "header_times": {
+   "970400": 1791412279,
+   "970401": 1791412998,
+   "970402": 1791413245,
+   "970403": 1791413684,
+   "970404": 1791415047,
+   "970405": 1791416108,
+   "970406": 1791416719,
+   "970407": 1791416796,
+   "970408": 1791416821,
+   "970409": 1791417162,
+   "970410": 1791418083,
+   "970411": 1791418849,
+   "970412": 1791419382,
+   "970413": 1791419782,
+   "970414": 1791420674,
+   "970415": 1791421475,
+   "970416": 1791422833,
+   "970417": 1791423157,
+   "970418": 1791423302,
+   "970419": 1791423744,
+   "970420": 1791423811,
+   "970421": 1791423908,
+   "970422": 1791424029,
+   "970423": 1791424803,
+   "970424": 1791424998,
+   "970425": 1791425197,
+   "970426": 1791427055,
+   "970427": 1791427923,
+   "970428": 1791428009,
+   "970429": 1791428747,
+   "970430": 1791429136,
+   "970431": 1791430642,
+   "970432": 1791430822,
+   "970433": 1791431031,
+   "970434": 1791431708,
+   "970435": 1791432610,
+   "970436": 1791432679,
+   "970437": 1791433477,
+   "970438": 1791434151,
+   "970439": 1791434193,
+   "970440": 1791434509,
+   "970441": 1791434848,
+   "970442": 1791434904,
+   "970443": 1791435100,
+   "970444": 1791436847,
+   "970445": 1791436660,
+   "970446": 1791436763,
+   "970447": 1791438048,
+   "970448": 1791438701,
+   "970449": 1791438953,
+   "970450": 1791439352,
+   "970451": 1791440614,
+   "970452": 1791442913,
+   "970453": 1791443004,
+   "970454": 1791443250,
+   "970455": 1791443378,
+   "970456": 1791443921,
+   "970457": 1791443951,
+   "970458": 1791444309,
+   "970459": 1791444451,
+   "970500": 1791470870,
+   "970501": 1791470956,
+   "970502": 1791471100,
+   "970503": 1791471520,
+   "970504": 1791472129,
+   "970505": 1791472494,
+   "970506": 1791473014,
+   "970507": 1791473088,
+   "970508": 1791473305,
+   "970509": 1791474494,
+   "970510": 1791475222,
+   "970511": 1791477174,
+   "970512": 1791478192,
+   "970513": 1791479216,
+   "970514": 1791479935,
+   "970515": 1791481249,
+   "970516": 1791481921,
+   "970517": 1791483228,
+   "970518": 1791485590,
+   "970519": 1791485732,
+   "970520": 1791486390,
+   "970521": 1791487674,
+   "970522": 1791488739,
+   "970523": 1791489395,
+   "970524": 1791489767,
+   "970525": 1791490396,
+   "970526": 1791491665,
+   "970527": 1791491967,
+   "970528": 1791492049,
+   "970529": 1791492455,
+   "970530": 1791492688,
+   "970531": 1791492912,
+   "970532": 1791493204,
+   "970533": 1791493625,
+   "970534": 1791494186,
+   "970535": 1791496107,
+   "970536": 1791496129,
+   "970537": 1791496855,
+   "970538": 1791496749,
+   "970539": 1791496843,
+   "970540": 1791497148,
+   "970541": 1791500023,
+   "970542": 1791500054,
+   "970543": 1791500378,
+   "970544": 1791502802,
+   "970545": 1791502866,
+   "970546": 1791503213,
+   "970547": 1791503437,
+   "970548": 1791503648,
+   "970549": 1791504483,
+   "970550": 1791505072,
+   "970551": 1791505101,
+   "970552": 1791505208,
+   "970553": 1791505231,
+   "970554": 1791505545,
+   "970555": 1791505575,
+   "970556": 1791505828,
+   "970557": 1791505914,
+   "970558": 1791507322,
+   "970559": 1791507435
+  },
+  "cases": [
+   {
+    "what": "an honest planting: the clock block when the seed was signed",
+    "stated": 970524,
+    "created_at": 1791492718,
+    "floor": 970517,
+    "effective": 970524
+   },
+   {
+    "what": "a planting backdated 120 blocks, with an honest created_at",
+    "stated": 970410,
+    "created_at": 1791492718,
+    "floor": 970517,
+    "effective": 970517
+   },
+   {
+    "what": "a planted height in the future",
+    "stated": 970600,
+    "created_at": 1791492718,
+    "floor": 970517,
+    "effective": 970600
+   },
+   {
+    "what": "a planting exactly at the floor",
+    "stated": 970517,
+    "created_at": 1791492718,
+    "floor": 970517,
+    "effective": 970517
+   }
+  ]
+ },
+ "mixing": {
+  "parents": {
+   "fiddlehead": {
+    "pubkey": "10f48bb3fe7ff8942cad1e79388389cec1a645aa6ca852630b97816ca428d479",
+    "created_at": 1791384530,
+    "kind": 3350,
+    "tags": [
+     [
+      "caps",
+      "8000",
+      "6000",
+      "40"
+     ],
+     [
+      "nonce",
+      "821716",
+      "21"
+     ]
+    ],
+    "content": "dna     fiddlehead\nspecies fern\nmutate  4\n\n# genome: two alleles each, ! marks dominant\n# standard genes (every DNA has them; the turtle applies them)\ngene size    180  170  in 50..200  # giant, recessive\ngene hue     0!   0!   in 0..23    # keeps the green\n# species genes\ngene curl    22   20   in 2..30    # how tightly a new node coils (recessive)\ngene span    7!   5    in 3..12    # how long a pinna gets\ngene leaf    3    3    in 1..6     # leaflet size\ngene gap     4    3!   in 2..7     # space between nodes\n\n# growth rules\nangle 8\n# terroir: K is the terrain (0..16), n0..n3 its nibbles, finest to coarsest\nlet lean  = curl + n0 % 7          # fine texture adds a little coil\nlet reach = span + K / 4 - 2       # richer terrain, longer pinnae\nlet fan   = 55 + n1 * 2            # pinna angle\naxiom '(203) O(2) !(2) A(0)\n\n# the tip adds one node a day, with a pair of pinnae\nA(k) if k < 27 -> '(171) F(gap) [ +(fan) P(reach - k/3) ] [ -(fan) P(reach - k/3) ] ^(lean) A(k+1)\n# every coil relaxes a little each day, so the frond unfurls behind its tip\n^(a) if a > 0 -> ^(a - 2)\n# each pinna adds a leaflet pair a day; weather sometimes stops it early\nP(n) if n > 0 chance 92 -> '(173) F(2) [ +(55) '(174) L(leaf) ] [ -(55) '(174) L(leaf) ] &(3) P(n-1)\nP(n) -> '(175) L(leaf+1)",
+    "id": "0000007f4f18c6e42a7712d673e92a05e234ccb161461b5e314059be618c2d06"
+   },
+   "sword fern": {
+    "pubkey": "10f48bb3fe7ff8942cad1e79388389cec1a645aa6ca852630b97816ca428d479",
+    "created_at": 1791384530,
+    "kind": 3350,
+    "tags": [
+     [
+      "caps",
+      "8000",
+      "6000",
+      "40"
+     ],
+     [
+      "nonce",
+      "2709768",
+      "21"
+     ]
+    ],
+    "content": "dna     sword fern\nspecies fern\nmutate  4\n\n# genome: two alleles each, ! marks dominant\n# standard genes (every DNA has them; the turtle applies them)\ngene size    70!  75!  in 50..200  # small, dominant\ngene hue     6    6    in 0..23    # green turned blue, recessive\n# species genes\ngene curl    6!   5!   in 2..30    # how tightly a new node coils (loose is dominant)\ngene span    10   9!   in 3..12    # how long a pinna gets\ngene leaf    2!   4    in 1..6     # leaflet size\ngene gap     5!   5    in 2..7     # space between nodes\n\n# growth rules\nangle 8\n# terroir: K is the terrain (0..16), n0..n3 its nibbles, finest to coarsest\nlet lean  = curl + n0 % 7          # fine texture adds a little coil\nlet reach = span + K / 4 - 2       # richer terrain, longer pinnae\nlet fan   = 55 + n1 * 2            # pinna angle\naxiom '(203) O(2) !(2) A(0)\n\n# the tip adds one node a day, with a pair of pinnae\nA(k) if k < 27 -> '(171) F(gap) [ +(fan) P(reach - k/3) ] [ -(fan) P(reach - k/3) ] ^(lean) A(k+1)\n# every coil relaxes a little each day, so the frond unfurls behind its tip\n^(a) if a > 0 -> ^(a - 2)\n# each pinna adds a leaflet pair a day; weather sometimes stops it early\nP(n) if n > 0 chance 92 -> '(173) F(2) [ +(55) '(174) L(leaf) ] [ -(55) '(174) L(leaf) ] &(3) P(n-1)\nP(n) -> '(175) L(leaf+1)",
+    "id": "000000ad49b9281176b854d54f991b69f08dbcd0c921c3d03f3e7883a9f21128"
+   },
+   "oak": {
+    "pubkey": "10f48bb3fe7ff8942cad1e79388389cec1a645aa6ca852630b97816ca428d479",
+    "created_at": 1791384530,
+    "kind": 3350,
+    "tags": [
+     [
+      "caps",
+      "8000",
+      "6000",
+      "40"
+     ],
+     [
+      "nonce",
+      "650669",
+      "21"
+     ]
+    ],
+    "content": "dna     oak\nspecies tree\nmutate  3\n\n# genome: two alleles each, ! marks dominant\n# standard genes (every DNA has them; the turtle applies them)\ngene tone    1!   1    in -4..4    # a shade lighter\ngene hue     0!   0!   in 0..23    # leaves stay green\n# species genes\ngene spread  38!  30   in 10..60   # branch angle\ngene droop   -4!  -4!  in -8..8    # bend down (+) or reach up (-)\ngene fork    22   30!  in 5..50    # chance a tip forks today\ngene leaf    5!   3    in 2..8     # leaf size\ngene trunk   4!   3    in 1..9     # days of bare trunk before the crown\n\n# growth rules\nangle 25\n# terroir: K is the terrain (0..16), n0..n3 its nibbles, finest to coarsest\nlet forks = fork + K - 8           # richer terrain, more forks\nlet open  = spread + n2 - 7        # middle-scale soil opens or closes the crown\naxiom '(203) O(3) !(2, 10) S(trunk)\n\n# the trunk rises first, then becomes a crown\nS(n) if n > 0 -> '(122) F(6) /(137) S(n-1)\nS(n) -> A(4)\n# a tip grows one internode a day; some days it forks in two\nA(v) if v > 0 chance forks -> '(122) F(4) [ &(open) !(1, v*2) A(v-1) ] /(137) [ &(open) !(1, v*2) A(v-1) ]\nA(v) -> '(122) F(3) T(droop) [ ^(40) '(173) L(leaf) ] /(137) A(v)\n# wood thickens a little each day, up to its limit\n!(t, m) if t < m -> !(t+1, m)",
+    "id": "0000042804a4d11236d54fd94228187c7b71e7aa589429bc20672a2143c1d80e"
+   },
+   "coral": {
+    "pubkey": "10f48bb3fe7ff8942cad1e79388389cec1a645aa6ca852630b97816ca428d479",
+    "created_at": 1791384530,
+    "kind": 3350,
+    "tags": [
+     [
+      "caps",
+      "8000",
+      "6000",
+      "40"
+     ],
+     [
+      "nonce",
+      "5551636",
+      "21"
+     ]
+    ],
+    "content": "dna     coral\nspecies coral\nmutate  5\n\n# standard genes (every DNA has them; the turtle applies them)\ngene hue     0!   12   in 0..23    # magenta, hiding a green; mix coral with coral to find it\n# species genes\ngene split   22!  15   in 5..50    # chance a tip splits today\ngene twist   40   70!  in 0..120   # roll between segments\ngene life    18!  14   in 8..26    # growing days before a tip closes\n\nangle 30\nlet lean = n1 * 3                  # terroir: the current leans with the soil\nlet rest = 20 + K + n0             # poor terrain, more resting days\naxiom '(250) O(4) !(3) C(0)\n\n# a polyp tip grows on most days, sometimes splits, sometimes rests; old tips close with a bead\nC(k) if k < life chance split -> '(75+k/5) F(2) [ +(20+w/3) &(lean/3) C(k+1) ] /(twist) [ -(20+w/4) C(k+1) ]\nC(k) if k < life chance 100 - rest -> '(75+k/5) F(2) /(twist) ^(w/8) C(k+1)\nC(k) if k >= life -> '(79) O(2)",
+    "id": "000000240f514c3243f37b04ecd9eae2499d08edfa2d995cafab54b9cd8db5d4"
+   }
+  },
+  "mixes": [
+   {
+    "what": "fiddlehead x sword fern",
+    "mother": "fiddlehead",
+    "father": "sword fern",
+    "event": {
+     "pubkey": "10f48bb3fe7ff8942cad1e79388389cec1a645aa6ca852630b97816ca428d479",
+     "created_at": 1791470930,
+     "kind": 3350,
+     "tags": [
+      [
+       "e",
+       "0000007f4f18c6e42a7712d673e92a05e234ccb161461b5e314059be618c2d06",
+       "",
+       "mother"
+      ],
+      [
+       "e",
+       "000000ad49b9281176b854d54f991b69f08dbcd0c921c3d03f3e7883a9f21128",
+       "",
+       "father"
+      ],
+      [
+       "block",
+       "970500",
+       "00000000000000000001190ed1dcc169460315b60f7271ffc8d85dd41b63f363"
+      ],
+      [
+       "caps",
+       "8000",
+       "6000",
+       "40"
+      ],
+      [
+       "nonce",
+       "5064419",
+       "21"
+      ]
+     ],
+     "content": "",
+     "id": "000004d4a6525fed93eade8bcc4278c2ffe76ec587bf026c6a7b2b8a787b20a0"
+    },
+    "commit_height": 970500,
+    "outcome_height": 970536,
+    "outcome_hash": "00000000000000000000cf1f1ad5ef2dae2431b986211e4e9660b143cf4f60a6",
+    "readable_at_clock": 970536,
+    "mix_hash": "50180fc6a6d212a660df76277bfce2167656efb936d19fe9e6e48ad2a70c88fc",
+    "mix_word": 716970785,
+    "genes": [
+     {
+      "name": "size",
+      "word": 2990781884,
+      "alleles_from": [
+       "A1",
+       "B1"
+      ],
+      "a": "180",
+      "b": "70!",
+      "lo": 50,
+      "hi": 200,
+      "expressed": 70,
+      "mutated": null
+     },
+     {
+      "name": "hue",
+      "word": 2747821082,
+      "alleles_from": [
+       "A1",
+       "B2"
+      ],
+      "a": "0!",
+      "b": "6",
+      "lo": 0,
+      "hi": 23,
+      "expressed": 0,
+      "mutated": null
+     },
+     {
+      "name": "tone",
+      "word": 2651159432,
+      "alleles_from": [
+       "A1",
+       "B1"
+      ],
+      "a": "0",
+      "b": "0",
+      "lo": -4,
+      "hi": 4,
+      "expressed": 0,
+      "mutated": null
+     },
+     {
+      "name": "curl",
+      "word": 1360037992,
+      "alleles_from": [
+       "A1",
+       "B1"
+      ],
+      "a": "22",
+      "b": "6!",
+      "lo": 2,
+      "hi": 30,
+      "expressed": 6,
+      "mutated": null
+     },
+     {
+      "name": "span",
+      "word": 3281346721,
+      "alleles_from": [
+       "A2",
+       "B1"
+      ],
+      "a": "5",
+      "b": "10",
+      "lo": 3,
+      "hi": 12,
+      "expressed": 7,
+      "mutated": null
+     },
+     {
+      "name": "leaf",
+      "word": 1825212264,
+      "alleles_from": [
+       "A1",
+       "B1"
+      ],
+      "a": "3",
+      "b": "2!",
+      "lo": 1,
+      "hi": 6,
+      "expressed": 2,
+      "mutated": null
+     },
+     {
+      "name": "gap",
+      "word": 879880839,
+      "alleles_from": [
+       "A2",
+       "B2"
+      ],
+      "a": "3!",
+      "b": "5",
+      "lo": 2,
+      "hi": 7,
+      "expressed": 3,
+      "mutated": null
+     }
+    ],
+    "child_text": "dna fiddlehead x sword fern\ngene tone 0 0 in -4..4\nspecies fern\nmutate  4\n\n# genome: two alleles each, ! marks dominant\n# standard genes (every DNA has them; the turtle applies them)\ngene size 180 70! in 50..200\ngene hue 0! 6 in 0..23\n# species genes\ngene curl 22 6! in 2..30\ngene span 5 10 in 3..12\ngene leaf 3 2! in 1..6\ngene gap 3! 5 in 2..7\n\n# growth rules\nangle 8\n# terroir: K is the terrain (0..16), n0..n3 its nibbles, finest to coarsest\nlet lean  = curl + n0 % 7          # fine texture adds a little coil\nlet reach = span + K / 4 - 2       # richer terrain, longer pinnae\nlet fan   = 55 + n1 * 2            # pinna angle\naxiom '(203) O(2) !(2) A(0)\n\n# the tip adds one node a day, with a pair of pinnae\nA(k) if k < 27 -> '(171) F(gap) [ +(fan) P(reach - k/3) ] [ -(fan) P(reach - k/3) ] ^(lean) A(k+1)\n# every coil relaxes a little each day, so the frond unfurls behind its tip\n^(a) if a > 0 -> ^(a - 2)\n# each pinna adds a leaflet pair a day; weather sometimes stops it early\nP(n) if n > 0 chance 92 -> '(173) F(2) [ +(55) '(174) L(leaf) ] [ -(55) '(174) L(leaf) ] &(3) P(n-1)\nP(n) -> '(175) L(leaf+1)",
+    "child_sterile": false
+   },
+   {
+    "what": "the same parents, one block later",
+    "mother": "fiddlehead",
+    "father": "sword fern",
+    "event": {
+     "pubkey": "10f48bb3fe7ff8942cad1e79388389cec1a645aa6ca852630b97816ca428d479",
+     "created_at": 1791471016,
+     "kind": 3350,
+     "tags": [
+      [
+       "e",
+       "0000007f4f18c6e42a7712d673e92a05e234ccb161461b5e314059be618c2d06",
+       "",
+       "mother"
+      ],
+      [
+       "e",
+       "000000ad49b9281176b854d54f991b69f08dbcd0c921c3d03f3e7883a9f21128",
+       "",
+       "father"
+      ],
+      [
+       "block",
+       "970501",
+       "000000000000000000007f286f5dc58017d7d1767647f5973c614953d26fabc7"
+      ],
+      [
+       "caps",
+       "8000",
+       "6000",
+       "40"
+      ],
+      [
+       "nonce",
+       "390977",
+       "21"
+      ]
+     ],
+     "content": "",
+     "id": "000005977492965e4d35faa742f118f0293ae9ac9b80efd1452f72bd2577dc7b"
+    },
+    "commit_height": 970501,
+    "outcome_height": 970537,
+    "outcome_hash": "00000000000000000001bdff73c2b07c3b12002d3c9bbb512bf3e423b5c9e389",
+    "readable_at_clock": 970537,
+    "mix_hash": "8e4ff3f4179a7b42b93740e4da77fc2a4a39cc6a9e5a6f7a4f75682804bd8c97",
+    "mix_word": 1021213102,
+    "genes": [
+     {
+      "name": "size",
+      "word": 3929821385,
+      "alleles_from": [
+       "A2",
+       "B1"
+      ],
+      "a": "170",
+      "b": "70!",
+      "lo": 50,
+      "hi": 200,
+      "expressed": 70,
+      "mutated": null
+     },
+     {
+      "name": "hue",
+      "word": 1639166663,
+      "alleles_from": [
+       "A2",
+       "B2"
+      ],
+      "a": "0!",
+      "b": "6",
+      "lo": 0,
+      "hi": 23,
+      "expressed": 0,
+      "mutated": null
+     },
+     {
+      "name": "tone",
+      "word": 1857919534,
+      "alleles_from": [
+       "A1",
+       "B2"
+      ],
+      "a": "0",
+      "b": "0",
+      "lo": -4,
+      "hi": 4,
+      "expressed": 0,
+      "mutated": null
+     },
+     {
+      "name": "curl",
+      "word": 709288419,
+      "alleles_from": [
+       "A2",
+       "B2"
+      ],
+      "a": "20",
+      "b": "5!",
+      "lo": 2,
+      "hi": 30,
+      "expressed": 5,
+      "mutated": null
+     },
+     {
+      "name": "span",
+      "word": 4139167080,
+      "alleles_from": [
+       "A1",
+       "B1"
+      ],
+      "a": "7!",
+      "b": "10",
+      "lo": 3,
+      "hi": 12,
+      "expressed": 7,
+      "mutated": null
+     },
+     {
+      "name": "leaf",
+      "word": 3510403561,
+      "alleles_from": [
+       "A2",
+       "B1"
+      ],
+      "a": "3",
+      "b": "2!",
+      "lo": 1,
+      "hi": 6,
+      "expressed": 2,
+      "mutated": null
+     },
+     {
+      "name": "gap",
+      "word": 591417651,
+      "alleles_from": [
+       "A2",
+       "B2"
+      ],
+      "a": "3!",
+      "b": "5",
+      "lo": 2,
+      "hi": 7,
+      "expressed": 3,
+      "mutated": null
+     }
+    ],
+    "child_text": "dna fiddlehead x sword fern\ngene tone 0 0 in -4..4\nspecies fern\nmutate  4\n\n# genome: two alleles each, ! marks dominant\n# standard genes (every DNA has them; the turtle applies them)\ngene size 170 70! in 50..200\ngene hue 0! 6 in 0..23\n# species genes\ngene curl 20 5! in 2..30\ngene span 7! 10 in 3..12\ngene leaf 3 2! in 1..6\ngene gap 3! 5 in 2..7\n\n# growth rules\nangle 8\n# terroir: K is the terrain (0..16), n0..n3 its nibbles, finest to coarsest\nlet lean  = curl + n0 % 7          # fine texture adds a little coil\nlet reach = span + K / 4 - 2       # richer terrain, longer pinnae\nlet fan   = 55 + n1 * 2            # pinna angle\naxiom '(203) O(2) !(2) A(0)\n\n# the tip adds one node a day, with a pair of pinnae\nA(k) if k < 27 -> '(171) F(gap) [ +(fan) P(reach - k/3) ] [ -(fan) P(reach - k/3) ] ^(lean) A(k+1)\n# every coil relaxes a little each day, so the frond unfurls behind its tip\n^(a) if a > 0 -> ^(a - 2)\n# each pinna adds a leaflet pair a day; weather sometimes stops it early\nP(n) if n > 0 chance 92 -> '(173) F(2) [ +(55) '(174) L(leaf) ] [ -(55) '(174) L(leaf) ] &(3) P(n-1)\nP(n) -> '(175) L(leaf+1)",
+    "child_sterile": false
+   },
+   {
+    "what": "the two children mixed (F2), with a name tag",
+    "mother": "F1 at 970500",
+    "father": "F1 at 970501",
+    "event": {
+     "pubkey": "10f48bb3fe7ff8942cad1e79388389cec1a645aa6ca852630b97816ca428d479",
+     "created_at": 1791497208,
+     "kind": 3350,
+     "tags": [
+      [
+       "e",
+       "000004d4a6525fed93eade8bcc4278c2ffe76ec587bf026c6a7b2b8a787b20a0",
+       "",
+       "mother"
+      ],
+      [
+       "e",
+       "000005977492965e4d35faa742f118f0293ae9ac9b80efd1452f72bd2577dc7b",
+       "",
+       "father"
+      ],
+      [
+       "block",
+       "970540",
+       "00000000000000000000a6153701a8e47ef24844b627d8bc14defd461fc1186a"
+      ],
+      [
+       "name",
+       "blue giant hope"
+      ],
+      [
+       "caps",
+       "8000",
+       "6000",
+       "40"
+      ],
+      [
+       "nonce",
+       "5457663",
+       "21"
+      ]
+     ],
+     "content": "",
+     "id": "0000046933d4bf311e99ff01c7c2b59a3ad582b1e0f0e1f3f5b5536933de03e9"
+    },
+    "commit_height": 970540,
+    "outcome_height": 970576,
+    "outcome_hash": "00000000000000000001bc401b09150a6f092579644cc5616a828949f48bbd1d",
+    "readable_at_clock": 970576,
+    "mix_hash": "87436be0abe9c05324ce63b467ed4c4a019426045819589663be7ad25af07aac",
+    "mix_word": 159306317,
+    "genes": [
+     {
+      "name": "size",
+      "word": 33039059,
+      "alleles_from": [
+       "A2",
+       "B2"
+      ],
+      "a": "70!",
+      "b": "70!",
+      "lo": 50,
+      "hi": 200,
+      "expressed": 70,
+      "mutated": null
+     },
+     {
+      "name": "hue",
+      "word": 280826717,
+      "alleles_from": [
+       "A2",
+       "B1"
+      ],
+      "a": "6",
+      "b": "0!",
+      "lo": 0,
+      "hi": 23,
+      "expressed": 0,
+      "mutated": null
+     },
+     {
+      "name": "tone",
+      "word": 3285883031,
+      "alleles_from": [
+       "A2",
+       "B2"
+      ],
+      "a": "0",
+      "b": "0",
+      "lo": -4,
+      "hi": 4,
+      "expressed": 0,
+      "mutated": null
+     },
+     {
+      "name": "curl",
+      "word": 1122219886,
+      "alleles_from": [
+       "A1",
+       "B2"
+      ],
+      "a": "22",
+      "b": "5!",
+      "lo": 2,
+      "hi": 30,
+      "expressed": 5,
+      "mutated": null
+     },
+     {
+      "name": "span",
+      "word": 2192985149,
+      "alleles_from": [
+       "A2",
+       "B1"
+      ],
+      "a": "10",
+      "b": "7!",
+      "lo": 3,
+      "hi": 12,
+      "expressed": 7,
+      "mutated": null
+     },
+     {
+      "name": "leaf",
+      "word": 4119217383,
+      "alleles_from": [
+       "A2",
+       "B2"
+      ],
+      "a": "2!",
+      "b": "2!",
+      "lo": 1,
+      "hi": 6,
+      "expressed": 2,
+      "mutated": null
+     },
+     {
+      "name": "gap",
+      "word": 137800724,
+      "alleles_from": [
+       "A1",
+       "B1"
+      ],
+      "a": "3!",
+      "b": "3!",
+      "lo": 2,
+      "hi": 7,
+      "expressed": 3,
+      "mutated": null
+     }
+    ],
+    "child_text": "dna blue giant hope\ngene tone 0 0 in -4..4\nspecies fern\nmutate  4\n\n# genome: two alleles each, ! marks dominant\n# standard genes (every DNA has them; the turtle applies them)\ngene size 70! 70! in 50..200\ngene hue 6 0! in 0..23\n# species genes\ngene curl 22 5! in 2..30\ngene span 10 7! in 3..12\ngene leaf 2! 2! in 1..6\ngene gap 3! 3! in 2..7\n\n# growth rules\nangle 8\n# terroir: K is the terrain (0..16), n0..n3 its nibbles, finest to coarsest\nlet lean  = curl + n0 % 7          # fine texture adds a little coil\nlet reach = span + K / 4 - 2       # richer terrain, longer pinnae\nlet fan   = 55 + n1 * 2            # pinna angle\naxiom '(203) O(2) !(2) A(0)\n\n# the tip adds one node a day, with a pair of pinnae\nA(k) if k < 27 -> '(171) F(gap) [ +(fan) P(reach - k/3) ] [ -(fan) P(reach - k/3) ] ^(lean) A(k+1)\n# every coil relaxes a little each day, so the frond unfurls behind its tip\n^(a) if a > 0 -> ^(a - 2)\n# each pinna adds a leaflet pair a day; weather sometimes stops it early\nP(n) if n > 0 chance 92 -> '(173) F(2) [ +(55) '(174) L(leaf) ] [ -(55) '(174) L(leaf) ] &(3) P(n-1)\nP(n) -> '(175) L(leaf+1)",
+    "child_sterile": false
+   },
+   {
+    "what": "coral with itself",
+    "mother": "coral",
+    "father": "coral",
+    "event": {
+     "pubkey": "10f48bb3fe7ff8942cad1e79388389cec1a645aa6ca852630b97816ca428d479",
+     "created_at": 1791471160,
+     "kind": 3350,
+     "tags": [
+      [
+       "e",
+       "000000240f514c3243f37b04ecd9eae2499d08edfa2d995cafab54b9cd8db5d4",
+       "",
+       "mother"
+      ],
+      [
+       "e",
+       "000000240f514c3243f37b04ecd9eae2499d08edfa2d995cafab54b9cd8db5d4",
+       "",
+       "father"
+      ],
+      [
+       "block",
+       "970502",
+       "0000000000000000000212f76085176143488791dd07a554654de604ea574a0b"
+      ],
+      [
+       "caps",
+       "8000",
+       "6000",
+       "40"
+      ],
+      [
+       "nonce",
+       "1951157",
+       "21"
+      ]
+     ],
+     "content": "",
+     "id": "00000118d768732f285947d7c8a8f4e7e85e348e7c39cfc50f1194a239e5f1e2"
+    },
+    "commit_height": 970502,
+    "outcome_height": 970538,
+    "outcome_hash": "000000000000000000011f1c75aab663f15bbbcdeb7f3b28cef9f1b8b889a84f",
+    "readable_at_clock": 970538,
+    "mix_hash": "8c54efccecb9c2072946b5cd4b6addc14852db59b475816b08a89a25101cedf8",
+    "mix_word": 4091566943,
+    "genes": [
+     {
+      "name": "size",
+      "word": 3422816868,
+      "alleles_from": [
+       "A1",
+       "B1"
+      ],
+      "a": "100",
+      "b": "100",
+      "lo": 50,
+      "hi": 200,
+      "expressed": 100,
+      "mutated": null
+     },
+     {
+      "name": "hue",
+      "word": 1203421213,
+      "alleles_from": [
+       "A2",
+       "B1"
+      ],
+      "a": "12",
+      "b": "0!",
+      "lo": 0,
+      "hi": 23,
+      "expressed": 0,
+      "mutated": null
+     },
+     {
+      "name": "tone",
+      "word": 3435527440,
+      "alleles_from": [
+       "A1",
+       "B1"
+      ],
+      "a": "0",
+      "b": "0",
+      "lo": -4,
+      "hi": 4,
+      "expressed": 0,
+      "mutated": null
+     },
+     {
+      "name": "split",
+      "word": 3364400517,
+      "alleles_from": [
+       "A2",
+       "B1"
+      ],
+      "a": "15",
+      "b": "22!",
+      "lo": 5,
+      "hi": 50,
+      "expressed": 22,
+      "mutated": null
+     },
+     {
+      "name": "twist",
+      "word": 949756086,
+      "alleles_from": [
+       "A1",
+       "B2"
+      ],
+      "a": "40",
+      "b": "70!",
+      "lo": 0,
+      "hi": 120,
+      "expressed": 70,
+      "mutated": null
+     },
+     {
+      "name": "life",
+      "word": 3070786625,
+      "alleles_from": [
+       "A2",
+       "B1"
+      ],
+      "a": "14",
+      "b": "18!",
+      "lo": 8,
+      "hi": 26,
+      "expressed": 18,
+      "mutated": null
+     }
+    ],
+    "child_text": "dna coral x coral\ngene size 100 100 in 50..200\ngene tone 0 0 in -4..4\nspecies coral\nmutate  5\n\n# standard genes (every DNA has them; the turtle applies them)\ngene hue 12 0! in 0..23\n# species genes\ngene split 15 22! in 5..50\ngene twist 40 70! in 0..120\ngene life 14 18! in 8..26\n\nangle 30\nlet lean = n1 * 3                  # terroir: the current leans with the soil\nlet rest = 20 + K + n0             # poor terrain, more resting days\naxiom '(250) O(4) !(3) C(0)\n\n# a polyp tip grows on most days, sometimes splits, sometimes rests; old tips close with a bead\nC(k) if k < life chance split -> '(75+k/5) F(2) [ +(20+w/3) &(lean/3) C(k+1) ] /(twist) [ -(20+w/4) C(k+1) ]\nC(k) if k < life chance 100 - rest -> '(75+k/5) F(2) /(twist) ^(w/8) C(k+1)\nC(k) if k >= life -> '(79) O(2)",
+    "child_sterile": false
+   },
+   {
+    "what": "fern with coral, refused: different species",
+    "mother": "fiddlehead",
+    "father": "coral",
+    "event": {
+     "pubkey": "10f48bb3fe7ff8942cad1e79388389cec1a645aa6ca852630b97816ca428d479",
+     "created_at": 1791471580,
+     "kind": 3350,
+     "tags": [
+      [
+       "e",
+       "0000007f4f18c6e42a7712d673e92a05e234ccb161461b5e314059be618c2d06",
+       "",
+       "mother"
+      ],
+      [
+       "e",
+       "000000240f514c3243f37b04ecd9eae2499d08edfa2d995cafab54b9cd8db5d4",
+       "",
+       "father"
+      ],
+      [
+       "block",
+       "970503",
+       "000000000000000000021932cdf703e64226aa9fb7ee2c9b6d88d17c654a66d6"
+      ],
+      [
+       "caps",
+       "8000",
+       "6000",
+       "40"
+      ],
+      [
+       "nonce",
+       "2965449",
+       "21"
+      ]
+     ],
+     "content": "",
+     "id": "00000560806c3f6d911b5fbf7b009bc6318e380549b8f96af5cbd14942e2a0e3"
+    },
+    "commit_height": 970503,
+    "outcome_height": 970539,
+    "outcome_hash": "000000000000000000014c2951a2220b1c07ce90e814266d6d4e31ac14afc39f",
+    "readable_at_clock": 970539,
+    "mix_hash": "0ad779eae4a82a6eebeb9efd58de300669c8c9d96b8c8f2ba5398ae05b2c3674",
+    "mix_word": 4288582023,
+    "refused": "different species"
+   },
+   {
+    "what": "oak with coral as a sterile hybrid",
+    "mother": "oak",
+    "father": "coral",
+    "event": {
+     "pubkey": "10f48bb3fe7ff8942cad1e79388389cec1a645aa6ca852630b97816ca428d479",
+     "created_at": 1791471580,
+     "kind": 3350,
+     "tags": [
+      [
+       "e",
+       "0000042804a4d11236d54fd94228187c7b71e7aa589429bc20672a2143c1d80e",
+       "",
+       "mother"
+      ],
+      [
+       "e",
+       "000000240f514c3243f37b04ecd9eae2499d08edfa2d995cafab54b9cd8db5d4",
+       "",
+       "father"
+      ],
+      [
+       "block",
+       "970503",
+       "000000000000000000021932cdf703e64226aa9fb7ee2c9b6d88d17c654a66d6"
+      ],
+      [
+       "hybrid"
+      ],
+      [
+       "caps",
+       "8000",
+       "6000",
+       "40"
+      ],
+      [
+       "nonce",
+       "445071",
+       "21"
+      ]
+     ],
+     "content": "",
+     "id": "000007c722f244614fa5e70a64096e86fea37a5cd9bfa87f04e553314f3ec25a"
+    },
+    "commit_height": 970503,
+    "outcome_height": 970539,
+    "outcome_hash": "000000000000000000014c2951a2220b1c07ce90e814266d6d4e31ac14afc39f",
+    "readable_at_clock": 970539,
+    "mix_hash": "c5657fe59c52596606dbe3ed7bb6d0784c4d5e14697c455c4d18ce62656442f6",
+    "mix_word": 2178137866,
+    "genes": [
+     {
+      "name": "size",
+      "word": 4089597798,
+      "alleles_from": [
+       "A1",
+       "B2"
+      ],
+      "a": "100",
+      "b": "100",
+      "lo": 50,
+      "hi": 200,
+      "expressed": 100,
+      "mutated": null
+     },
+     {
+      "name": "hue",
+      "word": 944326283,
+      "alleles_from": [
+       "A2",
+       "B2"
+      ],
+      "a": "0!",
+      "b": "12",
+      "lo": 0,
+      "hi": 23,
+      "expressed": 0,
+      "mutated": null
+     },
+     {
+      "name": "tone",
+      "word": 3908476969,
+      "alleles_from": [
+       "A2",
+       "B1"
+      ],
+      "a": "1",
+      "b": "0",
+      "lo": -4,
+      "hi": 4,
+      "expressed": 0,
+      "mutated": null
+     },
+     {
+      "name": "spread",
+      "word": 3660786511,
+      "alleles_from": [
+       "A2",
+       "A1"
+      ],
+      "a": "30",
+      "b": "38!",
+      "lo": 10,
+      "hi": 60,
+      "expressed": 38,
+      "mutated": null
+     },
+     {
+      "name": "droop",
+      "word": 836468022,
+      "alleles_from": [
+       "A1",
+       "A2"
+      ],
+      "a": "-4!",
+      "b": "-4!",
+      "lo": -8,
+      "hi": 8,
+      "expressed": -4,
+      "mutated": null
+     },
+     {
+      "name": "fork",
+      "word": 1459019219,
+      "alleles_from": [
+       "A2",
+       "A1"
+      ],
+      "a": "30!",
+      "b": "22",
+      "lo": 5,
+      "hi": 50,
+      "expressed": 30,
+      "mutated": null
+     },
+     {
+      "name": "leaf",
+      "word": 4113603381,
+      "alleles_from": [
+       "A2",
+       "A1"
+      ],
+      "a": "3",
+      "b": "5!",
+      "lo": 2,
+      "hi": 8,
+      "expressed": 5,
+      "mutated": null
+     },
+     {
+      "name": "trunk",
+      "word": 970254773,
+      "alleles_from": [
+       "A2",
+       "A1"
+      ],
+      "a": "3",
+      "b": "4!",
+      "lo": 1,
+      "hi": 9,
+      "expressed": 4,
+      "mutated": null
+     }
+    ],
+    "child_text": "dna oak x coral\nsterile\ngene size 100 100 in 50..200\nspecies tree\nmutate  3\n\n# genome: two alleles each, ! marks dominant\n# standard genes (every DNA has them; the turtle applies them)\ngene tone 1 0 in -4..4\ngene hue 0! 12 in 0..23\n# species genes\ngene spread 30 38! in 10..60\ngene droop -4! -4! in -8..8\ngene fork 30! 22 in 5..50\ngene leaf 3 5! in 2..8\ngene trunk 3 4! in 1..9\n\n# growth rules\nangle 25\n# terroir: K is the terrain (0..16), n0..n3 its nibbles, finest to coarsest\nlet forks = fork + K - 8           # richer terrain, more forks\nlet open  = spread + n2 - 7        # middle-scale soil opens or closes the crown\naxiom '(203) O(3) !(2, 10) S(trunk)\n\n# the trunk rises first, then becomes a crown\nS(n) if n > 0 -> '(122) F(6) /(137) S(n-1)\nS(n) -> A(4)\n# a tip grows one internode a day; some days it forks in two\nA(v) if v > 0 chance forks -> '(122) F(4) [ &(open) !(1, v*2) A(v-1) ] /(137) [ &(open) !(1, v*2) A(v-1) ]\nA(v) -> '(122) F(3) T(droop) [ ^(40) '(173) L(leaf) ] /(137) A(v)\n# wood thickens a little each day, up to its limit\n!(t, m) if t < m -> !(t+1, m)",
+    "child_sterile": true
+   },
+   {
+    "what": "the hybrid mixed again, refused: sterile",
+    "mother": "oak x coral",
+    "father": "oak",
+    "event": {
+     "pubkey": "10f48bb3fe7ff8942cad1e79388389cec1a645aa6ca852630b97816ca428d479",
+     "created_at": 1791471610,
+     "kind": 3350,
+     "tags": [
+      [
+       "e",
+       "000007c722f244614fa5e70a64096e86fea37a5cd9bfa87f04e553314f3ec25a",
+       "",
+       "mother"
+      ],
+      [
+       "e",
+       "0000042804a4d11236d54fd94228187c7b71e7aa589429bc20672a2143c1d80e",
+       "",
+       "father"
+      ],
+      [
+       "block",
+       "970503",
+       "000000000000000000021932cdf703e64226aa9fb7ee2c9b6d88d17c654a66d6"
+      ],
+      [
+       "caps",
+       "8000",
+       "6000",
+       "40"
+      ],
+      [
+       "nonce",
+       "924066",
+       "21"
+      ]
+     ],
+     "content": "",
+     "id": "000002bfdca499df14a97abdf5bb90ea8f068e3761d84c2c6ec99ee49dd43199"
+    },
+    "commit_height": 970503,
+    "outcome_height": 970539,
+    "outcome_hash": "000000000000000000014c2951a2220b1c07ce90e814266d6d4e31ac14afc39f",
+    "readable_at_clock": 970539,
+    "mix_hash": "b7a04434ed115e00d774f98b8e86356fbab6bfb160588aaf89b3eab2ec29e129",
+    "mix_word": 2913106456,
+    "refused": "sterile"
+   }
+  ],
+  "child_growth": {
+   "what": "a seed of fiddlehead x sword fern (the first mix) planted at 970600 at coordA, day 30 and 6 blocks",
+   "planted": 970600,
+   "clock": 974926,
+   "caps": {
+    "vertices": 8000,
+    "symbols": 6000,
+    "generations": 40
+   },
+   "generation": 30,
+   "vertices": 2106,
+   "sno_sha256": "3be465acbdfe18fd86b5c1182c3158c58264aa684ba41a60142d8b5d22b4c334"
+  }
+ },
+ "price": {
+  "rows": [
+   {
+    "caps": {
+     "vertices": 2048,
+     "symbols": 2048,
+     "generations": 32
+    },
+    "bits": 16
+   },
+   {
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "bits": 21
+   },
+   {
+    "caps": {
+     "vertices": 2049,
+     "symbols": 2048,
+     "generations": 32
+    },
+    "bits": 17
+   },
+   {
+    "caps": {
+     "vertices": 4096,
+     "symbols": 4096,
+     "generations": 64
+    },
+    "bits": 19
+   },
+   {
+    "caps": {
+     "vertices": 65536,
+     "symbols": 65536,
+     "generations": 1024
+    },
+    "bits": 31
+   },
+   {
+    "caps": {
+     "vertices": 1,
+     "symbols": 1,
+     "generations": 1
+    },
+    "bits": 16
+   },
+   {
+    "caps": {
+     "vertices": 65537,
+     "symbols": 2048,
+     "generations": 32
+    },
+    "bits": null
+   },
+   {
+    "caps": {
+     "vertices": 0,
+     "symbols": 2048,
+     "generations": 32
+    },
+    "bits": null
+   }
+  ],
+  "mined_at_base_price": {
+   "event": {
+    "pubkey": "10f48bb3fe7ff8942cad1e79388389cec1a645aa6ca852630b97816ca428d479",
+    "created_at": 1790000000,
+    "kind": 3350,
+    "tags": [
+     [
+      "caps",
+      "2048",
+      "2048",
+      "32"
+     ],
+     [
+      "nonce",
+      "167854",
+      "16"
+     ]
+    ],
+    "content": "dna     crystal\nspecies crystal\nmutate  2\n\n# standard genes (every DNA has them; the turtle applies them)\ngene hue     0!   5    in 0..23    # cyan, hiding a violet\n# species genes\ngene arm     5!   4    in 3..8     # cell size\ngene bud     35   50!  in 0..90    # chance, per day, that every arm buds\n\nangle 90\nlet step  = arm + n0 % 3           # terroir: fine texture sets the cell size\nlet calm  = 45 + K * 2 + n3        # days are calm enough to grow when W < calm\nlet reach = 2 + n2 % 3             # side arm length\naxiom '(15) O(3) !(4) X\n\n# six arms on a cubic lattice. W is one roll per day for the whole crystal, so it stays symmetric\nX -> [ Y(0) ] [ +(90) Y(0) ] [ -(90) Y(0) ] [ ^(90) Y(0) ] [ &(90) Y(0) ] [ |(0) Y(0) ]\nY(k) if k < 16 and W < bud * calm / 100 -> '(12) F(step) O(1) [ +(90) Z(reach) ] [ -(90) Z(reach) ] [ ^(90) Z(reach-1) ] Y(k+1)\nY(k) if k < 16 and W < calm -> '(12) F(step) O(1) Y(k+1)\nZ(n) if n > 0 and W < calm -> '(14) F(step/2) O(1) Z(n-1)",
+    "id": "00001c2ce096c02bef53eb088bc30d2820aa2bdf6ab7b367d312f97647790e8d"
+   },
+   "leading_zero_bits": 19
+  }
+ }
+}

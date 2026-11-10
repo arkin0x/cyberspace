@@ -1,0 +1,762 @@
+# DECK-0008: Seeds
+
+DECK: 0008
+Title: Seeds
+Status: Draft
+Mandatory: no
+Created: 2026-11-10
+Last updated: 2026-11-10
+Requires: `CYBERSPACE_V2.md` §2 (coordinates), §5.2 (terrain `K`), §5.9 and §5.10 (residues and the re-roll attempt, for tending), §7.2 (region keys), §7.6 (the bag) and §8.6 (its event); DECK-0003 (SNO, the output format, and its built-in palette); DECK-0004 §3 (chests); DECK-0006 §2.2 (lineage); NIP-01, NIP-13, NIP-18, NIP-70; Bitcoin block headers
+
+## Abstract
+
+**Seeds** are programs that grow in cyberspace. A **DNA** is a small program written in **SEEDO**, a language of genes and growth rules. A **seed** is one planting of a DNA at a coordinate, at a block height and at a scale, hidden in a bag like any other item. What grows from the seed is its **bloom**: every client computes the same bloom from the DNA, the coordinate and the Bitcoin blocks mined since the seed was planted, and draws it as a SNO object (DECK-0003). A bloom is never published. It grows one generation per day of blocks, its weather is the hashes of those blocks, and its soil, its **terroir**, is the terrain of the place it was planted (`CYBERSPACE_V2.md` §5.2). Two DNAs of one species can be **mixed** into a child DNA whose genes are drawn, half from each parent, by a block mined after the mix was committed. Anyone who has found a seed can **tend** it, giving it work that is counted as sunlight.
+
+A DNA pays once for how much it may cost the people who grow it. It declares caps on its vertices, its symbols and its generations, and it carries NIP-13 proof of work priced by those caps. After that, planting it is free and growing it costs nothing more than the CPU of the clients that draw it, which the caps bound.
+
+This DECK defines SEEDO completely enough for a second implementation, three event kinds (`3350`, a DNA; `3351`, a seed; `3352`, a tend), the clock, the weather and the terroir, the exact mix function, the caps and their price, and the shape of a tend. It writes down the Seed Garden prototype of 2026-11-09 and 2026-11-10 (§14) and arkinox's rulings of the same days. The price numbers and the tend's proof are provisional. Self-seeding and what sunlight does are open (§13).
+
+**Defined here:**
+
+| Thing | Value |
+|---|---|
+| The language | SEEDO, plain text: header lines, a genome, `let` lines, an axiom and growth rules, a parametric L-system driving an integer 3D turtle (§3, §5). "SEEDO" is a working name (§13, question 1) |
+| A DNA | `kind 3350`, regular. Its id is its identity. Written (its text in `content`) or mixed (computed from two parents and a block). Carries NIP-13 work priced by its caps (§7, §8.1) |
+| A seed | `kind 3351`, an item inside a bag or a chest, signed and protected like a shard (§8.2) |
+| A tend | `kind 3352`, regular, rooted on the bag that holds the seed, the seed named inside its seal (§8.3) |
+| The clock | the block 6 below the tip. One generation per 144 blocks (§4.1) |
+| Weather | the hash of the block that drives each generation, never the planted block's own (§4.3) |
+| Terroir | terrain `K` and its four nibbles at the seed's scale (§4.4) |
+| The bloom | a SNO payload computed by every reader, unit = the seed's scale (§5) |
+| Reference implementation | `decks/seeds-reference.mjs`, the prototype's core with this DECK's changes |
+| Vectors | `decks/seeds-vectors.json`, produced by `decks/seeds-vectors.mjs` (§11) |
+
+---
+
+## Terms
+
+- **SEEDO:** the language a DNA is written in (§3).
+- **DNA:** a definition: a genome, growth rules and declared caps, carried by a `kind 3350` event that pays for its caps with proof of work (§7, §8.1). A **written DNA** carries its SEEDO text in `content`. A **mixed DNA** has empty `content` and names two parent DNAs and a block; its text is computed (§6).
+- **Gene:** a named integer with two **alleles**, each a value and a mark of whether it is **dominant**, and a range (§3.3). What a gene contributes to growth is its **expressed** value.
+- **Standard genes:** `size`, `hue` and `tone`. Every DNA has them, declared or not, and the turtle applies them (§3.3, §5.4).
+- **Seed:** one planting of a DNA: a `kind 3351` item that names a DNA, a coordinate, a planted height and a scale (§8.2).
+- **Planted height:** the block height a seed states as its day 0. The **effective planted height** is that height after the clamp of §4.2.
+- **Scale:** the seed's `u`, from `0` to `84`. One model unit of its bloom is `2^u` gibsons. The default is `0`, one gibson.
+- **Bloom:** what grows from a seed, computed by every reader and never published. It may be a fern, a coral or a crystal; nothing in this DECK assumes a plant.
+- **Clock height:** the height of the reader's best chain tip, minus 6 (§4.1).
+- **Age:** the clock height minus the effective planted height, in blocks.
+- **Generation:** one rewrite of the bloom's symbol string. Generation `k`, from 1, is driven by the block at the effective planted height plus `k × 144`.
+- **Weather word:** a 32-bit word folded from a block hash (§4.3). **`W`** is one roll per generation for the whole bloom; **`w`** is one roll per symbol.
+- **Terroir:** the terrain of the seed's coordinate at the seed's scale: `K` and the nibbles `n0` to `n3`, plus the plane `pl` (§4.4).
+- **Symbol:** one letter or turtle character of a bloom's string, with up to four integer parameters and a **birth**, the generation that made it (§4.6).
+- **Caps:** the three limits a DNA declares: vertices, symbols and generations (§7).
+- **Mix:** combining two DNAs into a child DNA. A mix is committed by publishing a mixed DNA; its **outcome block** is fixed by the commit and mined after it (§6).
+- **Mother, father:** the two parents of a mix. The child takes the mother's rules and one allele of each gene from each parent.
+- **Species:** two DNAs are of one species when they have the same rule alphabet and the same gene names (§3.9).
+- **Sterile:** a DNA that cannot be a parent. A **sterile hybrid** is the child of two species, made only on request (§6.5).
+- **Tend:** a `kind 3352` event that gives work to a seed. **Sunlight** is the amount of that work, counted in attempts (§9).
+- **Attempt:** one unit of residue work: an aligned height-12 Cantor tree modulo a 61-bit prime, the unit of the hop's re-roll price (`CYBERSPACE_V2.md` §5.10).
+
+---
+
+## 1. Overview (non-normative)
+
+| What | Kind | Where it lives | Who can read it |
+|---|---|---|---|
+| a DNA | `3350` | published on its own, or as an item in the bag (or chest) that holds the seeds planted from it | everyone, or whoever opens that bag |
+| a seed | `3351` | inside a bag or a chest, inline or in a sealed entry | whoever opens the bag |
+| a bloom | none | computed by every reader | whoever can read the seed and its DNA |
+| a mix | `3350`, a mixed DNA | published on its own, or as an item in a bag | as for any DNA |
+| a tend | `3352` | published on its own, rooted on the bag, the seed named inside its seal | everyone sees that the bag was tended; whoever opens the bag reads which seed |
+
+A gardener writes a DNA in a workshop, previews it at any place and any block, and publishes it with the work its caps call for. Anyone can then plant it: their client writes a seed naming the DNA, the place and the current clock block, and hides it in a bag at that place. Every client that opens the bag fetches the DNA and grows the bloom from the planted block to the clock height. Nothing more is published as the bloom grows. Each day of blocks rewrites it once, and between rewrites each new part stretches out over the day, so the bloom changes with every block.
+
+Two gardeners whose DNAs are of one species can mix them. A mix is a mixed DNA event that names both parents and the current block; 36 blocks later the outcome block is mined, and from then on every client computes the same child, which can be planted like any other DNA.
+
+**Why seeds travel as code (non-normative).** The prototype's blooms reach 40 to 170 KB of SNO by day 30 (§14). A bloom published as geometry would be over a stock relay's event limit, and would have to be published again every block. The DNA that grows it is under 2 KB, is published once, and every client grows it locally.
+
+---
+
+## 2. Kinds (normative)
+
+| Kind | Name | Class | Defined in |
+|---|---|---|---|
+| `3350` | DNA, written or mixed | regular (`1000..9999`): stored, never replaced | §8.1 |
+| `3351` | seed | regular; an item inside a bag or a chest, never published on its own | §8.2 |
+| `3352` | tend | regular | §8.3 |
+
+**Why three kinds, and why a mix is a DNA (non-normative).** A mix needs a public commitment made before its outcome block, a price for each attempt, and an identity for the child it makes. A mixed DNA event is all three: it is published before the outcome block, it carries NIP-13 work like every DNA, and its id is the child's identity. A separate commitment kind would need a second event for the child, with a second id, a second price and a rule tying the two together. With one kind, a seed names any DNA by id, written or mixed, and a reader dispatches on whether `content` is empty.
+
+**Why regular kinds (non-normative).** A DNA's id is its identity: seeds, children and copies name it by id, and its proof of work is in its id. An addressable DNA could be replaced under every seed that names it, which is what a DNA must never allow. A seed is an item in a bag, like a shard (`3330`) or a key item (`3340`), and items are regular. A tend is a record of work done, which nobody replaces.
+
+**Why these numbers (non-normative).** They sit near the other Cyberspace item kinds (`3330`, `3333`, `3340`, `3341`). They were checked on 2026-11-10 against every kind this specification, its DECKs, ONOSENDAI, cyberspace-mcp and sno-core use; against the NIPs and the nostr registry of kinds (which lists `3302` to `3313` for another application, but nothing from `3314` to `3399`); and against what `relay.damus.io`, `nos.lol` and `relay.primal.net` hold. None of them uses `3350`, `3351` or `3352`. The nearer free-looking numbers are taken in practice: public relays hold `kind 3334` events from another application (as they hold `kind 33334`), and `kind 3338` events carrying image prompts.
+
+---
+
+## 3. SEEDO, the language (normative)
+
+A DNA's text is SEEDO. This section says how a reader parses it. A text that breaks any rule of this section is **invalid**: a reader MUST NOT grow it, and a seed that names it is a seed that cannot grow (§8.2). The prototype is more lenient than this section in several places (§14); a writer writes what this section allows.
+
+An example, the prototype's fiddlehead (§11 has all six of its DNAs):
+
+```
+dna     fiddlehead
+species fern
+mutate  4
+gene size    180  170  in 50..200  # standard gene: giant, recessive
+gene hue     0!   0!   in 0..23    # standard gene: no rotation
+gene curl    22   20   in 2..30    # species gene; ! marks dominant
+gene span    7!   5    in 3..12
+gene leaf    3    3    in 1..6
+gene gap     4    3!   in 2..7
+
+angle 8
+let lean  = curl + n0 % 7          # terroir: fine texture adds coil
+let reach = span + K / 4 - 2       # terroir: richer terrain, longer pinnae
+let fan   = 55 + n1 * 2
+axiom '(203) O(2) !(2) A(0)
+
+A(k) if k < 27 -> '(171) F(gap) [ +(fan) P(reach - k/3) ] [ -(fan) P(reach - k/3) ] ^(lean) A(k+1)
+^(a) if a > 0 -> ^(a - 2)          # coils relax daily: the frond unfurls
+P(n) if n > 0 chance 92 -> '(173) F(2) [ +(55) '(174) L(leaf) ] [ -(55) '(174) L(leaf) ] &(3) P(n-1)
+P(n) -> '(175) L(leaf+1)
+```
+
+### 3.1 Text, lines and comments
+
+- The text is UTF-8. It is split into lines at every line feed (U+000A).
+- **Comments:** on each line, everything from the first `#` to the end of the line is a comment and is removed. This holds inside names too: `dna my#1` names the DNA `my`.
+- **Whitespace** in this section means exactly U+0009, U+000A, U+000B, U+000C, U+000D and U+0020. Each line is trimmed of whitespace at both ends after its comment is removed. An empty line is skipped.
+- **Characters:** outside comments, and outside the rest of a `dna`, `seed` or `species` line, a line MUST contain only printable ASCII (U+0020 to U+007E) and tabs.
+- **Rule lines:** a line that contains `->` is a rule (§3.7), whatever it begins with. It MUST contain `->` exactly once.
+- **Keyword lines:** any other line begins with a keyword: its first run of characters up to whitespace. The **rest** of the line is what follows the keyword, trimmed. The keywords are `dna` (or `seed`), `species`, `sterile`, `mutate`, `angle`, `width`, `color`, `planted`, `scale`, `gene`, `let` and `axiom`. Any other keyword makes the text invalid.
+- Every keyword except `gene`, `let` and `sterile` MAY appear at most once. `dna` and `seed` count as one keyword.
+- A **whole number** in this section is an optional `-` followed by one or more decimal digits, with an absolute value of at most 1,000,000. Leading zeros are allowed.
+
+### 3.2 Header lines
+
+| Line | Meaning | Default |
+|---|---|---|
+| `dna <name>` | The DNA's name: the rest of the line, cut to its first 64 Unicode code points. `seed <name>` is read the same way (the prototype's first spelling). | `dna` |
+| `species <label>` | A label for people, cut to 64 code points. It does not decide the species; §3.9 does. | empty |
+| `sterile` | This DNA cannot be a parent (§6.5). The rest of the line is ignored. | not sterile |
+| `mutate <n>` | The mutation rate in percent, a whole number, clamped to `0..100` (§6.4). | `0` |
+| `angle <n>` | The turn, in whole degrees, of a turtle symbol written without a parameter (§5.2). A whole number. | `30` |
+| `width <n>` | The width the turtle starts with and returns to on a bare `!` (§5.2). A whole number. | `2` |
+| `color <n>` | The color the turtle starts with and returns to on a bare `'` (§5.2), a palette index. A whole number. | `7` |
+
+**Planting lines:** `planted <height>` (decimal digits only) and `scale <u>` (decimal digits only, `0` to `84`) name a planting, so that a SEEDO file can be grown on its own in a workshop or a test. A reader MUST check their form, and MUST ignore their values when it grows a seed: the seed's tags decide its planted height and scale (§8.2). A writer SHOULD NOT write them in a DNA event.
+
+### 3.3 The genome
+
+A gene line is:
+
+```
+gene <name> <allele> <allele> in <lo>..<hi>
+```
+
+- `<name>` is a name (§3.4) that is not taken, with one exception: each of the standard gene names `size`, `hue` and `tone` MAY be declared once.
+- Each `<allele>` is a whole number, optionally followed directly by `!`, which marks it dominant.
+- `<lo>` and `<hi>` are whole numbers with `lo ≤ hi`, written with `..` between them and no whitespace around it. The parts are separated by spaces or tabs, and `in` is lowercase.
+- A declared standard gene's range is first narrowed to its standard bounds (the table below); if nothing is left, the text is invalid. Each allele's value is then clamped to the range.
+
+**Standard genes.** Every DNA has the three standard genes, in this order, before its own genes. A standard gene that a DNA does not declare is **implicit**: both alleles hold its default value, neither is dominant, and its range is its default range.
+
+| Gene | What the turtle does with it (§5.4) | Default value | Default range | Standard bounds |
+|---|---|---|---|---|
+| `size` | scales every length, width and size, in percent | `100` | `50..200` | `10..400` |
+| `hue` | rotates the hue family of every palette color | `0` | `0..23` | `0..23` |
+| `tone` | shifts every shade lighter (positive) or darker | `0` | `-4..4` | `-7..7` |
+
+So size and color are breedable on every DNA, and a DNA that never mentions them is neutral.
+
+**The genome's order** is the three standard genes in the order of the table, then the DNA's own genes in the order their lines appear. Mixing (§6.4) walks genes in this order.
+
+**Expression.** A gene's expressed value is the value of its dominant allele when exactly one allele is dominant. Otherwise, when both or neither are dominant, it is `floor((a + b) / 2)`, rounding toward minus infinity, so the two blend.
+
+### 3.4 Names and expressions
+
+**Names.** A name is a letter or `_` followed by letters, digits or `_` (ASCII), and is case-sensitive. The names in use are:
+
+| Name | Value |
+|---|---|
+| `w` | the weather roll of the symbol being rewritten, `0..99` (§4.3) |
+| `W` | the weather roll of the generation, `0..99`, the same for every symbol of the bloom (§4.3) |
+| `g` | the generation being made, from 1 |
+| `K` | terrain `K` at the seed's scale, `0..16` (§4.4) |
+| `n0`, `n1`, `n2`, `n3` | the terroir's four nibbles, finest to coarsest, each `0..15` (§4.4) |
+| `pl` | the seed's plane, `0` or `1` |
+| a gene's name | its expressed value (§3.3) |
+| a `let`'s name | its value (§3.5) |
+| a rule parameter | the matched symbol's parameter (§3.7) |
+
+A name is **taken** when it is one of the nine built-in names above, one of the keywords `and`, `or`, `not`, `if`, `chance` and `in`, a standard gene's name, or the name of a gene or a `let` already declared. A rule parameter MUST NOT be a taken name, whether the gene or `let` it would match is declared before or after the rule. The parameters of one rule MUST be distinct.
+
+**Grammar.** An expression is read as tokens: a run of decimal digits, a name, or one of `==`, `!=`, `<=`, `>=`, `<`, `>`, `+`, `-`, `*`, `/`, `%`, `(`, `)`. Whitespace may stand between tokens. Any other character makes the text invalid. The grammar, loosest first:
+
+```
+expr  := and ( "or" and )*
+and   := not ( "and" not )*
+not   := "not" not | cmp
+cmp   := sum [ ( "==" | "!=" | "<" | "<=" | ">" | ">=" ) sum ]
+sum   := term ( ( "+" | "-" ) term )*
+term  := unary ( ( "*" | "/" | "%" ) unary )*
+unary := "-" unary | atom
+atom  := "(" expr ")" | digits | name
+```
+
+At most one comparison stands at one level: `1 < 2 < 3` is invalid, and `(1 < 2) < 3` is valid. A name that is not in use where the expression stands makes the text invalid. Every expression MUST be read to its last token.
+
+**Integer semantics.** Every value is an integer. Let `clamp(v)` be `v` limited to `-1,000,000..1,000,000`.
+
+| Operation | Result |
+|---|---|
+| a literal | `clamp` of its decimal value |
+| `a + b`, `a - b`, `a * b` | `clamp` of the exact result |
+| `a / b` | `0` when `b = 0`; otherwise the exact quotient truncated toward zero: `-7 / 2 = -3` |
+| `a % b` | `0` when `b = 0`; otherwise the remainder that is at least `0` and less than the absolute value of `b`: `-7 % 3 = 2`, `7 % -3 = 1` |
+| `-a` | the negation of `a` |
+| a comparison | `1` when it holds, else `0` |
+| `a and b`, `a or b`, `not a` | `1` or `0`, reading any nonzero value as true |
+
+Every value an expression can produce lies within `-1,000,000..1,000,000`, so 64-bit integers hold every intermediate result of this section. An expression has no side effects, so the order in which `and` and `or` evaluate their operands does not matter.
+
+### 3.5 `let` lines
+
+```
+let <name> = <expression>
+```
+
+`<name>` is a name that is not taken. The expression MAY read `K`, `n0` to `n3`, `pl`, the three standard genes (declared anywhere, or implicit), every other gene declared on an earlier line, and every `let` declared on an earlier line. It MUST NOT read `w`, `W` or `g`. A reader evaluates every `let` once per seed, in the order of their lines, after the genes are expressed (§4.5).
+
+### 3.6 Symbol strings and the axiom
+
+A **symbol string** is a sequence of symbols, with whitespace (other than a line feed) allowed between them. A symbol is one ASCII letter (`A` to `Z`, `a` to `z`) or one of the turtle characters `+ - & ^ \ / | [ ] ! '`. Any other character makes the text invalid.
+
+A symbol MAY be followed directly, with no whitespace, by an argument list: `(`, up to four expressions separated by commas, `)`. Commas inside nested parentheses do not separate. `()` with only whitespace inside is no arguments. An empty argument (`F(1,,2)`, `F(1,)`) or a fifth argument makes the text invalid.
+
+```
+axiom <symbol string>
+```
+
+The axiom is the bloom's string at generation 0. There MUST be exactly one `axiom` line. Its arguments are evaluated once per seed with `w`, `W` and `g` all `0`, and may read every name in use (§4.5).
+
+### 3.7 Rules
+
+A rule line has the form:
+
+```
+<symbol>[(<parameters>)] [if <condition>] [chance <expression>] -> <successor>
+```
+
+- The **head** is the first character of the line after leading whitespace, and MUST be a symbol (§3.6): a rule can rewrite a letter or a turtle character.
+- The parameters, if present, are names separated by commas, directly after the head, with no parenthesis inside. Their count is the rule's **arity**, at most 4. `X()` has arity 0.
+- What follows, up to `->`, is split at the first whole word `chance`. The part after `chance` is the chance expression. The part before MUST be empty, or `if` followed by whitespace and the condition expression.
+- The **successor** is the symbol string after `->`. It MAY be empty, which deletes the symbol.
+- A DNA has at most 40 rules.
+
+Conditions, chances and the successor's arguments may read the rule's parameters and every name in use (§3.4).
+
+**Matching (normative).** When a generation rewrites a symbol with character `c` and `p` parameters, the reader considers, in the order of their lines, the rules whose head is `c` and whose arity is `p`. It binds the rule's parameters to the symbol's parameters, in order. The first rule whose condition is absent or nonzero, and whose chance is absent or greater than the symbol's `w`, applies. A symbol for which no rule applies is copied unchanged.
+
+### 3.8 Fixed limits
+
+These limits belong to the language and are not priced: 40 rules; 4 parameters per symbol; values within `-1,000,000..1,000,000`; a turtle stack of 64 states (§5.2); positions within 64 model units of the origin on each axis (§5.2), the bound DECK-0003 §1.8 sets for publishers. The priced caps are in §7.
+
+### 3.9 Species
+
+A DNA's **alphabet** is the set of pairs (character, count) made of: the head and arity of every rule, letter or turtle character; and every letter (not turtle character) in the axiom and in every successor, with its number of arguments. Its **gene names** are the names of its genome, standard genes included.
+
+Two DNAs are **of one species** when their alphabets are equal and their sets of gene names are equal. The `species` line does not count. Two DNAs of one species can differ in their rules, their genes' values and ranges, their lets and their header lines.
+
+---
+
+## 4. Growth (normative)
+
+### 4.1 The clock, the age and the generation
+
+- A reader's **clock height** `c` is the height of its best chain's tip minus 6. Reading 6 blocks back keeps a bloom from changing when the last blocks are replaced: the relays and clients of Cyberspace treat a reorganization deeper than 6 blocks as out of scope.
+- A seed's **age** is `c - P`, where `P` is the effective planted height (§4.2).
+- One generation takes `N = 144` blocks, about one day.
+- The bloom's **generation** is `g = min(floor(age / N), G)` when `age ≥ 0`, and `0` otherwise, where `G` is the DNA's generation cap (§7).
+- Generation `k`, for `k` from 1 to `g`, is driven by the block at height `P + k × N`. The planted block's own hash is never read: day 0 is the planted block, and the weather starts after it. Because `k × N ≤ age`, every driving block is at most the clock height, so it is at least 6 blocks deep.
+
+A reader needs the hash of every driving block. A reader that lacks one draws the latest generation it can compute and SHOULD say that it is behind. A seed whose planted height the clock has not reached is drawn at generation 0, as its axiom.
+
+### 4.2 The planted height and the clamp
+
+A seed states its planted height in its `planted` tag (§8.2). A writer MUST state the clock height at the moment it plants. A reader computes the **effective planted height** as:
+
+```
+E = the highest height h whose block header time is at most created_at - 7200
+P = max(planted, E)
+```
+
+where `created_at` is the seed event's own `created_at` and the header time is the block header's `time` field. If no block meets the condition, `E` does not raise `P`.
+
+- **Why (non-normative).** A planter who could state an old planted height would know the weather of every generation up to the present, and could shop for the height that grows the bloom they want. The clamp lets a seed's planted height be no older than about two hours before the time the seed itself states. The margin is two hours because a block's header time may run up to two hours ahead of the time it was mined, so a block whose header time is two hours before `created_at` certainly existed when the seed was signed, if `created_at` is true. An honest planter writes the clock block, which lies about 6 blocks below the tip, while `E` lies about 12 blocks below it, so an honest seed is almost never clamped. When it is, in an hour of slow blocks, every reader clamps it the same way, because they read the same headers and the same `created_at`.
+- **What the clamp cannot do.** `created_at` is whatever the signer writes. A planter who also backdates `created_at` is not clamped. §12 says what that buys.
+- **Moving a seed replants it.** A client that moves a seed writes a new event at the new `C`, with a new `created_at` (DECK-0006 §2.2). The clamp then raises its effective planted height to about the time of the move, so the moved seed starts again from day 0. A seed cannot be grown in one place and moved, with its age, to the soil that suits the weather that came.
+
+### 4.3 Weather
+
+**The mixer.** `lowbias32(x)`, on an unsigned 32-bit `x`, with every product taken modulo `2^32`:
+
+```
+x = x XOR (x >> 16);  x = x × 0x7feb352d
+x = x XOR (x >> 15);  x = x × 0x846ca68b
+x = x XOR (x >> 16)
+```
+
+**The weather word of a block.** The block's hash is written as 64 lowercase hex characters in the order block explorers and Bitcoin Core's RPC display it (the byte-reversed double SHA-256 of the header, so that it begins with zeros). With `word_i` the unsigned 32-bit integer of hex characters `8i` to `8i + 7`:
+
+```
+s = 0x811c9dc5
+for i in 0..7:  s = lowbias32(s XOR word_i)
+word = s
+```
+
+**The rolls.** For generation `k`, with `word` the weather word of its driving block:
+
+- `W = lowbias32(word XOR 0x5bd1e995) mod 100`, one roll for the whole bloom.
+- `w` for the symbol at index `i` of the string being rewritten (from 0) is `lowbias32(word XOR ((i + 1) × 0x9E3779B1 mod 2^32)) mod 100`.
+
+Weather belongs to the block, not to the place: two seeds planted at the same height see the same weather, and differ by their DNA and their terroir.
+
+### 4.4 Terroir
+
+Terroir is terrain `K` (`CYBERSPACE_V2.md` §5.2) measured at the seed's scale `u`. For each `b` in `[3, 7, 9, 11]`, in order, with `bits = b + u`:
+
+1. Align the seed's coordinate `(x, y, z, plane)` to the cell of width `2^bits` on each axis: `bx = (x >> bits) << bits`, and the same for `y` and `z`.
+2. `cell = xyz_to_coord(bx, by, bz, plane)`, encoded as exactly 32 big-endian bytes.
+3. `nibble = SHA256(DOMAIN || byte(bits) || cell)[0] & 0x0F`.
+
+`DOMAIN` is `CYBERSPACE_TERRAIN_K_V2` (ASCII) when `u = 0` and `CYBERSPACE_SEED_TERROIR_V1` (ASCII) when `u > 0`. `n0` to `n3` are the four nibbles in order, finest to coarsest. `K` is the number of 1 bits in `(n0 << 12) | (n1 << 8) | (n2 << 4) | n3`. `pl` is the plane bit.
+
+At `u = 0` this is exactly `CYBERSPACE_V2.md` §5.2, so a bloom's `K` is the `K` a hop to its coordinate pays: for the destination `(4104, 0, 0)` on plane 0 of `CYBERSPACE_V2.md` §5.7, the nibbles are `0, 15, 15, 13` and `K = 11`. Above `u = 0` the cells are `2^u` times wider, and the domain differs, because otherwise the cells at `bits = 7` and `11` of one scale would be the cells of terrain `K` at another, and two scales would share nibbles.
+
+**Why terrain (non-normative).** At scale `2^0` a bloom spans tens of gibsons, so it covers several of the finest cells (8 gibsons) inside one coarse cell (2,048 gibsons): seeds planted near each other share their coarse soil and differ in fine texture. Terroir ties the bloom to the same landscape that sets the cost of a hop. A reader computes it once per seed, with four SHA-256 calls.
+
+### 4.5 The environment
+
+Once per seed, a reader builds the environment: `K`, `n0` to `n3` and `pl` from §4.4; every gene's expressed value (§3.3); then every `let`, in order (§3.5). The axiom's arguments are then evaluated in it, with `w`, `W` and `g` all `0`, and every axiom symbol has birth `0`.
+
+### 4.6 One generation
+
+Generation `k` rewrites the string of generation `k - 1` from first symbol to last, with `g = k`, `W` and each symbol's `w` from §4.3:
+
+1. For the symbol at index `i`, find the rule that applies (§3.7). If none does, copy the symbol unchanged, with its birth.
+2. Otherwise, **the symbol cap:** let `out` be the number of symbols written so far in this generation, `s` the length of the rule's successor and `r` the number of symbols after index `i` in the string being read. If `out + s + r` is greater than the DNA's symbol cap (§7), copy this symbol unchanged and copy every later symbol of this generation unchanged without matching any rule. The next generation tries again from its first symbol.
+3. Otherwise write the successor's symbols in order. Each argument is evaluated in the environment, with the rule's parameters bound and with `w`, `W` and `g` as above, and becomes that symbol's parameter.
+4. **Birth:** every written symbol has birth `k`, except the first symbol of the successor whose character equals the character of the symbol being rewritten, which keeps that symbol's birth.
+
+### 4.7 Growing between generations
+
+A bloom does not jump once a day. Every symbol remembers its birth, and in drawing (§5) a symbol of birth `b` is grown by the fraction `f(b) / N`, where, with `a = max(0, age)`:
+
+```
+f(b) = N                              when b = 0
+f(b) = min(N, max(0, a - b × N))      otherwise
+```
+
+A symbol made by generation `b` appears at length 0 at the block that drives generation `b`, and reaches its full length `N` blocks later. Because the first successor of a symbol's own character inherits its birth (§4.6, step 4), a rewrite never shrinks what has already grown. Lengths and sizes grow (§5.3); widths, angles and colors do not.
+
+**Why this is normative (non-normative).** The prototype showed that one rewrite a day reads as a jump: the largest single-block change in a bloom's height was 3.6 to 7.0 percent of its height at day 30. With this rule it fell to 0.3 to 0.7 percent for most DNAs, and the bloom changes at every block while staying a pure function of public data. That is what makes block time read as growth, so every reader does it.
+
+---
+
+## 5. Drawing the bloom (normative)
+
+A reader draws the string of generation `g` with a turtle, at the age of §4.1, and emits a SNO payload (DECK-0003). All arithmetic is on integers.
+
+### 5.1 Fixed-point arithmetic
+
+| Name | Definition |
+|---|---|
+| `ONE` | `16384`, fixed-point 1.0 for directions |
+| `TICK` | `120` SNO ticks per model unit (DECK-0003 §1.2). Positions are in ticks |
+| `STEP` | `12` ticks, a tenth of a unit: one SEEDO length step |
+| `R` | `64 × TICK = 7680` ticks, the position bound |
+| `fdiv(a, b)` | `a / b` rounded toward minus infinity. Note: this differs from expression division (§3.4), which truncates toward zero |
+| `fx(a)` | `fdiv(a + 8192, ONE)`: a fixed-point product brought back to ticks, rounding half up |
+| `isin(d)` | for whole degrees: `d = ((d mod 360) + 360) mod 360`; then `SIN[d]` for `d ≤ 90`, `SIN[180 - d]` for `d ≤ 180`, `-SIN[d - 180]` for `d ≤ 270`, and `-SIN[360 - d]` otherwise |
+| `icos(d)` | `isin(d + 90)` |
+| `isqrt(n)` | the largest integer whose square is at most `n`; `0` for `n ≤ 0` |
+| `norm(v)` | with `l = isqrt(v·v)`, or `1` if that is 0: `[fdiv(v0 × ONE, l), fdiv(v1 × ONE, l), fdiv(v2 × ONE, l)]` |
+| `cross(a, b)` | `[fdiv(a1 b2 - a2 b1, ONE), fdiv(a2 b0 - a0 b2, ONE), fdiv(a0 b1 - a1 b0, ONE)]` |
+| `rot(a, b, d)` | with `c = icos(d)` and `s = isin(d)`, returns the pair `fx(a × c + b × s)` and `fx(b × c - a × s)`, component by component |
+| `ortho()` | `H = norm(H)`; `t = H·L`; `L = norm(L - fdiv(t × H, ONE²))` component by component; `U = cross(H, L)` |
+| `clampR(v)` | `v` limited to `-R..R` |
+
+`SIN` is a fixed table, part of the language and never computed: `SIN[d]` is `sin(d°) × 16384`, rounded, for `d` from 0 to 90:
+
+```
+0,286,572,857,1143,1428,1713,1997,2280,2563,2845,3126,3406,3686,3964,4240,4516,4790,5063,5334,
+5604,5872,6138,6402,6664,6924,7182,7438,7692,7943,8192,8438,8682,8923,9162,9397,9630,9860,10087,
+10311,10531,10749,10963,11174,11381,11585,11786,11982,12176,12365,12551,12733,12911,13085,13255,
+13421,13583,13741,13894,14044,14189,14330,14466,14598,14726,14849,14968,15082,15191,15296,15396,
+15491,15582,15668,15749,15826,15897,15964,16026,16083,16135,16182,16225,16262,16294,16322,16344,
+16362,16374,16382,16384
+```
+
+Every intermediate value of this section fits in a signed 64-bit integer: the largest are the ring offsets of §5.3, below `2^40`. A port MUST NOT use 32-bit integers.
+
+### 5.2 The turtle
+
+The turtle starts at position `(0, 0, 0)` in ticks, with heading `H = [0, ONE, 0]` (up, `+Y`), left `L = [-ONE, 0, 0]` and up-vector `U = [0, 0, ONE]`, width = the DNA's `width` and color = the DNA's `color`. `SIZE = min(400, max(10, size))`, with `size` the expressed standard gene. `a` is a symbol's first parameter; the others are ignored. "Default" means the symbol has no parameters.
+
+| Symbol | Action |
+|---|---|
+| `F` | Move forward and draw a segment (§5.3). Length step `a`, default `10` |
+| `f` | Move forward without drawing. Length as for `F` |
+| `+`, `-` | Turn: `(H, L) = rot(H, L, d)`, then `ortho()`. `d = a` (default `angle`) for `+`, `-d` for `-` |
+| `&`, `^` | Pitch: `(H, U) = rot(H, U, -d)`, then `ortho()`. `d = a` (default `angle`) for `&`, `-d` for `^` |
+| `/`, `\` | Roll: `(L, U) = rot(L, U, d)`, then `ortho()`. `d = a` (default `angle`) for `/`, `-d` for `\` |
+| `\|` | Turn around: `(H, L) = rot(H, L, 180)`, then `ortho()` |
+| `T` | Tropism (below). Degrees `a`, default `5` |
+| `[` | Push position, `H`, `L`, `U`, width and color, if the stack holds fewer than 64 states; otherwise do nothing |
+| `]` | Pop them, if the stack is not empty; otherwise do nothing |
+| `!` | Set width to `a`, default the DNA's `width` |
+| `'` | Set color to `a`, default the DNA's `color` |
+| `L` | Draw a leaf (§5.3). Size step `a`, default `3` |
+| `O` | Draw a bead (§5.3). Radius step `a`, default `2` |
+| any other letter | Nothing. Letters are free for rules to use as state |
+
+**Tropism.** With `deg = a` (default 5): the target is `D = [0, -ONE, 0]` (down) when `deg ≥ 0` and `[0, ONE, 0]` (up) otherwise, and `dd = |deg| mod 360`. Let `t = D·H` and `P = D - fdiv(t × H, ONE²)` component by component. If `P·P < 400²`, do nothing. Otherwise `Pn = norm(P)`, `H = fx(H × icos(dd) + Pn × isin(dd))` component by component, then `ortho()`.
+
+Note: an unmatched `[` beyond the 64th is dropped while its `]` still pops, so a DNA that nests deeper than 64 draws with the wrong states. That is deterministic, and a writer avoids it.
+
+### 5.3 Geometry
+
+A **vertex** at `(x, y, z)` stores `(clampR(x), clampR(y), clampR(z))` and the painted current color (§5.4). The **vertex cap** is the DNA's (§7): a primitive that would bring the vertex count above it is skipped, whole, and the turtle still moves.
+
+- **`F` and `f`.** `len = fdiv(min(100, max(0, a)) × STEP × f(b) × SIZE, N × 100)`, with `f(b)` from §4.7. If `len = 0`, do nothing at all. Otherwise the new position is `p + fx(H × len)`, component by component. For `F`, with `wd = fdiv(min(50, max(0, width)) × STEP × SIZE, 200)`: if `wd > 0` and 6 more vertices fit under the cap, write a **ring** at the old position, then a ring at the new one (unclamped), and the 6 faces `[r0_j, r0_k, r1_k]` and `[r0_j, r1_k, r1_j]` for `j` = 0, 1, 2 and `k = (j + 1) mod 3`. Then the position becomes the new position, clamped with `clampR`.
+- **A ring** of width `wd` at `(x, y, z)` is 3 vertices, one for each `(cx, cy)` in `[(0, 16384), (-14189, -8192), (14189, -8192)]` (the directions 90, 210 and 330 degrees): `x + fdiv((L0 × cx + U0 × cy) × wd, ONE²)`, and the same for `y` with `L1`, `U1` and for `z` with `L2`, `U2`.
+- **`L`, a leaf.** `sz = fdiv(min(50, max(0, a)) × STEP × f(b) × SIZE, N × 100)`. If `sz = 0`, or 4 more vertices do not fit, do nothing. Otherwise, with `h2 = fdiv(sz, 2)` and `q = fdiv(sz, 3)`, write the vertices `A = p`, `B = p + fx(H × h2 + L × q)`, `C = p + fx(H × sz)`, `D = p + fx(H × h2 - L × q)` and the faces `[A, B, C]` and `[A, C, D]`. The turtle does not move.
+- **`O`, a bead.** `r = fdiv(min(50, max(0, a)) × STEP × f(b) × SIZE, N × 100)`. If `r = 0`, or 6 more vertices do not fit, do nothing. Otherwise write, in this order, `xp = p + (r, 0, 0)`, `xn = p - (r, 0, 0)`, `yp = p + (0, r, 0)`, `yn = p - (0, r, 0)`, `zp = p + (0, 0, r)`, `zn = p - (0, 0, r)`, and the 8 faces `[xp, yp, zp]`, `[yp, xn, zp]`, `[xn, yn, zp]`, `[yn, xp, zp]`, `[yp, xp, zn]`, `[xn, yp, zn]`, `[yn, xn, zn]`, `[xp, yn, zn]`. The turtle does not move.
+
+### 5.4 Colors and the standard genes
+
+Colors are indices into DECK-0003's built-in palette, `cyberspace-neon-256`, whose first 192 entries are 24 hue families of 8 shades (`family × 8 + shade`). With `hue' = ((hue mod 24) + 24) mod 24` and `tone` the expressed standard genes, a vertex's color is the **painted** current color:
+
+```
+c = min(255, max(0, color))
+if c ≥ 192:  index = c                      # steels and signature colors are not rotated
+else:        shade = min(7, max(0, (c mod 8) + tone))
+             index = ((floor(c / 8) + hue') mod 24) × 8 + shade
+```
+
+`size` scales lengths, leaf sizes, bead radii and widths through `SIZE` (§5.2, §5.3).
+
+### 5.5 Emission to SNO
+
+The bloom is a SNO payload (DECK-0003 §1.1) written exactly as follows, in this key order: `v`, `name`, `unit`, `extent` (only when it is not 8), `mode`, `vertices`, `ticks` (only when present), `colors`, `faces`.
+
+- `v` is `2`. `name` is the DNA's name, cut to 64 code points. `unit` is the seed's scale `u`. `mode` is `"solid"`.
+- For each vertex, in the order written, with position `t` in ticks on each axis: its whole part `floor(t / 120)` goes into `vertices`, and its remainder `t - 120 × floor(t / 120)` into `ticks`.
+- `ticks` is run-length encoded as DECK-0003 §1.2 requires: a run of two or more zero remainders is one negative integer, a single zero remainder is `[0, 0, 0]`, and `ticks` is omitted when every remainder is zero.
+- `extent` is the larger of 1 and, over every vertex and axis, `|whole|` and `whole + 1` when its remainder is nonzero; then at most 64; omitted when it is 8.
+- `colors` holds each vertex's painted color, and `faces` the faces in the order written.
+
+The payload is valid under DECK-0003 §1.9 by construction. A reader never publishes it. Where a hash of the payload is wanted, as in the vectors (§11), it is SHA-256 of the compact JSON of the payload in this key order.
+
+### 5.6 Where a bloom stands
+
+A reader draws the bloom as it draws a shard whose payload is the bloom, standing at the seed's `C` (DECK-0003 §3.2): the model's origin on that coordinate, one model unit `2^u` gibsons.
+
+---
+
+## 6. Mixing (normative)
+
+### 6.1 What a mix is
+
+A **mix** combines a mother DNA and a father DNA into a child DNA. It is committed by a **mixed DNA**: a `kind 3350` event with empty `content` that names the mother, the father and a block (§8.1). The child's genes are drawn by the outcome block, which is mined after the commit, and by the commit's own id. Anyone who can read two DNAs MAY mix them; the child names both, so their authors are credited wherever the child grows. The mother and the father MAY be the same DNA.
+
+### 6.2 The outcome block
+
+- The mixed DNA's `block` tag names a height and that block's hash: the **anchor**. A writer MUST name the tip of its best chain, not the clock block.
+- The **commit height** is `max(anchor, E)`, with `E` computed from the mixed DNA's `created_at` exactly as in §4.2.
+- The **outcome height** is the commit height plus `MIX_DELAY = 36`.
+- The child exists from the moment the outcome height is at most the reader's clock height (§4.1). Before that the mixed DNA is **pending**: a reader MUST NOT grow it or mix it.
+- The hash in the `block` tag MUST equal the hash of the block at that height on the reader's best chain; otherwise the mixed DNA is invalid.
+
+**Why 36 (non-normative).** Six blocks would be enough to read the outcome safely, because the reader reads it at the clock height, 6 blocks deep. It would not be enough to keep the committer from knowing it. The clamp of §4.2 lets a commit name an anchor down to `E`, about 12 blocks below the tip when the commit is made, and more in an hour of fast blocks. With 36, the outcome block lies about 24 blocks above the tip at the moment of the commit, even when the committer names the oldest anchor the clamp allows. A mix then resolves about 7 hours after it is committed (36 blocks to the outcome block, 6 more to read it), which is the time scale of a bloom that grows one generation a day.
+
+### 6.3 The mix word
+
+```
+mix_hash = SHA256("CYBERSPACE_SEED_MIX_V1" || outcome_block_hash || commit_id)
+s0       = the weather word (§4.3) of mix_hash, written as 64 lowercase hex characters
+```
+
+`outcome_block_hash` is the 32 bytes of the outcome block's hash in its displayed order (§4.3), and `commit_id` the 32 bytes of the mixed DNA's event id. The domain string is ASCII.
+
+**Why the commit's id is in the word (non-normative).** Without it, every mix of the same two parents at the same outcome block would make the same child, with the same genes, under two ids. With it, each commit is its own draw. It also means that a committer who somehow knows the outcome block still has to pay a full DNA price for every draw it tries (§12).
+
+### 6.4 Alleles, dominance and mutation
+
+The mother is `A` and the father `B`. The rate is `floor((A.mutate + B.mutate) / 2)`. For each gene of `A`'s genome, in genome order (§3.3), with index `i` from 0:
+
+1. `s = lowbias32(s0 XOR ((i + 1) × 0x9E3779B1 mod 2^32))`.
+2. `ia = s & 1` and `ib = (s >> 1) & 1`.
+3. The child's first allele is a copy of `A`'s second allele if `ia = 1`, else of its first. Each allele keeps its value and its dominance mark.
+4. If `B` has a gene of the same name, the child's second allele is a copy of `B`'s second allele if `ib = 1`, else of its first, and the child's range is `min(A.lo, B.lo)..max(A.hi, B.hi)`. If `B` has no gene of that name (only possible in a sterile hybrid, §6.5), the second allele is a copy of `A`'s other allele (the first if `ia = 1`, else the second), and the range is `A`'s.
+5. **Mutation:** if `(s >> 8) mod 100` is less than the rate, then with `span = hi - lo`, `step = 1 + ((s >> 16) mod max(1, ceil(span / 6)))` and `sign = +1` if `(s >> 4) & 1` else `-1`, the allele chosen by `(s >> 2) & 1` (the first for 0, the second for 1) takes the value `min(hi, max(lo, value + sign × step))`. Its dominance mark does not change.
+
+Genes that `B` has and `A` does not are not passed on. All shifts are on the unsigned 32-bit `s`.
+
+**What this does (non-normative).** A trait carried by a recessive allele in both parents hides in their children and returns in about one grandchild in four. The prototype's sword fern carries a recessive blue `hue`, and the fiddlehead a recessive giant `size`; both vanish in every child of the two and return in 25 and 26 of 100 grandchildren. The coral carries a hidden green that a mix of coral with coral reveals in about 1 in 4.
+
+### 6.5 Species and sterile hybrids
+
+- A mix of a sterile parent is refused: the mixed DNA is invalid.
+- A mix of two DNAs that are not of one species (§3.9) is refused, unless the mixed DNA carries the `hybrid` tag (§8.1). With it, the child is a **sterile hybrid**: it grows and can be planted, and it can never be a parent.
+- A mix of one species never makes a sterile child unless a parent's text says `sterile`, which already refuses the mix.
+
+### 6.6 The child's text
+
+The child's text is computed from the mother's text, line by line, so that every reader computes the same text and a republished copy (§8.1) can be compared with it:
+
+1. The **head** is the line `dna <name>`, where `<name>` is the mixed DNA's `name` tag if it has one, and otherwise the mother's name, a space, `x`, a space and the father's name; either way cut to 64 code points. In a sterile hybrid the head continues with the line `sterile`. It then continues with a gene line (step 4) for each standard gene the mother does not declare, in the order `size`, `hue`, `tone`.
+2. Walk the mother's lines in order, judging each by its keyword after comments are removed (§3.1). A rule line is copied unchanged. A `dna` or `seed` line is replaced by the head. A `sterile`, `planted` or `scale` line is dropped. A `gene` line is replaced by the child's gene line for the gene of that name. Every other line, comments and blank lines included, is copied unchanged.
+3. If the mother has no `dna` or `seed` line, the head is placed before her first line.
+4. A child's gene line is `gene <name> <first allele> <second allele> in <lo>..<hi>`, single spaces, where an allele is its value in decimal followed by `!` when it is dominant.
+
+Lines are joined with a line feed. The child's `mutate`, `angle`, `width`, `color`, lets, axiom and rules are therefore the mother's, its genome is the one §6.4 drew, and its species is the mother's species.
+
+**The child's caps** are the mixed DNA's own `caps` tag (§8.1), not the mother's: the child grows under the caps its commit paid for. A mixer who declares smaller caps than the mother's bloom needs gets a bloom that stops at them (§7).
+
+### 6.7 Lineage and depth
+
+A mixed DNA's parents may themselves be mixed. A written DNA has **depth** 0, and a mixed DNA has depth one more than the deeper of its parents. A mixed DNA of depth greater than `MIX_DEPTH_MAX = 8` is invalid. To breed further, a gardener republishes a deep child as a written DNA (§8.1), which pays its own work and starts again at depth 0.
+
+To compute a mixed DNA, a reader resolves its parents (§8.2, Resolving a DNA), checks each one as a DNA (§8.1), computes each mixed parent's text first, and checks the parents' sterility and species. A depth of 8 bounds this at 510 ancestor events, every one of which paid for its work.
+
+### 6.8 Previews
+
+A client MAY compute what a mix would make with any 32-bit word in place of `s0`, for example from past blocks and a made-up commit id, so that a gardener can see the range of children before committing. A preview is not a mix: only a mixed DNA event makes a child.
+
+---
+
+## 7. Caps and their price (normative; the numbers are provisional)
+
+A DNA declares three **caps** in its `caps` tag (§8.1), and pays for them with NIP-13 proof of work on its event id.
+
+| Cap | What it bounds | Free at the base price | Each extra bit doubles it, up to |
+|---|---|---|---|
+| vertices | vertices in the bloom (§5.3) | 2,048 | 65,536 (5 bits) |
+| symbols | symbols in the bloom's string (§4.6) | 2,048 | 65,536 (5 bits) |
+| generations | generations the bloom grows (§4.1) | 32 | 1,024 (5 bits) |
+| **base price** | | **16 bits** | |
+
+**The price.** For each cap, its bits are the smallest `k ≥ 0` with `cap ≤ free × 2^k`. A cap MUST be a whole number from 1 to the cap's maximum; a DNA whose `caps` tag gives anything else is invalid. A DNA without a `caps` tag has the free caps, 2,048, 2,048 and 32. The price is:
+
+```
+price = 16 + bits(vertices) + bits(symbols) + bits(generations)
+```
+
+| Caps (vertices, symbols, generations) | Price |
+|---|---|
+| 2,048, 2,048, 32 (the default) | 16 bits |
+| 8,000, 6,000, 40 (the prototype's caps) | 21 bits |
+| 4,096, 4,096, 64 | 19 bits |
+| 65,536, 65,536, 1,024 (the largest) | 31 bits |
+
+**The check.** A DNA event MUST carry a NIP-13 `nonce` tag whose committed target, its third element, is at least the price, and its event id MUST have at least that many leading zero bits. A reader MUST check both before it grows the DNA, plants it or mixes it. The committed target keeps a DNA mined for small caps that happened to land a lucky id from claiming larger ones.
+
+**At a cap.** A cap never makes a bloom invalid. At the symbol cap the string stops growing for the rest of the generation (§4.6). At the generation cap the bloom stops rewriting and finishes growing between generations (§4.7). At the vertex cap the turtle stops drawing and keeps moving (§5.3). Every reader stops at the same place.
+
+**Why each bit doubles a cap (non-normative).** Proof of work is priced in bits: each bit doubles the expected number of hashes. The caps bound what a DNA costs every client that grows it: rewriting costs up to `generations × symbols` symbol steps, once, and drawing costs up to `symbols + vertices` steps per block. Doubling any cap at most doubles that cost, so one bit per doubling keeps price and worst-case cost in proportion. The bits add, so the price follows the product of the caps, which is conservative for the vertex cap, since a symbol emits at most six vertices. At the base price (16 bits, about 65,000 hashes) a DNA costs a phone well under a second. At the prototype's caps (21 bits) it costs about a second on a desktop core and under ten seconds in a phone's JavaScript (measured at 269,000 SHA-256 per second in the tending research of 2026-11-10). At the largest caps (31 bits) it costs about 18 minutes on a desktop core, and its bloom costs every client up to about 67 million symbol steps to grow once, which is seconds. The numbers are provisional (§13, question 2).
+
+---
+
+## 8. Events (normative)
+
+### 8.1 The DNA: `kind 3350`
+
+| Field | Value |
+|---|---|
+| `kind` | `3350` |
+| `content` | a written DNA: its SEEDO text, which MUST be valid (§3). A mixed DNA: empty |
+| `["nonce", "<n>", "<target>"]` | exactly one. NIP-13. `<target>` is at least the price of the caps (§7) |
+| `["caps", "<vertices>", "<symbols>", "<generations>"]` | OPTIONAL, at most one. Absent means the free caps (§7) |
+| `["e", "<mother id>", "<relay hint>", "mother"]` | a mixed DNA only: exactly one |
+| `["e", "<father id>", "<relay hint>", "father"]` | a mixed DNA only: exactly one |
+| `["block", "<height>", "<hash>"]` | a mixed DNA only: exactly one. The anchor (§6.2). `<height>` in decimal, `<hash>` 64 lowercase hex in displayed order |
+| `["hybrid"]` | a mixed DNA only, OPTIONAL: ask for a sterile hybrid (§6.5) |
+| `["name", "<name>"]` | a mixed DNA only, OPTIONAL: the child's name (§6.6), at most 64 code points |
+| `["q", "<original id>", "<relay hint>"]` | OPTIONAL. Credit for a copy (below) |
+| `["p", "<original author>"]` | OPTIONAL. On a public copy only (below) |
+| `["alt", "<text>"]` | OPTIONAL. NIP-31, for clients that do not know the kind |
+| `["-"]` | on a DNA hidden in a bag: the NIP-70 protected marker (below) |
+
+A reader MUST verify a DNA's signature, as for any event, and its work (§7). A DNA whose `content` is empty is mixed, and its other required tags MUST be present and well formed; a DNA whose `content` is not empty is written, and a reader ignores any `mother`, `father`, `block`, `hybrid` or `name` tag on it. A writer MUST NOT write those tags on a written DNA. A DNA that fails any check is invalid, and so is every child whose ancestry includes it.
+
+**Public or hidden.** A DNA MAY be published on its own, for anyone to plant, or carried as an item in the bag or the chest that holds the seeds planted from it, for only the people who reach the place. A DNA hidden that way is an item like any other (`CYBERSPACE_V2.md` §7.6): inline, or in a sealed entry. Its author MUST add `-` to it, as to every item written into a bag, and does so before mining its work, because a tag added afterwards would change its id. A DNA of another author is placed unchanged. A writer SHOULD NOT add `-` to a DNA it publishes on its own, because relays that honour NIP-70 refuse a protected event from anyone but its authenticated author.
+
+**Copying.** Code can be copied; a DNA's authorship (its signature), its lineage (its parents) and its paid work cannot. A gardener who republishes another DNA's text, or the computed text of a mixed DNA, publishes a new written DNA: a new id, signed by the gardener, paying its own work. Such a copy SHOULD credit the DNA it was copied from with `["q", "<original id>", "<relay hint>"]`, the NIP-18 quote tag that DECK-0003 §3.5 uses for copied objects, naming the event it was copied from. A copy published on its own SHOULD also carry `["p", "<original author>"]`, so the author is told; a copy hidden in a bag MUST NOT, because the notification would point at a hidden place. Planting the original by reference (§8.2) is free and credits its author wherever the seed is found. A reader MAY compare a copy of a mixed DNA with the child text it computes (§6.6) and say whether the copy is faithful.
+
+### 8.2 The seed: `kind 3351`
+
+A seed is an item carried in a bag's list of entries (`CYBERSPACE_V2.md` §7.6) or a chest's (DECK-0004 §3). A bag MAY carry it in a sealed entry. It MUST NOT be published on its own: its `C` tag is the place the bag protects.
+
+| Field | Value |
+|---|---|
+| `kind` | `3351` |
+| `content` | the planter's caption, at most 280 characters, or empty |
+| `["dna", "<dna id>", "<relay hint>"]` | exactly one. The DNA, by id, written or mixed. The relay hint MAY be empty |
+| `["planted", "<height>"]` | exactly one. The clock height when the seed was planted (§4.2), in decimal |
+| `["scale", "<u>"]` | OPTIONAL. The scale, `0` to `84`, in decimal. Absent means `0` |
+| `["C", "<coord_hex>"]` | exactly one. Where the seed is planted, under the rules of `CYBERSPACE_V2.md` §7.6. A seed needs an exact coordinate, because its terroir depends on it |
+| `["title", "<name>"]` | OPTIONAL. The planter's name for this planting, at most 64 characters |
+| `["-"]` | the NIP-70 protected marker. MUST be present (`CYBERSPACE_V2.md` §7.6, Protected items) |
+| `["d", "<64 lowercase hex>"]` | present only on a seed that has been moved: its lineage (DECK-0006 §2.2) |
+
+Decimal integers follow `CYBERSPACE_V2.md` §10: no sign, no leading zeros. The seed is signed by its planter, as `CYBERSPACE_V2.md` §7.6 says every item that is not a message or hidden audio SHOULD be: a seed's signature is the only proof of who planted it once it is seen elsewhere, and it binds the `created_at` that the clamp reads (§4.2).
+
+**Reading a seed.** A reader MUST skip, as an item it cannot read, a `kind 3351` whose `dna` is not 64 hex characters, whose `planted` is not a decimal integer, whose `scale` is present and is not an integer from 0 to 84, or that has no `C`. Where the table says "exactly one" and a seed carries more, a reader uses the first.
+
+**Resolving a DNA.** A reader looks for a DNA, by id, first among the items of the list of entries that holds the seed (the bag's, a sealed entry's payload counting as part of its bag, or the chest's), and then on relays: the relays where it found the bag, then the hinted relay under the consent rule of `CYBERSPACE_V2.md` §7.6, References. A mixed DNA's parents are resolved the same way, from the same list of entries. A DNA that cannot be found, or that is invalid (§8.1), leaves the seed a seed that cannot grow: a reader SHOULD say that a seed was found and its DNA could not be fetched, or was refused, rather than show nothing.
+
+**Contents.** A bag that publishes its contents (`CYBERSPACE_V2.md` §7.7) counts seeds under the kind `seed` and hidden DNAs under the kind `dna`: `["contents", "seed", "<count>"]`, `["contents", "dna", "<count>"]`. A reader that does not know a kind ignores it.
+
+### 8.3 The tend: `kind 3352`
+
+A tend gives work to one seed. It is rooted on the bag that holds the seed, as a sealed comment is (DECK-0006), and it names the seed only inside its seal.
+
+| Field | Value |
+|---|---|
+| `kind` | `3352` |
+| `content` | a public placeholder, for example `This garden is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech`. It MUST NOT reveal the seed or the place |
+| `["A", "33330:<bag author>:<lookup_id>"]` | exactly one. The bag that holds the seed, by address, so one query (`kinds: [3352], #A: [<bag address>]`) finds every tend in it |
+| `["block", "<height>", "<hash>"]` | exactly one. The anchor: the clock block when the tend was made (§4.1) |
+| `["encrypted", "aes-256-gcm", "<payload>", "cyberspace:region"]` | exactly one. The payload, encrypted with the bag's key under the cipher of `CYBERSPACE_V2.md` §7.6 (for a room bag, its room key, DECK-0004 §3.7.2). The fourth element means that the key is derived from a place: a reader MUST NOT make a network request for it |
+
+The decrypted payload is a JSON object:
+
+```json
+{"seed": "<the seed's lineage id>", "target": "<sunlight, in attempts, decimal>", "nonces": ["<16 hex>", "..."]}
+```
+
+`seed` is the seed's lineage id: its `d` when it has been moved, and otherwise its event id (DECK-0006 §2.2), so tends stay with a seed that is moved within its bag. `target` is the sunlight the tend claims, and `nonces` its proof (§9). A tend carries no `e`, `k` or `p` tag naming the seed or its planter.
+
+**Why the seed is named inside the seal (non-normative).** A tend says in public only that someone gave work to something in this bag. DECK-0006 puts the commented item's id and kind in the clear, and its §6 asks whether to stop; a tend starts from the private form. The seed's id is also part of the tend's salt (§9), so only a reader who has opened the bag can check the work, and only such a reader sees the bloom it feeds.
+
+---
+
+## 9. Tending (provisional)
+
+**Sunlight is counted in attempts (normative).** The amount of work a tend carries, its sunlight, is a number of **attempts**: the unit of the hop's re-roll price (`CYBERSPACE_V2.md` §5.10), one aligned height-12 Cantor tree modulo a 61-bit prime. Sunlight is never counted in leading zero bits, and a tend never uses NIP-13. A hop's honest cost is already defined in attempts (16 times `HOP_REROLL_BUDGET[h]`), so "a tend worth one h16 hop" is a defined quantity, 28,048 attempts.
+
+**The attempt construction (provisional).** The construction below follows the tending research of 2026-11-10 and is not ratified. Its domain strings end in `_DRAFT` so that nothing built on it can be mistaken for the final form; ratifying it will give them `_V1` names and golden vectors.
+
+1. `tend_salt = SHA256("CYBERSPACE_SEED_TEND_DRAFT" || seed_lineage_id || anchor_block_hash || tender_pubkey)`, with 32 bytes each for the id, the anchor's displayed hash and the tend's `pubkey`. It cannot be made before the anchor block exists, it is useless for any other seed, and it is useless in an event anyone else signs.
+2. `p` is the prime of index 0 drawn from `tend_salt` by the procedure of `CYBERSPACE_V2.md` §5.9, with `tend_salt` in place of `previous_event_id`.
+3. `r_place = region_n mod p`, where `region_n` is the region of the bag that holds the seed (`CYBERSPACE_V2.md` §4.7), computed modulo `p` as §5.9 allows. It names the place in every attempt.
+4. One attempt, for an unsigned 64-bit `nonce`: `seed_n = SHA256("CYBERSPACE_SEED_TEND_GRIND_DRAFT" || tend_salt || be64(nonce))`; `base = ((int(seed_n) mod 2^85) >> 12) << 12`; `r = compute_subtree_cantor(base, 12) mod p`; `G = SHA256("CYBERSPACE_SEED_TEND_GRIND_DRAFT" || seed_n || be64(pi_p(r_place, r)))`.
+5. **Shares:** a tend with target `T` publishes 8 distinct nonces, each of whose `G`, read as a 256-bit big-endian integer, satisfies `G × ceil(T / 8) < 2^256`. The expected cost is `T` attempts, and a verifier replays 8 attempts, about 54 microseconds on a desktop core.
+
+**What sunlight does is open.** Whether sunlight keeps a bloom alive, makes it flower, lets it drop seeds, or is only shown, is §13, question 8. Until it is ruled, a reader MUST NOT let tends change a bloom's geometry, and MAY show the sunlight a seed has received.
+
+**Why attempts, not NIP-13 (non-normative).** SHA-256 is native to GPUs and mining hardware; `CYBERSPACE_V2.md` §4.1 rejects searching a hash space as the protocol's work. An attempt is structured work in the protocol's own currency, priced in the unit hops already use, with the place's root folded in. At bloom scale the place itself cannot carry the work (three axis trees of a height-8 region cost about 0.1 ms), so the work comes from repeated salts, and a full residue proof (a "standing hop") buys nothing more until seeds are planted at scale `2^8` and above. The research measured both; §13 holds its seven decisions.
+
+---
+
+## 10. Seeds and games (non-normative)
+
+SEEDO owns form, never behavior. A DNA reads its genes, its terroir, the clock and the block hashes, and nothing else: no game state, no movement chain, no events other than its own DNA and seed, no input, no network. A bloom is therefore the same for every reader and every game, and no game can make it depend on who is winning.
+
+The Games DECK (DECK-0002, reserved) defines what entities do inside a virtual bracket. An entity MAY wear a bloom as its body, through a component that a future revision of the Games DECK would define: the component would name a DNA and a planting, and the game would draw the bloom where the entity stands. The game decides where the body goes and what it does; SEEDO decides only what it looks like and how it grows.
+
+SEEDO's expression grammar and integer semantics (§3.4) and its fixed-point arithmetic (§5.1) are deterministic and self-contained. The Games DECK could share them, so that a game's rules and a bloom's rules read the same way and port with the same code. That is a suggestion, not a dependency: nothing in this DECK requires it.
+
+---
+
+## 11. Test vectors
+
+`seeds-vectors.json`, beside this DECK, is produced by `seeds-vectors.mjs` (Node 18 or later, no dependencies) from `seeds-reference.mjs`. It uses real Bitcoin blocks, whose hashes and header times are embedded in the generator. Its DNA events are unsigned stand-ins whose ids carry their NIP-13 work. Like the other vectors in this repository it is not normative: where it disagrees with this text, the text is right and the file is a bug.
+
+| Section | What it holds |
+|---|---|
+| `primitives` | the sine table's hash, `isin`, `icos`, `isqrt` and `lowbias32` samples, and the weather word, `W` and the first eight `w` of block 970,544 |
+| `terroir` | twelve coordinates and scales, including the §5.7 destination `(4104, 0, 0)` on plane 0, whose nibbles are `0, 15, 15, 13` and whose `K` is `11` |
+| `expressions` | a DNA of `let` lines whose values exercise every rule of §3.4, for example `-7 / 2 = -3`, `-7 % 3 = 2`, `7 % -3 = 1`, `5 / 0 = 0` and `1000 * 1000 * 3 = 1000000` |
+| `rejected`, `accepted` | twenty texts a reader MUST reject, each with its reason, and six edge cases it MUST accept |
+| `growth` | the prototype's six DNAs grown at coordinate `3a7f1c9e...a9c1`, planted at 970,400, at day 0, halfway through day 1, day 10 and day 30, plus another place, scale 4, the base caps and small caps: for each, the generation, symbol, vertex and face counts, the bytes and SHA-256 of the SNO payload (§5.5), the weather blocks used, and the whole payload for the small ones |
+| `clamp` | header times of blocks 970,400 to 970,559 and four seeds clamped by §4.2 |
+| `mixing` | four written parents, seven mixes (two children of one pair, their grandchild with a `name` tag, coral with itself, a refused pair of species, a sterile hybrid and its refused mix), each with its event, commit height, outcome block, `mix_hash`, mix word, every gene's draw and the child's text; and the growth of a seed of the first child |
+| `price` | the price of eight sets of caps, two of them invalid, and a DNA mined at the base price |
+
+Some single values, for a quick check:
+
+- The fiddlehead at day 30 and 6 blocks (clock 974,726), scale 0, caps 8,000, 6,000 and 40: generation 30, 2,106 vertices, SNO SHA-256 `438902f6f31616f6f8e00f0581d277ee2652d8ea9163564c0949d2e96ee8b463`.
+- The fiddlehead at exactly day 1 (clock 970,544): generation 1, its new symbols at length 0, so the payload equals day 0's, SHA-256 `4764aa4d16b449ff7301fd5bb598daf05de1b6f19fb16bdffa7ac5667566a602`.
+- The first mix, fiddlehead with sword fern: anchor 970,500, commit height 970,500, outcome height 970,536, commit id `000004d4a6525fed93eade8bcc4278c2ffe76ec587bf026c6a7b2b8a787b20a0`, `mix_hash` `50180fc6a6d212a660df76277bfce2167656efb936d19fe9e6e48ad2a70c88fc`, mix word 716970785.
+
+**Conformance with the prototype.** The prototype, unmodified, reproduces every growth vector at scale 0 with the prototype's caps (27 of them), every allele of the five mixes that make a child when it is given the same `mix_hash` as its block hash, and every terroir vector at scale 0. The vectors differ from the prototype only where this DECK changes it (§14).
+
+---
+
+## 12. Security considerations
+
+- **Grinding the planting time.** A planter chooses the planted height, and so the weather. The planted height must be the clock block (§4.2), whose successors at `+144` and beyond are unmined, so the planter cannot know the weather of any generation. The clamp stops a seed from stating an old height with an honest `created_at`.
+- **Backdating.** A planter who writes an old `created_at` as well escapes the clamp, and can choose among past blocks the planted height whose known weather grows the bloom it wants. Nothing in nostr proves when an event was made: relays store whatever `created_at` the signer writes, and a relay accepts an old one. What remains is that the seed is found only when its bag is published or rewritten, so readers who knew the bag before can see that the seed was not in it; that is evidence, not proof. Bitcoin timestamps (OpenTimestamps, or the block anchors of DECK-0001) would close it at a cost (§13, question 4).
+- **Grinding mixes.** Every committed attempt costs a full DNA price (§7), at least 16 bits, because a mix is a DNA. The outcome block is mined after the commit, and the commit's id salts the outcome (§6.3), so a committer cannot see a child before paying for it. A committer who backdates `created_at` to know the outcome block still pays the price for every commit id it tries; a committer who publishes many commits honestly pays the same and leaves every attempt in public as a DNA of its own. A rare trait therefore costs in proportion to its rarity. That is the defence; it is not a proof that rare children cannot be bought.
+- **Soil shopping.** Terroir is public, so a planter can compute every coordinate's soil before planting and choose. That is choosing a garden, and it is allowed. It buys nothing about the weather, which is unmined when the seed is planted, and moving a grown seed to better soil replants it (§4.2).
+- **Copying.** A DNA's text is public once published, and anyone can republish it. A copy is a new DNA with a new id and its own work; it cannot take the original's signature, its lineage or its id, and seeds of the original keep naming the original. Credit is by `q` and is a courtesy (§8.1).
+- **Compute.** The caps bound the work of every bloom (§7): a reader never rewrites more than `generations × symbols` symbols for one seed, never draws more than `symbols` symbols or emits more than `vertices` vertices, and never resolves more than 510 ancestors for one mixed DNA (§6.7). Many seeds in one bag multiply that. A reader SHOULD grow the blooms nearest its viewer first and MAY limit how many it grows at once, saying that more are present. A reader SHOULD cache each generation's string, since generations change once a day, and redraw once per block.
+- **Sandboxing.** SEEDO has no input, no output, no network, no clock but the block clock, no randomness but the weather, and no access to game state or to any event but its own DNA and seed. Every expression terminates, every generation is one pass over a bounded string, and memory is bounded by the caps. A reader that interprets SEEDO needs no other sandbox.
+- **Determinism and floats.** Every value that decides geometry is an integer, and every reader MUST compute it exactly as §3 to §5 say. A reader MUST NOT replace the sine table with a sine function, the integer square root with a float square root, or floor division with a float division: one difference in one bit of one direction moves every vertex after it, and two readers then draw two blooms. Floating point MAY be used only after emission, to place the finished payload in a scene (DECK-0003 §1.2, the float hazard). The reference implementation uses JavaScript numbers, which are exact here because every intermediate value is below `2^53` (§5.1); a port uses 64-bit integers.
+- **Reorganizations.** The clock reads 6 blocks back (§4.1), a mix is read at its outcome block 6 deep (§6.2), and a mixed DNA whose anchor hash is not on the reader's chain is invalid. A reorganization deeper than 6 blocks can change blooms and children; the protocol treats one as out of scope.
+- **Privacy.** A seed is as private as the bag that holds it, and a hidden DNA as private as its bag. A public mix names its parents by id: mixing a hidden DNA in public says that it exists, though not what it is, and the child can be grown only by readers who can resolve every parent. A tend says in public that its signer reached something in the named bag (§8.3).
+
+---
+
+## 13. Open questions (non-normative)
+
+1. **The language's name.** "SEEDO" is a working name. A trademark check is owed before it is used in public. This DECK keeps it out of every domain string (`CYBERSPACE_SEED_TERROIR_V1`, `CYBERSPACE_SEED_MIX_V1`), so a new name changes no hash. The prototype's terroir domain was `SEEDO_TERROIR_V1`.
+2. **The price numbers.** The base price (16 bits) and the free caps (2,048 vertices, 2,048 symbols, 32 generations) are provisional, chosen so that the prototype's DNAs cost about 21 bits. They should be calibrated against phones. Should the price be paid in attempts (§9) instead of NIP-13 bits, so that DNAs, tends and hops share one currency? Recommendation: keep NIP-13 for the first release, as the owner's model says, and revisit with the tending decisions.
+3. **Blocks per generation.** `N` is fixed at 144. Should a DNA choose it, with a `generation` line? A floor would be needed: the clamp's margin is about 12 blocks, so an `N` near that would let a planter know the first generation's weather. Recommendation: fixed at 144 until a DNA needs another pace; then a line allowing 36 to 1,008.
+4. **The mix delay.** 36 blocks keeps the outcome unknown with the clamp's two-hour margin (§6.2). With a Bitcoin timestamp on each commit, 6 would do. Recommendation: 36 now; revisit if commits get timestamps.
+5. **A floor for mixes.** A mix costs its caps' price, at least 16 bits. Should a mix cost more than a written DNA, to make rare children dearer? Recommendation: no floor until mixing is played with.
+6. **Self-seeding.** The prototype drops seeds from a bloom (willow and coral, at day 30): drop `i` falls at generation `3 + 3i`, at a distance of 14 to 43 model units in a direction drawn from that generation's block, with its own planted height inside the next day, computed by every reader and published by nobody. It is not specified here because the prototype leaves too much open: how many seeds a bloom drops (a slider in the prototype, not a DNA line), whether the DNA declares it, what keeps a drop inside the bag's region (the prototype's offsets can leave it), whether drops drop seeds of their own, which caps bound the whole meadow, and how the clamp applies to a seed no event states. Recommendation: specify it after the tending decisions, with the drop count a DNA line priced like the caps, drops confined to the region of the bag that holds the parent, and no drops from drops.
+7. **The tending decisions** (the research of 2026-11-10, held for arkinox, one at a time):
+   1. Tend with Cantor work instead of NIP-13. Recommendation: yes.
+   2. At bloom scale, tend attempts (repeated salts) instead of a residue proof. Recommendation: yes.
+   3. Shares per tend. Recommendation: 8.
+   4. Require presence (the tender's chain head inside the region). Recommendation: no; perhaps a bonus later.
+   5. Terrain `K` as a sunlight price modifier. Recommendation: gentle, or none at first.
+   6. A standing hop (the place costs work) for large-scale seeds. Recommendation: defer until seeds are planted at scale `2^8` and above.
+   7. Late tends, which name an old anchor. Recommendation: accept them, with a cap on the anchor's age, settled by a simulation in the Seed Garden.
+8. **What sunlight does.** Candidates: life (a bloom without enough sunlight stops growing, or fades), flowering (a DNA reads its sunlight as a built-in name), and self-seeding (sunlight pays for dropped seeds). Every one of them makes a bloom depend on which tends a reader has fetched, so two readers with different relays would draw two blooms; whichever is chosen must say how it behaves under a partial view. Recommendation: first show sunlight beside a bloom without changing it; then add life, counted only from tends whose anchors are at most the clock height, with a cap per tender per day so that one wealthy tender cannot keep a bloom alive alone.
+9. **Parameter changes still pop.** Growing between generations stretches new symbols, but a parameter that a rule changes (the fiddlehead's coils, the coral's rolls) still changes once a day: 3.8 percent of the fiddlehead's height in one block. Interpolating a parameter from its old value to its new one over the day would fix it, at the cost of remembering each symbol's previous parameters.
+10. **Blooms and walkers.** Should a bloom stop a walker (DECK-0003 §1.12), and should a DNA say so? The emitted payload carries no `constrain`, so today a walker passes through every bloom.
+11. **Public seeds.** Every seed is hidden in a bag. A garden planted in the open would need a published form, as public shards do (`kind 33332`, reserved).
+12. **Deep lineage.** `MIX_DEPTH_MAX` is 8, and a deeper child must be republished as a written DNA. Is 8 the right bound, and should a faithful republished copy (§8.1) keep its lineage for display?
+
+---
+
+## 14. Implementations (non-normative)
+
+**The Seed Garden prototype** (2026-11-09 and 2026-11-10, not published; arkinox has it as a private artifact) is the source of SEEDO: its parser, rewriting, turtle, emission, terroir and mix function are this DECK's, and `seeds-reference.mjs` is its core with the changes below. It embeds 5,000 consecutive block hashes (970,217 to 975,216). Its measurements, at place A, scale `2^0`, day 30, on Node 22:
+
+| DNA | species | vertices | faces | SNO bytes | full regrow, ms | redraw, ms |
+|---|---|---|---|---|---|---|
+| fiddlehead | fern | 2,106 | 1,508 | 75,176 | 34 (with JIT warm-up) | 2.8 |
+| sword fern | fern | 3,156 | 2,258 | 111,292 | 9 | 2.0 |
+| oak | tree | 2,070 | 1,682 | 76,297 | 8 | 2.5 |
+| willow | tree | 1,134 | 932 | 40,887 | 2 | 0.8 |
+| coral | coral | 2,724 | 2,836 | 106,398 | 7 | 0.7 |
+| crystal | crystal | 4,038 | 4,712 | 168,598 | 12 | 1.7 |
+
+**Where this DECK differs from the prototype:**
+
+- **Planting is the seed's.** The prototype's DNA text carries `planted` and `scale`; here the seed's tags carry them, and a reader ignores those lines in a DNA (§3.2).
+- **Caps are the DNA's.** The prototype has fixed caps (6,000 symbols, 40 generations, 8,000 vertices); here each DNA declares and pays for its own (§7).
+- **The mix word.** The prototype draws alleles from the outcome block's hash alone; here the commit's id is folded in (§6.3), the outcome is 36 blocks after a clamped commit height (§6.2), and the child's text has an exact form without the prototype's comments and padding (§6.6). Given the same 32-bit word, the alleles are identical.
+- **The terroir domain** above scale 0 is `CYBERSPACE_SEED_TERROIR_V1`, not `SEEDO_TERROIR_V1` (§13, question 1).
+- **Stricter parsing**, each a case the prototype accepted: a rule parameter that shadows a gene, a `let` or a built-in name (in the prototype the parameter's value then leaked to every later symbol of the generation); header numbers that are not whole numbers (the prototype read `parseInt(...) || 0`); gene values beyond 1,000,000 and ranges that run high to low; a second `axiom` line (the prototype kept the last); a rule with two `->` (the prototype dropped everything after the second); a trailing empty argument such as `F(1,)` (the prototype dropped it); `IN` in upper case in a gene line; and Unicode whitespace, which the prototype trimmed.
+- **Growing between generations** is always on; the prototype's switch to turn it off is a debugging view.
+- **Self-seeding** is left open (§13, question 6).
+
+**No client implements this DECK yet.** ONOSENDAI has no seeds; cyberspace-mcp has none.
