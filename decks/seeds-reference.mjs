@@ -211,7 +211,7 @@ export function parseDNA(text) {
   // DECK-0008 §3.1: at most 8,192 bytes of UTF-8, and well-formed Unicode
   if (/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(text)) throw new Error('the text is not well-formed Unicode')
   if (Buffer.byteLength(text, 'utf8') > LIMITS.textBytes) throw new Error('the text is longer than ' + LIMITS.textBytes + ' bytes')
-  const prog = { text, name: 'dna', species: '', planted: null, scale: null, mutate: 0, sterile: false, genes: [], angle: 30, width: 2, color: 7, lets: [], axiom: null, rules: [], letters: {} }
+  const prog = { text, revision: 1, name: 'dna', species: '', planted: null, scale: null, mutate: 0, sterile: false, genes: [], angle: 30, width: 2, color: 7, lets: [], axiom: null, rules: [], letters: {} }
   const lines = text.split('\n')
   const names = new Set([...BUILTINS, ...STD_NAMES]); const declared = new Set()
   let axiomSrc = null, axiomLine = 0; const ruleSrc = []; const seen = new Set()
@@ -265,6 +265,7 @@ export function parseDNA(text) {
       once('seedo')
       if (!/^[1-9][0-9]*$/.test(rest)) throw new Error(where + ': seedo is a revision number from 1')
       if (Number(rest) > SEEDO_REVISION) throw new Error(where + ': SEEDO revision ' + rest + ' is newer than this reader (' + SEEDO_REVISION + ')')
+      prog.revision = Number(rest)
     }
     else { /* DECK-0008 §3.2: an unknown line is ignored; it still counts toward the size limit */ }
   })
@@ -541,6 +542,7 @@ export const geneLine = (g) => 'gene ' + g.name + ' ' + alleleStr(g.a) + ' ' + a
 // s0 is the mix word. Returns { refused } or { text, prog, log }.
 export function mixDNA(A, B, s0, { name, hybrid = false } = {}) {
   if (A.sterile || B.sterile) return { refused: 'sterile' }
+  if (A.revision !== B.revision) return { refused: 'different SEEDO revisions' }   // DECK-0008 §6.5, until a later revision says how
   const same = A.speciesKey === B.speciesKey
   if (!same && !hybrid) return { refused: 'different species' }   // a hybrid tag on one species is ignored
   const rate = Math.floor((A.mutate + B.mutate) / 2)

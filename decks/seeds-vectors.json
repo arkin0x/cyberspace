@@ -799,6 +799,8 @@
    "why": "a turtle symbol as a rule head, two parameters",
    "dna": "dna x\naxiom !(1, 4)\n!(t, m) if t < m -> !(t+1, m)",
    "name": "x",
+   "mutate": 0,
+   "rules": 1,
    "genes": [
     [
      "size",
@@ -830,6 +832,8 @@
    "why": "spaces inside a parameter list",
    "dna": "dna x\naxiom A(1, 2)\nA( k , m ) -> A(k, m)",
    "name": "x",
+   "mutate": 0,
+   "rules": 1,
    "genes": [
     [
      "size",
@@ -861,6 +865,8 @@
    "why": "an empty argument list, and an empty parameter list",
    "dna": "dna x\naxiom F() A\nA( ) -> A",
    "name": "x",
+   "mutate": 0,
+   "rules": 1,
    "genes": [
     [
      "size",
@@ -892,6 +898,8 @@
    "why": "a \"seed\" line in place of \"dna\"",
    "dna": "seed old name\naxiom F",
    "name": "old name",
+   "mutate": 0,
+   "rules": 0,
    "genes": [
     [
      "size",
@@ -923,6 +931,8 @@
    "why": "planting lines, which a reader ignores in a DNA event",
    "dna": "dna x\nplanted 970400\nscale 0\naxiom F",
    "name": "x",
+   "mutate": 0,
+   "rules": 0,
    "genes": [
     [
      "size",
@@ -954,6 +964,8 @@
    "why": "a declared standard gene outside its standard range is clamped to it",
    "dna": "dna x\ngene size 500 20 in 1..900\naxiom F",
    "name": "x",
+   "mutate": 0,
+   "rules": 0,
    "genes": [
     [
      "size",
@@ -985,6 +997,8 @@
    "why": "alleles outside a species gene range are clamped to it",
    "dna": "dna x\ngene leaf 0 9! in 1..6\naxiom F",
    "name": "x",
+   "mutate": 0,
+   "rules": 0,
    "genes": [
     [
      "size",
@@ -1024,6 +1038,8 @@
    "why": "a hash inside a name starts a comment",
    "dna": "dna my#1 fern\naxiom F",
    "name": "my",
+   "mutate": 0,
+   "rules": 0,
    "genes": [
     [
      "size",
@@ -1055,6 +1071,8 @@
    "why": "CRLF line ends",
    "dna": "dna x\r\naxiom F\r\n",
    "name": "x",
+   "mutate": 0,
+   "rules": 0,
    "genes": [
     [
      "size",
@@ -1086,6 +1104,8 @@
    "why": "a gene name that starts with \"chance\" is a name, not the keyword",
    "dna": "dna x\ngene chancey 1 1 in 0..9\naxiom A\nA if chancey > 0 -> A",
    "name": "x",
+   "mutate": 0,
+   "rules": 1,
    "genes": [
     [
      "size",
@@ -1125,6 +1145,8 @@
    "why": "a let that reads a standard gene declared later",
    "dna": "dna x\nlet a = size + 1\ngene size 120 120 in 50..200\naxiom F",
    "name": "x",
+   "mutate": 0,
+   "rules": 0,
    "genes": [
     [
      "size",
@@ -1156,6 +1178,8 @@
    "why": "the axiom and rules read genes and lets declared after them",
    "dna": "dna x\naxiom A(late)\nA(n) if n < later -> A(n + 1)\ngene late 2 2 in 0..9\nlet later = late * 2",
    "name": "x",
+   "mutate": 0,
+   "rules": 1,
    "genes": [
     [
      "size",
@@ -1195,6 +1219,8 @@
    "why": "an expression of depth 16 (a sum of 16 terms)",
    "dna": "dna x\nlet a = 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1\naxiom F",
    "name": "x",
+   "mutate": 0,
+   "rules": 0,
    "genes": [
     [
      "size",
@@ -1226,6 +1252,8 @@
    "why": "an expression of 64 nodes (depth 14)",
    "dna": "dna x\nlet a = -((1 + 1 + 1 + 1 + 1 + 1 + 1 + 1) * (1 + 1 + 1 + 1 + 1 + 1 + 1 + 1) * (1 + 1 + 1 + 1 + 1 + 1 + 1 + 1) * (1 + 1 + 1 + 1 + 1 + 1 + 1 + 1))\naxiom F",
    "name": "x",
+   "mutate": 0,
+   "rules": 0,
    "genes": [
     [
      "size",
@@ -1257,6 +1285,8 @@
    "why": "an expression of depth 16 (1 inside 15 pairs of parentheses)",
    "dna": "dna x\nlet a = (((((((((((((((1)))))))))))))))\naxiom F",
    "name": "x",
+   "mutate": 0,
+   "rules": 0,
    "genes": [
     [
      "size",
@@ -1288,6 +1318,8 @@
    "why": "the rules of one head and arity with exactly 256 condition and chance nodes",
    "dna": "dna x\naxiom A\nA if (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 chance (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 -> A\nA if (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 chance (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 -> A\nA if 1<2 chance 1 -> A",
    "name": "x",
+   "mutate": 0,
+   "rules": 3,
    "genes": [
     [
      "size",
@@ -1319,6 +1351,8 @@
    "why": "the rules of a DNA with exactly 1,024 condition and chance nodes",
    "dna": "dna x\naxiom A B C D\nA if (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 chance (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 -> A\nA if (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 chance (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 -> A\nA if 1<2 chance 1 -> A\nB if (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 chance (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 -> B\nB if (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 chance (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 -> B\nB if 1<2 chance 1 -> B\nC if (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 chance (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 -> C\nC if (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 chance (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 -> C\nC if 1<2 chance 1 -> C\nD if (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 chance (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 -> D\nD if (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 chance (1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1+1)*(1+1+1+1+1+1+1)>0 -> D\nD if 1<2 chance 1 -> D",
    "name": "x",
+   "mutate": 0,
+   "rules": 12,
    "genes": [
     [
      "size",
@@ -1350,6 +1384,8 @@
    "why": "a successor of 64 symbols",
    "dna": "dna x\naxiom A\nA -> FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
    "name": "x",
+   "mutate": 0,
+   "rules": 1,
    "genes": [
     [
      "size",
@@ -1381,6 +1417,8 @@
    "why": "a text of exactly 8,192 bytes",
    "dna": "dna x\naxiom F\n#xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
    "name": "x",
+   "mutate": 0,
+   "rules": 0,
    "genes": [
     [
      "size",
@@ -1412,6 +1450,8 @@
    "why": "an unknown line is ignored",
    "dna": "dna x\nbloom 3\naxiom F",
    "name": "x",
+   "mutate": 0,
+   "rules": 0,
    "genes": [
     [
      "size",
@@ -1443,6 +1483,8 @@
    "why": "an unknown line may hold any printable character",
    "dna": "dna x\nnote grown for the vectors: é ü 雪\naxiom F",
    "name": "x",
+   "mutate": 0,
+   "rules": 0,
    "genes": [
     [
      "size",
@@ -1474,6 +1516,206 @@
    "why": "a declared SEEDO revision of 1",
    "dna": "seedo 1\ndna x\naxiom F",
    "name": "x",
+   "mutate": 0,
+   "rules": 0,
+   "genes": [
+    [
+     "size",
+     "100",
+     "100",
+     50,
+     200,
+     100
+    ],
+    [
+     "hue",
+     "0",
+     "0",
+     0,
+     23,
+     0
+    ],
+    [
+     "tone",
+     "0",
+     "0",
+     -4,
+     4,
+     0
+    ]
+   ]
+  },
+  {
+   "why": "U+200B, U+202E and U+2028 in an unknown line",
+   "dna": "dna x\nnote a​b‮c d\naxiom F",
+   "name": "x",
+   "mutate": 0,
+   "rules": 0,
+   "genes": [
+    [
+     "size",
+     "100",
+     "100",
+     50,
+     200,
+     100
+    ],
+    [
+     "hue",
+     "0",
+     "0",
+     0,
+     23,
+     0
+    ],
+    [
+     "tone",
+     "0",
+     "0",
+     -4,
+     4,
+     0
+    ]
+   ]
+  },
+  {
+   "why": "U+200B, U+202E and U+2028 in a name",
+   "dna": "dna a​b‮c d\naxiom F",
+   "name": "a​b‮c d",
+   "mutate": 0,
+   "rules": 0,
+   "genes": [
+    [
+     "size",
+     "100",
+     "100",
+     50,
+     200,
+     100
+    ],
+    [
+     "hue",
+     "0",
+     "0",
+     0,
+     23,
+     0
+    ],
+    [
+     "tone",
+     "0",
+     "0",
+     -4,
+     4,
+     0
+    ]
+   ]
+  },
+  {
+   "why": "a no-break space (U+00A0) after a keyword makes an unknown line: the mutation rate stays 0",
+   "dna": "dna x\nmutate 4\naxiom F",
+   "name": "x",
+   "mutate": 0,
+   "rules": 0,
+   "genes": [
+    [
+     "size",
+     "100",
+     "100",
+     50,
+     200,
+     100
+    ],
+    [
+     "hue",
+     "0",
+     "0",
+     0,
+     23,
+     0
+    ],
+    [
+     "tone",
+     "0",
+     "0",
+     -4,
+     4,
+     0
+    ]
+   ]
+  },
+  {
+   "why": "an ideographic space (U+3000) after a keyword makes an unknown line: the mutation rate stays 0",
+   "dna": "dna x\nmutate　4\naxiom F",
+   "name": "x",
+   "mutate": 0,
+   "rules": 0,
+   "genes": [
+    [
+     "size",
+     "100",
+     "100",
+     50,
+     200,
+     100
+    ],
+    [
+     "hue",
+     "0",
+     "0",
+     0,
+     23,
+     0
+    ],
+    [
+     "tone",
+     "0",
+     "0",
+     -4,
+     4,
+     0
+    ]
+   ]
+  },
+  {
+   "why": "a misspelled keyword is an unknown line: mutat 4 leaves the rate at 0",
+   "dna": "dna x\nmutat 4\naxiom F",
+   "name": "x",
+   "mutate": 0,
+   "rules": 0,
+   "genes": [
+    [
+     "size",
+     "100",
+     "100",
+     50,
+     200,
+     100
+    ],
+    [
+     "hue",
+     "0",
+     "0",
+     0,
+     23,
+     0
+    ],
+    [
+     "tone",
+     "0",
+     "0",
+     -4,
+     4,
+     0
+    ]
+   ]
+  },
+  {
+   "why": "a rule typed without its arrow is an unknown line: no rule",
+   "dna": "dna x\naxiom A\nA if g < 3 A A",
+   "name": "x",
+   "mutate": 0,
+   "rules": 0,
    "genes": [
     [
      "size",

@@ -810,8 +810,14 @@ axiom F`
     'an unknown line is ignored': 'dna x\nbloom 3\naxiom F',
     'an unknown line may hold any printable character': 'dna x\nnote grown for the vectors: é ü 雪\naxiom F',
     'a declared SEEDO revision of 1': 'seedo 1\ndna x\naxiom F',
+    'U+200B, U+202E and U+2028 in an unknown line': 'dna x\nnote a\u200bb\u202ec\u2028d\naxiom F',
+    'U+200B, U+202E and U+2028 in a name': 'dna a\u200bb\u202ec\u2028d\naxiom F',
+    'a no-break space (U+00A0) after a keyword makes an unknown line: the mutation rate stays 0': 'dna x\nmutate\u00a04\naxiom F',
+    'an ideographic space (U+3000) after a keyword makes an unknown line: the mutation rate stays 0': 'dna x\nmutate\u30004\naxiom F',
+    'a misspelled keyword is an unknown line: mutat 4 leaves the rate at 0': 'dna x\nmutat 4\naxiom F',
+    'a rule typed without its arrow is an unknown line: no rule': 'dna x\naxiom A\nA if g < 3 A A',
   }
-  out.accepted = Object.entries(ok).map(([why, dna]) => { const err = tryParse(dna); if (err) throw new Error('rejected: ' + why + ': ' + err); const p = S.parseDNA(dna); return { why, dna, name: p.name, genes: p.genes.map((g) => [g.name, g.a.v + (g.a.d ? '!' : ''), g.b.v + (g.b.d ? '!' : ''), g.lo, g.hi, S.express(g)]) } })
+  out.accepted = Object.entries(ok).map(([why, dna]) => { const err = tryParse(dna); if (err) throw new Error('rejected: ' + why + ': ' + err); const p = S.parseDNA(dna); return { why, dna, name: p.name, mutate: p.mutate, rules: p.rules.length, genes: p.genes.map((g) => [g.name, g.a.v + (g.a.d ? '!' : ''), g.b.v + (g.b.d ? '!' : ''), g.lo, g.hi, S.express(g)]) } })
   // the axiom against the symbol cap, which needs the caps
   const ax = 'dna x\naxiom ' + 'F'.repeat(40)
   out.axiom_cap = [32, 40, 39].map((sym) => { let err = null; try { S.grow({ prog: S.parseDNA(ax), coord: coordA, planted: 970400, caps: { vertices: 2048, symbols: sym, generations: 32 }, clock: 970400, blockHash }) } catch (e) { err = e.message } return { dna: ax, symbol_cap: sym, valid: err === null } })
