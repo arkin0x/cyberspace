@@ -1,4 +1,5 @@
-// Golden vectors for DECK-0004 (items, chests, item listings), DECK-0005
+// Golden vectors for DECK-0004 (items, chests, item listings, and the locks of
+// regions and rooms, §3.8), DECK-0005
 // (local chat), DECK-0006 (sealed comments), DECK-0007 (hidden audio) and the
 // sealed entries of CYBERSPACE_V2.md §7.6 (kind 33335). Deterministic: every key is
 // SHA-256 of a label, every nonce is fixed, and every BIP-340 signature uses
@@ -171,6 +172,99 @@ const door = sign({ pubkey: hider, created_at: T, kind: 3341, content: doorSeal,
 // derive the room key above from the bag's key and reach the room bag.
 const sealedDoor = await sealEntry('door', door, regionKey, hiderSk)
 
+// DECK-0004 §3.8: a region key and a room key as locks. The region is a real
+// aligned cube, computed from a coordinate as CYBERSPACE_V2.md §2.3, §4.6,
+// §4.7 and §7.2 compute it, so these vectors check the whole path from a
+// coordinate to a lock.
+const AXIS_BITS = 85
+const xyzToCoord = (x, y, z, plane) => {
+  let c = BigInt(plane & 1)
+  for (let i = 0n; i < BigInt(AXIS_BITS); i++) {
+    c |= ((z >> i) & 1n) << (1n + i * 3n)
+    c |= ((y >> i) & 1n) << (2n + i * 3n)
+    c |= ((x >> i) & 1n) << (3n + i * 3n)
+  }
+  return c
+}
+const cantorPair = (a, b) => { const s = a + b; return (s * (s + 1n)) / 2n + b }
+const subtreeCantor = (base, h) => {
+  let v = Array.from({ length: 2 ** h }, (_, i) => base + BigInt(i))
+  for (let l = 0; l < h; l++) v = Array.from({ length: v.length / 2 }, (_, i) => cantorPair(v[2 * i], v[2 * i + 1]))
+  return v[0]
+}
+const intToBytesBeMin = (n) => { let s = n.toString(16); if (s.length % 2) s = '0' + s; return Buffer.from(s, 'hex') }
+function regionOf(x, y, z, plane, h) {
+  const hb = BigInt(h)
+  const base = [x, y, z].map((v) => (v >> hb) << hb)
+  const regionN = cantorPair(cantorPair(subtreeCantor(base[0], h), subtreeCantor(base[1], h)), subtreeCantor(base[2], h))
+  const locationKey = new Uint8Array(sha(intToBytesBeMin(regionN)))
+  return { height: h, plane, base: base.map(String), base_coordinate: xyzToCoord(base[0], base[1], base[2], plane).toString(16).padStart(64, '0'), region_n: regionN.toString(), location_key: hex(locationKey), lookup_id: hex(sha(locationKey)), locationKey }
+}
+// The lock of a bag key: SHA-256(UTF-8("cyberspace:lock") || key), taken as a
+// secp256k1 secret when it is nonzero and below the curve order n, and its
+// BIP-340 x-only public key.
+const CURVE_N = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141n
+function lockOf(bagKey) {
+  const preimage = Buffer.concat([Buffer.from('cyberspace:lock', 'utf8'), Buffer.from(bagKey)])
+  const secret = new Uint8Array(sha(preimage))
+  const d = BigInt('0x' + hex(secret))
+  if (d === 0n || d >= CURVE_N) throw new Error('this key has no lock (DECK-0004 §3.8.1)')
+  return { preimage: preimage.toString('hex'), lock_secret: hex(secret), lock: getPublicKey(secret), secret }
+}
+const lockPoint = { x: (1n << 84n) + 1234567n, y: (1n << 84n) - 89012n, z: (1n << 84n) + 3456n, plane: 0 }
+const lockRegion = regionOf(lockPoint.x, lockPoint.y, lockPoint.z, lockPoint.plane, 4)
+const lockRegionH5 = regionOf(lockPoint.x, lockPoint.y, lockPoint.z, lockPoint.plane, 5)
+const lockRegionIdea = regionOf(lockPoint.x, lockPoint.y, lockPoint.z, 1, 4)
+if (lockRegionIdea.location_key !== lockRegion.location_key) throw new Error('region_n has no plane bit: the ideaspace twin shares the key')
+const regionLock = lockOf(lockRegion.locationKey)
+const regionLockH5 = lockOf(lockRegionH5.locationKey)
+if (regionLock.lock === regionLockH5.lock) throw new Error('heights 4 and 5 must give different locks')
+
+// A chest sealed to the region's lock (§3.2, unchanged) and opened with the
+// lock secret derived from the region key (§3.3, With an item).
+const lockedSenderSk = key('region lock chest sender'); const lockedSender = getPublicKey(lockedSenderSk)
+const lockedMessage = rumorOf({ pubkey: hider, created_at: T, kind: 1, content: 'You carried the right key here.', tags: [['C', C], ['-']] })
+const lockedPlain = JSON.stringify([lockedMessage])
+const lockedConvSeal = nip44.utils.getConversationKey(lockedSenderSk, regionLock.lock)
+const lockedPayload = nip44.encrypt(lockedPlain, lockedConvSeal, nonce32('region lock chest'))
+const lockedConvOpen = nip44.utils.getConversationKey(regionLock.secret, lockedSender)
+if (hex(lockedConvSeal) !== hex(lockedConvOpen)) throw new Error('region lock conversation keys differ')
+if (nip44.decrypt(lockedPayload, lockedConvOpen) !== lockedPlain) throw new Error('the region lock chest does not open')
+// The region key itself is not the lock secret: used as one, it must not open the chest.
+if (hex(nip44.utils.getConversationKey(lockRegion.locationKey, lockedSender)) === hex(lockedConvSeal)) throw new Error('the bare region key must not open the chest')
+const lockedChest = sign({ pubkey: hider, created_at: T, kind: 3341, content: lockedPayload, tags: [['C', C], ['title', 'Grate'], ['lock', regionLock.lock, lockedSender], ['requires', 'Where the old light turned'], ['-']] }, hiderSk)
+
+// A room key (§3.7.2) of the same region, and its lock.
+const lockDoorSecret = key('lock room door secret')
+const lockRoomKey = new Uint8Array(sha(Buffer.concat([Buffer.from('cyberspace:door', 'utf8'), Buffer.from(lockRegion.locationKey), Buffer.from(lockDoorSecret)])))
+const roomLock = lockOf(lockRoomKey)
+const strip = ({ secret, locationKey, ...rest }) => rest
+
+// A door sealed to the region's lock, end to end: the lock secret opens the
+// door, the door gives its door secret, and the door secret with the key of
+// the door's own room gives the room key. The door stands at C, in its own
+// region of height 4, far from the region its lock asks for.
+const coordToXyz = (c) => {
+  let x = 0n; let y = 0n; let z = 0n
+  for (let i = 0n; i < BigInt(AXIS_BITS); i++) {
+    z |= ((c >> (1n + i * 3n)) & 1n) << i
+    y |= ((c >> (2n + i * 3n)) & 1n) << i
+    x |= ((c >> (3n + i * 3n)) & 1n) << i
+  }
+  return [x, y, z, Number(c & 1n)]
+}
+const [cx, cy, cz, cplane] = coordToXyz(BigInt('0x' + C))
+const doorRegion = regionOf(cx, cy, cz, cplane, 4)
+const lockedDoorSecret = key('region lock door secret')
+const lockedDoorSenderSk = key('region lock door sender'); const lockedDoorSender = getPublicKey(lockedDoorSenderSk)
+const lockedDoorPlain = JSON.stringify([['room', hex(lockedDoorSecret)]])
+const lockedDoorConv = nip44.utils.getConversationKey(lockedDoorSenderSk, regionLock.lock)
+const lockedDoorPayload = nip44.encrypt(lockedDoorPlain, lockedDoorConv, nonce32('region lock door'))
+const lockedDoorOpened = JSON.parse(nip44.decrypt(lockedDoorPayload, nip44.utils.getConversationKey(regionLock.secret, lockedDoorSender)))
+if (lockedDoorOpened[0][1] !== hex(lockedDoorSecret)) throw new Error('the region lock door does not give its door secret')
+const lockedDoor = sign({ pubkey: hider, created_at: T, kind: 3341, content: lockedDoorPayload, tags: [['C', C], ['title', 'Cistern door'], ['lock', regionLock.lock, lockedDoorSender], ['requires', 'Where the old light turned'], ['door', '4'], ['-']] }, hiderSk)
+const lockedDoorRoomKey = new Uint8Array(sha(Buffer.concat([Buffer.from('cyberspace:door', 'utf8'), Buffer.from(doorRegion.locationKey), Buffer.from(lockedDoorSecret)])))
+
 const utf8 = (s) => Buffer.byteLength(s, 'utf8')
 const refKey = JSON.stringify(bagEntries[1])
 
@@ -206,5 +300,18 @@ console.log(JSON.stringify({
       key_item_reference_bytes: utf8(refKey),
       key_item_reference_in_bag_bytes: Math.ceil(utf8(refKey) * 4 / 3),
     },
+  },
+  locks: {
+    note: 'DECK-0004 §3.8. lock_secret = SHA-256(UTF-8("cyberspace:lock") || key), valid when nonzero and below the curve order; lock = its BIP-340 x-only public key. preimage is the 47 hashed bytes. region_n is decimal, given for the height 4 regions only. base is the region\'s aligned base on X, Y and Z, decimal. region_n carries no plane bit (CYBERSPACE_V2.md §4.7), so the region with the same X, Y, Z and height in ideaspace has the same location key and the same lock.',
+    point: { x: String(lockPoint.x), y: String(lockPoint.y), z: String(lockPoint.z), plane: lockPoint.plane, coordinate: xyzToCoord(lockPoint.x, lockPoint.y, lockPoint.z, lockPoint.plane).toString(16).padStart(64, '0') },
+    region: { ...strip(lockRegion), ideaspace_base_coordinate: lockRegionIdea.base_coordinate, ...strip(regionLock) },
+    region_height_5: (({ region_n, ...r }) => r)({ ...strip(lockRegionH5), ...strip(regionLockH5) }),
+    chest: { plaintext: lockedPlain, nip44_nonce: hex(nonce32('region lock chest')), conversation_key: hex(lockedConvSeal), opens_with_lock_secret: regionLock.lock_secret, event: lockedChest },
+    door: {
+      note: 'A door at C, sealed to region.lock. Its own room is the height 4 region that holds C, so its room key uses that region\'s location key (door_region), not region.location_key.',
+      door_region: strip(doorRegion), plaintext: lockedDoorPlain, nip44_nonce: hex(nonce32('region lock door')), conversation_key: hex(lockedDoorConv), opens_with_lock_secret: regionLock.lock_secret,
+      event: lockedDoor, door_secret: hex(lockedDoorSecret), room_key: hex(lockedDoorRoomKey), room_lookup_id: hex(sha(lockedDoorRoomKey)),
+    },
+    room: { location_key: lockRegion.location_key, door_secret: hex(lockDoorSecret), room_key: hex(lockRoomKey), room_lookup_id: hex(sha(lockRoomKey)), ...strip(roomLock) },
   },
 }, null, 2))
