@@ -605,14 +605,14 @@ An object's `constrain` field says whether its faces stop a walker. Avatars neve
 
 ## Seeds
 
-Seeds is DECK-0008, still a draft in [PR #91](https://github.com/arkin0x/cyberspace/pull/91). The links in this group point at `decks/DECK-0008-seeds.md` and work once that PR is merged. The vocabulary was ruled on 2026-11-10.
+Seeds is DECK-0008, still a draft in [PR #91](https://github.com/arkin0x/cyberspace/pull/91). The links in this group point at `decks/DECK-0008-seeds.md` and work once that PR is merged. The vocabulary and the pricing were ruled on 2026-11-10, and the draft follows them as of `3c5387e`.
 
 ```
   DNA (kind 3350)                    another DNA of the same species
   the definition, written in SEEDO
   publishing it is free
      |        \                      /
-     |         +-------- mix -------+     a commitment with a small floor price;
+     |         +-------- mix -------+     a commitment with a fixed 20-bit floor;
      |                    |               a block mined later picks the genes
      |                    v
      |              child DNA (a DNA like any other)
@@ -648,13 +648,13 @@ A working name: a trademark check is owed, and the name is kept out of every dom
 
 `DECK draft` The definition of a growing thing: its genes, its growth rules and its caps.
 
-**Wire:** `kind 3350`; its id is its identity. A written DNA has SEEDO text in `content`; a mixed DNA is computed from its parents. Publishing one is free (ruled 2026-11-10). [DECK-0008 §8.1](../decks/DECK-0008-seeds.md#81-the-dna-kind-3350)
+**Wire:** `kind 3350`; its id is its identity. A written DNA has SEEDO text in `content` and is free to publish; a mixed DNA is computed from its parents and pays the mix floor. [DECK-0008 §8.1](../decks/DECK-0008-seeds.md#81-the-dna-kind-3350)
 
 #### Seed
 
 `DECK draft` One planting of a DNA at a coordinate, a block and a scale, hidden in a bag.
 
-**Wire:** `kind 3351`, an item. It carries the proof of work, priced by its DNA's caps and paid once at planting (ruled 2026-11-10). [DECK-0008 §8.2](../decks/DECK-0008-seeds.md#82-the-seed-kind-3351)
+**Wire:** `kind 3351`, an item. It carries NIP-13 work at its DNA's price, paid once per planting; a moved or changed seed is a new planting. [DECK-0008 §8.2](../decks/DECK-0008-seeds.md#82-the-seed-kind-3351)
 
 #### Bloom
 
@@ -666,13 +666,13 @@ It is drawn as a SNO object whose unit is the seed's scale. Not ONOSENDAI's rend
 
 `DECK draft` Combining two DNAs into a child DNA.
 
-It is a commitment with a small floor price (ruled 2026-11-10). **Wire:** a mixed DNA with `mother`, `father` and `block` tags; a block mined 36 blocks later picks the child's genes. [DECK-0008 §6](../decks/DECK-0008-seeds.md#6-mixing-normative)
+**Wire:** a mixed DNA with `mother`, `father` and `block` tags and NIP-13 work at a fixed floor of 20 bits, whatever the child's caps. A block mined 36 blocks later picks the child's genes. [DECK-0008 §6](../decks/DECK-0008-seeds.md#6-mixing-normative)
 
 #### Tend
 
 `DECK draft` Communal work that anyone who found a seed can give to its bloom.
 
-**Wire:** `kind 3352`, sealed with the bag's key and naming the seed only inside. What the work does to a bloom is still open. [DECK-0008 §8.3](../decks/DECK-0008-seeds.md#83-the-tend-kind-3352), [§9](../decks/DECK-0008-seeds.md#9-tending-provisional)
+**Wire:** `kind 3352`, sealed with the bag's key. The draft words it as work given to the seed, which it names only inside the seal; what the work does is still open. [DECK-0008 §8.3](../decks/DECK-0008-seeds.md#83-the-tend-kind-3352), [§9](../decks/DECK-0008-seeds.md#9-tending-provisional)
 
 #### Sunlight
 
@@ -738,7 +738,7 @@ An allele marked `!` is dominant; otherwise the two blend. [DECK-0008 §3.3](../
 
 `DECK draft` The three limits a DNA declares, on vertices, symbols and generations, which bound what it costs to grow.
 
-The price is 16 bits at the base caps, and each extra bit doubles one cap. The numbers are provisional. [DECK-0008 §7](../decks/DECK-0008-seeds.md#7-caps-and-their-price-normative-the-numbers-are-provisional)
+Each seed pays its DNA's price: 16 bits at the base caps, plus one bit per doubling of a cap, at most 27. The numbers are provisional. [DECK-0008 §7](../decks/DECK-0008-seeds.md#7-caps-and-their-price-normative-the-numbers-are-provisional)
 
 #### Species
 
