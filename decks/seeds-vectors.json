@@ -759,9 +759,19 @@
    "error_in_reference": "line 2: angle is a whole number"
   },
   {
-   "why": "an unknown line",
-   "dna": "dna x\nbloom 3\naxiom F",
-   "error_in_reference": "line 2: unknown line \"bloom\""
+   "why": "a SEEDO revision newer than this reader knows",
+   "dna": "seedo 2\ndna x\naxiom F",
+   "error_in_reference": "line 1: SEEDO revision 2 is newer than this reader (1)"
+  },
+  {
+   "why": "a SEEDO revision that is not a number from 1",
+   "dna": "seedo 0\ndna x\naxiom F",
+   "error_in_reference": "line 1: seedo is a revision number from 1"
+  },
+  {
+   "why": "an unknown first word on a rule line is still a rule, and must parse",
+   "dna": "dna x\naxiom F\nbloom 3 -> F",
+   "error_in_reference": "line 3: expected \"if\" or \"chance\""
   },
   {
    "why": "a rule that starts with a digit",
@@ -1397,6 +1407,99 @@
      0
     ]
    ]
+  },
+  {
+   "why": "an unknown line is ignored",
+   "dna": "dna x\nbloom 3\naxiom F",
+   "name": "x",
+   "genes": [
+    [
+     "size",
+     "100",
+     "100",
+     50,
+     200,
+     100
+    ],
+    [
+     "hue",
+     "0",
+     "0",
+     0,
+     23,
+     0
+    ],
+    [
+     "tone",
+     "0",
+     "0",
+     -4,
+     4,
+     0
+    ]
+   ]
+  },
+  {
+   "why": "an unknown line may hold any printable character",
+   "dna": "dna x\nnote grown for the vectors: é ü 雪\naxiom F",
+   "name": "x",
+   "genes": [
+    [
+     "size",
+     "100",
+     "100",
+     50,
+     200,
+     100
+    ],
+    [
+     "hue",
+     "0",
+     "0",
+     0,
+     23,
+     0
+    ],
+    [
+     "tone",
+     "0",
+     "0",
+     -4,
+     4,
+     0
+    ]
+   ]
+  },
+  {
+   "why": "a declared SEEDO revision of 1",
+   "dna": "seedo 1\ndna x\naxiom F",
+   "name": "x",
+   "genes": [
+    [
+     "size",
+     "100",
+     "100",
+     50,
+     200,
+     100
+    ],
+    [
+     "hue",
+     "0",
+     "0",
+     0,
+     23,
+     0
+    ],
+    [
+     "tone",
+     "0",
+     "0",
+     -4,
+     4,
+     0
+    ]
+   ]
   }
  ],
  "axiom_cap": [
@@ -1524,9 +1627,9 @@
    "valid": false
   }
  ],
- "reserved_anim": {
-  "what": "the fiddlehead with a reserved anim line, at day 30 and 6 blocks: it parses, and grows exactly as the fiddlehead without it",
-  "dna": "dna     fiddlehead\nspecies fern\nmutate  4\n\n# genome: two alleles each, ! marks dominant\n# standard genes (every DNA has them; the turtle applies them)\ngene size    180  170  in 50..200  # giant, recessive\ngene hue     0!   0!   in 0..23    # keeps the green\n# species genes\ngene curl    22   20   in 2..30    # how tightly a new node coils (recessive)\ngene span    7!   5    in 3..12    # how long a pinna gets\ngene leaf    3    3    in 1..6     # leaflet size\ngene gap     4    3!   in 2..7     # space between nodes\n\n# growth rules\nangle 8\nanim turn y curl 144 0      # reserved: the anim DECK will define it\n# terroir: K is the terrain (0..16), n0..n3 its nibbles, finest to coarsest\nlet lean  = curl + n0 % 7          # fine texture adds a little coil\nlet reach = span + K / 4 - 2       # richer terrain, longer pinnae\nlet fan   = 55 + n1 * 2            # pinna angle\naxiom '(203) O(2) !(2) A(0)\n\n# the tip adds one node a day, with a pair of pinnae\nA(k) if k < 27 -> '(171) F(gap) [ +(fan) P(reach - k/3) ] [ -(fan) P(reach - k/3) ] ^(lean) A(k+1)\n# every coil relaxes a little each day, so the frond unfurls behind its tip\n^(a) if a > 0 -> ^(a - 2)\n# each pinna adds a leaflet pair a day; weather sometimes stops it early\nP(n) if n > 0 chance 92 -> '(173) F(2) [ +(55) '(174) L(leaf) ] [ -(55) '(174) L(leaf) ] &(3) P(n-1)\nP(n) -> '(175) L(leaf+1)",
+ "unknown_lines": {
+  "what": "the fiddlehead with two unknown lines (anim, note), at day 30 and 6 blocks: it parses, and grows exactly as the fiddlehead without them",
+  "dna": "dna     fiddlehead\nspecies fern\nmutate  4\n\n# genome: two alleles each, ! marks dominant\n# standard genes (every DNA has them; the turtle applies them)\ngene size    180  170  in 50..200  # giant, recessive\ngene hue     0!   0!   in 0..23    # keeps the green\n# species genes\ngene curl    22   20   in 2..30    # how tightly a new node coils (recessive)\ngene span    7!   5    in 3..12    # how long a pinna gets\ngene leaf    3    3    in 1..6     # leaflet size\ngene gap     4    3!   in 2..7     # space between nodes\n\n# growth rules\nangle 8\nanim turn y curl 144 0      # expected in a later revision\nnote planted for the vectors, with a note in é\n# terroir: K is the terrain (0..16), n0..n3 its nibbles, finest to coarsest\nlet lean  = curl + n0 % 7          # fine texture adds a little coil\nlet reach = span + K / 4 - 2       # richer terrain, longer pinnae\nlet fan   = 55 + n1 * 2            # pinna angle\naxiom '(203) O(2) !(2) A(0)\n\n# the tip adds one node a day, with a pair of pinnae\nA(k) if k < 27 -> '(171) F(gap) [ +(fan) P(reach - k/3) ] [ -(fan) P(reach - k/3) ] ^(lean) A(k+1)\n# every coil relaxes a little each day, so the frond unfurls behind its tip\n^(a) if a > 0 -> ^(a - 2)\n# each pinna adds a leaflet pair a day; weather sometimes stops it early\nP(n) if n > 0 chance 92 -> '(173) F(2) [ +(55) '(174) L(leaf) ] [ -(55) '(174) L(leaf) ] &(3) P(n-1)\nP(n) -> '(175) L(leaf+1)",
   "planted": 970400,
   "clock": 974726,
   "caps": {

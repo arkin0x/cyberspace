@@ -778,7 +778,9 @@ axiom F`
     'a vertical tab inside a line': 'dna x\naxiom F\u000bF',
     'an unpaired surrogate in a name': 'dna \ud800x\naxiom F',
     'a number that is not whole': 'dna x\nangle 2.5\naxiom F',
-    'an unknown line': 'dna x\nbloom 3\naxiom F',
+    'a SEEDO revision newer than this reader knows': 'seedo 2\ndna x\naxiom F',
+    'a SEEDO revision that is not a number from 1': 'seedo 0\ndna x\naxiom F',
+    'an unknown first word on a rule line is still a rule, and must parse': 'dna x\naxiom F\nbloom 3 -> F',
     'a rule that starts with a digit': 'dna x\naxiom F\n3 -> F',
     'a condition without "if"': 'dna x\naxiom A(1)\nA(n) n > 0 -> A(n)',
     '"chance" glued to a number is not the keyword': 'dna x\naxiom A\nA if 1 chance50 -> A',
@@ -805,6 +807,9 @@ axiom F`
     'the rules of a DNA with exactly 1,024 condition and chance nodes': 'dna x\naxiom A B C D\n' + ['A', 'B', 'C', 'D'].map((h) => head(h, '1')).join('\n'),
     'a successor of 64 symbols': 'dna x\naxiom A\nA -> ' + 'F'.repeat(64),
     'a text of exactly 8,192 bytes': pad(8192),
+    'an unknown line is ignored': 'dna x\nbloom 3\naxiom F',
+    'an unknown line may hold any printable character': 'dna x\nnote grown for the vectors: é ü 雪\naxiom F',
+    'a declared SEEDO revision of 1': 'seedo 1\ndna x\naxiom F',
   }
   out.accepted = Object.entries(ok).map(([why, dna]) => { const err = tryParse(dna); if (err) throw new Error('rejected: ' + why + ': ' + err); const p = S.parseDNA(dna); return { why, dna, name: p.name, genes: p.genes.map((g) => [g.name, g.a.v + (g.a.d ? '!' : ''), g.b.v + (g.b.d ? '!' : ''), g.lo, g.hi, S.express(g)]) } })
   // the axiom against the symbol cap, which needs the caps
@@ -844,13 +849,13 @@ axiom F`
     'B -> f(10) F(2) B'
   P.turtle = S.parseDNA(turtle)
   add('the turtle test: every symbol, the stack beyond 64, the position clamp, f growing halfway through day 2', 'turtle', P.turtle, coordA, P0, 0, S.BASE_CAPS, P0 + 2 * 144 + 72, true)
-  // a reserved anim line (DECK-0008 §3.2) is accepted and changes nothing: same payload, same hash
-  const animText = DNAS.fiddlehead.replace('angle 8', 'angle 8\nanim turn y curl 144 0      # reserved: the anim DECK will define it')
+  // unknown lines (DECK-0008 §3.2) are ignored and change nothing: same payload, same hash
+  const animText = DNAS.fiddlehead.replace('angle 8', 'angle 8\nanim turn y curl 144 0      # expected in a later revision\nnote planted for the vectors, with a note in é')
   const withAnim = S.grow({ prog: S.parseDNA(animText), coord: coordA, planted: P0, scale: 0, caps: CAPS, clock: P0 + 30 * 144 + 6, blockHash })
   const without = cases.find((c) => c.dna === 'fiddlehead' && c.what === 'day 30 and 6 blocks')
   const animSha = S.sha256hex(Buffer.from(withAnim.json, 'utf8'))
   if (animSha !== without.sno_sha256) throw new Error('an anim line changed the bloom')
-  out.reserved_anim = { what: 'the fiddlehead with a reserved anim line, at day 30 and 6 blocks: it parses, and grows exactly as the fiddlehead without it', dna: animText, planted: P0, clock: P0 + 30 * 144 + 6, caps: CAPS, coord: coordA, sno_sha256: animSha, same_as_without: true }
+  out.unknown_lines = { what: 'the fiddlehead with two unknown lines (anim, note), at day 30 and 6 blocks: it parses, and grows exactly as the fiddlehead without them', dna: animText, planted: P0, clock: P0 + 30 * 144 + 6, caps: CAPS, coord: coordA, sno_sha256: animSha, same_as_without: true }
   out.growth = { blocks_per_generation: S.N, dnas: { ...DNAS, turtle }, cases }
 }
 

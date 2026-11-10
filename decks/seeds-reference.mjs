@@ -17,6 +17,8 @@ export const CLOCK_DEPTH = 6     // the clock reads the block 6 below the tip
 export const MIX_DELAY = 36      // a mix's outcome block is its commit height + 36
 export const MIX_DEPTH_MAX = 8   // a mixed DNA is at most 8 mixes from written DNA
 export const CLAMP_MARGIN = 7200 // seconds: the planted-height clamp's margin
+export const SEEDO_REVISION = 1   // the language revision this reader knows (DECK-0008 §3.2)
+export const KNOWN_KEYWORDS = ['dna', 'seed', 'species', 'sterile', 'mutate', 'angle', 'width', 'color', 'planted', 'scale', 'gene', 'let', 'axiom', 'seedo']
 export const LIMITS = { rules: 40, params: 4, value: 1000000, stack: 64, region: 64, textBytes: 8192, exprNodes: 64, exprDepth: 16, successor: 64, headNodes: 256, dnaNodes: 1024 }
 export const TERRAIN_DOMAIN_V2 = 'CYBERSPACE_TERRAIN_K_V2'
 export const TERROIR_DOMAIN = 'CYBERSPACE_SEED_TERROIR_V1'  // DECK-0008: the prototype used SEEDO_TERROIR_V1
@@ -220,7 +222,9 @@ export function parseDNA(text) {
     const kw0 = line.split(new RegExp(WS + '+'))[0]
     // DECK-0008 §3.1: inside a line, the only whitespace is space and tab, and there are no control characters
     if (/[\x00-\x08\x0a-\x1f\x7f-\x9f]/.test(line)) throw new Error(where + ': a control character')
-    if (!['dna', 'seed', 'species'].includes(kw0) && !/^[\x20-\x7e\t]*$/.test(line)) throw new Error(where + ': only printable ASCII outside comments and names')
+    // DECK-0008 §3.1: rule lines and known keyword lines other than names are printable ASCII; an unknown line may hold any printable character
+    const known = line.includes('->') || KNOWN_KEYWORDS.includes(kw0)
+    if (known && !['dna', 'seed', 'species'].includes(kw0) && !/^[\x20-\x7e\t]*$/.test(line)) throw new Error(where + ': only printable ASCII outside comments and names')
     if (line.includes('->')) {
       if (line.split('->').length !== 2) throw new Error(where + ': a rule has exactly one "->"')
       ruleSrc.push([line, where]); return
@@ -257,8 +261,12 @@ export function parseDNA(text) {
       names.add(m[1])
     }
     else if (kw === 'axiom') { once('axiom'); axiomSrc = rest; axiomLine = where }   // DECK-0008: exactly one axiom
-    else if (kw === 'anim') { /* DECK-0008 §3.2: reserved for the anim DECK; the rest of the line is not read and never affects the bloom */ }
-    else throw new Error(where + ': unknown line "' + kw + '"')
+    else if (kw === 'seedo') {
+      once('seedo')
+      if (!/^[1-9][0-9]*$/.test(rest)) throw new Error(where + ': seedo is a revision number from 1')
+      if (Number(rest) > SEEDO_REVISION) throw new Error(where + ': SEEDO revision ' + rest + ' is newer than this reader (' + SEEDO_REVISION + ')')
+    }
+    else { /* DECK-0008 §3.2: an unknown line is ignored; it still counts toward the size limit */ }
   })
   if (axiomSrc === null) throw new Error('no axiom')
   const stdGenes = STD.map((x) => prog.genes.find((g) => g.name === x.name) ||
