@@ -152,17 +152,25 @@ specified in `docs/HEADER-BLOBS.md` of the `nth` repository.
 
 ### 2.5 The header tag (normative)
 
-**Rule: an anchor MAY carry the block's raw header, and a reader uses it only after hashing it to the anchor's `H`.**
+**Rule: an anchor MAY carry the block's raw header, and a reader uses it only after hashing it to the anchor's `H`, and only when it accepts that `H`.**
 
 **Form.** `["header", "<160 lowercase hex>"]`: the block's 80-byte header exactly as Bitcoin serializes it on the wire, as 160 lowercase hex characters. The bytes are, in order: version (4, little-endian), previous block hash (32, internal byte order), merkle root (32, internal byte order), time (4, unsigned little-endian, Unix seconds), bits (4, little-endian), nonce (4, little-endian). Internal byte order is the reverse of the display hex that explorers show and that `H`, `P` and `M` carry.
 
 **Verification (MUST).** Before using any field of the header, a reader MUST check that the tag appears exactly once, that its value is exactly 160 lowercase hex characters, and that `sha256(sha256(header_bytes))`, with its 32 bytes reversed into display order, equals the anchor's `H`. If any of these checks fails, the reader MUST ignore the `header` tag entirely. The tag never makes an anchor valid or invalid: the anchor still stands or falls by §2.3 alone.
 
-**Timestamps come only from verified headers (MUST).** A reader that needs a block's time or difficulty bits MUST take them from a header that passed the check above, or from its own block source. It MUST NOT take them from an anchor's `created_at`, its `content`, or any other tag.
+**A header is only as trustworthy as the `H` it hashes to (MUST).** A reader MUST take a block's time or bits from a verified header only when it accepts that anchor's `H`: either it has checked the anchor under §2.3 (for example against the header blobs of §2.4 with their embedded checkpoints, or against its own block source), or the anchor is signed by a publisher the reader trusts. A header that hashes to an `H` the reader has not accepted proves nothing about Bitcoin, because anyone can hash a header of their own making.
 
-**Why (non-normative):** The block hash commits to every byte of the header, so whoever signed the anchor cannot change the time, the bits, the merkle root or the previous hash without changing `H`. `H` is what §2.3 already checks against Bitcoin mainnet. So a verified header proves the block's time with no trust in the publisher. A reader that paces anything by Bitcoin's own clock, such as the average block time over a 2016-block retarget window, gets the times it needs from anchors it already reads. The difficulty bits come for free. A verified header also carries the block's real merkle root and previous hash. A reader that finds them different from `M` or `P` has learned from the anchor itself that §2.3 rejects it.
+**Proof of work (SHOULD).** A reader that takes times from anchors it has not checked under §2.3 SHOULD also check that the header's hash, read as a 256-bit number, does not exceed the target its `bits` encode, and that this target is no easier than a minimum difficulty the reader sets for itself (for example, a floor well below recent mainnet difficulty). Without the floor a forger could simply set easy `bits`. With it, a forged header costs real mining work, although less than a full check under §2.3 would demand.
 
-**More than one anchor per block (normative).** A publisher MAY publish a second anchor for a block it has already anchored, for example to add the `header` tag to a block anchored before the tag existed. Anchors that name the same `B` and the same `H` describe the same stop. A reader MUST NOT treat them as competing blocks, and it MAY keep either one. Two anchors at one `B` compete only when their `H` values differ.
+**Timestamps come only from verified headers (MUST).** A reader that needs a block's time or difficulty bits MUST take them from a header that passed the verification above and whose `H` it accepts, or from its own block source. It MUST NOT take them from an anchor's `created_at`, its `content`, or any other tag.
+
+**Why (non-normative):** The block hash commits to every byte of the header, so no one can change the time, the bits, the merkle root or the previous hash without changing `H`. The header therefore turns the question "is this time right?" into "is this `H` right?", which is the question §2.3 already answers. A reader that has checked `H` against Bitcoin mainnet needs no trust in the publisher for the time. A reader that trusts the publisher for `H` trusts it for the time to exactly the same degree, and no further. A reader that paces anything by Bitcoin's own clock, such as the average block time over a 2016-block retarget window, gets the times it needs from anchors it already reads. The difficulty bits come for free. A verified header also carries the block's real merkle root and previous hash. A reader that finds them different from `M` or `P` has learned from the anchor itself that §2.3 rejects it.
+
+**More than one anchor per block (normative).** A publisher MAY publish a second anchor for a block it has already anchored, for example to add the `header` tag to a block anchored before the tag existed. Anchors valid under §2.3 that name the same `B` and the same `H` describe the same stop. A reader MUST NOT treat them as competing blocks. It MAY keep either one, except that a reader that needs the header SHOULD keep an anchor whose header verifies over an equivalent one without it. Two valid anchors at one `B` compete only when their `H` values differ.
+
+**Never order by `created_at` (MUST NOT).** A reader MUST NOT infer the tip of the line, or the order of blocks, from anchors' `created_at`. Height `B` and the `P` linkage give the order, and the tip is the highest `B` on a chain the reader accepts.
+
+**Why (non-normative):** A second anchor for a block is signed after the first, so it carries a newer `created_at` than anchors of higher blocks. Anchors republished or backfilled in bulk also share one `created_at` by the thousand. "The newest anchors" are therefore not "the highest blocks". NTH dates a second anchor one second after the block's first anchor, so it never poses as the newest, but a reader cannot rely on every publisher doing so.
 
 **Publishers (non-normative):** A publisher should run the same check before signing, and refuse to sign a header that does not hash to the `H` it is about to sign. NTH does.
 
@@ -180,7 +188,7 @@ specified in `docs/HEADER-BLOBS.md` of the `nth` repository.
 | bits | `0x17020093` |
 | nonce | `1009511781` |
 
-`sha256(sha256(header_bytes))`, reversed, equals `H` above, so a reader accepts this header.
+`sha256(sha256(header_bytes))`, reversed, equals `H` above, so the header verifies. For the proof-of-work check, `bits` `0x17020093` encodes the target `0000000000000000000200930000000000000000000000000000000000000000`, and `H` read as a 256-bit number does not exceed it.
 
 **Negative vector.** Flip the lowest bit of byte 68, the first byte of the time field, which changes the time by one second:
 
@@ -465,7 +473,7 @@ In an ultrametric space, targets become reachable by becoming numerous, never by
 - v3 revision (2026-09-28): the re-roll price on ride openings, with samples drawn from `G` (§5.5, §5.8).
 - v3 revision (2026-10-07): no zero-length ride (§5.6), with the §5.8 exemption limited to roots and openings; sector tags count toward validity, each carried exactly once (§1.3).
 - v3 revision (2026-10-08): a fork kills the chain, restoring the v1 rule (§8); every tag the chain rules read is carried exactly once with a well-formed value (§3.1, §5.2, §8); the network is Bitcoin mainnet, always, and a `net` tag on an action is never read (§1.4).
-- v3 revision (2026-11-10): the optional `header` tag on anchors, which a reader uses only after hashing it to `H`; block times come only from verified headers; anchors that name the same `B` and `H` are the same stop (§2.5).
+- v3 revision (2026-11-10): the optional `header` tag on anchors, which a reader uses only after hashing it to an `H` it accepts; block times come only from such headers, with a proof-of-work floor for readers that do not check `H` under §2.3; valid anchors that name the same `B` and `H` are the same stop; never infer the tip or block order from `created_at` (§2.5).
 
 ## Appendix C: Reference implementations (non-normative)
 
