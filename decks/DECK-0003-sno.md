@@ -44,6 +44,8 @@ The design goal is not to compete with glTF or USD. It is to be the three-dimens
 - **Opacity:** how solid an object is drawn, a whole percent from `1` to `100`. Absent means `100`, fully opaque (§1.11).
 - **Walker:** a viewer that a client moves through a scene a step at a time, as a person walks, rather than by jumping to a place (§1.12).
 - **Constraint (`constrain`):** whether an object's faces stop a walker: `"all"`, `"opaque"`, or `"off"` for none. Absent also means none to a reader, and means "not chosen" to an authoring tool, which writes `"opaque"` (§1.12).
+- **Bounce (`bounce`):** how high a walker under gravity is thrown when it lands on one of the object's faces: a whole number of gibsons from `1` to `24`, or `"reflect"`, back to the height it fell from. Absent means no bounce (§1.13).
+- **Springboard (`springboard`):** `true` makes a fixed `bounce` throw a walker that arrives on the object's top by stepping, not only one that lands from a fall (§1.13).
 - **Extent:** the half-width of the grid the object was built on, in model units. A bound, not a size (§1.8).
 - **Address:** the name of an addressable nostr event, written the way a nostr `a` tag writes it: the event's kind, its author's pubkey as 64 lowercase hex characters, and its `d` tag, joined by colons. An object's address is `33331:<pubkey hex>:<d>`, for example `33331:79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798:5e0a3c91d27f4b68` (§1.10, §3.1).
 - **Ref:** one entry in an object's `refs` list. It names one object that this object places, the way a nostr tag names an event. The ref `["a", "33331:<pubkey hex>:<d>"]` names the object by its address. The ref `["e", "<event id hex>"]` names it by event id. Either shape may be followed by one relay URL as a hint, such as `["a", "33331:<pubkey hex>:<d>", "wss://relay.example"]` (§1.9 rule 11, §1.10).
@@ -77,6 +79,8 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | `facecolors` | array | no | One palette index per face, run-length encoded, for hard color seams (§1.4a). Absent means every face interpolates its vertices. |
 | `opacity` | integer | no | How solid the object is drawn, a percent, `1` to `100` (§1.11). Repaired, never rejected: absent or malformed means `100`, fully opaque. |
 | `constrain` | string | no | Whether the object's faces stop a walker: `"all"`, `"opaque"` or `"off"` (§1.12). `"off"` and absent mean they stop nothing; a malformed value is repaired to mean the same, never rejected. An authoring tool writes `"opaque"`, and never omits it, unless its author chooses otherwise. |
+| `bounce` | integer or string | no | How high a walker under gravity is thrown when it lands on the object's faces: a whole number of gibsons `1` to `24`, or `"reflect"` (§1.13). Read rather than validated: absent or malformed means no bounce, never a rejection. |
+| `springboard` | boolean | no | `true` makes a fixed `bounce` throw a walker that steps onto the object's top as well as one that lands on it (§1.13). Anything but `true` means the same as absent. |
 | `palette` | string or array | no | Which 256 colors the indices name (§1.3a). Absent means the built-in. |
 | `up` | boolean | no | `true` means the object stands on the Earth's surface where it is placed (§1.7). `false` means the same as absent. |
 | `spin` | integer | no | With `up`: the compass bearing the object's `+Z` faces, `0` to `359` (§1.7). |
@@ -340,7 +344,8 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 13. A payload with `parts` and no `vertices` of its own is valid: an object may be nothing but the arrangement of others (§1.10).
 14. `opacity`, if present, is repaired rather than validated (§1.11): a value that is not an integer in `1..100`, null included, means `100`, and an integer from `1` to `9` is drawn at `10`. It is never a reason to reject.
 15. `constrain`, if present, is read rather than validated (§1.12). `"off"` is a valid word, and means the object stops nothing. A value that is not exactly the string `"all"`, `"opaque"` or `"off"`, null included, is repaired to mean the same. It is never a reason to reject.
-16. `objects`, if present, is read rather than validated (§1.10). It is never a reason to reject this payload. A value that is not a JSON object, null included, is read as absent. A key that is not an address of the form `33331:<64 lowercase hex>:<d>` is ignored. For example, the key `"glass-tetra"` is ignored, and so is a key whose pubkey is written in uppercase hex. Each value is a payload. It is checked by rules 1 to 15, on its own, when a placement draws from it, and any `objects` field inside it is ignored. A value that fails is a placeholder for each placement that names it.
+16. `objects`, if present, is read rather than validated (§1.10). It is never a reason to reject this payload. A value that is not a JSON object, null included, is read as absent. A key that is not an address of the form `33331:<64 lowercase hex>:<d>` is ignored. For example, the key `"glass-tetra"` is ignored, and so is a key whose pubkey is written in uppercase hex. Each value is a payload. It is checked by rules 1 to 15 and 17, on its own, when a placement draws from it, and any `objects` field inside it is ignored. A value that fails is a placeholder for each placement that names it.
+17. `bounce` and `springboard`, if present, are read rather than validated (§1.13). A `bounce` that is not a JSON integer from `1` to `24` and not exactly the string `"reflect"`, null included, means no bounce. A `springboard` that is not exactly `true` means none. Neither is ever a reason to reject.
 
 ---
 
@@ -629,6 +634,38 @@ A new field is ignored by those readers (§5). The `a` ref stays an ordinary ref
 
 (Non-normative: `decks/sno-reference.py` implements the table above as `walk_constraint` and `stops_walker`, and the authoring rule as `authored_constraint`, and its self-test carries a repair case for each kind of value in the table and an authoring case for each; there is no rejection case, because nothing in this section rejects. As with `opacity`, a reader that edits objects should keep fields it does not recognize when it writes an object back, or the first person to open a walled room in an older editor and publish it again would take its walls down for everyone after them.)
 
+### 1.13 Bounce
+
+`bounce` says how high a walker (§1.12) is thrown when it lands on one of the object's faces with gravity on. Some clients give their walker gravity: it falls when nothing is under it, lands on the first face that stops it, and jumps. ONOSENDAI's WALK with GRAVITY on is one. A bounce is a launch from such a landing, as off a trampoline or a bounce pad. A client whose walker has no gravity ignores the field.
+
+| `bounce` | A walker landing on one of the object's faces is thrown |
+|---|---|
+| a JSON integer from `1` to `24` | that many gibsons up from where it landed |
+| `"reflect"` | as many whole gibsons up as it fell, the top of its fall above where it landed, rounded down and at most `24` |
+| absent, or anything else | not at all: it lands and stands |
+
+**Only faces that hold a walker throw one.** A face can only be landed on if it stops a walker (§1.12), so an object whose own faces stop nothing (its `constrain` absent, `"off"`, or `"opaque"` while it is see-through) throws nobody, whatever its `bounce` says. An author who wants a trampoline sets both: `"constrain": "all"` (or `"opaque"` on an opaque object) and a `bounce`.
+
+**A landing, not a touch.** A fixed `bounce` throws a walker that lands on the object's faces from a fall or a jump, and one that climbs onto a face from below by a client's step-up (a stair step), since that is a short landing too. A walker that walks level onto the object's top from a floor beside it, flush with it, is not thrown, unless the object is a springboard (below). `"reflect"` throws only what fell: a walker that walked or stepped on fell from nowhere, so it is thrown nowhere, springboard or not.
+
+**`springboard`.** `"springboard": true` makes a fixed `bounce` throw a walker that arrives on the object's top in any way: a landing, a step up or down onto it, or a level walk from a floor beside it. It is for a pad set into a floor, which a walker should not have to jump onto. Touching counts: a walker that walks along the seam between a plain floor and a flush springboard is thrown. With `"reflect"` it adds nothing. Any value but `true`, the string `"true"` and `1` included, means no springboard.
+
+**The walker's own say.** A client MAY let its walker add to a launch or absorb it, with a press just before the landing: ONOSENDAI adds its walker's own jump height for a press of JUMP in the last quarter second before the landing, and absorbs the bounce, landing and standing, for a press of DOWN in that window. Whatever a client adds, a launch is never more than `24` gibsons. The window, the controls and what they add are the client's, since they are how its walker feels, not what the object is; the object says only how high it throws.
+
+**Why the cap is 24.** A launch is a rise, and in Cyberspace every gibson a walker rises is a move it proves (`CYBERSPACE_V2.md` §4). A walker thrown far would owe the work of a long move for one press, and one thrown out of the region it stands in could be thrown across a boundary whose work it cannot afford. Twenty-four gibsons is about three and a half meters at a gibson's 0.147 m, a big trampoline, and stays well inside the work a phone does for a step. A client whose walker cannot afford a rise stops it where it can, as it stops a jump (§1.12 sets out the same courtesy for walls).
+
+**A courtesy, not a rule of the space.** As with `constrain` (§1.12), nothing in a chain records what threw a walker. A launch is a set of ordinary moves, proved and signed by the one who makes them. A reader MUST NOT reject, hide or mark another avatar's movement for rising without a bounce under it, and MUST NOT apply the field to anyone's movement but its own viewer's.
+
+**It is repaired, never a reason to reject** (§1.9 rule 17). A malformed `bounce` or `springboard` is read as absent. A publisher MUST write `bounce` as a JSON integer (digits only: `12`, never `12.0` or `1.2e1`) or as the exact lowercase string `"reflect"`, and MUST write `springboard` only as `true`, omitting it otherwise. A reader whose JSON parser cannot tell `12.0` from `12` MAY read such a value as `12`.
+
+**Placed objects and avatars.** A placed object keeps its own `bounce` and `springboard`, and its parent's do not reach it (§1.10): a floor that places a trampoline throws a walker only from the trampoline's faces. An object that is nothing but placements throws nobody by its own field, since it has no faces. An avatar ignores both fields (§3.3): a person is not a trampoline.
+
+**What it costs.** Thirteen bytes for `,"bounce":12`, eighteen for `,"bounce":"reflect"`, and nineteen more for `,"springboard":true`. Nothing for an object without them.
+
+**Versioning.** Both fields are optional and their absence has a meaning, so their addition does not bump `v` (§5). An older reader ignores them, and its walkers land and stand.
+
+(Non-normative: `decks/sno-reference.py` implements the table as `bounce_of`, `springboard_of` and `launch_height`, and its self-test carries a repair case for each kind of value. ONOSENDAI's WALK has carried both fields as an experiment since 2026-11-10, and Maze Kit's AeroCarnival kit is built to them: bounce pads of 6, trampolines of 12, a rubber floor of `"reflect"`.)
+
 ## 2. Model space (normative)
 
 An object is built in a right-handed frame with Y up, which is the glTF and three.js convention:
@@ -697,7 +734,7 @@ An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload
 
 **An avatar is drawn opaque.** A reader MUST ignore `opacity` (§1.11) in an avatar's payload, and in every object the avatar places (§1.10), and draw the avatar fully opaque. The work an avatar owes prices its size and its detail, not its visibility, so a translucent avatar would buy a way to move unseen through a shared space for nothing, and an avatar is how one person knows another is present. `opacity` is not one of the fields the work is computed from, so the work an avatar owes is unchanged by it.
 
-**An avatar never stops a walker.** A reader MUST ignore `constrain` (§1.12) in an avatar's payload, and in every object the avatar places (§1.10). An avatar is a person, not a wall: one standing in a doorway would shut it for every walker whose client honors the field, and one that moves would carry a wall about with it, through which nobody could follow. `constrain` is not one of the fields the work is computed from, so the work an avatar owes is unchanged by it.
+**An avatar never stops or throws a walker.** A reader MUST ignore `bounce` and `springboard` (§1.13) in an avatar's payload and in every object it places, for the reason that follows. **An avatar never stops a walker.** A reader MUST ignore `constrain` (§1.12) in an avatar's payload, and in every object the avatar places (§1.10). An avatar is a person, not a wall: one standing in a doorway would shut it for every walker whose client honors the field, and one that moves would carry a wall about with it, through which nobody could follow. `constrain` is not one of the fields the work is computed from, so the work an avatar owes is unchanged by it.
 
 ### 3.4 A hidden object as its own event
 
@@ -786,7 +823,7 @@ A client MUST perform welding, deduplication and any equality test on the intege
 
 `v` is `1` or `2`, and a reader MUST support both and reject anything else. A version bump means the meaning of an existing field has changed, which is exactly what happened between the two: `v: 2` reads its Z as written and `v: 1` has it negated (§2). Nothing else differs, and nothing else should ever differ by so little: two versions are a cost, and this one buys a format that every other tool can read without a special case.
 
-A reader MUST ignore fields it does not recognize rather than rejecting them. This is what allows an optional field to be added without a version bump, and it is how `extent`, `ticks`, `up`, `spin`, `palette`, `facecolors`, `refs`, `parts`, `opacity`, `constrain` and `objects` were each added to a format already in use: an older reader sees an object with whole-unit positions on a grid of 8, unoriented, in the built-in colors, every face interpolating its corners, placing nothing, fully opaque, stopping no walker, carrying no other objects, and draws something correct rather than nothing.
+A reader MUST ignore fields it does not recognize rather than rejecting them. This is what allows an optional field to be added without a version bump, and it is how `extent`, `ticks`, `up`, `spin`, `palette`, `facecolors`, `refs`, `parts`, `opacity`, `constrain`, `objects`, `bounce` and `springboard` were each added to a format already in use: an older reader sees an object with whole-unit positions on a grid of 8, unoriented, in the built-in colors, every face interpolating its corners, placing nothing, fully opaque, stopping no walker, carrying no other objects, throwing nobody, and draws something correct rather than nothing.
 
 An extension that changes how an existing field is interpreted MUST bump `v`. An extension that adds a field whose absence has a well-defined meaning MUST NOT.
 

@@ -350,6 +350,45 @@ def authored_constraint(payload: dict) -> str:
     return AUTHORING_DEFAULT
 
 
+BOUNCE_MIN = 1
+BOUNCE_MAX = 24
+BOUNCE_REFLECT = "reflect"
+
+
+def bounce_of(payload: dict):
+    """§1.13: a walker's launch off this object's faces: an int 1..24, "reflect", or 0 for none.
+
+    Read, never validated: anything that is not a JSON integer from 1 to 24
+    (a float, a boolean, a string other than "reflect", null, out of range)
+    is no bounce, and the payload is never rejected for it.
+    """
+    value = payload.get("bounce")
+    if value == BOUNCE_REFLECT and isinstance(value, str):
+        return value
+    if _is_int(value) and BOUNCE_MIN <= value <= BOUNCE_MAX:
+        return value
+    return 0
+
+
+def springboard_of(payload: dict) -> bool:
+    """§1.13: exactly true; anything else, "true" and 1 included, is no springboard."""
+    return payload.get("springboard") is True
+
+
+def launch_height(bounce, fell: float, added: int = 0) -> int:
+    """§1.13: gibsons a landing throws a walker up, at most 24; 0 for none.
+
+    `fell` is how far the top of the fall was above the landing (a reflect
+    throws that, rounded down); `added` is what the walker's own press adds,
+    the client's to choose.
+    """
+    if bounce == 0:
+        return 0
+    base = int(fell // 1) if bounce == BOUNCE_REFLECT else bounce
+    h = min(BOUNCE_MAX, base + added)
+    return h if h >= BOUNCE_MIN else 0
+
+
 def stops_walker(payload: dict) -> bool:
     """§1.12: whether this object's own faces stop a walker.
 
@@ -1004,6 +1043,45 @@ def _self_test() -> None:
             failures += 1
     print(f"{len(walls) + 2 * len(seen_through)} constrain cases (rule 15 never rejects), every payload accepted")
     print(f"{len(authored)} authoring cases (absent and malformed publish as opaque, off survives)")
+
+    # §1.13 and rule 17: bounce and springboard are read, never rejected.
+    bounces = [
+        (absent, 0, "absent: no bounce"),
+        (12, 12, "a whole number in range"),
+        (1, 1, "the lowest"),
+        (24, 24, "the highest"),
+        (0, 0, "zero is out of range"),
+        (25, 0, "above 24"),
+        (-3, 0, "negative"),
+        (12.0, 0, "a float, even a whole one"),
+        (12.5, 0, "a fraction"),
+        ("12", 0, "a string number"),
+        ("reflect", "reflect", "reflect"),
+        ("Reflect", 0, "the word is lowercase and exact"),
+        (True, 0, "a boolean is not a number"),
+        (None, 0, "null"),
+        ([12], 0, "an array"),
+    ]
+    for given, want, why in bounces:
+        payload = dict(APPENDIX_A) if given is absent else {**APPENDIX_A, "bounce": given}
+        got = bounce_of(validate(payload))
+        if got != want or type(got) is not type(want):
+            print(f"  BOUNCE: {given!r} gave {got!r}, expected {want!r} ({why})")
+            failures += 1
+    for given, want in ((absent, False), (True, True), ("true", False), (1, False), (False, False), (None, False)):
+        payload = dict(APPENDIX_A) if given is absent else {**APPENDIX_A, "springboard": given}
+        if springboard_of(validate(payload)) != want:
+            print(f"  SPRINGBOARD: {given!r} expected {want}")
+            failures += 1
+    launches = [
+        ((12, 0, 0), 12), ((12, 9.0, 0), 12), ((12, 0, 5), 17), ((22, 0, 5), 24),
+        (("reflect", 7.9, 0), 7), (("reflect", 30, 0), 24), (("reflect", 0.5, 0), 0), ((0, 10, 5), 0),
+    ]
+    for (b, fell, added), want in launches:
+        if launch_height(b, fell, added) != want:
+            print(f"  LAUNCH: {b!r} after {fell} with {added} gave {launch_height(b, fell, added)}, expected {want}")
+            failures += 1
+    print(f"{len(bounces) + 6} bounce and springboard cases (rule 17 never rejects), {len(launches)} launch cases")
 
     # §1.10 and rule 16: the objects a payload carries in its objects table.
     # The field never rejects the payload that carries it. Each entry is
