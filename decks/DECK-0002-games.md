@@ -81,13 +81,16 @@ A game's **entry point** is where a player appears in the game by virtue of ente
 
 | Tag | Value |
 |---|---|
-| `["entry"]` | on one item of the world, of any kind: a shard drawn at the place of arrival, for example. Its `C` is the entry point. The tag has no value; any further elements are ignored. |
+| `["entry"]` | on one item stored inline in the world's bag, of any kind: a shard drawn at the place of arrival, for example, or an item no client draws. Its `C` is the entry point. The tag has no value; any further elements are ignored. |
 
-- A game's world SHOULD carry exactly one item with the `entry` tag.
-- When more than one item carries it, the entry point is the `C` of the first of them in the bag's list, the same order that decides which of two copies of an item counts (`CYBERSPACE_V2.md` §7.6).
-- When no item carries it, the entry point is the centre of the region: on each axis, its base plus `2^(H - 1)`, where `H` is the region's height (for `H` = 0, the base itself).
+A reader finds the entry point in the list of the game's newest world bag (§5.1), in order, before it reads any item for drawing:
 
-The entry point lies inside the region, because every item's `C` lies inside its bag's region (`CYBERSPACE_V2.md` §7.6), and the world's bag is sealed to the region (§5.1).
+- It counts an entry only when it is stored inline in the bag (not a reference, and not a sealed entry), it is authentic as an item of that bag (`CYBERSPACE_V2.md` §7.6: signed by the game key, or a rumor the bag vouches for), and its `C` is well formed and lies inside the region, in the region's plane. An entry that fails any of these is skipped, and the next one counts.
+- A reader counts an entry whatever its kind, including a kind it cannot read or draw.
+- A game's world SHOULD carry exactly one item with the `entry` tag. When more than one counts, the entry point is the `C` of the first of them in the bag's list, the same order that decides which of two copies of an item counts (`CYBERSPACE_V2.md` §7.6).
+- When none counts, the entry point is the centre of the region: on each axis, its base plus `2^(H - 1)`, where `H` is the region's height (for `H` = 0, the base itself).
+
+**Why inline only (non-normative):** A reference names an object, possibly by another author, and that object's own tags are its author's: if a reference could carry the entry point, the author of an object a game placed could move the game's entry point by editing their object. An inline entry is the game key's own, read from the bag with no fetch. And because the entry point is only a `C` and a tag, it needs nothing a reader has to understand: a game may mark it with an item no client draws.
 
 **The entry point is not a spawn point in play.** Where a game starts a round, restarts a player who fell, or revives one who lost, is the game's own rule, and none of those needs to be the entry point. The entry point says only where a player appears when they enter.
 
