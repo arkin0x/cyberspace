@@ -1,11 +1,11 @@
 // Golden vectors for DECK-0008 (Seeds). Run from this directory with Node 18 or later
 // and no dependencies:
 //   node seeds-vectors.mjs > seeds-vectors.json
-// It takes about two minutes, most of it mining the NIP-13 work of the DNA events.
+// It takes about two minutes, most of it mining the NIP-13 work of the mixed DNAs and the seeds.
 // Every value comes from seeds-reference.mjs. The block hashes and header times below
 // are real Bitcoin blocks, read from mempool.space (read-only GETs) on 2026-11-09 and
-// 2026-11-10. The DNA events are unsigned: a vector needs their ids, which carry the
-// proof of work, and not their signatures. A real DNA event is signed. The file is not
+// 2026-11-10. The events are unsigned: a vector needs their ids, which carry the proof of
+// work of mixed DNAs and seeds, and not their signatures. Real events are signed. The file is not
 // normative: where it disagrees with DECK-0008, the DECK is right and the file is a bug.
 import * as S from './seeds-reference.mjs'
 
@@ -661,20 +661,19 @@ Z(n) if n > 0 and W < calm -> '(14) F(step/2) O(1) Z(n-1)`,
 }
 const P = Object.fromEntries(Object.entries(DNAS).map(([k, t]) => [k, S.parseDNA(t)]))
 
-// ---------- DNA events, mined to their price (NIP-13) ----------
-function mine(base) {
-  const bits = S.price(base.caps)
-  const tags0 = [...base.tags, capsTag(base.caps)]
+// ---------- events: a written DNA is free; a mixed DNA pays the mix floor; a seed pays its DNA's price ----------
+function mineEvent(kind, created_at, tags, content, target, accept = (lz) => lz >= target) {
   for (let n = 0; ; n++) {
-    const ev = { pubkey: PUBKEY, created_at: base.created_at, kind: 3350, tags: [...tags0, ['nonce', String(n), String(bits)]], content: base.content }
+    const ev = { pubkey: PUBKEY, created_at, kind, tags: [...tags, ['nonce', String(n), String(target)]], content }
     const id = S.eventId(ev)
-    if (S.leadingZeroBits(id) >= bits) return { ...ev, id }
+    if (accept(S.leadingZeroBits(id))) return { ...ev, id }
   }
 }
-const written = (name, created_at) => mine({ created_at, caps: CAPS, tags: [], content: DNAS[name] })
+const plainEvent = (kind, created_at, tags, content) => { const ev = { pubkey: PUBKEY, created_at, kind, tags, content }; return { ...ev, id: S.eventId(ev) } }
+const written = (name, created_at, caps = CAPS) => plainEvent(3350, created_at, caps ? [capsTag(caps)] : [], DNAS[name])
 
 const out = {
-  note: 'Golden vectors for DECK-0008 (Seeds), produced by seeds-vectors.mjs from seeds-reference.mjs. Not normative: where this file disagrees with DECK-0008, the DECK is right. Block hashes are written as block explorers display them; `blocks` maps every height this file uses to its hash. DNA events are unsigned stand-ins whose ids carry their NIP-13 work; a real DNA event is signed. SNO hashes are SHA-256 of the compact JSON of the bloom payload (DECK-0008 §5.5), keys in the order v, name, unit, extent, mode, vertices, ticks, colors, faces.',
+  note: 'Golden vectors for DECK-0008 (Seeds), produced by seeds-vectors.mjs from seeds-reference.mjs. Not normative: where this file disagrees with DECK-0008, the DECK is right. Block hashes are written as block explorers display them; `blocks` maps every height this file uses to its hash. Events are unsigned stand-ins: a written DNA carries no work, a mixed DNA carries work at the mix floor, and a seed carries work at the price of its DNA, all in their ids; real events are signed. SNO hashes are SHA-256 of the compact JSON of the bloom payload (DECK-0008 §5.5), keys in the order v, name, unit, extent, mode, vertices, ticks, colors, faces.',
   constants: { TICK: S.TICK, STEP: S.STEP, ONE: S.ONE, N: S.N, CLOCK_DEPTH: S.CLOCK_DEPTH, MIX_DELAY: S.MIX_DELAY, MIX_DEPTH_MAX: S.MIX_DEPTH_MAX, CLAMP_MARGIN: S.CLAMP_MARGIN, limits: S.LIMITS, TERRAIN_DOMAIN_V2: S.TERRAIN_DOMAIN_V2, TERROIR_DOMAIN: S.TERROIR_DOMAIN, MIX_DOMAIN: S.MIX_DOMAIN, price: S.PRICE },
   blocks: BLOCKS.hashes,
 }
@@ -876,7 +875,7 @@ const settleClock = (createdAt) => { for (let c = 970410; c <= LAST; c++) if (S.
 {
   const C0 = T[970506] + 60
   const ev = { fiddlehead: written('fiddlehead', C0 - 86400), 'sword fern': written('sword fern', C0 - 86400), oak: written('oak', C0 - 86400), coral: written('coral', C0 - 86400) }
-  const commit = (mother, father, anchor, created_at, extra = []) => mine({ created_at, caps: CAPS, content: '', tags: [['e', mother.id, '', 'mother'], ['e', father.id, '', 'father'], ['block', String(anchor), blockHash(anchor)], ...extra] })
+  const commit = (mother, father, anchor, created_at, extra = []) => mineEvent(3350, created_at, [['e', mother.id, '', 'mother'], ['e', father.id, '', 'father'], ['block', String(anchor), blockHash(anchor)], ...extra, capsTag(CAPS)], '', S.MIX_FLOOR)
   const mixes = []
   // anchor: the clock block (tip minus 6) of the writer; created_at: a minute after the tip it saw
   const run = (what, Aname, A, Bname, B, mEv, fEv, anchor, extra = [], parentOutcomes = [], late = 60) => {
@@ -914,6 +913,26 @@ const settleClock = (createdAt) => { for (let c = 970410; c <= LAST; c++) if (S.
     mixes,
     child_growth: { what: 'a seed of fiddlehead x sword fern (the first mix) planted at 970600 at coordA, day 30 and 6 blocks', planted: 970600, clock: 970600 + 30 * 144 + 6, caps: CAPS, generation: g.g, vertices: g.sno.vertices.length, sno_sha256: S.sha256hex(Buffer.from(g.json, 'utf8')) },
   }
+  // ---------- seeds: each carries NIP-13 work at its DNA's price, once per planting ----------
+  const crystalFree = written('crystal', C0 - 86400, null)
+  const seedTags = (dna, planted) => [['dna', dna.id, ''], ['planted', String(planted)], ['C', coordA], ['-']]
+  const seed = (what, dna, dnaCaps, planted, tipTime, target, accept) => {
+    const price = S.price(dnaCaps)
+    const ev = mineEvent(3351, tipTime + 30, seedTags(dna, planted), '', target, accept)
+    return { what, dna: dna.id, dna_caps: dnaCaps, price, event: ev, leading_zero_bits: S.leadingZeroBits(ev.id), committed_target: target, grows: S.workOk(ev, price) }
+  }
+  const p21 = S.price(CAPS)
+  out.seeds = {
+    note: 'Seeds are signed in a real bag; these are unsigned stand-ins whose ids carry their work. Each plants at coordA, at the clock block of a planter whose tip was 6 blocks higher.',
+    free_dna: crystalFree,
+    cases: [
+      seed('a planting of the fiddlehead (caps 8,000, 6,000, 40)', ev.fiddlehead, CAPS, 970524, T[970530], p21),
+      seed('a planting of the first mixed child, after its outcome block', f1a.ev, CAPS, 970600, T[970606], p21),
+      seed('a planting of the crystal published without a caps tag: the free caps, the base price', crystalFree, S.BASE_CAPS, 970524, T[970530], S.price(S.BASE_CAPS)),
+      seed('a planting of the fiddlehead mined to 16 bits only, committed target 16: skipped', ev.fiddlehead, CAPS, 970524, T[970530], 16, (lz) => lz >= 16 && lz < p21),
+      seed('a planting of the fiddlehead whose committed target says 21 but whose id has fewer than 21 leading zero bits: skipped', ev.fiddlehead, CAPS, 970524, T[970530], p21, (lz) => lz >= 16 && lz < p21),
+    ],
+  }
 }
 
 // ---------- the price of caps ----------
@@ -924,8 +943,7 @@ const settleClock = (createdAt) => { for (let c = 970410; c <= LAST; c++) if (S.
     { vertices: 65537, symbols: 2048, generations: 32 }, { vertices: 0, symbols: 2048, generations: 32 },
     { vertices: 2048, symbols: 16385, generations: 32 }, { vertices: 2048, symbols: 2048, generations: 257 },
   ].map((c) => ({ caps: c, bits: S.price(c) }))
-  const e = mine({ created_at: 1790000000, caps: S.BASE_CAPS, tags: [], content: DNAS.crystal })
-  out.price = { rows, mined_at_base_price: { event: e, leading_zero_bits: S.leadingZeroBits(e.id) } }
+  out.price = { mix_floor: S.MIX_FLOOR, rows }
 }
 
 process.stdout.write(JSON.stringify(out, null, 1) + '\n')

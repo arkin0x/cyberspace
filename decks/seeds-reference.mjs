@@ -23,7 +23,9 @@ export const TERROIR_DOMAIN = 'CYBERSPACE_SEED_TERROIR_V1'  // DECK-0008: the pr
 export const MIX_DOMAIN = 'CYBERSPACE_SEED_MIX_V1'          // DECK-0008: new
 export const TERRAIN_CELL_BITS = [3, 7, 9, 11]
 
-// The price of a DNA's caps (DECK-0008 §7). Provisional numbers.
+// The price of a DNA's caps (DECK-0008 §7), paid by every seed that plants it; a written DNA is free
+// to publish, and a mixed DNA pays the fixed mix floor. Provisional numbers.
+export const MIX_FLOOR = 20
 export const PRICE = {
   base: 16,
   caps: {
@@ -586,6 +588,13 @@ export function price(caps) {
   let bits = PRICE.base
   for (const k of ['vertices', 'symbols', 'generations']) { const b = capBits(caps[k], PRICE.caps[k]); if (b === null) return null; bits += b }
   return bits
+}
+// NIP-13 work on an event (a seed at its DNA's price, a mixed DNA at the mix floor): the committed
+// target is a section 10 decimal at least the price, and the id has at least that many leading zero bits.
+export function workOk(ev, bits) {
+  const t = ev.tags.find((x) => x[0] === 'nonce')
+  if (!t || !isDecimal(t[2]) || Number(t[2]) < bits) return false
+  return leadingZeroBits(ev.id) >= bits
 }
 // NIP-01 event id and NIP-13 difficulty
 export const eventId = (ev) => sha256hex(Buffer.from(JSON.stringify([0, ev.pubkey, ev.created_at, ev.kind, ev.tags, ev.content]), 'utf8'))
