@@ -1,7 +1,7 @@
 // Golden vectors for DECK-0008 (Seeds). Run from this directory with Node 18 or later
 // and no dependencies:
 //   node seeds-vectors.mjs > seeds-vectors.json
-// It takes about a minute and a half, most of it mining the NIP-13 work of the DNA events.
+// It takes about two minutes, most of it mining the NIP-13 work of the DNA events.
 // Every value comes from seeds-reference.mjs. The block hashes and header times below
 // are real Bitcoin blocks, read from mempool.space (read-only GETs) on 2026-11-09 and
 // 2026-11-10. The DNA events are unsigned: a vector needs their ids, which carry the
@@ -12,18 +12,226 @@ import * as S from './seeds-reference.mjs'
 const BLOCKS = {
   hashes: {
     970400: '000000000000000000016242c942ba251f2dbfb6d2faa1e29c6ec58967aee578',
+    970401: '00000000000000000000ee5d7efffe9460c903dd90196bab791fbac0ba959afc',
+    970402: '00000000000000000001127a990d2786f60a9997040181bf3308d27750cd570e',
+    970403: '00000000000000000000cf98017be585521a2a84e4030e20021565479c6218fe',
+    970404: '0000000000000000000141e6be4189208cd48e16c8d4e7c59ac5a2a6bb47c269',
+    970405: '00000000000000000001124c99a956a24e8570d9afb7e51266aab72fe2473aed',
+    970406: '0000000000000000000154af660b62a1faa76a71f5c1b6f4f09d8a0da8d1061a',
+    970407: '000000000000000000012f5d7f239fecdf9e2007d42a6dc97a264a62881d8100',
+    970408: '00000000000000000000e9e3031f48608108b8bc132cdd94bbcfdb16137b9dd5',
+    970409: '0000000000000000000200edb11fe5bfd615b5fce7bbe372f323269d1b97eb97',
+    970410: '000000000000000000010ec2f1cbed0efbe5139de076ab1464d4377dacfc93c3',
+    970411: '000000000000000000021447e8b980f788b4a58120f456a2a4298f5be66d2f15',
+    970412: '0000000000000000000159956a8f2cc5e2087aa9a5c21aaebb4b6bc92810bb18',
+    970413: '00000000000000000001f674dc543ee771b7ab473849dc51a8e470830cd6b68a',
+    970414: '00000000000000000001cce2d38d81baa21431f3d5447e7be44ad6885c7dc73e',
+    970415: '00000000000000000000556491bf4cd56e9e1d49f88bd5b87dbad1e1563bcf36',
+    970416: '00000000000000000001e0a6f58797ab205005aaada003415beceae6318c9095',
+    970417: '00000000000000000000f204d4816fd40ae45998e5bc310a8e17ce7c63afd135',
+    970418: '0000000000000000000006eb598d030f2111353f4374be0906fcb4b625d167c6',
+    970419: '000000000000000000016dfc75388236a08ad98ac6cfc4822159cce83ef46ed6',
+    970420: '00000000000000000001d06cd592fbdbb1d5e975ab628adccc4f29fc1876ff9c',
+    970421: '000000000000000000000dc3b49b6e6abc649406be958007dea9f89deb22d455',
+    970422: '00000000000000000001ccfa779d30bd648534a6c9048233e10a0b4f24653bb7',
+    970423: '00000000000000000000e4591424499844694b497f22a798c6df3b6a95edcd78',
+    970424: '00000000000000000000eb91a11ccf827a859b2ca25b89a63106372c1b6d2e05',
+    970425: '00000000000000000001a22c08622961c9fc0a1b063510bf5fc9141577b77537',
+    970426: '0000000000000000000170de061ef1b3fcb9ace091e2aa44f279dbf0ffdf04dd',
+    970427: '00000000000000000002062aa70a10872881ee524e882ad730d65ddf7edd7513',
+    970428: '00000000000000000000298d0cbb7aec014915fa782f51e8cb784cf875bb2b60',
+    970429: '000000000000000000001d2b879045c8ffbf974a2de7751fd764d2d671a91379',
+    970430: '00000000000000000000bf5dcfc3dc43382bf3f6318796f9088a6e82b0eab349',
+    970431: '00000000000000000001d4ce4ae2debfcde3bfec24ac370eaec805416b49a787',
+    970432: '000000000000000000021155c9a6758ce298f7ec6da28a48f366777302e4231d',
+    970433: '00000000000000000000d1aaf714e86829a8d454d8581f2ed07a830c13237a04',
+    970434: '0000000000000000000097b63ce6fa709d453e571ed09a9ed32a07b33cdde944',
+    970435: '000000000000000000016ef485419c3dd38ca52b74499f13cd318c5e771cf450',
+    970436: '00000000000000000001598f57fd7325833d210a661296eb7e204e1deb9ae7e6',
+    970437: '00000000000000000000afef0a99ff137e6761cfa979e425f1469e02c6bdb8ff',
+    970438: '00000000000000000001fd39b2ae809bc6224ab5a8a6bf426fc579508df8b698',
+    970439: '00000000000000000000817372c12c7ea5c9e255233719f51b200c9dd5896928',
+    970440: '000000000000000000019b1774c050ea82acb2cbb4dc88f32a44d3fec2d1cb34',
+    970441: '00000000000000000000a006f522a4b3ba11782ca6307a851697275fd7fb42fd',
+    970442: '00000000000000000000a5e80922062ff938401b65f4053a20b507cb0667cf41',
+    970443: '00000000000000000001c234533a9fe9f61492f4d1d73cc033c0155f3c40977e',
+    970444: '000000000000000000012bdc70da12451420e3c38a0c7c15f6e3c11aa70e7aef',
+    970445: '00000000000000000000f94203f4fec418da96f6f432fc08934665991493fa4c',
+    970446: '00000000000000000001642e47930b60909cb6200d76fa3ec322b6581b45a762',
+    970447: '000000000000000000003964e08fdd34507bae67ee73ad209710c10de7a08bfe',
+    970448: '00000000000000000000e692a658829e6771e981cb612b6f622bbf3ed83d0da4',
+    970449: '000000000000000000016a7ba62fbc5ab6f45bf39fbc045a530cffdc1262367a',
+    970450: '00000000000000000001a851c7a7d0bb862c2e23eec41c6b305a3dea1ee4fbe4',
+    970451: '0000000000000000000155c39359737e8acffefc83a27ca75a5828147118301d',
+    970452: '00000000000000000000a44e92dea2aeb5cfdf4c003b9bb9990ad0864a6c6179',
+    970453: '00000000000000000001ea065ab61215578f4e72e1dd1ed8cfadaf52bfd9dfce',
+    970454: '00000000000000000001dead27f253a4a0ed3e634a815a9bc82115c2212f25e4',
+    970455: '00000000000000000001ae4415f11474f2acb8b48378d52fc47a00c31a2884e7',
+    970456: '000000000000000000015186b412c37217047b4dd31841f21e9656bccb9266c6',
+    970457: '0000000000000000000104a95891f5379eb5efd14b683a25d4f3e5bbe5948ee2',
+    970458: '00000000000000000001c709ca9e7f1d0675e05a4dd64731e4648c8972a5d76b',
+    970459: '0000000000000000000001b9ce6fade6b789394b08aaed79ffafa74a9e888a52',
+    970460: '00000000000000000000a3921bddd89484dbab9f1d26201a5fcb53df8aad6f83',
+    970461: '00000000000000000001cece643543d8c2fb53f8a00abb898b25130fac382d9e',
+    970462: '00000000000000000001b2b15bbaeedb21037193beb84ab080943b19e70b2995',
+    970463: '00000000000000000000db073d5255d0cd1f3dd4428d50d1a3243423bab9c70e',
+    970464: '000000000000000000015636c35fc9d0fb6b8c655c6634740a9501d1678da766',
+    970465: '00000000000000000001145750a79c49256da7fcb55012bbd8af014d863123a8',
+    970466: '00000000000000000000042a88e8154e9e4ed7283f85235d8e4a7d0d973e96f7',
+    970467: '000000000000000000016b34dcdf149900b44d1d3b69c8af7b848d7abf5ca1ef',
+    970468: '000000000000000000021c35d13758d1851bb0e0b8381c379fd9549209ce0a3d',
+    970469: '0000000000000000000181489bc6ee61a7c165d767e91b0247b8543482e18928',
+    970470: '00000000000000000000fdebfe67484ebf102d80837d6f6153f1e5720485c41a',
+    970471: '00000000000000000000a8adf5a5eefc68d05a63a6806642d4c92728e985f12b',
+    970472: '000000000000000000008c131ce6d930b974650214b08a23ac376de2c6824082',
+    970473: '00000000000000000000b2a2fbc7e70d21be6f242af2e64ff8e64a8bc9246250',
+    970474: '00000000000000000001bc72ca6b40438ba51d985bbcd941a75a5d73201bab83',
+    970475: '00000000000000000000cf4779d6866ebdc94b1addd875ef02e10c01e7279e5e',
+    970476: '00000000000000000000e15dedba82419f0447b17cb49dca84f0d04880b3414e',
+    970477: '00000000000000000000bccb675aa0f743eecaf9c0a32f44efeea2505ec41d58',
+    970478: '00000000000000000000c020f16867a49620bc3718b5405c95b4752c27da958a',
+    970479: '000000000000000000019bf3939014a4812fadc2538cab75d0e8e8eb4f3f805f',
+    970480: '00000000000000000001a54eee8f96936aaf34247ef00542368935188d3459b9',
+    970481: '0000000000000000000100d2514b5f872e0e4d42aec30041350e1d4d530506ea',
+    970482: '000000000000000000003f9e5eb6c1d63a460856f9bebd069b98cc6dd04710da',
+    970483: '000000000000000000006413fd432a73176e02c9bd773fe43075f8095010c304',
+    970484: '000000000000000000006739218ca2abc06cee8a2eea7f6cf046579f876cd4be',
+    970485: '0000000000000000000186850c635f8e30170ee20bc741876468d805c45398b7',
+    970486: '000000000000000000009504fbca4bf8fe17a94c3a4cf4057aa542c303b1c91e',
+    970487: '00000000000000000000c3e698da763342d791169b90155251d9c3ed3bc668f5',
+    970488: '00000000000000000000cdde0d57baa9bce3b4909c322fa9dc3a33be2a6f8167',
+    970489: '00000000000000000000c96f7eb6fb5a877b119015fa1b4c4d0c34607d46063b',
+    970490: '00000000000000000000a0228c5306a347437c636428b85b7d26f4bb30c40e9f',
+    970491: '00000000000000000000c4a4a4121cb0fece4308ecee0003de2da0e5bdc7a3d1',
+    970492: '00000000000000000001d2c4d3eb5ae75fbd6e2f817a5947117b20a9925dfa7e',
+    970493: '000000000000000000017596c39c656930a8fea630f31ac74f0f4171d653cd51',
+    970494: '0000000000000000000202c542ddfd00e381c4da9741064c25c454c116de0d94',
+    970495: '000000000000000000008d74a39a1e30f6696b86137eafdd1daa0399a49e2ef9',
+    970496: '000000000000000000009011ab8b37ebd25473e16ff95e7af31ec22bee55c2b1',
+    970497: '000000000000000000019bf8655892e94c6d0b7768ee20bbd20cc08db2b4c097',
+    970498: '00000000000000000001683a72df9a22322b2117aab9a1b264c5284045702d51',
+    970499: '00000000000000000001e1a493b8f6902702911c876179137d7ff23be71f99a0',
     970500: '00000000000000000001190ed1dcc169460315b60f7271ffc8d85dd41b63f363',
     970501: '000000000000000000007f286f5dc58017d7d1767647f5973c614953d26fabc7',
     970502: '0000000000000000000212f76085176143488791dd07a554654de604ea574a0b',
     970503: '000000000000000000021932cdf703e64226aa9fb7ee2c9b6d88d17c654a66d6',
+    970504: '0000000000000000000164b3da4f006a224fb9526183e6ff1a94a6b4f26d0f8b',
+    970505: '00000000000000000001ada6aa30d53fd0b548fbf065198abc9048f401d71de0',
+    970506: '00000000000000000000b5b4f162f748d8ae4940b31061dff040f80601a131ee',
+    970507: '00000000000000000001ec3f183cf87a623516376df048fed10a1696ed0f328f',
+    970508: '000000000000000000003861f2b30ceefec4b4ae3eaba7324a64af105013b1cf',
+    970509: '00000000000000000001f0db45b07c242e772c90f39b05855eb24e1d93602b89',
+    970510: '00000000000000000001d475a45969bf4991e5351185e475b52a5f523be8aa80',
+    970511: '00000000000000000000c3e40772b2db3131705464c93b5b93a1ce24d2a8933b',
+    970512: '000000000000000000010b018f9af14fedf9c65900b18adc6c418d56aa1a9aee',
+    970513: '00000000000000000001667107de71d761145ee6a8378cc8497ff94085bea4e7',
+    970514: '000000000000000000001b89a4d963a7495cdc712eda85a6214f618b59f22a5a',
+    970515: '0000000000000000000058c39e36a4c65365ba93fc6504a1208107934f6ac0f8',
+    970516: '0000000000000000000075970693e8c177176205517ef57fe14e8243bc612151',
+    970517: '00000000000000000001981d015c4c9b1f4344beee08407c826756b6b1edd94e',
+    970518: '00000000000000000000d7c447c36b689aa9ccb277887233b6b8edc7e66006bd',
+    970519: '0000000000000000000218fb0ecd73aad083e298fbc202b5303f9728c3660d43',
+    970520: '000000000000000000014f6d4045dc238f5deb5c8f2941e03ca871b1e38bd7ae',
+    970521: '00000000000000000000e9d000f01d1850128f5d5c4760da53bd3944f85364ee',
+    970522: '000000000000000000007ed9af8ab0940aaac493035a2d03f35d8ead10dfac2a',
+    970523: '00000000000000000000bd2ed89f509110b171eff03e20ec7611fca23557a2b9',
+    970524: '00000000000000000000be7ab1a89ddb29d32f82fa501f51335808969aeae1ca',
+    970525: '00000000000000000000f19b402ec63d42e0fcf0c3e4cdaaca473f3378c6c4c8',
+    970526: '00000000000000000001527ff5f03b7263e08cc756a8c6672cec6e24635fe0a3',
+    970527: '0000000000000000000106fabf9968145317682006ec4f15805be9d032cec923',
+    970528: '000000000000000000012691a3d39796a019b58e3db352d6a8a6e259e521e790',
+    970529: '000000000000000000011c2afd381831d31ceb5eeaab1cc0e3c4f08d6312993b',
+    970530: '0000000000000000000179967ff5c2580d1665f6f71cf92747d379e31503baec',
+    970531: '00000000000000000001ef9f3fe3a4de896ad0645a1392b1ec3f786cc445d662',
+    970532: '00000000000000000000f47a1a059319e677d10714694a4357cc5af8b1c456bf',
+    970533: '0000000000000000000187d7253203d6602728da8416e36e3760a7638abbcc7e',
+    970534: '000000000000000000019207fda24122ec1cfe2617e8466db74218ecc06a91d2',
+    970535: '000000000000000000009df5021fa2af2ba9ff85188a2ea4c76b7177afe3770f',
     970536: '00000000000000000000cf1f1ad5ef2dae2431b986211e4e9660b143cf4f60a6',
     970537: '00000000000000000001bdff73c2b07c3b12002d3c9bbb512bf3e423b5c9e389',
     970538: '000000000000000000011f1c75aab663f15bbbcdeb7f3b28cef9f1b8b889a84f',
     970539: '000000000000000000014c2951a2220b1c07ce90e814266d6d4e31ac14afc39f',
     970540: '00000000000000000000a6153701a8e47ef24844b627d8bc14defd461fc1186a',
+    970541: '0000000000000000000014690f405c8651369691b133dce8b176b88cdf9aaf02',
+    970542: '00000000000000000000ed5932a0a68e8d43e6e98be05ea0ad73a6fcbbe9bc41',
+    970543: '00000000000000000000b53c5385fdba0ecae3f64d227781365b3bc464cbc7ea',
     970544: '000000000000000000018e2630954cf08dd01574789ddf0a802fc034e1b6ba74',
+    970545: '000000000000000000018bee4a1759e02b289063d6d5a9afe704dd68d50101dc',
+    970546: '000000000000000000007ad25647e8a722dded76671624a07fdc554b26e940e1',
+    970547: '0000000000000000000193f7f86939c64df366ca2eb137946aa9cfb9b3588fc6',
+    970548: '00000000000000000000ad5735b3770a18d0f749952dfdb4c05e94105550e917',
+    970549: '00000000000000000001c96938404a2d973d69172f079909d3e050daf3c83c02',
+    970550: '0000000000000000000123a71c87706b99e6ee6a0163af3fad98735b34b28fd7',
+    970551: '00000000000000000000d27b5f3259be093231403b08fb597d3df0b387f26822',
+    970552: '00000000000000000000de017fee541d2c15a7b8170dc9859cf3219da2d06599',
+    970553: '0000000000000000000115c7e0deaec1693a45aaaad6801791eaa689bc6ef86e',
+    970554: '000000000000000000003ad2e8441f8ee840f32dace1200177dc958123796df2',
+    970555: '000000000000000000013d4af2d81d46c6462939b1a319ba1ef020b0c1945ef6',
+    970556: '00000000000000000001d8726bfaf9ac6e944e7a169ae9d8ab7cd6d9b060d219',
+    970557: '000000000000000000019444fe89f6b049f9768bd16c462d808079195c4448c5',
+    970558: '00000000000000000000a71b4f38897bc5a415aec4e7c050d71a072ca2d9acd4',
+    970559: '0000000000000000000060c00f9178382324daace7ca33c2b1aaecb5d7b14127',
+    970560: '000000000000000000016b54a005b36acd1bf309d9c6d2190f0577582bb635eb',
+    970561: '000000000000000000007c134e3f52d73e76d26ee14a002f65a3cac1dda91a45',
+    970562: '000000000000000000017dfba2103f252cfccc13f17c48a4cdfc6b09d87b8c1a',
+    970563: '000000000000000000015ad7832c14b0fc035df850e7b5f8a75209181684c628',
+    970564: '000000000000000000000317b07bee0a18fd40604518e8d18d260ca063f30c26',
+    970565: '00000000000000000001276de112425142c99cf0a4ffb794fae4e3e1341d87a0',
+    970566: '00000000000000000001cc9fe0d6d88e6dad6ab00dca0b99d8018157a32a5d15',
+    970567: '000000000000000000005c775ba78acd4d282b4823b379c9faa42c8adff0bc3b',
+    970568: '00000000000000000001d62038106eb14d0843d95b5f19a878cb3a144eec8c27',
+    970569: '000000000000000000003225542bf2f8ab2aadbaa449af26977602b793b6cde1',
+    970570: '00000000000000000001b257fda63e34549a44b9986fdbecaef952ef38831bd4',
+    970571: '0000000000000000000061dc63ab9fc0cbbfc7561b1512e8a595fc005a323bb2',
+    970572: '000000000000000000000a528f8856cb944f5862f66fdf9f55373a27393f0a01',
+    970573: '00000000000000000001c2fa2036322c843d2e2f5181092ad1f04c8be7f9a3ca',
+    970574: '0000000000000000000111ec7a032a4829b776bac2738c862066ca05ac6023a4',
+    970575: '000000000000000000005f88385458d80479e86281da50018e6a3e6aaa15ed7a',
     970576: '00000000000000000001bc401b09150a6f092579644cc5616a828949f48bbd1d',
+    970577: '000000000000000000010921402cb1033771a50caadec856bf7c2d37653130a2',
+    970578: '000000000000000000018595d41b4c02d96d24dc1939b9d857a01fa750ffd28b',
+    970579: '000000000000000000021d5e76e605c54fd763b261676e6ca6fb59b225d462fd',
+    970580: '00000000000000000001a1d86e430271dbad29d3e9693098f9b378d0eb1c9aeb',
+    970581: '000000000000000000014d8145a8b8156c68881b954a3fe39b4451dc750f7237',
+    970582: '00000000000000000001d5fb23f1e0f3a4523ab4c8ef21be3bbaba05070e0053',
+    970583: '00000000000000000001581a9e3ddf35cd91befe67e3f82b7e4db129967151e5',
+    970584: '00000000000000000001937f27f3ab5c9d12e763b994b5aa8dc04d0c49c12b23',
+    970585: '000000000000000000021aadda9f6aa9c61bc713e0fcf27e1d43a613e963915c',
+    970586: '000000000000000000016d1284d0c5c14f42cdb4f6ee7c596c70d1d70cc5f177',
+    970587: '000000000000000000009955e53561d679d9f9af300f2ddf86adc74dd86e30f7',
+    970588: '00000000000000000001737fccb4860b4144fe01968e54e507e86965fce593f7',
+    970589: '0000000000000000000011729a61b0e9d6767dfd53d8ef78836a8fcadcfc6682',
+    970590: '00000000000000000001f9ba8dc91bdcde0c423ceea3173ce95c9fa018146c33',
+    970591: '00000000000000000000e3e95db5d7be9a0ae5ac50d3cdc04ae5b2921ac4e9c0',
+    970592: '000000000000000000011878bc158f06f31208acbb607670eabd7a496d389daa',
+    970593: '000000000000000000021b1fddedf55fd43189d4f76e0055e576aae48d30ba65',
+    970594: '00000000000000000000b857e743d90e4484e0951f3f50a25b73ac707a7dd15e',
+    970595: '00000000000000000001f4437711685f9f712e9d856978b8dcfe9c5a91f49ae1',
+    970596: '0000000000000000000174269a3bea8d0511274e6a0dafbf759aa30e9341de33',
+    970597: '00000000000000000001c4253bf4ea6bc9af4e684de97bf9d22acf0802d3fd9c',
+    970598: '00000000000000000000d88996aac60260aef82e467e70a332eb88febc4e14bc',
+    970599: '000000000000000000020ff7e9bed6bf8606cbc6b2460b9b25ddbd3324fc4061',
     970600: '000000000000000000014c6d37fb203ddf57c1601b46e2be5a2388bcb4ad2981',
+    970601: '0000000000000000000142aebef25913a962a86ffd92c16e9514501312d70622',
+    970602: '00000000000000000000f61d866773618af59fdd17e6721bd4ed8871a351af01',
+    970603: '0000000000000000000080ed1d8fdc28742b3362abaca8069b624ca7dccb4803',
+    970604: '00000000000000000001137e5a583c4eb6d53015ed9d1a858b1edd15aa0d4e78',
+    970605: '00000000000000000001f77d0f299a952b3739bd8d95f43fec61d4fcccf07e79',
+    970606: '000000000000000000003bd239adda3e968218aacb384aff0ff97d59cda0ca5c',
+    970607: '000000000000000000021262db9d3d070bf39734b695f53f729b754b7d07de7f',
+    970608: '0000000000000000000083ab1affe2a4c186bd42555cd052d0599a0c9af7bc1b',
+    970609: '00000000000000000000f0b769f2a994146fb413bc765a14271faa91ca7e04ce',
+    970610: '000000000000000000008baad40ecb5106ee72a7f021257bb776997e1dedc2a3',
+    970611: '0000000000000000000099a27b317c13786f7a9c316e60f094dff9b870ce4bc5',
+    970612: '0000000000000000000126452760fce096aa23a2c5926e3445a6df4c6385811f',
+    970613: '000000000000000000009edf62fa7c027b2727e6883bfadf8cea3466240cf9b9',
+    970614: '00000000000000000000028726cff750bbea231df05df48a4985b64ba01e0dd8',
+    970615: '00000000000000000000eea7fb3277bd0b3a1f2639d21039e0e5052a8ff22a3b',
+    970616: '00000000000000000001a5d8d103088e9c9d59e9c6d59ed651a713b576bd8e9d',
+    970617: '00000000000000000001e97297123d0e1039a6c0d6b6b36e105da3cc2bb6a6b1',
+    970618: '00000000000000000000be33544360358145958f6a7c01f5ecd488c4ea3d0ebe',
+    970619: '000000000000000000009cf0cd2ad46068e955acde0724e337bc45c17ecdd7ec',
+    970620: '00000000000000000001e00da0691042ee4cc305a12669233aefd2cd27c36201',
     970688: '000000000000000000011996e35e408229def9e5c1c8b3ace2998507c2a0f129',
     970744: '000000000000000000000cc7724b59be86fd2a49ee8598924c39f8467ebb7cde',
     970832: '00000000000000000001c8607e15f23b286a549607192ebd54cb1e1b8f7f6f66',
@@ -205,6 +413,66 @@ const BLOCKS = {
     970557: 1791505914,
     970558: 1791507322,
     970559: 1791507435,
+    970560: 1791508146,
+    970561: 1791508175,
+    970562: 1791508391,
+    970563: 1791509251,
+    970564: 1791508834,
+    970565: 1791509292,
+    970566: 1791508891,
+    970567: 1791510009,
+    970568: 1791510398,
+    970569: 1791511193,
+    970570: 1791511395,
+    970571: 1791511962,
+    970572: 1791512700,
+    970573: 1791513832,
+    970574: 1791513876,
+    970575: 1791514936,
+    970576: 1791516032,
+    970577: 1791516868,
+    970578: 1791517034,
+    970579: 1791518152,
+    970580: 1791518623,
+    970581: 1791519799,
+    970582: 1791520196,
+    970583: 1791520533,
+    970584: 1791521270,
+    970585: 1791521405,
+    970586: 1791521650,
+    970587: 1791522204,
+    970588: 1791522012,
+    970589: 1791523427,
+    970590: 1791525260,
+    970591: 1791526545,
+    970592: 1791526668,
+    970593: 1791526909,
+    970594: 1791527425,
+    970595: 1791528460,
+    970596: 1791529397,
+    970597: 1791531843,
+    970598: 1791531980,
+    970599: 1791532612,
+    970600: 1791533625,
+    970601: 1791535378,
+    970602: 1791535583,
+    970603: 1791536102,
+    970604: 1791536687,
+    970605: 1791536979,
+    970606: 1791537127,
+    970607: 1791537096,
+    970608: 1791537508,
+    970609: 1791537909,
+    970610: 1791538130,
+    970611: 1791538819,
+    970612: 1791538924,
+    970613: 1791539921,
+    970614: 1791540270,
+    970615: 1791541137,
+    970616: 1791541071,
+    970617: 1791541390,
+    970618: 1791541801,
+    970619: 1791543136,
   },
 }
 const blockHash = (h) => BLOCKS.hashes[h] || null
@@ -366,9 +634,11 @@ function mine(base) {
 const written = (name, created_at) => mine({ created_at, caps: CAPS, tags: [], content: DNAS[name] })
 
 const out = {
-  note: 'Golden vectors for DECK-0008 (Seeds), produced by seeds-vectors.mjs from seeds-reference.mjs. Not normative: where this file disagrees with DECK-0008, the DECK is right. Block hashes are written as block explorers display them. DNA events are unsigned stand-ins whose ids carry their NIP-13 work; a real DNA event is signed. SNO hashes are SHA-256 of the compact JSON of the bloom payload (DECK-0008 §5.4), keys in the order v, name, unit, extent, mode, vertices, ticks, colors, faces.',
+  note: 'Golden vectors for DECK-0008 (Seeds), produced by seeds-vectors.mjs from seeds-reference.mjs. Not normative: where this file disagrees with DECK-0008, the DECK is right. Block hashes are written as block explorers display them; `blocks` maps every height this file uses to its hash. DNA events are unsigned stand-ins whose ids carry their NIP-13 work; a real DNA event is signed. SNO hashes are SHA-256 of the compact JSON of the bloom payload (DECK-0008 §5.5), keys in the order v, name, unit, extent, mode, vertices, ticks, colors, faces.',
   constants: { TICK: S.TICK, STEP: S.STEP, ONE: S.ONE, N: S.N, CLOCK_DEPTH: S.CLOCK_DEPTH, MIX_DELAY: S.MIX_DELAY, MIX_DEPTH_MAX: S.MIX_DEPTH_MAX, CLAMP_MARGIN: S.CLAMP_MARGIN, limits: S.LIMITS, TERRAIN_DOMAIN_V2: S.TERRAIN_DOMAIN_V2, TERROIR_DOMAIN: S.TERROIR_DOMAIN, MIX_DOMAIN: S.MIX_DOMAIN, price: S.PRICE },
+  blocks: BLOCKS.hashes,
 }
+const tryParse = (dna) => { try { S.parseDNA(dna); return null } catch (e) { return e.message } }
 
 // ---------- primitives ----------
 {
@@ -392,13 +662,19 @@ const out = {
     ['(4103, 0, 0): the same 8-gibson cell as 4096', S.xyzToCoord(4103n, 0n, 0n, 0), 0],
     ['(4104, 0, 0), plane 1', S.xyzToCoord(4104n, 0n, 0n, 1), 0],
     ['(4104, 0, 0) at scale 4', S.xyzToCoord(4104n, 0n, 0n, 0), 4],
-    ['coordA', coordA, 0], ['coordA', coordA, 4], ['coordA', coordA, 8], ['coordA', coordA, 12], ['coordA', coordA, 30], ['coordA', coordA, 84],
+    ['coordA', coordA, 0],
+    ['coordA at scale 1: its n2 reads cells of 2^10', coordA, 1],
+    ['coordA at scale 3: its n1 reads cells of 2^10 too, and differs, because byte(u) is in the preimage', coordA, 3],
+    ['coordA', coordA, 4], ['coordA', coordA, 8], ['coordA', coordA, 12], ['coordA', coordA, 30],
+    ['coordA at scale 74: n3 reads cells of 2^85, the same everywhere on a plane', coordA, 74],
+    ['coordA (plane 1) at scale 84: every cell is the whole plane', coordA, 84],
+    ['(0, 0, 0), plane 1, at scale 84: the same nibbles as coordA at scale 84', S.xyzToCoord(0n, 0n, 0n, 1), 84],
     ['coordB', coordB, 0],
   ]
   out.terroir = pts.map(([what, coord, u]) => ({ what, coord, scale: u, ...S.terroir(coord, u) }))
 }
 
-// ---------- expressions ----------
+// ---------- expressions, and texts a reader rejects or accepts ----------
 {
   const text = `dna exprs
 let a = -7 / 2
@@ -420,38 +696,68 @@ let t = K * 100 + n0 + n1 + n2 + n3 + pl
 axiom F`
   const env = S.makeEnv(S.parseDNA(text), coordA, 0)
   out.expressions = { dna: text, coord: coordA, scale: 0, values: Object.fromEntries('a b c d e f h i j k m o q r s t'.split(' ').map((n) => [n, env[n]])) }
+  const sum = (n) => Array.from({ length: n }, () => '1').join(' + ')
+  const B8 = '(' + sum(8) + ')'
+  const pad = (n) => { const head = 'dna x\naxiom F\n#'; return head + 'x'.repeat(n - head.length) }
   const bad = {
     'a parameter that shadows a gene': 'dna x\ngene curl 1 1 in 0..9\naxiom A(1)\nA(curl) -> A(curl)',
     'a parameter that shadows a builtin': 'dna x\naxiom A(1)\nA(K) -> A(K)',
+    'an empty parameter name at the end of a rule head': 'dna x\naxiom A(1)\nA(k,) -> A(k)',
+    'an empty parameter name between two': 'dna x\naxiom A(1, 2)\nA(k,,m) -> A(k)',
     'two axioms': 'dna x\naxiom F\naxiom F',
     'a gene range that runs high to low': 'dna x\ngene leaf 3 3 in 6..1\naxiom F',
     'a gene value past 1,000,000': 'dna x\ngene leaf 3 2000000 in 1..6\naxiom F',
     'an unknown name': 'dna x\nlet a = zz + 1\naxiom F',
     'a let that reads g': 'dna x\nlet a = g + 1\naxiom F',
+    'a let that reads a gene declared on a later line': 'dna x\nlet a = leaf + 1\ngene leaf 3 3 in 1..6\naxiom F',
     'two comparisons in a row': 'dna x\nlet a = 1 < 2 < 3\naxiom F',
+    'an expression of depth 17 (a sum of 17 terms)': 'dna x\nlet a = ' + sum(17) + '\naxiom F',
+    'an expression of 65 nodes (depth 12)': 'dna x\nlet a = ' + [B8, B8, B8, B8].join(' * ') + ' + 1\naxiom F',
+    'a successor of 65 symbols': 'dna x\naxiom A\nA -> ' + 'F'.repeat(65),
+    'a text of 8,193 bytes': pad(8193),
     'a space before an argument list': 'dna x\naxiom F (2)',
     'an empty argument': 'dna x\naxiom F(1,,2)',
+    'a trailing empty argument': 'dna x\naxiom F(1,)',
     'five arguments': 'dna x\naxiom A(1,2,3,4,5)',
     'two arrows': 'dna x\naxiom A\nA -> B -> C',
     'no axiom': 'dna x\nangle 9',
     'a keyword as a name': 'dna x\nlet chance = 1\naxiom F',
     'a non-ASCII letter outside a comment': 'dna x\nlet é = 1\naxiom F',
+    'a control character in a name': 'dna a\u0001b\naxiom F',
+    'a vertical tab inside a line': 'dna x\naxiom F\u000bF',
+    'an unpaired surrogate in a name': 'dna \ud800x\naxiom F',
     'a number that is not whole': 'dna x\nangle 2.5\naxiom F',
     'an unknown line': 'dna x\nbloom 3\naxiom F',
     'a rule that starts with a digit': 'dna x\naxiom F\n3 -> F',
     'a condition without "if"': 'dna x\naxiom A(1)\nA(n) n > 0 -> A(n)',
+    '"chance" glued to a number is not the keyword': 'dna x\naxiom A\nA if 1 chance50 -> A',
     'more than 40 rules': 'dna x\naxiom A\n' + Array.from({ length: 41 }, () => 'A -> A').join('\n'),
   }
-  out.rejected = Object.entries(bad).map(([why, dna]) => { let err = null; try { S.parseDNA(dna) } catch (e) { err = e.message } if (!err) throw new Error('accepted: ' + why); return { why, dna, error_in_reference: err } })
+  out.rejected = Object.entries(bad).map(([why, dna]) => { const err = tryParse(dna); if (!err) throw new Error('accepted: ' + why); return { why, dna, error_in_reference: err } })
   const ok = {
     'a turtle symbol as a rule head, two parameters': 'dna x\naxiom !(1, 4)\n!(t, m) if t < m -> !(t+1, m)',
-    'an empty argument list': 'dna x\naxiom F()',
+    'spaces inside a parameter list': 'dna x\naxiom A(1, 2)\nA( k , m ) -> A(k, m)',
+    'an empty argument list, and an empty parameter list': 'dna x\naxiom F() A\nA( ) -> A',
     'a "seed" line in place of "dna"': 'seed old name\naxiom F',
     'planting lines, which a reader ignores in a DNA event': 'dna x\nplanted 970400\nscale 0\naxiom F',
     'a declared standard gene outside its standard range is clamped to it': 'dna x\ngene size 500 20 in 1..900\naxiom F',
+    'alleles outside a species gene range are clamped to it': 'dna x\ngene leaf 0 9! in 1..6\naxiom F',
     'a hash inside a name starts a comment': 'dna my#1 fern\naxiom F',
+    'CRLF line ends': 'dna x\r\naxiom F\r\n',
+    'a gene name that starts with "chance" is a name, not the keyword': 'dna x\ngene chancey 1 1 in 0..9\naxiom A\nA if chancey > 0 -> A',
+    'a let that reads a standard gene declared later': 'dna x\nlet a = size + 1\ngene size 120 120 in 50..200\naxiom F',
+    'the axiom and rules read genes and lets declared after them': 'dna x\naxiom A(late)\nA(n) if n < later -> A(n + 1)\ngene late 2 2 in 0..9\nlet later = late * 2',
+    'an expression of depth 16 (a sum of 16 terms)': 'dna x\nlet a = ' + sum(16) + '\naxiom F',
+    'an expression of 64 nodes (depth 12)': 'dna x\nlet a = -(' + [B8, B8, B8, B8].join(' * ') + ')\naxiom F',
+    'a successor of 64 symbols': 'dna x\naxiom A\nA -> ' + 'F'.repeat(64),
+    'a text of exactly 8,192 bytes': pad(8192),
   }
-  out.accepted = Object.entries(ok).map(([why, dna]) => { const p = S.parseDNA(dna); return { why, dna, name: p.name, genes: p.genes.map((g) => [g.name, S.express(g), g.lo, g.hi]) } })
+  out.accepted = Object.entries(ok).map(([why, dna]) => { const err = tryParse(dna); if (err) throw new Error('rejected: ' + why + ': ' + err); const p = S.parseDNA(dna); return { why, dna, name: p.name, genes: p.genes.map((g) => [g.name, g.a.v + (g.a.d ? '!' : ''), g.b.v + (g.b.d ? '!' : ''), g.lo, g.hi, S.express(g)]) } })
+  // the axiom against the symbol cap, which needs the caps
+  const ax = 'dna x\naxiom ' + 'F'.repeat(40)
+  out.axiom_cap = [32, 40, 39].map((sym) => { let err = null; try { S.grow({ prog: S.parseDNA(ax), coord: coordA, planted: 970400, caps: { vertices: 2048, symbols: sym, generations: 32 }, clock: 970400, blockHash }) } catch (e) { err = e.message } return { dna: ax, symbol_cap: sym, valid: err === null } })
+  out.name_tags = ['', 'blue giant hope', 'é'.repeat(64), 'é'.repeat(65), 'kid\nF -> F F F F', 'kid -> F', 'a#b', 'tab\there', ' leading', 'trailing ', 'del\u007f', 'c1\u0085', 'lone \udc00'].map((v) => ({ value: v, verdict: S.nameTagVerdict(v) }))
+  out.decimal_tag_values = ['0', '7', '970524', '007', '00', '-1', '+1', '1.0', '', ' 1', '1 ', '1e3', '١'].map((v) => ({ value: v, valid: S.isDecimal(v) }))
 }
 
 // ---------- growth ----------
@@ -476,58 +782,77 @@ axiom F`
   add('scale 4: SNO unit 4 and terroir on cells 16 times wider', 'fiddlehead', P.fiddlehead, coordA, P0, 4, CAPS, P0 + 30 * 144 + 6, false)
   add('the base caps, at the base price', 'crystal', P.crystal, coordA, P0, 0, S.BASE_CAPS, P0 + 30 * 144 + 6, false)
   add('small caps: 512 vertices, 300 symbols, 8 generations', 'sword fern', P['sword fern'], coordA, P0, 0, { vertices: 512, symbols: 300, generations: 8 }, P0 + 30 * 144 + 6, false)
-  out.growth = { blocks_per_generation: S.N, dnas: DNAS, cases }
+  // the turtle: f, \, /, negative and default tropism, |, bare turn symbols, leaves and beads at and past
+  // their bounds, width 0, colors past 255 and below 0 under hue and tone, more than 64 pushes, the position clamp
+  const turtle = 'dna turtle test\nangle 20\nwidth 3\ngene size 200 200 in 10..400\ngene hue 5 5 in 0..23\ngene tone -2 -2 in -4..4\n' +
+    "axiom '(40) F(10) f(10) \\(30) F(10) /(15) T(-20) F(10) T(30) F(10) T F | F(10) + F - F & F ^ F L O L(60) O(-3) !(0) F(10) ! '(300) F(5) '(200) F(5) '(-5) F(5) '(7) " +
+    '['.repeat(65) + ' +(45) F(5) ] F(5) ' + ']'.repeat(64) + ' F(100) F(100) F(100) F(100) F(100) F(100) B\n' +
+    'B -> f(10) F(2) B'
+  P.turtle = S.parseDNA(turtle)
+  add('the turtle test: every symbol, the stack beyond 64, the position clamp, f growing halfway through day 2', 'turtle', P.turtle, coordA, P0, 0, S.BASE_CAPS, P0 + 2 * 144 + 72, true)
+  out.growth = { blocks_per_generation: S.N, dnas: { ...DNAS, turtle }, cases }
 }
 
 // ---------- the planted-height clamp ----------
+const T = BLOCKS.times
+const LAST = Math.max(...Object.keys(T).map(Number))
+const settleClock = (createdAt) => { for (let c = 970410; c <= LAST; c++) if (S.settled(createdAt, c, T)) return c; throw new Error('never settles in the window') }
 {
-  const T = BLOCKS.times
   const at = (h, s) => T[h] + s
+  const nm = at(970445, 7200)   // created_at - 7200 is block 970445's time, which is below block 970444's
+  if (!(T[970445] < T[970444] && T[970446] > T[970445])) throw new Error('the non-monotonic vector no longer fits')
   const cases = [
-    ['an honest planting: the clock block when the seed was signed', 970524, at(970530, 30)],
-    ['a planting backdated 120 blocks, with an honest created_at', 970410, at(970530, 30)],
-    ['a planted height in the future', 970600, at(970530, 30)],
-    ['a planting exactly at the floor', null, at(970530, 30)],
+    ['an honest planting: the clock block when the seed was signed (tip 970530)', 970524, at(970530, 30)],
+    ['a planting backdated 114 blocks, with an honest created_at', 970410, at(970530, 30)],
+    ['a planted height in the future, capped at F', 970600, at(970530, 30)],
+    ['header times that run backwards: E is the highest height at or below the threshold, 970445, though 970444 is above it', 970440, nm],
   ].map(([what, stated, created_at]) => {
-    const E = S.clampFloor(created_at, T)
-    const s = stated === null ? E : stated
-    return { what, stated: s, created_at, floor: E, effective: Math.max(s, E) }
+    const c = settleClock(created_at)
+    const E = S.highestAtOrBelow(created_at - S.CLAMP_MARGIN, T, c), F = S.highestAtOrBelow(created_at + S.CLAMP_MARGIN, T, c)
+    return { what, stated, created_at, settled_from_clock: c, mtp_at_that_clock: S.mtp(c, T), not_settled_at_clock: c - 1, E, F, effective: S.effectiveHeight(stated, created_at, c, T), effective_one_clock_earlier: S.effectiveHeight(stated, created_at, c - 1, T) }
   })
   out.clamp = { margin_seconds: S.CLAMP_MARGIN, header_times: T, cases }
 }
 
 // ---------- mixing ----------
 {
-  const C0 = BLOCKS.times[970500] + 60
+  const C0 = T[970506] + 60
   const ev = { fiddlehead: written('fiddlehead', C0 - 86400), 'sword fern': written('sword fern', C0 - 86400), oak: written('oak', C0 - 86400), coral: written('coral', C0 - 86400) }
   const commit = (mother, father, anchor, created_at, extra = []) => mine({ created_at, caps: CAPS, content: '', tags: [['e', mother.id, '', 'mother'], ['e', father.id, '', 'father'], ['block', String(anchor), blockHash(anchor)], ...extra] })
   const mixes = []
-  const run = (what, Aname, A, Bname, B, mEv, fEv, anchor, created_at, extra = []) => {
+  // anchor: the clock block (tip minus 6) of the writer; created_at: a minute after the tip it saw
+  const run = (what, Aname, A, Bname, B, mEv, fEv, anchor, extra = [], parentOutcomes = [], late = 60) => {
+    const created_at = T[anchor + 6] + late
     const c = commit(mEv, fEv, anchor, created_at, extra)
-    const commitHeight = Math.max(anchor, S.clampFloor(created_at, BLOCKS.times))
+    const settle = settleClock(created_at)
+    const commitHeight = S.effectiveHeight(anchor, created_at, settle, T)
     const outcome = commitHeight + S.MIX_DELAY
     const s0 = S.mixWord(blockHash(outcome), c.id)
-    const hybrid = extra.some((t) => t[0] === 'hybrid')
-    const nameTag = extra.find((t) => t[0] === 'name')
-    const r = S.mixDNA(A, B, s0, { hybrid, name: nameTag && nameTag[1] })
-    const v = { what, mother: Aname, father: Bname, event: c, commit_height: commitHeight, outcome_height: outcome, outcome_hash: blockHash(outcome), readable_at_clock: outcome, mix_hash: S.sha256hex(Buffer.concat([Buffer.from(S.MIX_DOMAIN), Buffer.from(blockHash(outcome), 'hex'), Buffer.from(c.id, 'hex')])), mix_word: s0 }
+    const v = { what, mother: Aname, father: Bname, event: c, settled_from_clock: settle, commit_height: commitHeight, outcome_height: outcome, outcome_hash: blockHash(outcome), readable_at_clock: Math.max(outcome, settle), mix_hash: S.sha256hex(Buffer.concat([Buffer.from(S.MIX_DOMAIN), Buffer.from(blockHash(outcome), 'hex'), Buffer.from(c.id, 'hex')])), mix_word: s0 }
+    let r
+    if (parentOutcomes.some((o) => commitHeight < o)) r = { refused: 'a mixed parent had not resolved at the commit height' }
+    else {
+      const nameTag = extra.find((t) => t[0] === 'name')
+      r = S.mixDNA(A, B, s0, { hybrid: extra.some((t) => t[0] === 'hybrid'), name: nameTag && nameTag[1] })
+    }
     if (r.refused) v.refused = r.refused
     else { v.genes = r.log.map((l) => ({ name: l.name, word: l.s, alleles_from: l.from, a: S.geneLine(l.child).split(' ')[2], b: S.geneLine(l.child).split(' ')[3], lo: l.child.lo, hi: l.child.hi, expressed: l.expressed, mutated: l.mutated })); v.child_text = r.text; v.child_sterile = r.prog.sterile }
     mixes.push(v)
-    return { ev: c, prog: r.prog }
+    return { ev: c, prog: r.prog, outcome }
   }
-  const f1a = run('fiddlehead x sword fern', 'fiddlehead', P.fiddlehead, 'sword fern', P['sword fern'], ev.fiddlehead, ev['sword fern'], 970500, C0)
-  const f1b = run('the same parents, one block later', 'fiddlehead', P.fiddlehead, 'sword fern', P['sword fern'], ev.fiddlehead, ev['sword fern'], 970501, BLOCKS.times[970501] + 60)
-  run('the two children mixed (F2), with a name tag', 'F1 at 970500', f1a.prog, 'F1 at 970501', f1b.prog, f1a.ev, f1b.ev, 970540, BLOCKS.times[970540] + 60, [['name', 'blue giant hope']])
-  run('coral with itself', 'coral', P.coral, 'coral', P.coral, ev.coral, ev.coral, 970502, BLOCKS.times[970502] + 60)
-  run('fern with coral, refused: different species', 'fiddlehead', P.fiddlehead, 'coral', P.coral, ev.fiddlehead, ev.coral, 970503, BLOCKS.times[970503] + 60)
-  const mule = run('oak with coral as a sterile hybrid', 'oak', P.oak, 'coral', P.coral, ev.oak, ev.coral, 970503, BLOCKS.times[970503] + 60, [['hybrid']])
-  run('the hybrid mixed again, refused: sterile', 'oak x coral', mule.prog, 'oak', P.oak, mule.ev, ev.oak, 970503, BLOCKS.times[970503] + 90)
-  // a seed of the first child, grown
-  const child = f1a.prog
-  const g = S.grow({ prog: child, coord: coordA, planted: 970600, scale: 0, caps: CAPS, clock: 970600 + 30 * 144 + 6, blockHash })
+  const f1a = run('fiddlehead x sword fern', 'fiddlehead', P.fiddlehead, 'sword fern', P['sword fern'], ev.fiddlehead, ev['sword fern'], 970500)
+  const f1b = run('the same parents, one block later', 'fiddlehead', P.fiddlehead, 'sword fern', P['sword fern'], ev.fiddlehead, ev['sword fern'], 970501)
+  run('the two children mixed (F2), with a name tag', 'F1 at 970500', f1a.prog, 'F1 at 970501', f1b.prog, f1a.ev, f1b.ev, 970540, [['name', 'blue giant hope']], [f1a.outcome, f1b.outcome])
+  run('the two children mixed before the first had resolved, refused', 'F1 at 970500', f1a.prog, 'F1 at 970501', f1b.prog, f1a.ev, f1b.ev, 970520, [], [f1a.outcome, f1b.outcome])
+  run('a name tag that tries to add a rule, refused', 'fiddlehead', P.fiddlehead, 'sword fern', P['sword fern'], ev.fiddlehead, ev['sword fern'], 970502, [['name', 'kid\nF -> F F F F']])
+  run('coral with itself', 'coral', P.coral, 'coral', P.coral, ev.coral, ev.coral, 970502)
+  run('fern with coral, refused: different species', 'fiddlehead', P.fiddlehead, 'coral', P.coral, ev.fiddlehead, ev.coral, 970503)
+  const mule = run('oak with coral as a sterile hybrid', 'oak', P.oak, 'coral', P.coral, ev.oak, ev.coral, 970503, [['hybrid']])
+  run('the hybrid mixed again, refused: sterile', 'oak x coral', mule.prog, 'oak', P.oak, mule.ev, ev.oak, 970540, [], [mule.outcome])
+  run('a hybrid tag on one species is ignored: a fertile child', 'fiddlehead', P.fiddlehead, 'sword fern', P['sword fern'], ev.fiddlehead, ev['sword fern'], 970504, [['hybrid']])
+  const g = S.grow({ prog: f1a.prog, coord: coordA, planted: 970600, scale: 0, caps: CAPS, clock: 970600 + 30 * 144 + 6, blockHash })
   out.mixing = {
-    parents: Object.fromEntries(Object.entries(ev).map(([k, e]) => [k, e])),
+    parents: ev,
     mixes,
     child_growth: { what: 'a seed of fiddlehead x sword fern (the first mix) planted at 970600 at coordA, day 30 and 6 blocks', planted: 970600, clock: 970600 + 30 * 144 + 6, caps: CAPS, generation: g.g, vertices: g.sno.vertices.length, sno_sha256: S.sha256hex(Buffer.from(g.json, 'utf8')) },
   }

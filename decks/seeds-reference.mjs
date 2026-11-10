@@ -17,7 +17,7 @@ export const CLOCK_DEPTH = 6     // the clock reads the block 6 below the tip
 export const MIX_DELAY = 36      // a mix's outcome block is its commit height + 36
 export const MIX_DEPTH_MAX = 8   // a mixed DNA is at most 8 mixes from written DNA
 export const CLAMP_MARGIN = 7200 // seconds: the planted-height clamp's margin
-export const LIMITS = { rules: 40, params: 4, value: 1000000, stack: 64, region: 64 }
+export const LIMITS = { rules: 40, params: 4, value: 1000000, stack: 64, region: 64, textBytes: 8192, exprNodes: 64, exprDepth: 16, successor: 64 }
 export const TERRAIN_DOMAIN_V2 = 'CYBERSPACE_TERRAIN_K_V2'
 export const TERROIR_DOMAIN = 'CYBERSPACE_SEED_TERROIR_V1'  // DECK-0008: the prototype used SEEDO_TERROIR_V1
 export const MIX_DOMAIN = 'CYBERSPACE_SEED_MIX_V1'          // DECK-0008: new
@@ -42,7 +42,8 @@ export function isqrt(n) { if (n <= 0) return 0; let r = Math.floor(Math.sqrt(n)
 const fdiv = (a, b) => Math.floor(a / b)    // floor division, toward minus infinity
 const clampV = (v) => v > LIMITS.value ? LIMITS.value : v < -LIMITS.value ? -LIMITS.value : v
 
-// lowbias32 (Chris Wellons): a 32-bit integer finalizer. Unsigned in, unsigned out.
+// lowbias32 (Chris Wellons): a 32-bit integer finalizer. Unsigned in, unsigned out. In JavaScript the
+// products MUST use Math.imul: a plain * loses the low bits once the product passes 2^53.
 export function mix32(a) {
   a = a | 0
   a ^= a >>> 16; a = Math.imul(a, 0x7feb352d)
@@ -85,7 +86,9 @@ export function terroir(hex, u = 0) {
   const nib = TERRAIN_CELL_BITS.map((b0) => {
     const bits = b0 + u, B = BigInt(bits)
     const cell = xyzToCoord((p.x >> B) << B, (p.y >> B) << B, (p.z >> B) << B, p.plane)
-    const d = sha256hex(Buffer.concat([dom, Buffer.from([bits]), Buffer.from(cell, 'hex')]))
+    // DECK-0008: above scale 0 the preimage also carries byte(u), so a cell's nibble differs between scales
+    const pre = u === 0 ? [dom, Buffer.from([bits]), Buffer.from(cell, 'hex')] : [dom, Buffer.from([u]), Buffer.from([bits]), Buffer.from(cell, 'hex')]
+    const d = sha256hex(Buffer.concat(pre))
     return parseInt(d.slice(0, 2), 16) & 0x0f
   })
   const word16 = (nib[0] << 12) | (nib[1] << 8) | (nib[2] << 4) | nib[3]
@@ -106,52 +109,59 @@ const NAME_RE = /^[A-Za-z_][A-Za-z_0-9]*$/
 const WS = '[\\t\\n\\v\\f\\r ]'
 const trimWS = (s) => s.replace(new RegExp('^' + WS + '+|' + WS + '+$', 'g'), '')
 
+// Every compiled expression carries its node count (.n) and its depth (.d), DECK-0008 §3.4:
+// an atom is one node of depth 1; an operator is one node, of depth one more than its deepest operand.
+const mk = (fn, n, d) => { fn.n = n; fn.d = d; return fn }
+const bin = (fn, l, r) => mk(fn, l.n + r.n + 1, 1 + Math.max(l.d, r.d))
 function compileExpr(src, known, where) {
   const toks = []; const re = new RegExp(WS + '*(\\d+|[A-Za-z_][A-Za-z_0-9]*|==|!=|<=|>=|[-+*/%<>()])', 'y')
   const s = trimWS(src)
   while (re.lastIndex < s.length) { const at = re.lastIndex; const m = re.exec(s); if (!m) throw new Error(where + ': cannot read "' + s.slice(at) + '"'); toks.push(m[1]) }
   let i = 0; const peek = () => toks[i], next = () => toks[i++]
-  function or() { let a = and(); while (peek() === 'or') { next(); const l = a, r = and(); a = (e) => (l(e) || r(e)) ? 1 : 0 } return a }
-  function and() { let a = not(); while (peek() === 'and') { next(); const l = a, r = not(); a = (e) => (l(e) && r(e)) ? 1 : 0 } return a }
-  function not() { if (peek() === 'not') { next(); const a = not(); return (e) => a(e) ? 0 : 1 } return cmp() }
+  function or() { let a = and(); while (peek() === 'or') { next(); const l = a, r = and(); a = bin((e) => (l(e) || r(e)) ? 1 : 0, l, r) } return a }
+  function and() { let a = not(); while (peek() === 'and') { next(); const l = a, r = not(); a = bin((e) => (l(e) && r(e)) ? 1 : 0, l, r) } return a }
+  function not() { if (peek() === 'not') { next(); const a = not(); return mk((e) => a(e) ? 0 : 1, a.n + 1, a.d + 1) } return cmp() }
   function cmp() {
     const a = add(); const op = peek()
     if (['==', '!=', '<', '<=', '>', '>='].includes(op)) {
       next(); const b = add()
       switch (op) {
-        case '==': return (e) => a(e) === b(e) ? 1 : 0
-        case '!=': return (e) => a(e) !== b(e) ? 1 : 0
-        case '<': return (e) => a(e) < b(e) ? 1 : 0
-        case '<=': return (e) => a(e) <= b(e) ? 1 : 0
-        case '>': return (e) => a(e) > b(e) ? 1 : 0
-        default: return (e) => a(e) >= b(e) ? 1 : 0
+        case '==': return bin((e) => a(e) === b(e) ? 1 : 0, a, b)
+        case '!=': return bin((e) => a(e) !== b(e) ? 1 : 0, a, b)
+        case '<': return bin((e) => a(e) < b(e) ? 1 : 0, a, b)
+        case '<=': return bin((e) => a(e) <= b(e) ? 1 : 0, a, b)
+        case '>': return bin((e) => a(e) > b(e) ? 1 : 0, a, b)
+        default: return bin((e) => a(e) >= b(e) ? 1 : 0, a, b)
       }
     }
     return a
   }
-  function add() { let a = mul(); while (peek() === '+' || peek() === '-') { const op = next(), l = a, r = mul(); a = op === '+' ? (e) => clampV(l(e) + r(e)) : (e) => clampV(l(e) - r(e)) } return a }
+  function add() { let a = mul(); while (peek() === '+' || peek() === '-') { const op = next(), l = a, r = mul(); a = op === '+' ? bin((e) => clampV(l(e) + r(e)), l, r) : bin((e) => clampV(l(e) - r(e)), l, r) } return a }
   function mul() {
     let a = un()
     while (peek() === '*' || peek() === '/' || peek() === '%') {
       const op = next(), l = a, r = un()
-      if (op === '*') a = (e) => clampV(l(e) * r(e))
-      else if (op === '/') a = (e) => { const d = r(e); return d === 0 ? 0 : Math.trunc(l(e) / d) }
-      else a = (e) => { const d = r(e); if (d === 0) return 0; const v = l(e) % d; return v < 0 ? v + Math.abs(d) : v }
+      if (op === '*') a = bin((e) => clampV(l(e) * r(e)), l, r)
+      else if (op === '/') a = bin((e) => { const d = r(e); return d === 0 ? 0 : Math.trunc(l(e) / d) }, l, r)
+      else a = bin((e) => { const d = r(e); if (d === 0) return 0; const v = l(e) % d; return v < 0 ? v + Math.abs(d) : v }, l, r)
     }
     return a
   }
-  function un() { if (peek() === '-') { next(); const a = un(); return (e) => -a(e) } return atom() }
+  function un() { if (peek() === '-') { next(); const a = un(); return mk((e) => -a(e), a.n + 1, a.d + 1) } return atom() }
   function atom() {
     const t = next()
     if (t === undefined) throw new Error(where + ': expression ends early')
     if (t === '(') { const a = or(); if (next() !== ')') throw new Error(where + ': missing )'); return a }
-    if (/^\d+$/.test(t)) { const v = clampV(parseInt(t, 10)); return () => v }
+    if (/^\d+$/.test(t)) { const v = clampV(parseInt(t, 10)); return mk(() => v, 1, 1) }
     if (KEYWORDS.includes(t)) throw new Error(where + ': unexpected "' + t + '"')
-    if (/^[A-Za-z_]/.test(t)) { if (!known.has(t)) throw new Error(where + ': unknown name "' + t + '"'); return (e) => e[t] }
+    if (/^[A-Za-z_]/.test(t)) { if (!known.has(t)) throw new Error(where + ': unknown name "' + t + '"'); return mk((e) => e[t], 1, 1) }
     throw new Error(where + ': unexpected "' + t + '"')
   }
   const f = or()
   if (i < toks.length) throw new Error(where + ': unexpected "' + toks[i] + '"')
+  // DECK-0008: validity limits on every expression (the prototype had none)
+  if (f.n > LIMITS.exprNodes) throw new Error(where + ': an expression has more than ' + LIMITS.exprNodes + ' nodes')
+  if (f.d > LIMITS.exprDepth) throw new Error(where + ': an expression is deeper than ' + LIMITS.exprDepth)
   return f
 }
 
@@ -160,7 +170,7 @@ const TURTLE = "+-&^\\/|[]!'"
 const isLetter = (ch) => /^[A-Za-z]$/.test(ch)
 const isSym = (ch) => isLetter(ch) || TURTLE.includes(ch)
 function splitTop(s) { const out = []; let d = 0, cur = ''; for (const ch of s) { if (ch === '(') d++; if (ch === ')') d--; if (ch === ',' && d === 0) { out.push(cur); cur = '' } else cur += ch } out.push(cur); return out }
-function parseString(src, known, where) {
+function parseString(src, known, where, maxSymbols = Infinity) {
   const out = []; let i = 0
   while (i < src.length) {
     const ch = src[i]
@@ -178,6 +188,7 @@ function parseString(src, known, where) {
       i = j + 1
     }
     out.push({ c: ch, args })
+    if (out.length > maxSymbols) throw new Error(where + ': a successor has more than ' + maxSymbols + ' symbols')
   }
   return out
 }
@@ -188,6 +199,9 @@ const intLine = (rest, where, kw) => {
 }
 
 export function parseDNA(text) {
+  // DECK-0008 §3.1: at most 8,192 bytes of UTF-8, and well-formed Unicode
+  if (/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(text)) throw new Error('the text is not well-formed Unicode')
+  if (Buffer.byteLength(text, 'utf8') > LIMITS.textBytes) throw new Error('the text is longer than ' + LIMITS.textBytes + ' bytes')
   const prog = { text, name: 'dna', species: '', planted: null, scale: null, mutate: 0, sterile: false, genes: [], angle: 30, width: 2, color: 7, lets: [], axiom: null, rules: [], letters: {} }
   const lines = text.split('\n')
   const names = new Set([...BUILTINS, ...STD_NAMES]); const declared = new Set()
@@ -197,6 +211,8 @@ export function parseDNA(text) {
     const line = trimWS(raw.replace(/#.*$/, ''))
     if (!line) return
     const kw0 = line.split(new RegExp(WS + '+'))[0]
+    // DECK-0008 §3.1: inside a line, the only whitespace is space and tab, and there are no control characters
+    if (/[\x00-\x08\x0a-\x1f\x7f-\x9f]/.test(line)) throw new Error(where + ': a control character')
     if (!['dna', 'seed', 'species'].includes(kw0) && !/^[\x20-\x7e\t]*$/.test(line)) throw new Error(where + ': only printable ASCII outside comments and names')
     if (line.includes('->')) {
       if (line.split('->').length !== 2) throw new Error(where + ': a rule has exactly one "->"')
@@ -246,7 +262,8 @@ export function parseDNA(text) {
     const [left, right] = line.split('->')
     const m = new RegExp('^' + WS + '*(\\S)(?:\\(([^)]*)\\))?' + WS + '*(.*)$').exec(left)
     if (!m || !isSym(m[1])) throw new Error(where + ': a rule starts with a symbol')
-    const params = m[2] ? m[2].split(',').map(trimWS).filter(Boolean) : []
+    // DECK-0008: "()" or "( )" is no parameters; otherwise every comma-separated part is one name (an empty part is invalid)
+    const params = m[2] === undefined || trimWS(m[2]) === '' ? [] : m[2].split(',').map(trimWS)
     // DECK-0008: parameters are distinct names that shadow nothing (the prototype allowed shadowing, which leaks values between symbols)
     for (const p of params) if (!NAME_RE.test(p) || names.has(p) || KEYWORDS.includes(p)) throw new Error(where + ': parameter "' + p + '" is not a free name')
     if (new Set(params).size !== params.length) throw new Error(where + ': parameter names repeat')
@@ -257,7 +274,7 @@ export function parseDNA(text) {
     if (ci >= 0) { chance = compileExpr(rest.slice(ci + 6), known, where); rest = trimWS(rest.slice(0, ci)) }
     if (/^if[\t ]/.test(rest)) cond = compileExpr(rest.slice(3), known, where)
     else if (rest) throw new Error(where + ': expected "if" or "chance"')
-    const rule = { c: m[1], params, cond, chance, succ: parseString(right, known, where) }
+    const rule = { c: m[1], params, cond, chance, succ: parseString(right, known, where, LIMITS.successor) }
     prog.rules.push(rule)
     ;(prog.letters[rule.c] = prog.letters[rule.c] || []).push(rule)
   }
@@ -422,6 +439,8 @@ export function toSNO(name, geo, unit) {
 // Grow one seed. `planted` is the effective planted height (after the clamp of §4.2),
 // `clock` the clock height (tip minus 6), `blockHash(h)` the block's hash as displayed.
 export function grow({ prog, coord, planted, scale = 0, caps = BASE_CAPS, clock, blockHash }) {
+  // DECK-0008 §3.6: the axiom is at most the symbol cap, so no string ever exceeds it
+  if (prog.axiom.length > caps.symbols) throw new Error('the axiom is longer than the symbol cap')
   const env = makeEnv(prog, coord, scale)
   const age = clock - planted
   const g = age < 0 ? 0 : Math.min(Math.floor(age / N), caps.generations)
@@ -439,14 +458,41 @@ export function grow({ prog, coord, planted, scale = 0, caps = BASE_CAPS, clock,
 }
 
 // ---------- the planted-height clamp (DECK-0008 §4.2) ----------
-// times[h] is block h's header time. E is the highest height whose header time is
-// at most created_at - 7200; the effective height is max(stated, E).
-export function clampFloor(createdAt, times) {
-  let E = -1
-  for (const [h, t] of Object.entries(times)) if (t <= createdAt - CLAMP_MARGIN && +h > E) E = +h
-  return E
+// times[h] is block h's header time. MTP(h) is the median of the header times of
+// blocks h-10 to h (BIP-113). A stated height is settled once MTP(clock) > created_at + 7200:
+// no later block can then have a header time at or below created_at + 7200, so E and F are
+// the same for every reader. E: the highest height whose header time is at most
+// created_at - 7200. F: the highest height whose header time is at most created_at + 7200.
+export function mtp(h, times) {
+  const ts = []; for (let k = h - 10; k <= h; k++) { if (times[k] === undefined) return null; ts.push(times[k]) }
+  return ts.sort((a, b) => a - b)[5]
 }
-export const effectiveHeight = (stated, createdAt, times) => Math.max(stated, clampFloor(createdAt, times))
+export const settled = (createdAt, clock, times) => { const m = mtp(clock, times); return m !== null && m > createdAt + CLAMP_MARGIN }
+export function highestAtOrBelow(t, times, clock) {
+  let H = -1
+  for (const [h, ht] of Object.entries(times)) if (+h <= clock && ht <= t && +h > H) H = +h
+  return H
+}
+// Returns null while the height is not settled (the seed is drawn at generation 0; a mix is pending).
+export function effectiveHeight(stated, createdAt, clock, times) {
+  if (!settled(createdAt, clock, times)) return null
+  const E = highestAtOrBelow(createdAt - CLAMP_MARGIN, times, clock)
+  const F = highestAtOrBelow(createdAt + CLAMP_MARGIN, times, clock)
+  return Math.min(Math.max(stated, E), F)
+}
+
+// ---------- tag values (CYBERSPACE_V2 §10) ----------
+export const isDecimal = (v) => typeof v === 'string' && /^(0|[1-9][0-9]*)$/.test(v)
+
+// ---------- the name tag of a mixed DNA (DECK-0008 §6.6) ----------
+// Empty or absent: the default name. Otherwise at most 64 code points, well-formed, no control
+// character (U+0000 to U+001F, U+007F to U+009F), no "#", no "->", and no whitespace at either end.
+export function nameTagVerdict(v) {
+  if (v === undefined || v === '') return 'default'
+  if (/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(v)) return 'invalid'
+  if ([...v].length > 64 || /[\x00-\x1f\x7f-\x9f#]/.test(v) || v.includes('->') || /^[ ]|[ ]$/.test(v)) return 'invalid'
+  return 'valid'
+}
 
 // ---------- mixing (DECK-0008 §6) ----------
 export function mixWord(blockHashHex, commitIdHex) {
@@ -459,7 +505,7 @@ export const geneLine = (g) => 'gene ' + g.name + ' ' + alleleStr(g.a) + ' ' + a
 export function mixDNA(A, B, s0, { name, hybrid = false } = {}) {
   if (A.sterile || B.sterile) return { refused: 'sterile' }
   const same = A.speciesKey === B.speciesKey
-  if (!same && !hybrid) return { refused: 'different species' }
+  if (!same && !hybrid) return { refused: 'different species' }   // a hybrid tag on one species is ignored
   const rate = Math.floor((A.mutate + B.mutate) / 2)
   const log = [], genes = []
   A.genes.forEach((ga, i) => {
@@ -483,7 +529,9 @@ export function mixDNA(A, B, s0, { name, hybrid = false } = {}) {
     log.push({ name: ga.name, s, from: ['A' + (ia + 1), gb ? 'B' + (ib + 1) : 'A' + (2 - ia)], child: g, expressed: express(g), mutated })
   })
   // DECK-0008 §6.5: the child's text, line by line from the mother's text
-  const childName = [...(name || (A.name + ' x ' + B.name))].slice(0, 64).join('')
+  const verdict = nameTagVerdict(name)
+  if (verdict === 'invalid') return { refused: 'invalid name tag' }
+  const childName = verdict === 'default' ? [...(A.name + ' x ' + B.name)].slice(0, 64).join('') : name
   const byName = Object.fromEntries(genes.map((g) => [g.name, g]))
   const head = ['dna ' + childName]
   if (!same) head.push('sterile')
