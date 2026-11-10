@@ -240,6 +240,31 @@ const lockRoomKey = new Uint8Array(sha(Buffer.concat([Buffer.from('cyberspace:do
 const roomLock = lockOf(lockRoomKey)
 const strip = ({ secret, locationKey, ...rest }) => rest
 
+// A door sealed to the region's lock, end to end: the lock secret opens the
+// door, the door gives its door secret, and the door secret with the key of
+// the door's own room gives the room key. The door stands at C, in its own
+// region of height 4, far from the region its lock asks for.
+const coordToXyz = (c) => {
+  let x = 0n; let y = 0n; let z = 0n
+  for (let i = 0n; i < BigInt(AXIS_BITS); i++) {
+    z |= ((c >> (1n + i * 3n)) & 1n) << i
+    y |= ((c >> (2n + i * 3n)) & 1n) << i
+    x |= ((c >> (3n + i * 3n)) & 1n) << i
+  }
+  return [x, y, z, Number(c & 1n)]
+}
+const [cx, cy, cz, cplane] = coordToXyz(BigInt('0x' + C))
+const doorRegion = regionOf(cx, cy, cz, cplane, 4)
+const lockedDoorSecret = key('region lock door secret')
+const lockedDoorSenderSk = key('region lock door sender'); const lockedDoorSender = getPublicKey(lockedDoorSenderSk)
+const lockedDoorPlain = JSON.stringify([['room', hex(lockedDoorSecret)]])
+const lockedDoorConv = nip44.utils.getConversationKey(lockedDoorSenderSk, regionLock.lock)
+const lockedDoorPayload = nip44.encrypt(lockedDoorPlain, lockedDoorConv, nonce32('region lock door'))
+const lockedDoorOpened = JSON.parse(nip44.decrypt(lockedDoorPayload, nip44.utils.getConversationKey(regionLock.secret, lockedDoorSender)))
+if (lockedDoorOpened[0][1] !== hex(lockedDoorSecret)) throw new Error('the region lock door does not give its door secret')
+const lockedDoor = sign({ pubkey: hider, created_at: T, kind: 3341, content: lockedDoorPayload, tags: [['C', C], ['title', 'Cistern door'], ['lock', regionLock.lock, lockedDoorSender], ['requires', 'Where the old light turned'], ['door', '4'], ['-']] }, hiderSk)
+const lockedDoorRoomKey = new Uint8Array(sha(Buffer.concat([Buffer.from('cyberspace:door', 'utf8'), Buffer.from(doorRegion.locationKey), Buffer.from(lockedDoorSecret)])))
+
 const utf8 = (s) => Buffer.byteLength(s, 'utf8')
 const refKey = JSON.stringify(bagEntries[1])
 
@@ -277,11 +302,16 @@ console.log(JSON.stringify({
     },
   },
   locks: {
-    note: 'DECK-0004 §3.8. lock_secret = SHA-256(UTF-8("cyberspace:lock") || key), valid when nonzero and below the curve order; lock = its BIP-340 x-only public key. preimage is the 47 hashed bytes. region_n is decimal, given for the height 4 region only. base is the region\'s aligned base on X, Y and Z, decimal. region_n carries no plane bit (CYBERSPACE_V2.md §4.7), so the region with the same X, Y, Z and height in ideaspace has the same location key and the same lock.',
+    note: 'DECK-0004 §3.8. lock_secret = SHA-256(UTF-8("cyberspace:lock") || key), valid when nonzero and below the curve order; lock = its BIP-340 x-only public key. preimage is the 47 hashed bytes. region_n is decimal, given for the height 4 regions only. base is the region\'s aligned base on X, Y and Z, decimal. region_n carries no plane bit (CYBERSPACE_V2.md §4.7), so the region with the same X, Y, Z and height in ideaspace has the same location key and the same lock.',
     point: { x: String(lockPoint.x), y: String(lockPoint.y), z: String(lockPoint.z), plane: lockPoint.plane, coordinate: xyzToCoord(lockPoint.x, lockPoint.y, lockPoint.z, lockPoint.plane).toString(16).padStart(64, '0') },
-    region: { ...strip(lockRegion), ...strip(regionLock) },
+    region: { ...strip(lockRegion), ideaspace_base_coordinate: lockRegionIdea.base_coordinate, ...strip(regionLock) },
     region_height_5: (({ region_n, ...r }) => r)({ ...strip(lockRegionH5), ...strip(regionLockH5) }),
     chest: { plaintext: lockedPlain, nip44_nonce: hex(nonce32('region lock chest')), conversation_key: hex(lockedConvSeal), opens_with_lock_secret: regionLock.lock_secret, event: lockedChest },
+    door: {
+      note: 'A door at C, sealed to region.lock. Its own room is the height 4 region that holds C, so its room key uses that region\'s location key (door_region), not region.location_key.',
+      door_region: strip(doorRegion), plaintext: lockedDoorPlain, nip44_nonce: hex(nonce32('region lock door')), conversation_key: hex(lockedDoorConv), opens_with_lock_secret: regionLock.lock_secret,
+      event: lockedDoor, door_secret: hex(lockedDoorSecret), room_key: hex(lockedDoorRoomKey), room_lookup_id: hex(sha(lockedDoorRoomKey)),
+    },
     room: { location_key: lockRegion.location_key, door_secret: hex(lockDoorSecret), room_key: hex(lockRoomKey), room_lookup_id: hex(sha(lockRoomKey)), ...strip(roomLock) },
   },
 }, null, 2))
