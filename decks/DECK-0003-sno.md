@@ -638,6 +638,10 @@ A new field is ignored by those readers (§5). The `a` ref stays an ordinary ref
 
 `bounce` says how high a walker (§1.12) is thrown when it lands on one of the object's faces with gravity on. Some clients give their walker gravity: it falls when nothing is under it, lands on the first face that stops it, and jumps. ONOSENDAI's WALK with GRAVITY on is one. A bounce is a launch from such a landing, as off a trampoline or a bounce pad. A client whose walker has no gravity ignores the field.
 
+**Up is the walker's.** Gravity has a direction, and this section's up, down, under and top are all measured along it: down is the way the walker falls, up is the opposite way, which is the way a launch throws it, and an object's top is whichever of its faces looks up, against the walker's gravity, whatever the object's own `+Y` (§2). Which way a walker's gravity points is the client's to choose, not the object's to say, and nothing in this section fixes it to the cyberspace `-Y` axis. A launch goes straight up from where the walker landed, along the walker's own up, and its height is counted in whole gibsons along that one direction. A `"reflect"` launch measures the fall along the same direction. An object whose top looks up under one walker's gravity may present a side to another walker whose gravity points elsewhere; each is thrown, or not, by the faces under it.
+
+(Non-normative: ONOSENDAI points its walker's gravity along the cyberspace axis nearest the viewer's down on the screen, one of the six axis directions and never a diagonal, so that turning the view with its compass turns gravity with it, and JUMP and a launch always go up the screen. In the default view, and in any view turned only left or right, that is `-Y`. A turn of the view in mid-air holds from that moment: the walker falls from rest along the new down, starting at the gibson it has reached.)
+
 | `bounce` | A walker landing on one of the object's faces is thrown |
 |---|---|
 | a JSON integer from `1` to `24` | that many gibsons up from where it landed |
