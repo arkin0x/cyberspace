@@ -5,7 +5,7 @@ Title: Hyperspace (Bitcoin block transit)
 Status: Draft v3 (supersedes the v2 draft of 2026-04-16 and the v1 draft of 2026-02-28)
 Mandatory: yes. Every verifier implements this DECK, because a `hyperjump` moves an identity (`CYBERSPACE_V2.md` §8.9).
 Created: 2026-02-28
-Last updated: 2026-10-08
+Last updated: 2026-11-10
 Requires: `CYBERSPACE_V2.md` (spec version `2026-03-16-h34-corrected`)
 
 ## Abstract
@@ -122,7 +122,7 @@ Stops are discoverable on Nostr through **block anchor events**. Anchors are a c
 - `P`: `["P", "<prev_block_hash_hex>"]`.
 - Sector tags `X`, `Y`, `Z`, `S` computed from `C`.
 
-Anchors SHOULD include `net` (`mainnet` assumed if absent) and `N` (next block hash) once known.
+Anchors SHOULD include `net` (`mainnet` assumed if absent) and `N` (next block hash) once known. Anchors MAY include `header`, the block's raw 80-byte header (§2.5).
 
 ### 2.2 Legacy anchors (normative)
 
@@ -149,6 +149,44 @@ substitute a chain. Measured in the reference web client, the full line
 verifies and derives from ~46 MB of static files in about 30 seconds,
 with anchors remaining the live tail and the fallback. The format is
 specified in `docs/HEADER-BLOBS.md` of the `nth` repository.
+
+### 2.5 The header tag (normative)
+
+**Rule: an anchor MAY carry the block's raw header, and a reader uses it only after hashing it to the anchor's `H`.**
+
+**Form.** `["header", "<160 lowercase hex>"]`: the block's 80-byte header exactly as Bitcoin serializes it on the wire, as 160 lowercase hex characters. The bytes are, in order: version (4, little-endian), previous block hash (32, internal byte order), merkle root (32, internal byte order), time (4, unsigned little-endian, Unix seconds), bits (4, little-endian), nonce (4, little-endian). Internal byte order is the reverse of the display hex that explorers show and that `H`, `P` and `M` carry.
+
+**Verification (MUST).** Before using any field of the header, a reader MUST check that the tag appears exactly once, that its value is exactly 160 lowercase hex characters, and that `sha256(sha256(header_bytes))`, with its 32 bytes reversed into display order, equals the anchor's `H`. If any of these checks fails, the reader MUST ignore the `header` tag entirely. The tag never makes an anchor valid or invalid: the anchor still stands or falls by §2.3 alone.
+
+**Timestamps come only from verified headers (MUST).** A reader that needs a block's time or difficulty bits MUST take them from a header that passed the check above, or from its own block source. It MUST NOT take them from an anchor's `created_at`, its `content`, or any other tag.
+
+**Why (non-normative):** The block hash commits to every byte of the header, so whoever signed the anchor cannot change the time, the bits, the merkle root or the previous hash without changing `H`. `H` is what §2.3 already checks against Bitcoin mainnet. So a verified header proves the block's time with no trust in the publisher. A reader that paces anything by Bitcoin's own clock, such as the average block time over a 2016-block retarget window, gets the times it needs from anchors it already reads. The difficulty bits come for free. A verified header also carries the block's real merkle root and previous hash. A reader that finds them different from `M` or `P` has learned from the anchor itself that §2.3 rejects it.
+
+**More than one anchor per block (normative).** A publisher MAY publish a second anchor for a block it has already anchored, for example to add the `header` tag to a block anchored before the tag existed. Anchors that name the same `B` and the same `H` describe the same stop. A reader MUST NOT treat them as competing blocks, and it MAY keep either one. Two anchors at one `B` compete only when their `H` values differ.
+
+**Publishers (non-normative):** A publisher should run the same check before signing, and refuse to sign a header that does not hash to the `H` it is about to sign. NTH does.
+
+**Test vector.** Mainnet block 973,727, the last block of retarget window 482 (482 × 2016 + 2015). The header is from `GET https://mempool.space/api/block/<hash>/header`.
+
+| Field | Value |
+|---|---|
+| `B` | `973727` |
+| `H` | `0000000000000000000132b722697381ee70f3c565ed8c2168ef68d54e3b4f04` |
+| `header` | `00a04b20f3f9aa1aaa2bb91f5d8acd5112a3c428814c3e4087ff0100000000000000000042ab8f9c176bd1993227e826305521f4c23f96b9dfb66354b08bab9f8a004d309297e36a9300021765ed2b3c` |
+| version | `541827072` (`0x204ba000`) |
+| previous block hash (`P`) | `00000000000000000001ff87403e4c8128c4a31251cd8a5d1fb92baa1aaaf9f3` |
+| merkle root (`M`) | `304d008a9fab8bb05463b6dfb9963fc2f421553026e8273299d16b179c8fab42` |
+| time | `1793300370` (2026-10-29T18:59:30Z) |
+| bits | `0x17020093` |
+| nonce | `1009511781` |
+
+`sha256(sha256(header_bytes))`, reversed, equals `H` above, so a reader accepts this header.
+
+**Negative vector.** Flip the lowest bit of byte 68, the first byte of the time field, which changes the time by one second:
+
+`00a04b20f3f9aa1aaa2bb91f5d8acd5112a3c428814c3e4087ff0100000000000000000042ab8f9c176bd1993227e826305521f4c23f96b9dfb66354b08bab9f8a004d309397e36a9300021765ed2b3c`
+
+It hashes, reversed, to `b187d54ad9c8dd60ddd6b6a0cfff4269ec37b6133a4bc4c488dcd6b68802fa3b`, not to `H`, so a reader MUST ignore the tag and MUST NOT use the time `1793300371`.
 
 ---
 
@@ -427,6 +465,7 @@ In an ultrametric space, targets become reachable by becoming numerous, never by
 - v3 revision (2026-09-28): the re-roll price on ride openings, with samples drawn from `G` (§5.5, §5.8).
 - v3 revision (2026-10-07): no zero-length ride (§5.6), with the §5.8 exemption limited to roots and openings; sector tags count toward validity, each carried exactly once (§1.3).
 - v3 revision (2026-10-08): a fork kills the chain, restoring the v1 rule (§8); every tag the chain rules read is carried exactly once with a well-formed value (§3.1, §5.2, §8); the network is Bitcoin mainnet, always, and a `net` tag on an action is never read (§1.4).
+- v3 revision (2026-11-10): the optional `header` tag on anchors, which a reader uses only after hashing it to `H`; block times come only from verified headers; anchors that name the same `B` and `H` are the same stop (§2.5).
 
 ## Appendix C: Reference implementations (non-normative)
 
@@ -435,7 +474,8 @@ In an ultrametric space, targets become reachable by becoming numerous, never by
   station lookup over the sorted line, boarding and rides with a persistent
   resumable worker pool, Level 1 verification, and a decimal landfall
   module reproducing the §1.2 golden vectors byte for byte.
-- **NTH** (`arkin0x/nth`): the anchor publisher (kind 321, §2.1 tags) and
+- **NTH** (`arkin0x/nth`): the anchor publisher (kind 321, §2.1 tags, and
+  the §2.5 `header`, checked against `H` before signing) and
   the header-blob packer with manifest and checkpoint emission.
 - **`decks/landfall-reference.py`** (this repository): stdlib Python §1.2
   derivation; executing it checks all eight golden vectors.
@@ -458,6 +498,7 @@ Anchor for a landfall (block 398):
     ["B", "398"],
     ["H", "000000002f7d702a27ccd65158740198f79d4ba1ddea8ab14b56b63a6289fe89"],
     ["P", "<prev_block_hash>"],
+    ["header", "<160 hex: the block's 80-byte header, §2.5>"],
     ["X", "<sx>"], ["Y", "<sy>"], ["Z", "<sz>"], ["S", "<sx>-<sy>-<sz>"]
   ]
 }
