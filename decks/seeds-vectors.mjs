@@ -844,6 +844,13 @@ axiom F`
     'B -> f(10) F(2) B'
   P.turtle = S.parseDNA(turtle)
   add('the turtle test: every symbol, the stack beyond 64, the position clamp, f growing halfway through day 2', 'turtle', P.turtle, coordA, P0, 0, S.BASE_CAPS, P0 + 2 * 144 + 72, true)
+  // a reserved anim line (DECK-0008 §3.2) is accepted and changes nothing: same payload, same hash
+  const animText = DNAS.fiddlehead.replace('angle 8', 'angle 8\nanim turn y curl 144 0      # reserved: the anim DECK will define it')
+  const withAnim = S.grow({ prog: S.parseDNA(animText), coord: coordA, planted: P0, scale: 0, caps: CAPS, clock: P0 + 30 * 144 + 6, blockHash })
+  const without = cases.find((c) => c.dna === 'fiddlehead' && c.what === 'day 30 and 6 blocks')
+  const animSha = S.sha256hex(Buffer.from(withAnim.json, 'utf8'))
+  if (animSha !== without.sno_sha256) throw new Error('an anim line changed the bloom')
+  out.reserved_anim = { what: 'the fiddlehead with a reserved anim line, at day 30 and 6 blocks: it parses, and grows exactly as the fiddlehead without it', dna: animText, planted: P0, clock: P0 + 30 * 144 + 6, caps: CAPS, coord: coordA, sno_sha256: animSha, same_as_without: true }
   out.growth = { blocks_per_generation: S.N, dnas: { ...DNAS, turtle }, cases }
 }
 

@@ -257,6 +257,7 @@ export function parseDNA(text) {
       names.add(m[1])
     }
     else if (kw === 'axiom') { once('axiom'); axiomSrc = rest; axiomLine = where }   // DECK-0008: exactly one axiom
+    else if (kw === 'anim') { /* DECK-0008 §3.2: reserved for the anim DECK; the rest of the line is not read and never affects the bloom */ }
     else throw new Error(where + ': unknown line "' + kw + '"')
   })
   if (axiomSrc === null) throw new Error('no axiom')
