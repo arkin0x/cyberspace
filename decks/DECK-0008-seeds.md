@@ -28,6 +28,7 @@ This DECK defines SEEDO completely enough for a second implementation, three eve
 | Weather | the hash of the block that drives each generation, never the planted block's own (§4.3) |
 | Terroir | terrain `K` and its four nibbles at the seed's scale (§4.4) |
 | The bloom | a SNO payload computed by every reader, unit = the seed's scale (§5) |
+| How a bloom stands | the seed's `turn`, `up` and `spin` tags, applied to the drawn bloom after its payload, never to the payload (§5.7) |
 | Reference implementation | `decks/seeds-reference.mjs`, the prototype's core with this DECK's changes |
 | Vectors | `decks/seeds-vectors.json`, produced by `decks/seeds-vectors.mjs` (§11) |
 
@@ -333,7 +334,7 @@ A seed states its planted height in its `planted` tag (§8.2). A writer MUST sta
 - **Why a floor (non-normative).** A planter who could state an old planted height would know the weather of every generation up to the present, and could shop for the height that grows the bloom it wants. `E` lets a seed's planted height be no older than about two hours before the time the seed itself states. The margin is two hours because a block's header time may run up to two hours ahead of the time it was mined, so a block whose header time is two hours before `created_at` certainly existed when the seed was signed, if `created_at` is true. An honest planter writes the clock block, about 6 blocks below the tip, while `E` lies about 12 blocks below it, so an honest seed is almost never raised. When it is, in an hour of slow blocks, every reader raises it the same way.
 - **Why a ceiling (non-normative).** `F` keeps a seed from stating a planted height far after its own time. Without it, a planter could sign seeds today for many heights to come and keep whichever one grows best (§12).
 - **What the clamp cannot do.** `created_at` is whatever the signer writes. A planter who also backdates `created_at` is not clamped. §12 says what that buys.
-- **Moving a seed replants it, for an honest `created_at`.** A client that moves a seed writes a new event at the new `C`, with a new `created_at` (DECK-0006 §2.2). It is a new planting and needs new work: the move keeps the seed's other tags but mines its `nonce` again (§7). The clamp then raises the effective planted height to about the time of the move, so the moved seed starts again from day 0, and a seed cannot be grown in one place and moved, with its age, to the soil that suits the weather that came. A mover who backdates the new event's `created_at` escapes this as a backdating planter does.
+- **Moving a seed replants it, for an honest `created_at`.** A client that moves a seed writes a new event at the new `C`, with a new `created_at` (DECK-0006 §2.2). It is a new planting and needs new work: the move keeps the seed's other tags but mines its `nonce` again (§7). The clamp then raises the effective planted height to about the time of the move, so the moved seed starts again from day 0, and a seed cannot be grown in one place and moved, with its age, to the soil that suits the weather that came. A mover who backdates the new event's `created_at` escapes this as a backdating planter does. Turning a seed, standing it on Earth or changing its spin (§5.7) is the same: a new event, new work, and a new day 0.
 
 ### 4.3 Weather
 
@@ -501,7 +502,38 @@ The payload is valid under DECK-0003 §1.9 by construction. A reader never publi
 
 ### 5.6 Where a bloom stands
 
-A reader draws the bloom as it draws a shard whose payload is the bloom, standing at the seed's `C` (DECK-0003 §3.2): the model's origin on that coordinate, one model unit `2^u` gibsons.
+A reader draws the bloom as it draws a shard whose payload is the bloom, standing at the seed's `C` (DECK-0003 §3.2): the model's origin on that coordinate, one model unit `2^u` gibsons, turned and stood as the seed's tags say (§5.7). A seed without those tags stands on Cyberspace's axes, its `+Y` up.
+
+### 5.7 How a bloom stands
+
+A seed MAY say how its bloom stands, with three tags (§8.2). They mirror the way an object stands in DECK-0003 §1.7, "Standing on Earth", and the controls a client offers when it places a shard: a turn by quarter turns, standing on Earth, and a spin.
+
+| Tag | Meaning | When absent |
+|---|---|---|
+| `["turn", "<x>", "<y>", "<z>"]` | The bloom's quarter turns about its `X`, `Y` and `Z` axes: three decimals under `CYBERSPACE_V2.md` §10, each from `0` to `3` | `0`, `0`, `0` |
+| `["up"]` | The bloom stands on Earth, as an object with `up: true` does (DECK-0003 §1.7). A reader ignores any further elements of the tag | it stands on Cyberspace's axes |
+| `["spin", "<bearing>"]` | The compass bearing the bloom's `+Z` faces once it stands on Earth: a decimal under §10 from `0` to `359`, clockwise from north (DECK-0003 §1.7) | `0` |
+
+**Reading the tags (normative).** Where a seed carries more than one tag of a name, a reader reads the first (§8.2). A reader MUST skip, as a seed it cannot read, a seed whose `turn` is present and is not exactly three such decimals, or whose `spin` is present and is not such a decimal from `0` to `359`, whether or not it carries `up`: as DECK-0003 §1.7 says of a payload, a nonsense bearing is malformed even where the bearing is unused. A reader MUST ignore the value of `spin` on a seed without `up`.
+
+**Drawing (normative).** A reader draws a seed's bloom in three steps, and every reader draws the same bloom, facing the same way:
+
+1. **The payload.** It grows and draws the bloom exactly as §4 and §5.1 to §5.5 say. The tags of this section never enter growth, the payload or its hash: two seeds of one DNA, at one coordinate, height and scale, that differ only in these tags grow the identical payload.
+2. **The turn.** It turns every point of the payload, in ticks, in the payload's own frame (DECK-0003 §1.2: right-handed, `+Y` up), about the bloom's origin: first `x` quarter turns about `X`, then `y` about `Y`, then `z` about `Z`. Each is a right-handed positive quarter turn:
+   - about `X`: `(x, y, z)` becomes `(x, -z, y)`;
+   - about `Y`: `(x, y, z)` becomes `(z, y, -x)`;
+   - about `Z`: `(x, y, z)` becomes `(-y, x, z)`.
+
+   A quarter turn takes whole ticks to whole ticks, so nothing is rounded. It keeps every point within the 64 units of §3.8, because that bound is a cube. It is a proper rotation, so every face keeps its winding and its front (DECK-0003 §1.4). Faces and colors are carried with their points unchanged.
+3. **Standing on Earth.** If the seed carries `up` and its `C` is in dataspace (plane `0`), the reader stands the turned bloom at its `C` exactly as DECK-0003 §1.7 stands an object with `up: true` and that `spin`: its `+Y` along the local up, its `+Z` facing the bearing `spin`. Ideaspace (plane `1`) has no Earth: a reader MUST ignore `up` and `spin` on a seed whose `C` is in ideaspace. Without `up`, the turned bloom's axes are Cyberspace's axes, its `+Y` up.
+
+The bloom's **up** is its `+Y` and its **front** is its `+Z`, both after the turn. A client that lets a planter turn a seed or stand it on Earth SHOULD show both directions, labelled, while the seed is being aimed, so the planter sees which way the bloom will grow and face before the seed is mined.
+
+**Changing how a bloom stands.** These tags are part of the seed event, so the work on the seed's id commits to them. Turning a seed, standing it on Earth or giving it another spin is therefore a change to the seed: a new event, a new planting, which needs new work (§7) and starts again from day 0, as §4.2 says of a move.
+
+**Why tags, and not lines of the DNA (non-normative).** One DNA is planted by many people at many places; how a bloom stands belongs to one planting. A line of SEEDO would change the payload, its hash and the DNA's id, and every planting of that DNA would stand the same way. A tag of the seed changes none of them.
+
+**Why a `turn` tag, when shards have none (non-normative).** DECK-0003 has no turn field: a client turns a shard by turning its geometry before it publishes it (ONOSENDAI's TURN does, by arkinox's choice of 2026-09-27), and every reader then draws the turned geometry. A bloom's geometry is never published; every reader computes it. Its turn therefore travels with the seed, as a tag, and every reader applies it. `up` and `spin` are the shard's own fields, written as tags for the same reason.
 
 ---
 
@@ -615,7 +647,7 @@ price = 16 + bits(vertices) + bits(symbols) + bits(generations)
 
 **The mix floor.** A mixed DNA MUST carry a NIP-13 `nonce` tag whose committed target is a decimal under `CYBERSPACE_V2.md` §10 and at least `MIX_FLOOR = 20` bits, and its id MUST have at least that many leading zero bits; otherwise it is invalid. The floor does not depend on the child's caps, because the child's seeds pay for those. A written DNA needs no work, and a reader ignores a `nonce` tag on one.
 
-**Paid once per planting.** The work is on the seed's id, so it belongs to that one event. A seed carried unchanged, from one version of a bag to the next or into a sealed entry, is the same event and keeps its work. A seed that another author's bag places unchanged (`CYBERSPACE_V2.md` §7.6, Items) keeps its work too, as a shard placed that way keeps its signature: it is one planting shown in several places, credited to its planter. A reader SHOULD grow each seed id only once and draw the same bloom wherever it is placed. Any change to a seed, including a move to a new `C` (§4.2), is a new event, a new planting, and needs new work. A move keeps every other tag of the seed, as DECK-0006 §2.2 says, except `nonce`, which the mover mines again for the new event.
+**Paid once per planting.** The work is on the seed's id, so it belongs to that one event. A seed carried unchanged, from one version of a bag to the next or into a sealed entry, is the same event and keeps its work. A seed that another author's bag places unchanged (`CYBERSPACE_V2.md` §7.6, Items) keeps its work too, as a shard placed that way keeps its signature: it is one planting shown in several places, credited to its planter. A reader SHOULD grow each seed id only once and draw the same bloom wherever it is placed. Any change to a seed, including a move to a new `C` (§4.2) or a new way of standing (§5.7), is a new event, a new planting, and needs new work. A move keeps every other tag of the seed, as DECK-0006 §2.2 says, except `nonce`, which the mover mines again for the new event.
 
 **The work and the clamp.** The work commits to `planted` and `created_at`, since both are in the event the id hashes. A planter that fixes both before it mines can mine for as long as it needs: the clamp reads `created_at`, not the time the seed was published, and the planted block's successors are still unmined. Stock NIP-13 miners refresh `created_at` while they mine. A mine longer than about an hour then leaves `created_at` well after the planted block, and the clamp's floor `E` may raise the effective planted height by a few blocks, which is harmless: day 0 moves a little later, and every reader moves it the same way. The work does not make backdating harder (§12): a planter who backdates evaluates past planted heights for free and mines once.
 
@@ -672,13 +704,16 @@ A seed is an item carried in a bag's list of entries (`CYBERSPACE_V2.md` §7.6) 
 | `["scale", "<u>"]` | OPTIONAL. The scale, `0` to `84`, in decimal. Absent means `0` |
 | `["C", "<coord_hex>"]` | exactly one. Where the seed is planted, under the rules of `CYBERSPACE_V2.md` §7.6. A seed needs an exact coordinate, because its terroir depends on it |
 | `["title", "<name>"]` | OPTIONAL. The planter's name for this planting, at most 64 characters |
+| `["turn", "<x>", "<y>", "<z>"]` | OPTIONAL. The bloom's quarter turns about `X`, `Y` and `Z`, each `0` to `3` (§5.7). Absent means none |
+| `["up"]` | OPTIONAL. The bloom stands on Earth, in dataspace only (§5.7) |
+| `["spin", "<bearing>"]` | OPTIONAL. The bearing of the bloom's `+Z` on Earth, `0` to `359` (§5.7). Read only with `up` |
 | `["nonce", "<n>", "<target>"]` | exactly one. NIP-13: the planting's work. `<target>` is at least the DNA's price (§7) |
 | `["-"]` | the NIP-70 protected marker. MUST be present (`CYBERSPACE_V2.md` §7.6, Protected items) |
 | `["d", "<64 lowercase hex>"]` | present only on a seed that has been moved: its lineage (DECK-0006 §2.2) |
 
-The `planted` and `scale` values and the `nonce` target follow `CYBERSPACE_V2.md` §10: decimal digits, no sign, and no leading zero unless the value is `0`. The seed is signed by its planter, as `CYBERSPACE_V2.md` §7.6 says every item that is not a message or hidden audio SHOULD be: a seed's signature is the only proof of who planted it once it is seen elsewhere, and it binds the `created_at` that the clamp reads (§4.2).
+The `planted` and `scale` values, the `turn` and `spin` values and the `nonce` target follow `CYBERSPACE_V2.md` §10: decimal digits, no sign, and no leading zero unless the value is `0`. The seed is signed by its planter, as `CYBERSPACE_V2.md` §7.6 says every item that is not a message or hidden audio SHOULD be: a seed's signature is the only proof of who planted it once it is seen elsewhere, and it binds the `created_at` that the clamp reads (§4.2).
 
-**Reading a seed.** A reader MUST skip, as an item it cannot read, a `kind 3351` whose `dna` is not 64 hex characters, whose `planted` is not a decimal under `CYBERSPACE_V2.md` §10, whose `scale` is present and is not such a decimal from 0 to 84, or that has no `C`. **Before it resolves the DNA**, a reader MUST also skip a seed that has no `nonce` tag, whose committed target is not such a decimal or is below 16 (the base price, the least any DNA can ask), or whose id has fewer leading zero bits than its committed target. Free DNAs then cannot be used to make a reader fetch on behalf of seeds that paid nothing. Where the table says "exactly one" and a seed carries more, a reader uses the first.
+**Reading a seed.** A reader MUST skip, as an item it cannot read, a `kind 3351` whose `dna` is not 64 hex characters, whose `planted` is not a decimal under `CYBERSPACE_V2.md` §10, whose `scale` is present and is not such a decimal from 0 to 84, whose `turn` or `spin` is present and malformed (§5.7), or that has no `C`. **Before it resolves the DNA**, a reader MUST also skip a seed that has no `nonce` tag, whose committed target is not such a decimal or is below 16 (the base price, the least any DNA can ask), or whose id has fewer leading zero bits than its committed target. Free DNAs then cannot be used to make a reader fetch on behalf of seeds that paid nothing. Where the table says "exactly one" and a seed carries more, a reader uses the first.
 
 **Resolving a DNA.** A reader looks for a DNA, by id, first among the items of the list of entries that holds the seed (the bag's, a sealed entry's payload counting as part of its bag, or the chest's), and then on relays: the relays where it found the bag, then the hinted relay under the consent rule of `CYBERSPACE_V2.md` §7.6, References. A mixed DNA's parents are resolved the same way, from the same list of entries. Once it has the DNA, the reader checks the seed's committed target against the DNA's price (§7), and skips a seed whose target falls short. A DNA that cannot be found, or that is invalid (§8.1), leaves the seed a seed that cannot grow: a reader SHOULD say that a seed was found and its DNA could not be fetched, or was refused, rather than show nothing.
 
@@ -759,6 +794,7 @@ SEEDO's expression grammar and integer semantics (§3.4) and its fixed-point ari
 | `mixing` | four written parents (unmined: publishing a DNA is free) and ten mixes, each mined to the mix floor, each anchored at a clock block, with its event, settling, commit height, outcome block, `mix_hash`, mix word, every gene's draw and the child's text: two children of one pair, their grandchild with a `name` tag, the same grandchild committed before its parents resolved (refused), a name tag that tries to add a rule (refused), coral with itself, a refused pair of species, a sterile hybrid and its refused mix, and a `hybrid` tag on one species (ignored); and the growth of a seed of the first child |
 | `seeds` | five seeds as events, with the written DNA published without a caps tag that one of them plants: a planting of the fiddlehead (21 bits), of the first mixed child (21 bits) and of a DNA at the free caps (16 bits), each mined to its DNA's price; and two plantings of the fiddlehead that a reader skips, one with a committed target of 16 and one whose target says 21 on an id with fewer than 21 leading zero bits |
 | `price` | the price of ten sets of caps, four of them invalid |
+| `orientation` | sixteen sets of seed tags read under §5.7 (`turn`, `up`, `spin`), eight of them malformed, and one small bloom (the fiddlehead halfway through day 1) with its points in ticks, then turned by six sets of quarter turns: what step 2 of §5.7 draws, while the payload and its hash stay those of the `growth` section |
 
 Some single values, for a quick check:
 

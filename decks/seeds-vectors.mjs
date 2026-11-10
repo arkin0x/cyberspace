@@ -964,4 +964,45 @@ const settleClock = (createdAt) => { for (let c = 970410; c <= LAST; c++) if (S.
   out.price = { mix_floor: S.MIX_FLOOR, rows }
 }
 
+// ---------- how a bloom stands (§5.7) ----------
+{
+  const P0 = 970400
+  // The payload's points in ticks: whole units times 120 plus the run-length encoded remainders (DECK-0003 §1.2).
+  const pointsOf = (sno) => {
+    const rest = []
+    for (const t of sno.ticks ?? []) {
+      if (typeof t === 'number') for (let i = 0; i < -t; i++) rest.push([0, 0, 0])
+      else rest.push(t)
+    }
+    while (rest.length < sno.vertices.length) rest.push([0, 0, 0])
+    return sno.vertices.map((v, i) => [v[0] * S.TICK + rest[i][0], v[1] * S.TICK + rest[i][1], v[2] * S.TICK + rest[i][2]])
+  }
+  const g = S.grow({ prog: S.parseDNA(DNAS.fiddlehead), coord: coordA, planted: P0, caps: CAPS, clock: P0 + 144 + 72, blockHash })
+  const points = pointsOf(g.sno)
+  const tags = [
+    [],
+    [['turn', '1', '0', '0']],
+    [['turn', '0', '3', '2'], ['up'], ['spin', '90']],
+    [['up']],
+    [['spin', '45']],
+    [['up'], ['spin', '0']],
+    [['up', 'true'], ['spin', '359']],
+    [['turn', '0', '0', '0', '0']],
+    [['turn', '4', '0', '0']],
+    [['turn', '01', '0', '0']],
+    [['turn', '1', '0']],
+    [['spin', '360']],
+    [['spin', '-90']],
+    [['spin', '90.0']],
+    [['spin']],
+    [['turn', '2', '2', '2'], ['turn', 'x', 'y', 'z']],
+  ]
+  out.orientation = {
+    note: 'A seed\'s orientation tags (DECK-0008 §5.7, §8.2), read: null means a malformed tag, and the reader skips the seed. Then the points of one small bloom (the fiddlehead halfway through day 1, at coordA, planted at 970,400), in ticks of the payload\'s frame, and the same points turned by quarter turns about X, then Y, then Z. The payload and its hash never change; only how the bloom is drawn does.',
+    tags: tags.map((t) => ({ tags: t, read: S.readOrientation(t) })),
+    bloom: { dna: 'fiddlehead', coord: coordA, planted: P0, clock: P0 + 144 + 72, caps: CAPS, sno_sha256: S.sha256hex(Buffer.from(g.json)), points },
+    turned: [[1, 0, 0], [0, 1, 0], [0, 0, 1], [2, 0, 0], [1, 2, 3], [3, 3, 3]].map((turn) => ({ turn, points: points.map((p) => S.turnPoint(p, turn)) })),
+  }
+}
+
 process.stdout.write(JSON.stringify(out, null, 1) + '\n')
