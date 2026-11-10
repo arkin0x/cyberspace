@@ -5,7 +5,7 @@ Title: SNO (Simple Nostr Objects)
 Status: Draft
 Mandatory: no
 Created: 2026-09-14
-Last updated: 2026-11-09
+Last updated: 2026-11-10
 Requires: `CYBERSPACE_V2.md` (spec version `2026-03-16-h34-corrected`)
 
 ## Abstract
@@ -682,7 +682,7 @@ A client that receives a `kind 33331` event whose content fails §1.9 MUST NOT r
 
 An object hidden at a place is an entry in a `kind 33330` bag, exactly as `CYBERSPACE_V2.md` §7.6 describes entries. It is carried in one of two ways of its own, or in a sealed entry (below):
 
-- **Inline:** an item, a `kind 3330` event, signed or unsigned, with the payload of §1 in its `content`. It MAY carry a `C` tag, which then MUST lie inside the bag's region. This is how every object was carried before 2026-09-24 and it stays the right way for small ones. Its payload MAY carry the objects it places, in its `objects` table (§1.10). Those carried objects are then sealed with the bag, together with the rest of the item.
+- **Inline:** an item, a `kind 3330` event, signed or unsigned, with the payload of §1 in its `content`. It MAY carry a `C` tag, which then MUST lie inside the bag's region or its twin in the other plane (`CYBERSPACE_V2.md` §7.6, Planes). This is how every object was carried before 2026-09-24 and it stays the right way for small ones. Its payload MAY carry the objects it places, in its `objects` table (§1.10). Those carried objects are then sealed with the bag, together with the rest of the item.
 - **By reference:** a reference entry (`CYBERSPACE_V2.md` §7.6) naming the object's own `kind 33331` event (§3.4): `["a", "33331:<pubkey>:<d>", "<relay hint>", "<coord_hex>"]`, which follows the object as its author edits it. `33331` is addressable, so an `e` reference to it would stop resolving as soon as its author replaced it (`CYBERSPACE_V2.md` §7.6); a reference to an object uses `a`. No `kind 3330` event is involved. A `pubkey` in the address that differs from the bag's author is not a reason to reject: placing another author's object is a placement. A reader MUST fetch the referenced event and read the object from it as §3.4 says; a reference that cannot be fetched is a missing entry, dropped like an item that fails to verify, and a client SHOULD say so rather than say nothing was found.
 
 A third form exists for every kind of entry: a `kind 3330` item carried whole in a sealed entry, a `kind 33335` event that a bag names by an `a` reference (`CYBERSPACE_V2.md` §7.6, Sealed entries). A publisher SHOULD carry an object by reference as its own `kind 33331` event, as above, rather than in a sealed entry, because that form is smaller and every reader that follows references reads it. A publisher MAY use a sealed entry, for example to keep a placed item exactly as it was placed, with its own signature and id. A reader MUST accept all three forms.

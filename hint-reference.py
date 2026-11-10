@@ -18,7 +18,9 @@ sections claim:
   5. malformed hints (bad hex, non-aligned base, a height below h or above
      85, a non-integer) are treated as absent, never as a reason to reject
      the bag
-  6. the plane bit survives the round trip, so a hint names one plane
+  6. the plane bit survives the round trip: a hint names the plane to look in.
+     Containment ignores it, because a region and its twin in the other plane
+     share one key and one bag (section 7.6, Planes)
 
 Golden vectors at the bottom lock the construction for other implementations.
 """
@@ -116,10 +118,13 @@ def parse_hint(tags: list, bag_height: int):
 
 
 def contains(hint, x: int, y: int, z: int, plane: int, bag_height: int) -> bool:
-    """Does the bag's region at bag_height lie inside the hinted box?"""
-    bx, by, bz, hplane, (hx, hy, hz) = hint
-    if plane != hplane:
-        return False
+    """Does the bag's region at bag_height lie inside the hinted box?
+
+    The plane is not compared. A region and its twin in the other plane share
+    one key, one lookup id and one bag (section 7.6, Planes), so the box
+    contains the bag from either plane; the hint's plane names where to look.
+    """
+    bx, by, bz, _hplane, (hx, hy, hz) = hint
     return (aligned_base(x, hx) == bx and aligned_base(y, hy) == by
             and aligned_base(z, hz) == bz and min(hx, hy, hz) >= bag_height)
 
@@ -144,7 +149,7 @@ def check() -> None:
     assert hint is not None
     assert contains(hint, lx, ly, lz, 0, h)
     assert not contains(hint, lx + (1 << 11), ly, lz, 0, h)      # next box along X
-    assert not contains(hint, lx, ly, lz, 1, h)                  # other plane
+    assert contains(hint, lx, ly, lz, 1, h)                      # the twin in the other plane: same bag
     assert not contains(hint, lx, ly, lz, 0, 12)                 # region larger than the box
 
     # 3. sector tags: exactly the axes with H <= 30, S only when all three
