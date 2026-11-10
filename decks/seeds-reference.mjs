@@ -17,7 +17,7 @@ export const CLOCK_DEPTH = 6     // the clock reads the block 6 below the tip
 export const MIX_DELAY = 36      // a mix's outcome block is its commit height + 36
 export const MIX_DEPTH_MAX = 8   // a mixed DNA is at most 8 mixes from written DNA
 export const CLAMP_MARGIN = 7200 // seconds: the planted-height clamp's margin
-export const LIMITS = { rules: 40, params: 4, value: 1000000, stack: 64, region: 64, textBytes: 8192, exprNodes: 64, exprDepth: 16, successor: 64 }
+export const LIMITS = { rules: 40, params: 4, value: 1000000, stack: 64, region: 64, textBytes: 8192, exprNodes: 64, exprDepth: 16, successor: 64, headNodes: 256, dnaNodes: 1024 }
 export const TERRAIN_DOMAIN_V2 = 'CYBERSPACE_TERRAIN_K_V2'
 export const TERROIR_DOMAIN = 'CYBERSPACE_SEED_TERROIR_V1'  // DECK-0008: the prototype used SEEDO_TERROIR_V1
 export const MIX_DOMAIN = 'CYBERSPACE_SEED_MIX_V1'          // DECK-0008: new
@@ -28,8 +28,8 @@ export const PRICE = {
   base: 16,
   caps: {
     vertices: { free: 2048, max: 65536 },
-    symbols: { free: 2048, max: 65536 },
-    generations: { free: 32, max: 1024 },
+    symbols: { free: 2048, max: 16384 },
+    generations: { free: 32, max: 256 },
   },
 }
 export const BASE_CAPS = { vertices: 2048, symbols: 2048, generations: 32 }
@@ -110,7 +110,8 @@ const WS = '[\\t\\n\\v\\f\\r ]'
 const trimWS = (s) => s.replace(new RegExp('^' + WS + '+|' + WS + '+$', 'g'), '')
 
 // Every compiled expression carries its node count (.n) and its depth (.d), DECK-0008 §3.4:
-// an atom is one node of depth 1; an operator is one node, of depth one more than its deepest operand.
+// an atom is one node of depth 1; an operator is one node, of depth one more than its deepest operand;
+// a pair of parentheses is no node, and adds one to the depth of what it holds.
 const mk = (fn, n, d) => { fn.n = n; fn.d = d; return fn }
 const bin = (fn, l, r) => mk(fn, l.n + r.n + 1, 1 + Math.max(l.d, r.d))
 function compileExpr(src, known, where) {
@@ -118,9 +119,13 @@ function compileExpr(src, known, where) {
   const s = trimWS(src)
   while (re.lastIndex < s.length) { const at = re.lastIndex; const m = re.exec(s); if (!m) throw new Error(where + ': cannot read "' + s.slice(at) + '"'); toks.push(m[1]) }
   let i = 0; const peek = () => toks[i], next = () => toks[i++]
+  // the parser recurses only through "(", unary "-" and "not"; each of those adds at least one to the
+  // depth of the tree, so a text that nests past the limit is invalid and is refused before the stack grows
+  let level = 0
+  const enter = () => { if (++level > LIMITS.exprDepth) throw new Error(where + ': an expression is deeper than ' + LIMITS.exprDepth) }
   function or() { let a = and(); while (peek() === 'or') { next(); const l = a, r = and(); a = bin((e) => (l(e) || r(e)) ? 1 : 0, l, r) } return a }
   function and() { let a = not(); while (peek() === 'and') { next(); const l = a, r = not(); a = bin((e) => (l(e) && r(e)) ? 1 : 0, l, r) } return a }
-  function not() { if (peek() === 'not') { next(); const a = not(); return mk((e) => a(e) ? 0 : 1, a.n + 1, a.d + 1) } return cmp() }
+  function not() { if (peek() === 'not') { next(); enter(); const a = not(); level--; return mk((e) => a(e) ? 0 : 1, a.n + 1, a.d + 1) } return cmp() }
   function cmp() {
     const a = add(); const op = peek()
     if (['==', '!=', '<', '<=', '>', '>='].includes(op)) {
@@ -147,11 +152,11 @@ function compileExpr(src, known, where) {
     }
     return a
   }
-  function un() { if (peek() === '-') { next(); const a = un(); return mk((e) => -a(e), a.n + 1, a.d + 1) } return atom() }
+  function un() { if (peek() === '-') { next(); enter(); const a = un(); level--; return mk((e) => -a(e), a.n + 1, a.d + 1) } return atom() }
   function atom() {
     const t = next()
     if (t === undefined) throw new Error(where + ': expression ends early')
-    if (t === '(') { const a = or(); if (next() !== ')') throw new Error(where + ': missing )'); return a }
+    if (t === '(') { enter(); const a = or(); level--; if (next() !== ')') throw new Error(where + ': missing )'); return mk((e) => a(e), a.n, a.d + 1) }
     if (/^\d+$/.test(t)) { const v = clampV(parseInt(t, 10)); return mk(() => v, 1, 1) }
     if (KEYWORDS.includes(t)) throw new Error(where + ': unexpected "' + t + '"')
     if (/^[A-Za-z_]/.test(t)) { if (!known.has(t)) throw new Error(where + ': unknown name "' + t + '"'); return mk((e) => e[t], 1, 1) }
@@ -278,6 +283,16 @@ export function parseDNA(text) {
     prog.rules.push(rule)
     ;(prog.letters[rule.c] = prog.letters[rule.c] || []).push(rule)
   }
+  // DECK-0008 §3.8: the conditions and chances of the rules of one head and arity hold at most 256 nodes,
+  // and those of the whole DNA at most 1,024
+  const perHead = {}; let allNodes = 0
+  for (const r of prog.rules) {
+    const n = (r.cond ? r.cond.n : 0) + (r.chance ? r.chance.n : 0)
+    const k = r.c + '/' + r.params.length
+    perHead[k] = (perHead[k] || 0) + n; allNodes += n
+    if (perHead[k] > LIMITS.headNodes) throw new Error('the rules of ' + k + ' have more than ' + LIMITS.headNodes + ' condition and chance nodes')
+  }
+  if (allNodes > LIMITS.dnaNodes) throw new Error('the rules have more than ' + LIMITS.dnaNodes + ' condition and chance nodes')
   // species: the rule alphabet (symbol and arity) plus the gene names
   const alpha = new Set()
   const addS = (s) => { if (isLetter(s.c)) alpha.add(s.c + '/' + s.args.length) }
@@ -463,21 +478,32 @@ export function grow({ prog, coord, planted, scale = 0, caps = BASE_CAPS, clock,
 // no later block can then have a header time at or below created_at + 7200, so E and F are
 // the same for every reader. E: the highest height whose header time is at most
 // created_at - 7200. F: the highest height whose header time is at most created_at + 7200.
+export const GENESIS_TIME = 1231006505   // block 0's header time; every later header time is greater
+const need = (h, times) => { if (times[h] === undefined) throw new Error('missing header ' + h); return times[h] }
 export function mtp(h, times) {
-  const ts = []; for (let k = h - 10; k <= h; k++) { if (times[k] === undefined) return null; ts.push(times[k]) }
+  const ts = []; for (let k = h - 10; k <= h; k++) ts.push(need(k, times))
   return ts.sort((a, b) => a - b)[5]
 }
-export const settled = (createdAt, clock, times) => { const m = mtp(clock, times); return m !== null && m > createdAt + CLAMP_MARGIN }
+export const settled = (createdAt, clock, times) => mtp(clock, times) > createdAt + CLAMP_MARGIN
+// The highest height at or below the clock whose header time is at most t, or -1 if no block's is.
+// A header time is greater than the MTP of the block before, so every such height h has MTP(h - 1) < t:
+// walk down to the highest h* with MTP(h*) < t (a reader may binary-search, since MTP never decreases),
+// then look at h* + 1 down to h* - 10: MTP(h*) < t puts at least six of blocks h* - 10..h* at or below t.
+// A missing header on the way is an error, never a gap to step over.
 export function highestAtOrBelow(t, times, clock) {
-  let H = -1
-  for (const [h, ht] of Object.entries(times)) if (+h <= clock && ht <= t && +h > H) H = +h
-  return H
+  if (t < GENESIS_TIME) return -1
+  let hs = clock
+  while (mtp(hs, times) >= t) hs--
+  for (let h = Math.min(clock, hs + 1); h >= hs - 10; h--) if (need(h, times) <= t) return h
+  throw new Error('unreachable: MTP(h*) < t but no block of h*-10..h* is at or below t')
 }
-// Returns null while the height is not settled (the seed is drawn at generation 0; a mix is pending).
+// null while the height is not settled (the seed is drawn at generation 0; a mix is pending);
+// 'none' when no block qualifies for F (the seed cannot grow; a mixed DNA is invalid).
 export function effectiveHeight(stated, createdAt, clock, times) {
   if (!settled(createdAt, clock, times)) return null
-  const E = highestAtOrBelow(createdAt - CLAMP_MARGIN, times, clock)
   const F = highestAtOrBelow(createdAt + CLAMP_MARGIN, times, clock)
+  if (F < 0) return 'none'
+  const E = highestAtOrBelow(createdAt - CLAMP_MARGIN, times, clock)
   return Math.min(Math.max(stated, E), F)
 }
 

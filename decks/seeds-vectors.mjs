@@ -353,6 +353,46 @@ const BLOCKS = {
     970457: 1791443951,
     970458: 1791444309,
     970459: 1791444451,
+    970460: 1791444597,
+    970461: 1791444928,
+    970462: 1791446430,
+    970463: 1791447376,
+    970464: 1791447441,
+    970465: 1791448004,
+    970466: 1791448688,
+    970467: 1791448808,
+    970468: 1791449362,
+    970469: 1791449483,
+    970470: 1791449890,
+    970471: 1791451613,
+    970472: 1791452060,
+    970473: 1791453059,
+    970474: 1791453689,
+    970475: 1791455154,
+    970476: 1791455173,
+    970477: 1791455961,
+    970478: 1791455638,
+    970479: 1791455992,
+    970480: 1791456574,
+    970481: 1791457561,
+    970482: 1791457899,
+    970483: 1791458160,
+    970484: 1791458396,
+    970485: 1791458547,
+    970486: 1791459111,
+    970487: 1791459181,
+    970488: 1791462261,
+    970489: 1791462891,
+    970490: 1791463242,
+    970491: 1791463322,
+    970492: 1791464769,
+    970493: 1791465196,
+    970494: 1791465301,
+    970495: 1791465651,
+    970496: 1791466430,
+    970497: 1791467057,
+    970498: 1791467710,
+    970499: 1791470643,
     970500: 1791470870,
     970501: 1791470956,
     970502: 1791471100,
@@ -699,6 +739,11 @@ axiom F`
   const sum = (n) => Array.from({ length: n }, () => '1').join(' + ')
   const B8 = '(' + sum(8) + ')'
   const pad = (n) => { const head = 'dna x\naxiom F\n#'; return head + 'x'.repeat(n - head.length) }
+  const parens = (k) => '('.repeat(k) + '1' + ')'.repeat(k)
+  // 63 nodes, depth 13: three parenthesized sums of 8, a parenthesized sum of 7, three products, a comparison
+  const B7 = '(' + Array.from({ length: 7 }, () => '1').join('+') + ')', B8n = '(' + Array.from({ length: 8 }, () => '1').join('+') + ')'
+  const E63 = B8n + '*' + B8n + '*' + B8n + '*' + B7 + '>0'
+  const head = (h, last) => [h + ' if ' + E63 + ' chance ' + E63 + ' -> ' + h, h + ' if ' + E63 + ' chance ' + E63 + ' -> ' + h, h + ' if 1<2 chance ' + last + ' -> ' + h].join('\n')
   const bad = {
     'a parameter that shadows a gene': 'dna x\ngene curl 1 1 in 0..9\naxiom A(1)\nA(curl) -> A(curl)',
     'a parameter that shadows a builtin': 'dna x\naxiom A(1)\nA(K) -> A(K)',
@@ -712,7 +757,14 @@ axiom F`
     'a let that reads a gene declared on a later line': 'dna x\nlet a = leaf + 1\ngene leaf 3 3 in 1..6\naxiom F',
     'two comparisons in a row': 'dna x\nlet a = 1 < 2 < 3\naxiom F',
     'an expression of depth 17 (a sum of 17 terms)': 'dna x\nlet a = ' + sum(17) + '\naxiom F',
-    'an expression of 65 nodes (depth 12)': 'dna x\nlet a = ' + [B8, B8, B8, B8].join(' * ') + ' + 1\naxiom F',
+    'an expression of depth 17 (1 inside 16 pairs of parentheses)': 'dna x\nlet a = ' + parens(16) + '\naxiom F',
+    'an expression of depth 17 in an argument list': 'dna x\naxiom F(' + parens(16) + ')',
+    '1 inside 1,500 pairs of parentheses (refused, never a stack overflow)': 'dna x\nlet a = ' + parens(1500) + '\naxiom F',
+    '1 inside 1,500 pairs of parentheses in an argument list': 'dna x\naxiom F(' + parens(1500) + ')',
+    '1,500 unary minuses': 'dna x\nlet a = ' + '- '.repeat(1500) + '1\naxiom F',
+    'an expression of 65 nodes (depth 13)': 'dna x\nlet a = ' + [B8, B8, B8, B8].join(' * ') + ' + 1\naxiom F',
+    'the rules of one head and arity with 257 condition and chance nodes': 'dna x\naxiom A\n' + head('A', '-1'),
+    'the rules of a DNA with 1,025 condition and chance nodes': 'dna x\naxiom A B C D E\n' + ['A', 'B', 'C', 'D'].map((h) => head(h, '1')).join('\n') + '\nE if 1 -> E',
     'a successor of 65 symbols': 'dna x\naxiom A\nA -> ' + 'F'.repeat(65),
     'a text of 8,193 bytes': pad(8193),
     'a space before an argument list': 'dna x\naxiom F (2)',
@@ -748,7 +800,10 @@ axiom F`
     'a let that reads a standard gene declared later': 'dna x\nlet a = size + 1\ngene size 120 120 in 50..200\naxiom F',
     'the axiom and rules read genes and lets declared after them': 'dna x\naxiom A(late)\nA(n) if n < later -> A(n + 1)\ngene late 2 2 in 0..9\nlet later = late * 2',
     'an expression of depth 16 (a sum of 16 terms)': 'dna x\nlet a = ' + sum(16) + '\naxiom F',
-    'an expression of 64 nodes (depth 12)': 'dna x\nlet a = -(' + [B8, B8, B8, B8].join(' * ') + ')\naxiom F',
+    'an expression of 64 nodes (depth 14)': 'dna x\nlet a = -(' + [B8, B8, B8, B8].join(' * ') + ')\naxiom F',
+    'an expression of depth 16 (1 inside 15 pairs of parentheses)': 'dna x\nlet a = ' + parens(15) + '\naxiom F',
+    'the rules of one head and arity with exactly 256 condition and chance nodes': 'dna x\naxiom A\n' + head('A', '1'),
+    'the rules of a DNA with exactly 1,024 condition and chance nodes': 'dna x\naxiom A B C D\n' + ['A', 'B', 'C', 'D'].map((h) => head(h, '1')).join('\n'),
     'a successor of 64 symbols': 'dna x\naxiom A\nA -> ' + 'F'.repeat(64),
     'a text of exactly 8,192 bytes': pad(8192),
   }
@@ -806,10 +861,13 @@ const settleClock = (createdAt) => { for (let c = 970410; c <= LAST; c++) if (S.
     ['a planting backdated 114 blocks, with an honest created_at', 970410, at(970530, 30)],
     ['a planted height in the future, capped at F', 970600, at(970530, 30)],
     ['header times that run backwards: E is the highest height at or below the threshold, 970445, though 970444 is above it', 970440, nm],
+    ['created_at 0: no block qualifies for F, so the seed cannot grow (a mixed DNA would be invalid)', 970524, 0],
   ].map(([what, stated, created_at]) => {
     const c = settleClock(created_at)
     const E = S.highestAtOrBelow(created_at - S.CLAMP_MARGIN, T, c), F = S.highestAtOrBelow(created_at + S.CLAMP_MARGIN, T, c)
-    return { what, stated, created_at, settled_from_clock: c, mtp_at_that_clock: S.mtp(c, T), not_settled_at_clock: c - 1, E, F, effective: S.effectiveHeight(stated, created_at, c, T), effective_one_clock_earlier: S.effectiveHeight(stated, created_at, c - 1, T) }
+    const v = { what, stated, created_at, settled_from_clock: c, mtp_at_that_clock: S.mtp(c, T), E: E < 0 ? null : E, F: F < 0 ? null : F, effective: S.effectiveHeight(stated, created_at, c, T) }
+    if (c > 970410) { v.not_settled_at_clock = c - 1; v.effective_one_clock_earlier = S.effectiveHeight(stated, created_at, c - 1, T) }
+    return v
   })
   out.clamp = { margin_seconds: S.CLAMP_MARGIN, header_times: T, cases }
 }
@@ -862,8 +920,9 @@ const settleClock = (createdAt) => { for (let c = 970410; c <= LAST; c++) if (S.
 {
   const rows = [
     S.BASE_CAPS, CAPS, { vertices: 2049, symbols: 2048, generations: 32 }, { vertices: 4096, symbols: 4096, generations: 64 },
-    { vertices: 65536, symbols: 65536, generations: 1024 }, { vertices: 1, symbols: 1, generations: 1 },
+    { vertices: 65536, symbols: 16384, generations: 256 }, { vertices: 1, symbols: 1, generations: 1 },
     { vertices: 65537, symbols: 2048, generations: 32 }, { vertices: 0, symbols: 2048, generations: 32 },
+    { vertices: 2048, symbols: 16385, generations: 32 }, { vertices: 2048, symbols: 2048, generations: 257 },
   ].map((c) => ({ caps: c, bits: S.price(c) }))
   const e = mine({ created_at: 1790000000, caps: S.BASE_CAPS, tags: [], content: DNAS.crystal })
   out.price = { rows, mined_at_base_price: { event: e, leading_zero_bits: S.leadingZeroBits(e.id) } }
