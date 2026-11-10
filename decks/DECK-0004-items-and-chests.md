@@ -404,7 +404,7 @@ A room bag as published therefore has only the required tags of `CYBERSPACE_V2.m
 
 **Coordinates:** Every entry's `C` lies inside the room's region, just as every entry of any bag lies inside that bag's region.
 
-**One plane:** A room is in its door's plane (§3.7.1), so a room bag holds one plane, not two. This is where a room bag differs from an ordinary bag, which holds a region and its twin (`CYBERSPACE_V2.md` §7.6, Planes). Every entry's `C` MUST be in the room's plane. A reader MUST drop an entry whose `C` is in the other plane, because it lies outside the room. A reader shows an entry without a `C` in the room's plane, because the door says which plane the room is in.
+**One plane:** A room is in its door's plane (§3.7.1), so a room bag holds one plane, not two. This is where a room bag differs from an ordinary bag, which holds a region and its twin (`CYBERSPACE_V2.md` §7.6, Planes). Every entry's `C` MUST be in the room's plane. A reader MUST drop an entry whose `C` is in the other plane, because it lies outside the room. A reader that keeps an entry without a `C` shows it in the room's plane, because the door says which plane the room is in.
 
 A writer MUST NOT write into a room bag an entry whose `C` is in the other plane. A writer that rewrites a room bag and finds such an entry drops it, as invalid. An ordinary bag's writer differs: it carries the other plane forward (`CYBERSPACE_V2.md` §7.6, Planes). The reason is that a room has no other plane: an entry in the other plane lies outside the room, no reader shows it, and carrying it forward only spends the room bag's size on a placement nobody can see.
 
