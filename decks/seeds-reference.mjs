@@ -617,3 +617,40 @@ export function seedPrecheck(ev) {
 // NIP-01 event id and NIP-13 difficulty
 export const eventId = (ev) => sha256hex(Buffer.from(JSON.stringify([0, ev.pubkey, ev.created_at, ev.kind, ev.tags, ev.content]), 'utf8'))
 export function leadingZeroBits(hex) { let n = 0; for (const ch of hex) { const v = parseInt(ch, 16); if (v === 0) { n += 4; continue } n += Math.clz32(v) - 28; break } return n }
+
+// ---------- how a bloom stands (DECK-0008 §5.7) ----------
+
+/**
+ * A seed's orientation tags read (§8.2, §5.7): its quarter turns about X, Y
+ * and Z, whether it stands on Earth, and its spin. Null when a tag is
+ * malformed: the reader skips the seed. The first tag of each name is read.
+ */
+export function readOrientation(tags) {
+  const first = (n) => tags.find((t) => Array.isArray(t) && t[0] === n)
+  const t = first('turn'), s = first('spin'), u = first('up')
+  let turn = [0, 0, 0]
+  if (t) {
+    if (t.length !== 4 || !t.slice(1).every((v) => isDecimal(v) && Number(v) <= 3)) return null
+    turn = t.slice(1).map(Number)
+  }
+  let spin = 0
+  if (s) {
+    if (s.length !== 2 || !isDecimal(s[1]) || Number(s[1]) > 359) return null
+    spin = Number(s[1])
+  }
+  const up = u !== undefined
+  return { turn, up, spin: up ? spin : 0 }
+}
+
+/** One quarter turn, positive about X, Y and Z by the maps of §5.7, in Cyberspace's axes. */
+const QUARTER = [([x, y, z]) => [x, -z, y], ([x, y, z]) => [z, y, -x], ([x, y, z]) => [-y, x, z]]
+
+/** A point of the payload, in ticks, placed into Cyberspace's axes (its Z negated, DECK-0003 §2). */
+export const intoCyberspace = (p) => [p[0], p[1], 0 - p[2]]
+
+/** A point in Cyberspace's axes, turned: X turns first, then Y, then Z (§5.7). */
+export function turnPoint(p, turn) {
+  let q = [p[0], p[1], p[2]]
+  for (let a = 0; a < 3; a++) for (let k = 0; k < turn[a]; k++) q = QUARTER[a](q)
+  return q
+}
