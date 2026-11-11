@@ -14,13 +14,14 @@ Requires: `CYBERSPACE_V2.md` §2 (coordinates), §4.7 (region integers, for tend
 
 Planting pays once for how much a bloom may cost the people who grow it. A DNA declares caps on its vertices, its symbols and its generations, and publishing it is free. Each seed carries NIP-13 proof of work priced by the caps of the DNA it plants: one payment per planting (arkinox's ruling of 2026-11-10). After that, growing it costs nothing more than the CPU of the clients that draw it, which the caps bound. A mix commits to its child with proof of work of its own, at a fixed floor, so that breeding attempts are not free.
 
-This DECK defines SEEDO completely enough for a second implementation, three event kinds (`3350`, a DNA; `3351`, a seed; `3352`, a tend), the clock, the weather and the terroir, the exact mix function, the caps and their price, and the shape of a tend. It writes down the Seed Garden prototype of 2026-11-09 and 2026-11-10 (§14) and arkinox's rulings of the same days. The price numbers and the tend's proof are provisional. Self-seeding and what sunlight does are open (§13).
+This DECK defines SEEDO completely enough for a second implementation, three event kinds (`3350`, a DNA; `3351`, a seed; `3352`, a tend), the clock, the weather and the terroir, the exact mix function, the caps and their price, and the shape of a tend. It writes down the Seed Garden prototype of 2026-11-09 and 2026-11-10 (§14) and arkinox's rulings of the same days. The price numbers and the tend's proof are provisional. Every rule that decides a bloom, a mix, a price or whether an event is valid, the provisional numbers included, belongs to the SEEDO revision that a DNA declares, so a later change to any of them is a new revision and never changes how an existing seed grows (§3.10). Self-seeding and what sunlight does are open (§13).
 
 **Defined here:**
 
 | Thing | Value |
 |---|---|
 | The language | SEEDO, plain text: header lines, a genome, `let` lines, an axiom and growth rules, a parametric L-system driving an integer 3D turtle (§3, §5). "SEEDO" is a working name (§13, question 1) |
+| The revision | the DNA's `seedo <n>` line, from 1, absent meaning 1: the only version number in this DECK. It fixes every rule that decides a bloom, a mix, a price or an event's validity, the provisional numbers included. Seeds, mixed DNAs and tends carry no version of their own; each is read under its DNA's revision (§3.10) |
 | A DNA | `kind 3350`, regular. Its id is its identity. Written (its text in `content`) or mixed (computed from two parents and a block). Declares its caps. A written DNA is free to publish; a mixed DNA carries NIP-13 work at the mix floor (§7, §8.1) |
 | A seed | `kind 3351`, an item inside a bag or a chest, signed and protected like a shard. Carries NIP-13 work priced by its DNA's caps, once per planting (§7, §8.2) |
 | A tend | `kind 3352`, regular, rooted on the bag that holds the seed, the seed named inside its seal (§8.3) |
@@ -37,6 +38,7 @@ This DECK defines SEEDO completely enough for a second implementation, three eve
 ## Terms
 
 - **SEEDO:** the language a DNA is written in (§3).
+- **Revision:** the version of SEEDO and of every rule of this DECK that decides a bloom, a mix, a price or an event's validity. A DNA declares it with its `seedo` line, and absent means 1 (§3.2, §3.10).
 - **DNA:** a definition: a genome, growth rules and declared caps, carried by a `kind 3350` event (§8.1). Publishing a DNA costs no work. A **written DNA** carries its SEEDO text in `content`. A **mixed DNA** has empty `content` and names two parent DNAs and a block; its text is computed (§6), and it carries work at the mix floor (§7).
 - **Gene:** a named integer with two **alleles**, each a value and a mark of whether it is **dominant**, and a range (§3.3). What a gene contributes to growth is its **expressed** value.
 - **Standard genes:** `size`, `hue` and `tone`. Every DNA has them, declared or not, and the turtle applies them (§3.3, §5.4).
@@ -128,7 +130,7 @@ P(n) -> '(175) L(leaf+1)
 
 - **Size:** a written DNA's text is at most 8,192 bytes of UTF-8. A longer text is invalid. (A mixed DNA's computed text is not bounded by this rule, §6.6; a copy of it republished as a written DNA is.)
 - The text MUST be well-formed Unicode: a text that carries an unpaired surrogate, which a JSON string can encode as an escape, is invalid. It is split into lines at every line feed (U+000A).
-- **Comments:** on each line, everything from the first `#` to the end of the line is a comment and is removed, whatever it contains. This holds inside names too: `dna my#1` names the DNA `my`.
+- **Comments:** on each line, everything from the first `#` to the end of the line is a comment and is removed, whatever it contains, a CR (U+000D), U+2028 or U+2029 included: none of those ends a line, so none of them ends a comment. This holds inside names too: `dna my#1` names the DNA `my`.
 - **Whitespace** at the ends of a line means U+0009, U+000B, U+000C, U+000D and U+0020. Each line is trimmed of it at both ends after its comment is removed, so a CR before a line feed is dropped. An empty line is skipped. Inside a line, after trimming, the only whitespace is the space (U+0020) and the tab (U+0009).
 - **Characters:** after its comment is removed and it is trimmed, a line MUST NOT contain a control character: U+0000 to U+0008, U+000A to U+001F, or U+007F to U+009F. A rule line, and a line of a known keyword other than `dna`, `seed` and `species`, MUST contain only printable ASCII (U+0020 to U+007E) and tabs. A name on a `dna` or `species` line, and an unknown line (§3.2), may hold any character except the control characters above and `#`: U+200B, U+202E and U+2028, for example, are allowed there.
 - **No normalization:** a reader MUST NOT normalize the text, whether by Unicode normalization, by folding case or by replacing characters. The bytes as written decide the 8,192-byte count, the 64-code-point cut of a name and the payload hash (§5.5).
@@ -141,7 +143,7 @@ P(n) -> '(175) L(leaf+1)
 
 | Line | Meaning | Default |
 |---|---|---|
-| `seedo <n>` | The SEEDO revision the DNA is written in, a decimal from 1 with no sign and no leading zeros. A reader MUST reject a DNA whose revision is higher than the one it knows; this DECK defines revision 1 (below). | `1` |
+| `seedo <n>` | The SEEDO revision the DNA is written in, a decimal from 1 with no sign and no leading zeros. A reader MUST reject a DNA whose revision it does not know. This DECK defines revision 1. A writer SHOULD write the line (§3.10), and what a revision fixes is §3.10. | `1` |
 | `dna <name>` | The DNA's name: the rest of the line, cut to its first 64 Unicode code points. `seed <name>` is read the same way (the prototype's first spelling). | `dna` |
 | `species <label>` | A label for people, cut to 64 code points. It does not decide the species; §3.9 does. | empty |
 | `sterile` | This DNA cannot be a parent (§6.5). The rest of the line is ignored. | not sterile |
@@ -157,6 +159,8 @@ P(n) -> '(175) L(leaf+1)
 - **A DNA is read under the revision it declares.** A keyword that a later revision defines is an unknown line in a DNA that declares an earlier revision, or none. A reader that knows revision 2 therefore reads a revision-1 DNA exactly as a revision-1 reader does.
 - **A keyword added without a new revision is read leniently.** A reader that knows such a keyword ignores, as an unknown line, a line of it that is malformed, repeated beyond what its definition allows, or holds characters its definition does not. Otherwise a reader that learned `note` or `anim` would reject a DNA that older readers accept, such as the vectors' DNA with a `note` line holding `é` (§11).
 - **No keyword that may be ignored can hold `->`.** A line with `->` is always a rule line, so a future keyword that older readers must ignore can never contain it.
+
+Keywords are only one kind of change. §3.10 says which changes to the rest of this DECK need a new revision, and which do not.
 
 **Planting lines:** `planted <height>` (decimal digits only) and `scale <u>` (decimal digits only, `0` to `84`) name a planting, so that a SEEDO file can be grown on its own in a workshop or a test. A reader MUST check their form, and MUST ignore their values when it grows a seed: the seed's tags decide its planted height and scale (§8.2). A writer SHOULD NOT write them in a DNA event.
 
@@ -190,7 +194,7 @@ So size and color are breedable on every DNA, and a DNA that never mentions them
 
 ### 3.4 Names and expressions
 
-**Names.** A name is a letter or `_` followed by letters, digits or `_` (ASCII), and is case-sensitive. The names in use are:
+**Names.** A name is a letter or `_` followed by letters, digits or `_` (ASCII), and is case-sensitive. Every name of that form that is not taken (below) is an ordinary name, with no meaning but the one the text gives it: a gene, a `let` or a rule parameter named `__proto__`, `constructor` or `toString` is read like one named `leaf`. A reader whose own language gives some of these names a meaning in its maps or objects MUST keep that meaning out of SEEDO's (in JavaScript, for example, by keeping names in a `Map` or in an object made with `Object.create(null)`, since assigning `__proto__` to a plain object sets its prototype instead of a value). The names in use are:
 
 | Name | Value |
 |---|---|
@@ -298,13 +302,56 @@ These limits belong to the language and are not priced.
 | the turtle stack | 64 states (§5.2) | a push beyond it is dropped |
 | positions | 64 model units from the origin on each axis (§5.2), the bound DECK-0003 §1.8 sets for publishers | clamped |
 
-The validity limits bound the work of one symbol step: matching evaluates at most the 256 condition and chance nodes of the symbol's head and arity, and each symbol written evaluates at most four arguments of 64 nodes. The priced caps (§7) bound how many steps there are. The two node budgets are provisional (2026-11-10); the six example DNAs use at most 81 condition and chance nodes in all.
+The validity limits bound the work of one symbol step: matching evaluates at most the 256 condition and chance nodes of the symbol's head and arity, and each symbol written evaluates at most four arguments of 64 nodes. The priced caps (§7) bound how many steps there are. The two node budgets are provisional (2026-11-10); the six example DNAs use at most 81 condition and chance nodes in all. Every limit of this table belongs to the revision (§3.10): a later budget or limit is a later revision's, and a DNA of revision 1 is held to revision 1's limits for as long as it exists.
 
 ### 3.9 Species
 
 A DNA's **alphabet** is the set of pairs (character, count) made of: the head and arity of every rule, letter or turtle character; and every letter (not turtle character) in the axiom and in every successor, with its number of arguments. Its **gene names** are the names of its genome, standard genes included.
 
 Two DNAs are **of one species** when their alphabets are equal and their sets of gene names are equal. The `species` line does not count. Two DNAs of one species can differ in their rules, their genes' values and ranges, their lets and their header lines.
+
+### 3.10 What a revision fixes (normative)
+
+A DNA's revision, its `seedo` line with absent meaning 1 (§3.2), is the only version number in this DECK. It names one complete set of rules, and every reader that accepts the DNA applies that set to it.
+
+**What a revision covers.** The revision covers every rule that decides what a bloom is, what a mix makes, what a seed costs, or whether a DNA, a mixed DNA or a seed is valid. That is:
+
+- the language (§3): how a text is read, names and expressions, the genome, rules, species, and the fixed limits of §3.8, the two node budgets among them;
+- growth (§4): the clock and `N = 144`, the clamp and its margin of 7,200 seconds, the weather, the terroir and its domain strings, one generation, and growing between generations;
+- drawing (§5): the fixed-point arithmetic and the sine table, the turtle, the geometry, the colors and the standard genes, the emission to SNO, and where and how a bloom stands;
+- mixing (§6): the outcome block and `MIX_DELAY = 36`, the mix word and its domain string, alleles, dominance and mutation, species and sterility, the child's text, and `MIX_DEPTH_MAX = 8`;
+- caps and price (§7): the free caps, the largest caps, the base price of 16 bits, the price formula and the mix floor of 20 bits;
+- the tags of the events (§8), as far as they decide any of the above.
+
+Some of these numbers are marked provisional: the caps and price of §7, the mix floor, and the node budgets of §3.8. They are revision 1's numbers like every other. Provisional means that a later revision may choose other values, not that revision 1's values may drift.
+
+**The rules (normative).**
+
+1. **A DNA keeps its revision.** A DNA grows, mixes and prices its seeds by the rules of the revision it declares, for as long as it exists. A reader that knows several revisions applies to each DNA the rules of that DNA's revision: a reader that knows revision 2 grows a revision-1 DNA, mixes it and prices its seeds exactly as a revision-1 reader does.
+2. **A change makes a new revision.** A change to any rule this section covers MUST come with a new revision number, and the rules of every earlier revision stay as they are. A DNA moves to a later revision only when its own text declares it. Republishing a text with a new `seedo` line is free, as publishing any written DNA is (§7), and makes a new DNA with a new id; seeds of the old DNA keep naming the old one and keep growing as they did.
+3. **An unknown revision is refused.** A reader MUST reject a DNA whose revision it does not know (§3.2). Every reader that accepts a DNA therefore grows the same bloom from it, makes the same child from it and asks the same price of its seeds.
+4. **Seeds, mixed DNAs and tends carry no version.** A seed is read, grown and priced under the revision of the DNA it names. A mixed DNA is made, checked and priced (the mix floor) under its parents' revision, which is also its own (§6.5). A tend is read under the revision of the DNA of the seed it tends. A reader learns the revision when it resolves the DNA (§8.2).
+
+**What needs no new revision.** A change needs no new revision when every existing DNA, mixed DNA and seed still grows the identical payload, is still valid or invalid as before, and still costs the same:
+
+- a keyword that changes no bloom's geometry and no hash, under the rules of §3.2;
+- a tag of a seed (§8.2) or of a DNA (§8.1) that changes no payload, no hash, no event's validity and no price, and whose absence means exactly what it meant before: for example how a whole bloom stands or moves, or a caption. A reader that does not know such a tag ignores it, draws the identical payload, and places it as if the tag were absent. As with a keyword added without a revision (§3.2), a reader that knows such a tag ignores it, as if it were absent, when it is malformed, rather than skip the event, so that a reader that has learned the tag never refuses a seed that older readers grow;
+- text that is not normative: explanations, examples, and test vectors that agree with the normative text.
+
+A tag that changes a payload, a validity or a price can be defined only by a new revision, and only for events whose DNA declares that revision. On a seed whose DNA declares an earlier revision, a reader ignores it.
+
+**What no revision can change.** A reader makes some checks before it knows a DNA's revision, so those checks are the same in every revision:
+
+- **Finding the revision.** A reader reads the `seedo` line before it knows the revision. How a text is split into lines, how comments and whitespace are removed, how a line's keyword is found (§3.1), and the form of the `seedo` line itself (§3.2) are therefore the same in every revision.
+- **Reading a seed before its DNA.** A reader checks a seed's tags and its work before it resolves the DNA (§8.2). Those checks are the same in every revision, and no revision may ask less than 16 bits of any seed, because 16 is the floor a reader checks before it knows which revision prices the seed.
+
+**Tending.** The attempt construction of §9 is provisional, and its domain strings end in `_DRAFT`. While they do, it is outside this section: it may change without a new revision, because a reader MUST NOT let tends change a bloom (§9), so a change to it changes no bloom. Whatever rule later lets sunlight change a bloom (§13, question 8) is part of the revision like every other rule that decides one.
+
+**While this DECK is a Draft.** Revision 1 is the normative text of this DECK as it stands when the DECK leaves Draft status. Until then, its rules, the provisional numbers among them, may still change without a new revision number, and a DNA published in that time is grown by revision 1 as it stands when it is read. A client that offers seeds to the public before then SHOULD say that seeds are a draft and that blooms may change. Once the DECK leaves Draft, revision 1 is fixed, and every change this section covers needs revision 2 (§13, question 14).
+
+**Writers.** A writer SHOULD write the revision explicitly, as the line `seedo 1` for a text written under this DECK, and SHOULD put it first, where a person reading the text sees it. Absent still means 1 for every reader, so a text written without it, such as the prototype's six DNAs (§11), is a revision-1 DNA. Adding the line to a text already published changes its bytes, and so makes a new DNA with a new id (rule 2). A mixed DNA's computed text copies the mother's `seedo` line, or its absence, unchanged (§6.6), and a copy of a computed text republished as a written DNA is copied exactly, without adding the line, so that it can still be compared with the child (§8.1).
+
+**Why one number, on the DNA (non-normative).** Every seed, every mix and every tend already depends on one DNA, and names it by id. The id commits to the DNA's text, and the text carries the revision, so nobody can change the revision under a seed: a seed's bloom is a pure function of its DNA's text, the seed's own tags and the blocks, and the revision is part of the text. A version tag on each seed or tend would let a seed and its DNA disagree, and every reader would then need a rule for each pairing, and a planter could choose the version that grows the bloom it prefers. With one number, an old seed keeps growing exactly as it did whatever the protocol later adds, and the only cost is that a reader keeps the rules, numbers and tables of every revision it knows, as a Bitcoin node keeps the consensus rules of blocks mined long ago. That cost is why revisions should be rare, and why a revision should gather many changes rather than one.
 
 ---
 
@@ -498,7 +545,7 @@ The bloom is a SNO payload (DECK-0003 §1.1) written exactly as follows, in this
 - `extent` is the larger of 1 and, over every vertex and axis, `|whole|` and `whole + 1` when its remainder is nonzero; then at most 64; omitted when it is 8.
 - `colors` holds each vertex's painted color, and `faces` the faces in the order written.
 
-The payload is valid under DECK-0003 §1.9 by construction. A reader never publishes it. Where a hash of the payload is wanted, as in the vectors (§11), it is SHA-256 of the UTF-8 bytes of the payload's compact JSON in this key order: no whitespace, integers in decimal, and the one string, `name`, escaped as JSON requires, with `"` as `\"` and `\` as `\\` and every other character written as itself. A name holds no control character (§3.1, §6.6), so no other escape arises.
+The payload is valid under DECK-0003 §1.9 by construction. A reader never publishes it. Where a hash of the payload is wanted, as in the vectors (§11), it is SHA-256 of the UTF-8 bytes of the payload's compact JSON in this key order: no whitespace, integers in decimal, and the one string, `name`, escaped as JSON requires: `"` as `\"`, `\` as `\\`, a tab (U+0009) as `\t`, and every other character written as itself, U+2028 and U+2029 included. A tab is the one control character a name can hold, because §3.1 allows it inside a line, and JSON does not allow it unescaped. No other escape arises: a name holds no other control character (§3.1, §6.6), and it is well-formed Unicode (§3.1), so it holds no unpaired surrogate. This is what `JSON.stringify` writes in JavaScript.
 
 ### 5.6 Where a bloom stands
 
@@ -586,7 +633,7 @@ Genes that `B` has and `A` does not are not passed on. All shifts are on the uns
 - A mix of a sterile parent is refused: the mixed DNA is invalid.
 - A mix of two DNAs that are not of one species (§3.9) is refused, unless the mixed DNA carries the `hybrid` tag (§8.1). With it, the child is a **sterile hybrid**: it grows and can be planted, and it can never be a parent.
 - A `hybrid` tag on a mix of one species is ignored: the child is fertile.
-- A mix of two DNAs that declare different SEEDO revisions (§3.2, absent counting as 1) is refused, until a later revision says how to mix them. The child copies the mother's `seedo` line unchanged (§6.6, step 2), so its revision is its parents'. **Why refuse rather than take the higher (non-normative):** the child is written from the mother's lines and the father's genes, and only a later revision can know whether its own keywords or gene forms survive a mix with an earlier one. Under revision 1 every DNA has the same revision, so the rule costs nothing now and leaves the choice to the revision that needs it.
+- A mix of two DNAs that declare different SEEDO revisions (§3.2, absent counting as 1) is refused, until a later revision says how to mix them. A mother without a `seedo` line and a father with `seedo 1` are both of revision 1, and mix. The child copies the mother's `seedo` line, or its absence, unchanged (§6.6, step 2), so its revision is its parents'. The mix is made, checked and priced by that revision's rules (§3.10). A gardener who wants to mix DNAs of two revisions republishes the older parent's text with the newer `seedo` line, which is free (§3.10, rule 2), and mixes that. **Why refuse rather than take the higher (non-normative):** the child is written from the mother's lines and the father's genes. Under the higher revision, the mother's rules could mean something other than what they meant in her own blooms, so the child would not be her rules with mixed genes in any sense a gardener could foresee; and only a later revision can know whether its own keywords or gene forms survive a mix with an earlier one. Under revision 1 every DNA has the same revision, so the rule costs nothing now and leaves the choice to the revision that needs it (§13, question 13).
 - A mix of one species never makes a sterile child unless a parent's text says `sterile`, which already refuses the mix.
 
 ### 6.6 The child's text
@@ -600,7 +647,7 @@ The child's text is computed from the mother's text, line by line, so that every
 
 Lines are joined with a line feed. The child's `mutate`, `angle`, `width`, `color`, lets, axiom and rules are therefore the mother's, its genome is the one §6.4 drew, and its species is the mother's species.
 
-**The name tag.** A `name` tag with an empty value means the same as no `name` tag. A value that is not empty MUST be at most 64 code points of well-formed Unicode, with no control character (U+0000 to U+001F, U+007F to U+009F; the line feed and the tab among them), no `#`, no `->`, and no space at either end. A mixed DNA whose `name` tag breaks this rule is invalid. The reason is that the name is written into the child's text: `kid` followed by a line feed and `F -> F F F F` would add a rule to the child, a `#` would cut its name short as a comment, and `->` would turn its `dna` line into a rule. The default name cannot break the rule, because a parent's name comes from its own `dna` line, which holds none of these.
+**The name tag.** A `name` tag with an empty value means the same as no `name` tag. A value that is not empty MUST be at most 64 code points of well-formed Unicode, with no control character (U+0000 to U+001F, U+007F to U+009F; the line feed and the tab among them), no `#`, no `->`, and no space at either end. A mixed DNA whose `name` tag breaks this rule is invalid. The reason is that the name is written into the child's text: `kid` followed by a line feed and `F -> F F F F` would add a rule to the child, a `#` would cut its name short as a comment, and `->` would turn its `dna` line into a rule. The default name needs no such check, because a parent's name comes from its own `dna` line, so it holds no line feed, no `#` and no `->`. It may hold a tab, which §3.1 allows inside a line and which is harmless there, and the cut to 64 code points may leave a space at its end, which is trimmed when the child's `dna` line is read (§3.1).
 
 **The child's axiom** is the mother's, so a child whose symbol cap is smaller than the mother's axiom is invalid (§3.6).
 
@@ -632,6 +679,8 @@ A DNA declares three **caps** in its `caps` tag (§8.1). Publishing a DNA costs 
 | **base price** | | **16 bits** | |
 
 The largest symbol and generation caps are provisional: they were lowered on 2026-11-10 from 65,536 and 1,024 until the cost of growing is measured on phones.
+
+**The numbers belong to the revision.** Every number of this section is revision 1's: the free caps, the largest caps, the base price, the price formula and the mix floor. A seed is priced by the numbers of its DNA's revision, and a mixed DNA is checked against the mix floor of its own revision (§3.10). Changing any of them makes a new revision, and that holds even for raising a largest cap: a reader of the old numbers would refuse a DNA that a reader of the new ones accepts. A new revision never changes what an existing seed paid for, or whether it grows.
 
 **The price.** For each cap, its bits are the smallest `k ≥ 0` with `cap ≤ free × 2^k`. Each value of the `caps` tag MUST be a decimal under `CYBERSPACE_V2.md` §10 (no sign, no leading zeros) from 1 to the cap's maximum, and a DNA whose `caps` tag gives anything else is invalid. A DNA without a `caps` tag has the free caps, 2,048, 2,048 and 32. The price of a DNA is:
 
@@ -754,7 +803,7 @@ The decrypted payload is a JSON object:
 
 **Sunlight is counted in attempts (normative).** The amount of work a tend carries, its sunlight, is a number of **attempts**: the unit of the hop's re-roll price (`CYBERSPACE_V2.md` §5.10), one aligned height-12 Cantor tree modulo a 61-bit prime. Sunlight is never counted in leading zero bits, and a tend never uses NIP-13. A hop's honest cost is already defined in attempts (16 times `HOP_REROLL_BUDGET[h]`), so "a tend worth one h16 hop" is a defined quantity, 28,048 attempts.
 
-**The attempt construction (provisional).** The construction below follows the tending research of 2026-11-10 and is not ratified. Its domain strings end in `_DRAFT` so that nothing built on it can be mistaken for the final form; ratifying it will give them `_V1` names and golden vectors.
+**The attempt construction (provisional).** The construction below follows the tending research of 2026-11-10 and is not ratified. Its domain strings end in `_DRAFT` so that nothing built on it can be mistaken for the final form; ratifying it will give them `_V1` names and golden vectors. While they end in `_DRAFT`, the construction may change without a new SEEDO revision (§3.10, Tending).
 
 1. `tend_salt = SHA256("CYBERSPACE_SEED_TEND_DRAFT" || seed_lineage_id || anchor_block_hash || tender_pubkey)`, with 32 bytes each for the id, the anchor's displayed hash and the tend's `pubkey`. It cannot be made before the anchor block exists, it is useless for any other seed, and it is useless in an event anyone else signs.
 2. `p` is the prime of index 0 drawn from `tend_salt` by the procedure of `CYBERSPACE_V2.md` §5.9, with `tend_salt` in place of `previous_event_id`.
@@ -830,7 +879,7 @@ Some single values, for a quick check:
 ## 13. Open questions (non-normative)
 
 1. **The language's name.** "SEEDO" is a working name. A trademark check is owed before it is used in public. This DECK keeps it out of every domain string (`CYBERSPACE_SEED_TERROIR_V1`, `CYBERSPACE_SEED_MIX_V1`), so a new name changes no hash. The prototype's terroir domain was `SEEDO_TERROIR_V1`.
-2. **The price numbers.** The base price (16 bits), the free caps (2,048 vertices, 2,048 symbols, 32 generations), the largest caps (65,536 vertices, 16,384 symbols, 256 generations) and the node budgets of §3.8 are provisional, chosen so that the prototype's DNAs cost about 21 bits and the worst case stays within seconds. They should be calibrated against phones. The planting price has the same hardware asymmetry as the mix floor (§12): NIP-13 is SHA-256, which a GPU mines thousands of times faster than the phone a gardener plants from. Should the price be paid in attempts (§9) instead of NIP-13 bits, so that plantings, tends and hops share one currency? Recommendation: keep NIP-13 for the first release, as the owner's model says, measure growing on phones, and revisit with the tending decisions.
+2. **The price numbers.** The base price (16 bits), the free caps (2,048 vertices, 2,048 symbols, 32 generations), the largest caps (65,536 vertices, 16,384 symbols, 256 generations) and the node budgets of §3.8 are provisional, chosen so that the prototype's DNAs cost about 21 bits and the worst case stays within seconds. They should be calibrated against phones, before this DECK leaves Draft if possible, since after that a calibration is revision 2 (§3.10). The planting price has the same hardware asymmetry as the mix floor (§12): NIP-13 is SHA-256, which a GPU mines thousands of times faster than the phone a gardener plants from. Should the price be paid in attempts (§9) instead of NIP-13 bits, so that plantings, tends and hops share one currency? Recommendation: keep NIP-13 for the first release, as the owner's model says, measure growing on phones, and revisit with the tending decisions.
 3. **Blocks per generation.** `N` is fixed at 144. Should a DNA choose it, with a `generation` line? A floor would be needed: the clamp's margin is about 12 blocks, so an `N` near that would let a planter know the first generation's weather. Recommendation: fixed at 144 until a DNA needs another pace; then a line allowing 36 to 1,008.
 4. **The mix delay.** 36 blocks keeps the outcome unknown with the clamp's two-hour margin (§6.2), for an honest `created_at`. With a Bitcoin timestamp on each commit, 6 would do, and a backdated commit would no longer escape it. Recommendation: 36 now; revisit if commits get timestamps.
 5. **The mix floor.** A mixed DNA pays a fixed floor of 20 bits (§7), provisional. The earlier recommendation, the caps' price plus 4 bits, was written when the DNA carried the price of its caps; with planting carrying that price, a fixed floor prices the draw alone. It prices the lineage claim, not access to the form, and a GPU pays it thousands of times faster than a phone (§12). Is 20 bits the right level, and should it rise with depth, so that long breeding lines cost more? Recommendation: 20 bits, flat, until mixing is played with.
@@ -848,6 +897,8 @@ Some single values, for a quick check:
 10. **Blooms and walkers.** Should a bloom stop a walker (DECK-0003 §1.12), and should a DNA say so? The emitted payload carries no `constrain`, so today a walker passes through every bloom.
 11. **Public seeds.** Every seed is hidden in a bag. A garden planted in the open would need a published form, as public shards do (`kind 33332`, reserved).
 12. **Deep lineage.** `MIX_DEPTH_MAX` is 8, and a deeper child must be republished as a written DNA. Is 8 the right bound, and should a faithful republished copy (§8.1) keep its lineage for display?
+13. **Mixing across revisions.** §6.5 refuses a mix of two DNAs of different revisions. The other choice is that the child takes the higher of its parents' revisions. Recommendation: refuse, as §6.5 says, and let the revision that first needs cross-revision mixing define it; a gardener can republish the older parent under the newer revision for free and mix that.
+14. **When revision 1 is fixed.** §3.10 fixes revision 1 when this DECK leaves Draft, so that the provisional numbers and the open drafts that touch it can still be settled without a revision 2. The other choice is to fix it now, so that no published DNA ever changes its bloom. Recommendation: fix it when the DECK leaves Draft, and leave Draft before any client offers seeds to the public.
 
 ---
 
