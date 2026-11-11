@@ -27,6 +27,7 @@
   "MIX_DOMAIN": "CYBERSPACE_SEED_MIX_V1",
   "price": {
    "base": 16,
+   "freeProductBits": 27,
    "caps": {
     "vertices": {
      "free": 2048,
@@ -7703,14 +7704,14 @@
   },
   "cases": [
    {
-    "what": "a planting of the fiddlehead (caps 8,000, 6,000, 40)",
+    "what": "a planting of the fiddlehead (caps 8,000, 6,000, 40: 20 bits)",
     "dna": "f4b2f7921eb25a67581f70d7c9b134e7c7c20a3c6a862c400ed399659e0046f1",
     "dna_caps": {
      "vertices": 8000,
      "symbols": 6000,
      "generations": 40
     },
-    "price": 21,
+    "price": 20,
     "event": {
      "pubkey": "10f48bb3fe7ff8942cad1e79388389cec1a645aa6ca852630b97816ca428d479",
      "created_at": 1791492718,
@@ -7734,15 +7735,15 @@
       ],
       [
        "nonce",
-       "983121",
-       "21"
+       "2944105",
+       "20"
       ]
      ],
      "content": "",
-     "id": "0000049bb6157ba2063db27be0035164f743f8212c23838ca5579838ae260b32"
+     "id": "000006610b278b57ba1d9fb13f783919517623f7d238f004516f9ac6410f2e62"
     },
     "leading_zero_bits": 21,
-    "committed_target": 21,
+    "committed_target": 20,
     "grows": true
    },
    {
@@ -7753,7 +7754,7 @@
      "symbols": 6000,
      "generations": 40
     },
-    "price": 21,
+    "price": 20,
     "event": {
      "pubkey": "10f48bb3fe7ff8942cad1e79388389cec1a645aa6ca852630b97816ca428d479",
      "created_at": 1791537157,
@@ -7777,15 +7778,15 @@
       ],
       [
        "nonce",
-       "855367",
-       "21"
+       "755807",
+       "20"
       ]
      ],
      "content": "",
-     "id": "0000011ec439e8b6a1890fb19a2126f9d20e5da208d08fdb0b5ca896b19f4422"
+     "id": "0000088a863e7629b47a5750ac056dc8bd10d7806ea9eb5f328ee9e94894c467"
     },
-    "leading_zero_bits": 23,
-    "committed_target": 21,
+    "leading_zero_bits": 20,
+    "committed_target": 20,
     "grows": true
    },
    {
@@ -7839,7 +7840,7 @@
      "symbols": 6000,
      "generations": 40
     },
-    "price": 21,
+    "price": 20,
     "event": {
      "pubkey": "10f48bb3fe7ff8942cad1e79388389cec1a645aa6ca852630b97816ca428d479",
      "created_at": 1791492718,
@@ -7875,14 +7876,14 @@
     "grows": false
    },
    {
-    "what": "a planting of the fiddlehead whose committed target says 21 but whose id has fewer than 21 leading zero bits: skipped",
+    "what": "a planting of the fiddlehead whose committed target says 20 but whose id has fewer than 20 leading zero bits: skipped",
     "dna": "f4b2f7921eb25a67581f70d7c9b134e7c7c20a3c6a862c400ed399659e0046f1",
     "dna_caps": {
      "vertices": 8000,
      "symbols": 6000,
      "generations": 40
     },
-    "price": 21,
+    "price": 20,
     "event": {
      "pubkey": "10f48bb3fe7ff8942cad1e79388389cec1a645aa6ca852630b97816ca428d479",
      "created_at": 1791492718,
@@ -7906,15 +7907,15 @@
       ],
       [
        "nonce",
-       "109257",
-       "21"
+       "25195",
+       "20"
       ]
      ],
      "content": "",
-     "id": "0000b2a6cb48323214797c8eb54765bfc5671bd4628b173c758a2dda86987f63"
+     "id": "00004098467f28753bf7747e6ca77b3830936b34aee6a0977b3d27faffda1865"
     },
-    "leading_zero_bits": 16,
-    "committed_target": 21,
+    "leading_zero_bits": 17,
+    "committed_target": 20,
     "grows": false
    }
   ]
@@ -7928,6 +7929,7 @@
      "symbols": 2048,
      "generations": 32
     },
+    "product": 134217728,
     "bits": 16
    },
    {
@@ -7936,23 +7938,8 @@
      "symbols": 6000,
      "generations": 40
     },
-    "bits": 21
-   },
-   {
-    "caps": {
-     "vertices": 2049,
-     "symbols": 2048,
-     "generations": 32
-    },
-    "bits": 17
-   },
-   {
-    "caps": {
-     "vertices": 4096,
-     "symbols": 4096,
-     "generations": 64
-    },
-    "bits": 19
+    "product": 1920000000,
+    "bits": 20
    },
    {
     "caps": {
@@ -7960,6 +7947,7 @@
      "symbols": 16384,
      "generations": 256
     },
+    "product": 274877906944,
     "bits": 27
    },
    {
@@ -7968,7 +7956,107 @@
      "symbols": 1,
      "generations": 1
     },
+    "product": 1,
     "bits": 16
+   },
+   {
+    "caps": {
+     "vertices": 4096,
+     "symbols": 1024,
+     "generations": 32
+    },
+    "product": 134217728,
+    "bits": 16
+   },
+   {
+    "caps": {
+     "vertices": 2048,
+     "symbols": 1024,
+     "generations": 64
+    },
+    "product": 134217728,
+    "bits": 16
+   },
+   {
+    "caps": {
+     "vertices": 1024,
+     "symbols": 1024,
+     "generations": 120
+    },
+    "product": 125829120,
+    "bits": 16
+   },
+   {
+    "caps": {
+     "vertices": 65536,
+     "symbols": 16384,
+     "generations": 1
+    },
+    "product": 1073741824,
+    "bits": 19
+   },
+   {
+    "caps": {
+     "vertices": 1,
+     "symbols": 16384,
+     "generations": 256
+    },
+    "product": 4194304,
+    "bits": 16
+   },
+   {
+    "caps": {
+     "vertices": 2049,
+     "symbols": 2048,
+     "generations": 32
+    },
+    "product": 134283264,
+    "bits": 17
+   },
+   {
+    "caps": {
+     "vertices": 4096,
+     "symbols": 2048,
+     "generations": 32
+    },
+    "product": 268435456,
+    "bits": 17
+   },
+   {
+    "caps": {
+     "vertices": 4097,
+     "symbols": 2048,
+     "generations": 32
+    },
+    "product": 268500992,
+    "bits": 18
+   },
+   {
+    "caps": {
+     "vertices": 3000,
+     "symbols": 2048,
+     "generations": 40
+    },
+    "product": 245760000,
+    "bits": 17
+   },
+   {
+    "caps": {
+     "vertices": 4096,
+     "symbols": 2048,
+     "generations": 40
+    },
+    "product": 335544320,
+    "bits": 18
+   },
+   {
+    "caps": {
+     "vertices": 4096,
+     "symbols": 4096,
+     "generations": 64
+    },
+    "product": 1073741824,
+    "bits": 19
    },
    {
     "caps": {
@@ -7976,6 +8064,7 @@
      "symbols": 2048,
      "generations": 32
     },
+    "product": 4295032832,
     "bits": null
    },
    {
@@ -7984,6 +8073,7 @@
      "symbols": 2048,
      "generations": 32
     },
+    "product": 0,
     "bits": null
    },
    {
@@ -7992,6 +8082,7 @@
      "symbols": 16385,
      "generations": 32
     },
+    "product": 1073807360,
     "bits": null
    },
    {
@@ -8000,6 +8091,7 @@
      "symbols": 2048,
      "generations": 257
     },
+    "product": 1077936128,
     "bits": null
    }
   ]

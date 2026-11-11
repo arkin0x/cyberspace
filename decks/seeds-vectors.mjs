@@ -939,28 +939,33 @@ const settleClock = (createdAt) => { for (let c = 970410; c <= LAST; c++) if (S.
     const ev = mineEvent(3351, tipTime + 30, seedTags(dna, planted), '', target, accept)
     return { what, dna: dna.id, dna_caps: dnaCaps, price, event: ev, leading_zero_bits: S.leadingZeroBits(ev.id), committed_target: target, grows: S.workOk(ev, price) }
   }
-  const p21 = S.price(CAPS)
+  const pCaps = S.price(CAPS)
   out.seeds = {
     note: 'Seeds are signed in a real bag; these are unsigned stand-ins whose ids carry their work. Each plants at coordA, at the clock block of a planter whose tip was 6 blocks higher.',
     free_dna: crystalFree,
     cases: [
-      seed('a planting of the fiddlehead (caps 8,000, 6,000, 40)', ev.fiddlehead, CAPS, 970524, T[970530], p21),
-      seed('a planting of the first mixed child, after its outcome block', f1a.ev, CAPS, 970600, T[970606], p21),
+      seed('a planting of the fiddlehead (caps 8,000, 6,000, 40: ' + pCaps + ' bits)', ev.fiddlehead, CAPS, 970524, T[970530], pCaps),
+      seed('a planting of the first mixed child, after its outcome block', f1a.ev, CAPS, 970600, T[970606], pCaps),
       seed('a planting of the crystal published without a caps tag: the free caps, the base price', crystalFree, S.BASE_CAPS, 970524, T[970530], S.price(S.BASE_CAPS)),
-      seed('a planting of the fiddlehead mined to 16 bits only, committed target 16: skipped', ev.fiddlehead, CAPS, 970524, T[970530], 16, (lz) => lz >= 16 && lz < p21),
-      seed('a planting of the fiddlehead whose committed target says 21 but whose id has fewer than 21 leading zero bits: skipped', ev.fiddlehead, CAPS, 970524, T[970530], p21, (lz) => lz >= 16 && lz < p21),
+      seed('a planting of the fiddlehead mined to 16 bits only, committed target 16: skipped', ev.fiddlehead, CAPS, 970524, T[970530], 16, (lz) => lz >= 16 && lz < pCaps),
+      seed('a planting of the fiddlehead whose committed target says ' + pCaps + ' but whose id has fewer than ' + pCaps + ' leading zero bits: skipped', ev.fiddlehead, CAPS, 970524, T[970530], pCaps, (lz) => lz >= 16 && lz < pCaps),
     ],
   }
 }
 
-// ---------- the price of caps ----------
+// ---------- the price of caps: the smallest whole p >= 16 with vertices x symbols x generations <= 2^(p + 11) ----------
 {
+  const c = (vertices, symbols, generations) => ({ vertices, symbols, generations })
   const rows = [
-    S.BASE_CAPS, CAPS, { vertices: 2049, symbols: 2048, generations: 32 }, { vertices: 4096, symbols: 4096, generations: 64 },
-    { vertices: 65536, symbols: 16384, generations: 256 }, { vertices: 1, symbols: 1, generations: 1 },
-    { vertices: 65537, symbols: 2048, generations: 32 }, { vertices: 0, symbols: 2048, generations: 32 },
-    { vertices: 2048, symbols: 16385, generations: 32 }, { vertices: 2048, symbols: 2048, generations: 257 },
-  ].map((c) => ({ caps: c, bits: S.price(c) }))
+    // the default, the prototype's caps, the largest and the smallest
+    S.BASE_CAPS, CAPS, c(65536, 16384, 256), c(1, 1, 1),
+    // caps below their free values leave room for the others, down to the 16-bit floor
+    c(4096, 1024, 32), c(2048, 1024, 64), c(1024, 1024, 120), c(65536, 16384, 1), c(1, 16384, 256),
+    // a product exactly at a power of two, and one just past it
+    c(2049, 2048, 32), c(4096, 2048, 32), c(4097, 2048, 32), c(3000, 2048, 40), c(4096, 2048, 40), c(4096, 4096, 64),
+    // invalid caps: each value from 1 to its largest value
+    c(65537, 2048, 32), c(0, 2048, 32), c(2048, 16385, 32), c(2048, 2048, 257),
+  ].map((caps) => ({ caps, product: caps.vertices * caps.symbols * caps.generations, bits: S.price(caps) }))
   out.price = { mix_floor: S.MIX_FLOOR, rows }
 }
 

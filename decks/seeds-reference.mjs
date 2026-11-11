@@ -26,10 +26,12 @@ export const MIX_DOMAIN = 'CYBERSPACE_SEED_MIX_V1'          // DECK-0008: new
 export const TERRAIN_CELL_BITS = [3, 7, 9, 11]
 
 // The price of a DNA's caps (DECK-0008 §7), paid by every seed that plants it; a written DNA is free
-// to publish, and a mixed DNA pays the fixed mix floor. Provisional numbers.
+// to publish, and a mixed DNA pays the fixed mix floor. Provisional numbers. The base price pays for
+// the free product, 2,048 x 2,048 x 32 = 2^27; each bit above it doubles the product of the caps.
 export const MIX_FLOOR = 20
 export const PRICE = {
   base: 16,
+  freeProductBits: 27,
   caps: {
     vertices: { free: 2048, max: 65536 },
     symbols: { free: 2048, max: 16384 },
@@ -590,15 +592,19 @@ export function mixDNA(A, B, s0, { name, hybrid = false } = {}) {
 }
 
 // ---------- the price of caps (DECK-0008 §7) ----------
-export function capBits(value, { free, max }) {
-  if (!Number.isInteger(value) || value < 1 || value > max) return null
-  let k = 0; while (free * 2 ** k < value) k++
-  return k
+// Every cap from 1 to its largest value is allowed. The price is the smallest whole p >= 16 with
+// vertices x symbols x generations <= 2^(p + 11), computed with whole numbers only (BigInt here;
+// the largest product, 2^38, also fits a 64-bit integer). Returns null for caps a DNA may not declare.
+export function capsValid(caps) {
+  return ['vertices', 'symbols', 'generations'].every((k) => Number.isInteger(caps[k]) && caps[k] >= 1 && caps[k] <= PRICE.caps[k].max)
 }
 export function price(caps) {
-  let bits = PRICE.base
-  for (const k of ['vertices', 'symbols', 'generations']) { const b = capBits(caps[k], PRICE.caps[k]); if (b === null) return null; bits += b }
-  return bits
+  if (!capsValid(caps)) return null
+  const product = BigInt(caps.vertices) * BigInt(caps.symbols) * BigInt(caps.generations)
+  const over = PRICE.freeProductBits - PRICE.base // 11: the price p covers products up to 2^(p + 11)
+  let p = PRICE.base
+  while (product > 1n << BigInt(p + over)) p++
+  return p
 }
 // NIP-13 work on an event (a seed at its DNA's price, a mixed DNA at the mix floor): the committed
 // target is a section 10 decimal at least the price, and the id has at least that many leading zero bits.
