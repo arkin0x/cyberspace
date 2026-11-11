@@ -175,7 +175,7 @@ gene <name> <allele> <allele> in <lo>..<hi>
 
 **Standard genes.** Every DNA has the four standard genes. A standard gene that a DNA does not declare is **implicit**: both alleles hold its default value, neither is dominant, and its range is its default range.
 
-| Gene | What the turtle does with it (§5.4) | Default value | Default range | Standard bounds |
+| Gene | What it does (§5.4) | Default value | Default range | Standard bounds |
 |---|---|---|---|---|
 | `size` | scales every length, width and size, in percent | `100` | `50..200` | `10..400` |
 | `hue` | rotates the hue family of every palette color | `0` | `0..23` | `0..23` |
@@ -192,7 +192,7 @@ So size and color are breedable on every DNA, and a DNA that never mentions them
 
 **Why its bounds are `10..100` (non-normative).** 100 is fully solid, the way every bloom was drawn before. DECK-0003 §1.11 draws any opacity from 1 to 9 at 10, so 10 is the faintest opacity that every reader draws as written, and a bound at 10 means that a bloom never carries a value that a reader repairs.
 
-**Opacity and revision 1 (non-normative).** `opacity` is part of SEEDO revision 1, added while this DECK is a Draft. Before it was added, `opacity` was an ordinary name: a text could declare a species gene of that name, which changed nothing in its bloom, or use it for a `let` or a rule parameter. Under this text, such a gene line declares the standard gene, so the bloom carries the payload's `opacity` and its hash changes, and such a `let` or rule parameter makes the text invalid, because the name is taken (§3.4).
+**Opacity and revision 1 (non-normative).** `opacity` is part of SEEDO revision 1, added while this DECK is a Draft. Before it was added, `opacity` was an ordinary name: a text could declare a species gene of that name, or use it for a `let` or a rule parameter. Under this text, such a gene line declares the standard gene, with four effects: the bloom carries the payload's `opacity` when it is below 100, so its hash changes; the gene's range is narrowed to `10..100` and its alleles clamped into it, which changes what any expression reads from it, and a range wholly outside `10..100` makes the text invalid; the gene moves to the end of the genome, so every species gene declared after it moves one index down and draws a different word in a mix (§6.4); and the mix rules for `opacity` (§6.4, §6.6) apply to it. Such a `let` or rule parameter makes the text invalid, because the name is taken (§3.4).
 
 **Expression.** A gene's expressed value is the value of its dominant allele when exactly one allele is dominant. Otherwise, when both or neither are dominant, it is `floor((a + b) / 2)`, rounding toward minus infinity, so the two blend.
 
@@ -496,7 +496,7 @@ else:        shade = min(7, max(0, (c mod 8) + tone))
 
 `size` scales lengths, leaf sizes, bead radii and widths through `SIZE` (§5.2, §5.3).
 
-`opacity` changes no vertex, color or face. Its expressed value is how solid the whole bloom is drawn, in percent, and the payload carries it as DECK-0003's `opacity` (§1.11) when it is below 100 (§5.5). A reader draws the bloom as it draws any SNO object with that opacity. The standard bounds keep the expressed value within `10..100`: both alleles lie inside the gene's range, the range lies inside the bounds, and the expressed value is one allele or the floor of their mean.
+The turtle applies `opacity` to no vertex, color or face, though an expression MAY read it like any gene (§3.4). Its expressed value is how solid the whole bloom is drawn, in percent, and the payload carries it as DECK-0003's `opacity` (§1.11) when it is below 100 (§5.5). A reader draws the bloom as it draws any SNO object with that opacity. The standard bounds keep the expressed value within `10..100`: both alleles lie inside the gene's range, the range lies inside the bounds, and the expressed value is one allele or the floor of their mean.
 
 **Why one opacity for the whole bloom (non-normative).** A bloom is one SNO object, and SNO has one opacity per object, never per face or per vertex: DECK-0003 §1.11 explains why translucency per face would ask every reader to sort an object's triangles every frame. arkinox ruled on 2026-11-11 that blooms get opacity for the whole bloom as a breedable trait, aimed first at crystals, and no transparency per part.
 
@@ -576,7 +576,7 @@ Genes that `B` has and `A` does not are not passed on. All shifts are on the uns
 
 The child's text is computed from the mother's text, line by line, so that every reader computes the same text and a republished copy (§8.1) can be compared with it:
 
-1. The **head** is the line `dna <name>`, where `<name>` is the mixed DNA's `name` tag if it has one with a value that is not empty, and otherwise the mother's name, a space, `x`, a space and the father's name, cut to 64 code points. In a sterile hybrid the head continues with the line `sterile`. It then continues with a gene line (step 4) for each of `size`, `hue` and `tone` that the mother does not declare, in that order. When the father declares `opacity` and the mother does not, it continues with the child's `opacity` gene line. When neither declares it, the child's text has no `opacity` line, and its `opacity` is implicit, as §6.4 drew it.
+1. The **head** is the line `dna <name>`, where `<name>` is the mixed DNA's `name` tag if it has one with a value that is not empty, and otherwise the mother's name, a space, `x`, a space and the father's name, cut to 64 code points. In a sterile hybrid the head continues with the line `sterile`. It then continues with a gene line (step 4) for each of `size`, `hue` and `tone` that the mother does not declare, in that order. When the father declares `opacity` and the mother does not, it continues with the child's `opacity` gene line. When neither declares it, the child's text has no `opacity` line, and its `opacity` is implicit, as §6.4 leaves it, with no draw.
 2. Walk the mother's lines in order, judging each by its keyword after comments are removed (§3.1). A rule line is copied unchanged. A `dna` or `seed` line is replaced by the head. A `sterile`, `planted` or `scale` line is dropped. A `gene` line is replaced by the child's gene line for the gene of that name. Every other line, comments and blank lines included, is copied unchanged.
 3. If the mother has no `dna` or `seed` line, the head is placed before her first line.
 4. A child's gene line is `gene <name> <first allele> <second allele> in <lo>..<hi>`, single spaces, where an allele is its value in decimal followed by `!` when it is dominant.
