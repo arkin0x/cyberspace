@@ -28,6 +28,7 @@
   "price": {
    "base": 16,
    "freeProductBits": 27,
+   "freeGrowthBits": 16,
    "caps": {
     "vertices": {
      "free": 2048,
@@ -7930,6 +7931,9 @@
      "generations": 32
     },
     "product": 134217728,
+    "growth": 65536,
+    "product_bits": 16,
+    "growth_bits": 16,
     "bits": 16
    },
    {
@@ -7939,6 +7943,9 @@
      "generations": 40
     },
     "product": 1920000000,
+    "growth": 240000,
+    "product_bits": 20,
+    "growth_bits": 18,
     "bits": 20
    },
    {
@@ -7948,6 +7955,9 @@
      "generations": 256
     },
     "product": 274877906944,
+    "growth": 4194304,
+    "product_bits": 27,
+    "growth_bits": 22,
     "bits": 27
    },
    {
@@ -7957,6 +7967,9 @@
      "generations": 1
     },
     "product": 1,
+    "growth": 1,
+    "product_bits": 16,
+    "growth_bits": 16,
     "bits": 16
    },
    {
@@ -7966,6 +7979,9 @@
      "generations": 32
     },
     "product": 134217728,
+    "growth": 32768,
+    "product_bits": 16,
+    "growth_bits": 16,
     "bits": 16
    },
    {
@@ -7975,15 +7991,9 @@
      "generations": 64
     },
     "product": 134217728,
-    "bits": 16
-   },
-   {
-    "caps": {
-     "vertices": 1024,
-     "symbols": 1024,
-     "generations": 120
-    },
-    "product": 125829120,
+    "growth": 65536,
+    "product_bits": 16,
+    "growth_bits": 16,
     "bits": 16
    },
    {
@@ -7993,7 +8003,34 @@
      "generations": 1
     },
     "product": 1073741824,
+    "growth": 16384,
+    "product_bits": 19,
+    "growth_bits": 16,
     "bits": 19
+   },
+   {
+    "caps": {
+     "vertices": 1,
+     "symbols": 16384,
+     "generations": 4
+    },
+    "product": 65536,
+    "growth": 65536,
+    "product_bits": 16,
+    "growth_bits": 16,
+    "bits": 16
+   },
+   {
+    "caps": {
+     "vertices": 1024,
+     "symbols": 1024,
+     "generations": 120
+    },
+    "product": 125829120,
+    "growth": 122880,
+    "product_bits": 16,
+    "growth_bits": 17,
+    "bits": 17
    },
    {
     "caps": {
@@ -8002,7 +8039,22 @@
      "generations": 256
     },
     "product": 4194304,
-    "bits": 16
+    "growth": 4194304,
+    "product_bits": 16,
+    "growth_bits": 22,
+    "bits": 22
+   },
+   {
+    "caps": {
+     "vertices": 1024,
+     "symbols": 2048,
+     "generations": 33
+    },
+    "product": 69206016,
+    "growth": 67584,
+    "product_bits": 16,
+    "growth_bits": 17,
+    "bits": 17
    },
    {
     "caps": {
@@ -8011,6 +8063,9 @@
      "generations": 32
     },
     "product": 134283264,
+    "growth": 65536,
+    "product_bits": 17,
+    "growth_bits": 16,
     "bits": 17
    },
    {
@@ -8020,6 +8075,9 @@
      "generations": 32
     },
     "product": 268435456,
+    "growth": 65536,
+    "product_bits": 17,
+    "growth_bits": 16,
     "bits": 17
    },
    {
@@ -8029,6 +8087,9 @@
      "generations": 32
     },
     "product": 268500992,
+    "growth": 65536,
+    "product_bits": 18,
+    "growth_bits": 16,
     "bits": 18
    },
    {
@@ -8038,6 +8099,9 @@
      "generations": 40
     },
     "product": 245760000,
+    "growth": 81920,
+    "product_bits": 17,
+    "growth_bits": 17,
     "bits": 17
    },
    {
@@ -8047,6 +8111,9 @@
      "generations": 40
     },
     "product": 335544320,
+    "growth": 81920,
+    "product_bits": 18,
+    "growth_bits": 17,
     "bits": 18
    },
    {
@@ -8056,6 +8123,9 @@
      "generations": 64
     },
     "product": 1073741824,
+    "growth": 262144,
+    "product_bits": 19,
+    "growth_bits": 18,
     "bits": 19
    },
    {
@@ -8065,6 +8135,9 @@
      "generations": 32
     },
     "product": 4295032832,
+    "growth": 65536,
+    "product_bits": null,
+    "growth_bits": null,
     "bits": null
    },
    {
@@ -8074,6 +8147,9 @@
      "generations": 32
     },
     "product": 0,
+    "growth": 65536,
+    "product_bits": null,
+    "growth_bits": null,
     "bits": null
    },
    {
@@ -8083,6 +8159,9 @@
      "generations": 32
     },
     "product": 1073807360,
+    "growth": 524320,
+    "product_bits": null,
+    "growth_bits": null,
     "bits": null
    },
    {
@@ -8092,6 +8171,9 @@
      "generations": 257
     },
     "product": 1077936128,
+    "growth": 526336,
+    "product_bits": null,
+    "growth_bits": null,
     "bits": null
    }
   ]

@@ -27,11 +27,13 @@ export const TERRAIN_CELL_BITS = [3, 7, 9, 11]
 
 // The price of a DNA's caps (DECK-0008 §7), paid by every seed that plants it; a written DNA is free
 // to publish, and a mixed DNA pays the fixed mix floor. Provisional numbers. The base price pays for
-// the free product, 2,048 x 2,048 x 32 = 2^27; each bit above it doubles the product of the caps.
+// the free product, 2,048 x 2,048 x 32 = 2^27, and for the free growth, 2,048 x 32 = 2^16; each bit
+// above it doubles both.
 export const MIX_FLOOR = 20
 export const PRICE = {
   base: 16,
   freeProductBits: 27,
+  freeGrowthBits: 16,
   caps: {
     vertices: { free: 2048, max: 65536 },
     symbols: { free: 2048, max: 16384 },
@@ -592,19 +594,28 @@ export function mixDNA(A, B, s0, { name, hybrid = false } = {}) {
 }
 
 // ---------- the price of caps (DECK-0008 §7) ----------
-// Every cap from 1 to its largest value is allowed. The price is the smallest whole p >= 16 with
-// vertices x symbols x generations <= 2^(p + 11), computed with whole numbers only (BigInt here;
+// Every cap from 1 to its largest value is allowed. The price is the larger of two whole numbers, each
+// at least 16: the product rule, the smallest p with vertices x symbols x generations <= 2^(p + 11), and
+// the growth rule, the smallest p with generations x symbols <= 2^p. Whole numbers only (BigInt here;
 // the largest product, 2^38, also fits a 64-bit integer). Returns null for caps a DNA may not declare.
 export function capsValid(caps) {
   return ['vertices', 'symbols', 'generations'].every((k) => Number.isInteger(caps[k]) && caps[k] >= 1 && caps[k] <= PRICE.caps[k].max)
 }
+// the smallest whole p >= PRICE.base with n <= 2^(p + over)
+function bitsFor(n, over) {
+  let p = PRICE.base
+  while (n > 1n << BigInt(p + over)) p++
+  return p
+}
+export function productPrice(caps) {
+  return bitsFor(BigInt(caps.vertices) * BigInt(caps.symbols) * BigInt(caps.generations), PRICE.freeProductBits - PRICE.base)
+}
+export function growthPrice(caps) {
+  return bitsFor(BigInt(caps.generations) * BigInt(caps.symbols), PRICE.freeGrowthBits - PRICE.base)
+}
 export function price(caps) {
   if (!capsValid(caps)) return null
-  const product = BigInt(caps.vertices) * BigInt(caps.symbols) * BigInt(caps.generations)
-  const over = PRICE.freeProductBits - PRICE.base // 11: the price p covers products up to 2^(p + 11)
-  let p = PRICE.base
-  while (product > 1n << BigInt(p + over)) p++
-  return p
+  return Math.max(productPrice(caps), growthPrice(caps))
 }
 // NIP-13 work on an event (a seed at its DNA's price, a mixed DNA at the mix floor): the committed
 // target is a section 10 decimal at least the price, and the id has at least that many leading zero bits.

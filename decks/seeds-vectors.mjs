@@ -953,19 +953,26 @@ const settleClock = (createdAt) => { for (let c = 970410; c <= LAST; c++) if (S.
   }
 }
 
-// ---------- the price of caps: the smallest whole p >= 16 with vertices x symbols x generations <= 2^(p + 11) ----------
+// ---------- the price of caps: the larger of the product rule (the smallest whole p >= 16 with
+// vertices x symbols x generations <= 2^(p + 11)) and the growth rule (the smallest whole p >= 16 with
+// generations x symbols <= 2^p) ----------
 {
   const c = (vertices, symbols, generations) => ({ vertices, symbols, generations })
   const rows = [
     // the default, the prototype's caps, the largest and the smallest
     S.BASE_CAPS, CAPS, c(65536, 16384, 256), c(1, 1, 1),
     // caps below their free values leave room for the others, down to the 16-bit floor
-    c(4096, 1024, 32), c(2048, 1024, 64), c(1024, 1024, 120), c(65536, 16384, 1), c(1, 16384, 256),
+    c(4096, 1024, 32), c(2048, 1024, 64), c(65536, 16384, 1), c(1, 16384, 4),
+    // the growth rule: rewriting past the free caps' 2^16 pays, whatever the vertex cap leaves
+    c(1024, 1024, 120), c(1, 16384, 256), c(1024, 2048, 33),
     // a product exactly at a power of two, and one just past it
     c(2049, 2048, 32), c(4096, 2048, 32), c(4097, 2048, 32), c(3000, 2048, 40), c(4096, 2048, 40), c(4096, 4096, 64),
     // invalid caps: each value from 1 to its largest value
     c(65537, 2048, 32), c(0, 2048, 32), c(2048, 16385, 32), c(2048, 2048, 257),
-  ].map((caps) => ({ caps, product: caps.vertices * caps.symbols * caps.generations, bits: S.price(caps) }))
+  ].map((caps) => {
+    const ok = S.capsValid(caps)
+    return { caps, product: caps.vertices * caps.symbols * caps.generations, growth: caps.generations * caps.symbols, product_bits: ok ? S.productPrice(caps) : null, growth_bits: ok ? S.growthPrice(caps) : null, bits: S.price(caps) }
+  })
   out.price = { mix_floor: S.MIX_FLOOR, rows }
 }
 
