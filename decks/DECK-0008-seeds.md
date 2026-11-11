@@ -511,7 +511,7 @@ The bloom is a SNO payload (DECK-0003 §1.1) written exactly as follows, in this
 - `colors` holds each vertex's painted color, and `faces` the faces in the order written.
 - `opacity` is the expressed standard gene `opacity` (§3.3, §5.4), a JSON integer. It is omitted when it is 100, as DECK-0003 §1.2 requires, so the payload of a bloom whose `opacity` is 100, declared or implicit, is exactly the payload it would be if the gene did not exist.
 
-The payload is valid under DECK-0003 §1.9 by construction. A reader never publishes it. Where a hash of the payload is wanted, as in the vectors (§11), it is SHA-256 of the UTF-8 bytes of the payload's compact JSON in this key order: no whitespace, integers in decimal (`opacity` among them), and the one string, `name`, escaped as JSON requires, with `"` as `\"` and `\` as `\\` and every other character written as itself. A name holds no control character (§3.1, §6.6), so no other escape arises.
+The payload is valid under DECK-0003 §1.9 by construction. A reader never publishes it. Where a hash of the payload is wanted, as in the vectors (§11), it is SHA-256 of the UTF-8 bytes of the payload's compact JSON in this key order: no whitespace, integers in decimal, and the one string, `name`, escaped as JSON requires, with `"` as `\"` and `\` as `\\` and every other character written as itself. A name holds no control character (§3.1, §6.6), so no other escape arises.
 
 ### 5.6 Where a bloom stands
 
