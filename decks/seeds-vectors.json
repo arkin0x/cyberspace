@@ -8003,5 +8003,798 @@
     "bits": null
    }
   ]
+ },
+ "opacity": {
+  "note": "The fourth standard gene, opacity (DECK-0008 §3.3): bounds 10..100, default 100, default range 100..100, last in the genome. A bloom whose expressed opacity is below 100 carries \"opacity\" after \"faces\" (§5.5); every other payload in this file is unchanged. Elsewhere in this file a listed genome leaves out an implicit opacity; here every genome is listed in full.",
+  "standard_gene": {
+   "name": "opacity",
+   "def": 100,
+   "lo": 100,
+   "hi": 100,
+   "min": 10,
+   "max": 100
+  },
+  "growth": [
+   {
+    "what": "the glass crystal at day 0: the bead of its axiom, at opacity 40",
+    "dna": "dna     crystal\nspecies crystal\nmutate  2\n\n# standard genes (every DNA has them; the turtle applies them)\ngene hue     0!   5    in 0..23    # cyan, hiding a violet\ngene opacity 40!  100  in 20..100  # glassy, dominant, hiding a solid allele\n# species genes\ngene arm     5!   4    in 3..8     # cell size\ngene bud     35   50!  in 0..90    # chance, per day, that every arm buds\n\nangle 90\nlet step  = arm + n0 % 3           # terroir: fine texture sets the cell size\nlet calm  = 45 + K * 2 + n3        # days are calm enough to grow when W < calm\nlet reach = 2 + n2 % 3             # side arm length\naxiom '(15) O(3) !(4) X\n\n# six arms on a cubic lattice. W is one roll per day for the whole crystal, so it stays symmetric\nX -> [ Y(0) ] [ +(90) Y(0) ] [ -(90) Y(0) ] [ ^(90) Y(0) ] [ &(90) Y(0) ] [ |(0) Y(0) ]\nY(k) if k < 16 and W < bud * calm / 100 -> '(12) F(step) O(1) [ +(90) Z(reach) ] [ -(90) Z(reach) ] [ ^(90) Z(reach-1) ] Y(k+1)\nY(k) if k < 16 and W < calm -> '(12) F(step) O(1) Y(k+1)\nZ(n) if n > 0 and W < calm -> '(14) F(step/2) O(1) Z(n-1)",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 970400,
+    "generation": 0,
+    "vertices": 6,
+    "faces": 8,
+    "opacity": 40,
+    "sno_bytes": 303,
+    "sno_sha256": "9504c10a914313069ae62ec25e68fe32ccca3dd32ac6f1d0f9e2729e166f3f4b",
+    "sno_sha256_without_opacity": "2599a8eaf632c66b057b438c5838a02c5bb91e654ff02bf466be867de692bb74",
+    "sno": {
+     "v": 2,
+     "name": "crystal",
+     "unit": 0,
+     "extent": 1,
+     "mode": "solid",
+     "vertices": [
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       -1,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       -1,
+       0
+      ],
+      [
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       -1
+      ]
+     ],
+     "ticks": [
+      [
+       36,
+       0,
+       0
+      ],
+      [
+       84,
+       0,
+       0
+      ],
+      [
+       0,
+       36,
+       0
+      ],
+      [
+       0,
+       84,
+       0
+      ],
+      [
+       0,
+       0,
+       36
+      ],
+      [
+       0,
+       0,
+       84
+      ]
+     ],
+     "colors": [
+      15,
+      15,
+      15,
+      15,
+      15,
+      15
+     ],
+     "faces": [
+      [
+       0,
+       2,
+       4
+      ],
+      [
+       2,
+       1,
+       4
+      ],
+      [
+       1,
+       3,
+       4
+      ],
+      [
+       3,
+       0,
+       4
+      ],
+      [
+       2,
+       0,
+       5
+      ],
+      [
+       1,
+       2,
+       5
+      ],
+      [
+       3,
+       1,
+       5
+      ],
+      [
+       0,
+       3,
+       5
+      ]
+     ],
+     "opacity": 40
+    }
+   },
+   {
+    "what": "the glass crystal at day 30 and 6 blocks: the crystal's payload with \"opacity\":40 after \"faces\"",
+    "dna": "dna     crystal\nspecies crystal\nmutate  2\n\n# standard genes (every DNA has them; the turtle applies them)\ngene hue     0!   5    in 0..23    # cyan, hiding a violet\ngene opacity 40!  100  in 20..100  # glassy, dominant, hiding a solid allele\n# species genes\ngene arm     5!   4    in 3..8     # cell size\ngene bud     35   50!  in 0..90    # chance, per day, that every arm buds\n\nangle 90\nlet step  = arm + n0 % 3           # terroir: fine texture sets the cell size\nlet calm  = 45 + K * 2 + n3        # days are calm enough to grow when W < calm\nlet reach = 2 + n2 % 3             # side arm length\naxiom '(15) O(3) !(4) X\n\n# six arms on a cubic lattice. W is one roll per day for the whole crystal, so it stays symmetric\nX -> [ Y(0) ] [ +(90) Y(0) ] [ -(90) Y(0) ] [ ^(90) Y(0) ] [ &(90) Y(0) ] [ |(0) Y(0) ]\nY(k) if k < 16 and W < bud * calm / 100 -> '(12) F(step) O(1) [ +(90) Z(reach) ] [ -(90) Z(reach) ] [ ^(90) Z(reach-1) ] Y(k+1)\nY(k) if k < 16 and W < calm -> '(12) F(step) O(1) Y(k+1)\nZ(n) if n > 0 and W < calm -> '(14) F(step/2) O(1) Z(n-1)",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 974726,
+    "generation": 30,
+    "vertices": 4038,
+    "faces": 4712,
+    "opacity": 40,
+    "sno_bytes": 168611,
+    "sno_sha256": "4aa35eba084a894721fe897154cc43331f2cb766867ab422dcd29cf851e9d08b",
+    "sno_sha256_without_opacity": "f0252ccc372cd51c436c9531b3b9958ebaece50b72019433bcc3e20bc39f5417"
+   },
+   {
+    "what": "the crystal declaring opacity 100: no opacity key, the crystal's own hash",
+    "dna": "dna     crystal\nspecies crystal\nmutate  2\n\n# standard genes (every DNA has them; the turtle applies them)\ngene hue     0!   5    in 0..23    # cyan, hiding a violet\n# species genes\ngene arm     5!   4    in 3..8     # cell size\ngene bud     35   50!  in 0..90    # chance, per day, that every arm buds\n\ngene opacity 100 100 in 10..100\nangle 90\nlet step  = arm + n0 % 3           # terroir: fine texture sets the cell size\nlet calm  = 45 + K * 2 + n3        # days are calm enough to grow when W < calm\nlet reach = 2 + n2 % 3             # side arm length\naxiom '(15) O(3) !(4) X\n\n# six arms on a cubic lattice. W is one roll per day for the whole crystal, so it stays symmetric\nX -> [ Y(0) ] [ +(90) Y(0) ] [ -(90) Y(0) ] [ ^(90) Y(0) ] [ &(90) Y(0) ] [ |(0) Y(0) ]\nY(k) if k < 16 and W < bud * calm / 100 -> '(12) F(step) O(1) [ +(90) Z(reach) ] [ -(90) Z(reach) ] [ ^(90) Z(reach-1) ] Y(k+1)\nY(k) if k < 16 and W < calm -> '(12) F(step) O(1) Y(k+1)\nZ(n) if n > 0 and W < calm -> '(14) F(step/2) O(1) Z(n-1)",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 974726,
+    "generation": 30,
+    "vertices": 4038,
+    "faces": 4712,
+    "opacity": null,
+    "sno_bytes": 168598,
+    "sno_sha256": "f0252ccc372cd51c436c9531b3b9958ebaece50b72019433bcc3e20bc39f5417",
+    "sno_sha256_without_opacity": "f0252ccc372cd51c436c9531b3b9958ebaece50b72019433bcc3e20bc39f5417"
+   },
+   {
+    "what": "the crystal declaring opacity 45 and 70, neither dominant: floor((45 + 70) / 2) = 57",
+    "dna": "dna     crystal\nspecies crystal\nmutate  2\n\n# standard genes (every DNA has them; the turtle applies them)\ngene hue     0!   5    in 0..23    # cyan, hiding a violet\n# species genes\ngene arm     5!   4    in 3..8     # cell size\ngene bud     35   50!  in 0..90    # chance, per day, that every arm buds\n\ngene opacity 45 70 in 10..100\nangle 90\nlet step  = arm + n0 % 3           # terroir: fine texture sets the cell size\nlet calm  = 45 + K * 2 + n3        # days are calm enough to grow when W < calm\nlet reach = 2 + n2 % 3             # side arm length\naxiom '(15) O(3) !(4) X\n\n# six arms on a cubic lattice. W is one roll per day for the whole crystal, so it stays symmetric\nX -> [ Y(0) ] [ +(90) Y(0) ] [ -(90) Y(0) ] [ ^(90) Y(0) ] [ &(90) Y(0) ] [ |(0) Y(0) ]\nY(k) if k < 16 and W < bud * calm / 100 -> '(12) F(step) O(1) [ +(90) Z(reach) ] [ -(90) Z(reach) ] [ ^(90) Z(reach-1) ] Y(k+1)\nY(k) if k < 16 and W < calm -> '(12) F(step) O(1) Y(k+1)\nZ(n) if n > 0 and W < calm -> '(14) F(step/2) O(1) Z(n-1)",
+    "coord": "3a7f1c9e5b2d4806f1e3c5a79b0d2f4618e3a5c7b9d1f3e5a7c9b1d3f5e7a9c1",
+    "planted": 970400,
+    "scale": 0,
+    "caps": {
+     "vertices": 8000,
+     "symbols": 6000,
+     "generations": 40
+    },
+    "clock": 974726,
+    "generation": 30,
+    "vertices": 4038,
+    "faces": 4712,
+    "opacity": 57,
+    "sno_bytes": 168611,
+    "sno_sha256": "31e4de692716c7e362831de386b5a58ced29aa61ba4e8b6eb706c57409cac183",
+    "sno_sha256_without_opacity": "f0252ccc372cd51c436c9531b3b9958ebaece50b72019433bcc3e20bc39f5417"
+   }
+  ],
+  "accepted": [
+   {
+    "why": "opacity narrowed to its standard bounds 10..100, its alleles clamped into them",
+    "dna": "dna x\ngene opacity 5 300 in 0..400\naxiom A",
+    "genes": [
+     [
+      "size",
+      "100",
+      "100",
+      50,
+      200,
+      100
+     ],
+     [
+      "hue",
+      "0",
+      "0",
+      0,
+      23,
+      0
+     ],
+     [
+      "tone",
+      "0",
+      "0",
+      -4,
+      4,
+      0
+     ],
+     [
+      "opacity",
+      "10",
+      "100",
+      10,
+      100,
+      55
+     ]
+    ],
+    "opacity": 55,
+    "axiom_arguments": [
+     []
+    ]
+   },
+   {
+    "why": "an expression reads an implicit opacity as 100",
+    "dna": "dna x\nlet o = opacity\naxiom A(o)",
+    "genes": [
+     [
+      "size",
+      "100",
+      "100",
+      50,
+      200,
+      100
+     ],
+     [
+      "hue",
+      "0",
+      "0",
+      0,
+      23,
+      0
+     ],
+     [
+      "tone",
+      "0",
+      "0",
+      -4,
+      4,
+      0
+     ],
+     [
+      "opacity",
+      "100",
+      "100",
+      100,
+      100,
+      100
+     ]
+    ],
+    "opacity": 100,
+    "axiom_arguments": [
+     [
+      100
+     ]
+    ]
+   },
+   {
+    "why": "a declared opacity, read by an expression on any line",
+    "dna": "dna x\naxiom A(opacity)\ngene opacity 30! 90 in 10..100",
+    "genes": [
+     [
+      "size",
+      "100",
+      "100",
+      50,
+      200,
+      100
+     ],
+     [
+      "hue",
+      "0",
+      "0",
+      0,
+      23,
+      0
+     ],
+     [
+      "tone",
+      "0",
+      "0",
+      -4,
+      4,
+      0
+     ],
+     [
+      "opacity",
+      "30!",
+      "90",
+      10,
+      100,
+      30
+     ]
+    ],
+    "opacity": 30,
+    "axiom_arguments": [
+     [
+      30
+     ]
+    ]
+   }
+  ],
+  "rejected": [
+   {
+    "why": "an opacity range wholly above the standard bounds",
+    "dna": "dna x\ngene opacity 50 50 in 101..200\naxiom A",
+    "error_in_reference": "line 2: opacity range is outside 10..100"
+   },
+   {
+    "why": "an opacity range wholly below the standard bounds",
+    "dna": "dna x\ngene opacity 5 5 in 0..9\naxiom A",
+    "error_in_reference": "line 2: opacity range is outside 10..100"
+   },
+   {
+    "why": "opacity declared twice",
+    "dna": "dna x\ngene opacity 50 50 in 10..100\ngene opacity 60 60 in 10..100\naxiom A",
+    "error_in_reference": "line 3: name \"opacity\" is taken"
+   },
+   {
+    "why": "a let named opacity: the name is taken",
+    "dna": "dna x\nlet opacity = 1\naxiom A",
+    "error_in_reference": "line 2: name \"opacity\" is taken"
+   },
+   {
+    "why": "a rule parameter named opacity: the name is taken",
+    "dna": "dna x\naxiom A(1)\nA(opacity) -> A(1)",
+    "error_in_reference": "line 3: parameter \"opacity\" is not a free name"
+   }
+  ],
+  "mixes": [
+   {
+    "what": "crystal x glass crystal: the father declares opacity, and the child takes his glassy allele and a line in its head",
+    "mother": "crystal",
+    "father": "glass crystal",
+    "word_from_block": 970536,
+    "mix_word": 3641337478,
+    "genes": [
+     {
+      "name": "size",
+      "index": 0,
+      "word": 2309687850,
+      "alleles_from": [
+       "A1",
+       "B2"
+      ],
+      "a": "100",
+      "b": "100",
+      "lo": 50,
+      "hi": 200,
+      "expressed": 100,
+      "mutated": null
+     },
+     {
+      "name": "hue",
+      "index": 1,
+      "word": 522686827,
+      "alleles_from": [
+       "A2",
+       "B2"
+      ],
+      "a": "5",
+      "b": "5",
+      "lo": 0,
+      "hi": 23,
+      "expressed": 5,
+      "mutated": null
+     },
+     {
+      "name": "tone",
+      "index": 2,
+      "word": 790635695,
+      "alleles_from": [
+       "A2",
+       "B2"
+      ],
+      "a": "0",
+      "b": "0",
+      "lo": -4,
+      "hi": 4,
+      "expressed": 0,
+      "mutated": null
+     },
+     {
+      "name": "arm",
+      "index": 3,
+      "word": 2736567998,
+      "alleles_from": [
+       "A1",
+       "B2"
+      ],
+      "a": "5!",
+      "b": "4",
+      "lo": 3,
+      "hi": 8,
+      "expressed": 5,
+      "mutated": null
+     },
+     {
+      "name": "bud",
+      "index": 4,
+      "word": 2868303016,
+      "alleles_from": [
+       "A1",
+       "B1"
+      ],
+      "a": "35",
+      "b": "35",
+      "lo": 0,
+      "hi": 90,
+      "expressed": 35,
+      "mutated": null
+     },
+     {
+      "name": "opacity",
+      "index": 5,
+      "word": 3967444216,
+      "alleles_from": [
+       "A1",
+       "B1"
+      ],
+      "a": "100",
+      "b": "40!",
+      "lo": 20,
+      "hi": 100,
+      "expressed": 40,
+      "mutated": null
+     }
+    ],
+    "child_text": "dna crystal x crystal\ngene size 100 100 in 50..200\ngene tone 0 0 in -4..4\ngene opacity 100 40! in 20..100\nspecies crystal\nmutate  2\n\n# standard genes (every DNA has them; the turtle applies them)\ngene hue 5 5 in 0..23\n# species genes\ngene arm 5! 4 in 3..8\ngene bud 35 35 in 0..90\n\nangle 90\nlet step  = arm + n0 % 3           # terroir: fine texture sets the cell size\nlet calm  = 45 + K * 2 + n3        # days are calm enough to grow when W < calm\nlet reach = 2 + n2 % 3             # side arm length\naxiom '(15) O(3) !(4) X\n\n# six arms on a cubic lattice. W is one roll per day for the whole crystal, so it stays symmetric\nX -> [ Y(0) ] [ +(90) Y(0) ] [ -(90) Y(0) ] [ ^(90) Y(0) ] [ &(90) Y(0) ] [ |(0) Y(0) ]\nY(k) if k < 16 and W < bud * calm / 100 -> '(12) F(step) O(1) [ +(90) Z(reach) ] [ -(90) Z(reach) ] [ ^(90) Z(reach-1) ] Y(k+1)\nY(k) if k < 16 and W < calm -> '(12) F(step) O(1) Y(k+1)\nZ(n) if n > 0 and W < calm -> '(14) F(step/2) O(1) Z(n-1)",
+    "other_genes_as_in_crystal_x_crystal": true,
+    "child_growth": {
+     "planted": 970400,
+     "clock": 974726,
+     "opacity": 40,
+     "vertices": 3678,
+     "sno_sha256": "5ce243633aebb519d093a538dfa14b350fb184325d72bf486f9168157b43577e"
+    }
+   },
+   {
+    "what": "crystal x glass crystal with another word: the child takes his solid allele, and keeps the line",
+    "mother": "crystal",
+    "father": "glass crystal",
+    "word_from_block": 970537,
+    "mix_word": 2462178117,
+    "genes": [
+     {
+      "name": "size",
+      "index": 0,
+      "word": 933597213,
+      "alleles_from": [
+       "A2",
+       "B1"
+      ],
+      "a": "100",
+      "b": "100",
+      "lo": 50,
+      "hi": 200,
+      "expressed": 100,
+      "mutated": null
+     },
+     {
+      "name": "hue",
+      "index": 1,
+      "word": 3060389554,
+      "alleles_from": [
+       "A1",
+       "B2"
+      ],
+      "a": "0!",
+      "b": "5",
+      "lo": 0,
+      "hi": 23,
+      "expressed": 0,
+      "mutated": null
+     },
+     {
+      "name": "tone",
+      "index": 2,
+      "word": 2178019865,
+      "alleles_from": [
+       "A2",
+       "B1"
+      ],
+      "a": "0",
+      "b": "0",
+      "lo": -4,
+      "hi": 4,
+      "expressed": 0,
+      "mutated": null
+     },
+     {
+      "name": "arm",
+      "index": 3,
+      "word": 3341160381,
+      "alleles_from": [
+       "A2",
+       "B1"
+      ],
+      "a": "4",
+      "b": "5!",
+      "lo": 3,
+      "hi": 8,
+      "expressed": 5,
+      "mutated": null
+     },
+     {
+      "name": "bud",
+      "index": 4,
+      "word": 2308518661,
+      "alleles_from": [
+       "A2",
+       "B1"
+      ],
+      "a": "50!",
+      "b": "35",
+      "lo": 0,
+      "hi": 90,
+      "expressed": 50,
+      "mutated": null
+     },
+     {
+      "name": "opacity",
+      "index": 5,
+      "word": 1746774,
+      "alleles_from": [
+       "A1",
+       "B2"
+      ],
+      "a": "100",
+      "b": "100",
+      "lo": 20,
+      "hi": 100,
+      "expressed": 100,
+      "mutated": null
+     }
+    ],
+    "child_text": "dna crystal x crystal\ngene size 100 100 in 50..200\ngene tone 0 0 in -4..4\ngene opacity 100 100 in 20..100\nspecies crystal\nmutate  2\n\n# standard genes (every DNA has them; the turtle applies them)\ngene hue 0! 5 in 0..23\n# species genes\ngene arm 4 5! in 3..8\ngene bud 50! 35 in 0..90\n\nangle 90\nlet step  = arm + n0 % 3           # terroir: fine texture sets the cell size\nlet calm  = 45 + K * 2 + n3        # days are calm enough to grow when W < calm\nlet reach = 2 + n2 % 3             # side arm length\naxiom '(15) O(3) !(4) X\n\n# six arms on a cubic lattice. W is one roll per day for the whole crystal, so it stays symmetric\nX -> [ Y(0) ] [ +(90) Y(0) ] [ -(90) Y(0) ] [ ^(90) Y(0) ] [ &(90) Y(0) ] [ |(0) Y(0) ]\nY(k) if k < 16 and W < bud * calm / 100 -> '(12) F(step) O(1) [ +(90) Z(reach) ] [ -(90) Z(reach) ] [ ^(90) Z(reach-1) ] Y(k+1)\nY(k) if k < 16 and W < calm -> '(12) F(step) O(1) Y(k+1)\nZ(n) if n > 0 and W < calm -> '(14) F(step/2) O(1) Z(n-1)",
+    "other_genes_as_in_crystal_x_crystal": true,
+    "child_growth": {
+     "planted": 970400,
+     "clock": 974726,
+     "opacity": null,
+     "vertices": 4038,
+     "sno_sha256": "97d7868ecf8e5321c4f30301d66ae6324d99b54837f92652d1b58f25ad85165a"
+    }
+   },
+   {
+    "what": "glass crystal x crystal: the mother declares opacity, and her line is replaced where it stands",
+    "mother": "glass crystal",
+    "father": "crystal",
+    "word_from_block": 970536,
+    "mix_word": 3641337478,
+    "genes": [
+     {
+      "name": "size",
+      "index": 0,
+      "word": 2309687850,
+      "alleles_from": [
+       "A1",
+       "B2"
+      ],
+      "a": "100",
+      "b": "100",
+      "lo": 50,
+      "hi": 200,
+      "expressed": 100,
+      "mutated": null
+     },
+     {
+      "name": "hue",
+      "index": 1,
+      "word": 522686827,
+      "alleles_from": [
+       "A2",
+       "B2"
+      ],
+      "a": "5",
+      "b": "5",
+      "lo": 0,
+      "hi": 23,
+      "expressed": 5,
+      "mutated": null
+     },
+     {
+      "name": "tone",
+      "index": 2,
+      "word": 790635695,
+      "alleles_from": [
+       "A2",
+       "B2"
+      ],
+      "a": "0",
+      "b": "0",
+      "lo": -4,
+      "hi": 4,
+      "expressed": 0,
+      "mutated": null
+     },
+     {
+      "name": "arm",
+      "index": 3,
+      "word": 2736567998,
+      "alleles_from": [
+       "A1",
+       "B2"
+      ],
+      "a": "5!",
+      "b": "4",
+      "lo": 3,
+      "hi": 8,
+      "expressed": 5,
+      "mutated": null
+     },
+     {
+      "name": "bud",
+      "index": 4,
+      "word": 2868303016,
+      "alleles_from": [
+       "A1",
+       "B1"
+      ],
+      "a": "35",
+      "b": "35",
+      "lo": 0,
+      "hi": 90,
+      "expressed": 35,
+      "mutated": null
+     },
+     {
+      "name": "opacity",
+      "index": 5,
+      "word": 3967444216,
+      "alleles_from": [
+       "A1",
+       "B1"
+      ],
+      "a": "40!",
+      "b": "100",
+      "lo": 20,
+      "hi": 100,
+      "expressed": 40,
+      "mutated": null
+     }
+    ],
+    "child_text": "dna crystal x crystal\ngene size 100 100 in 50..200\ngene tone 0 0 in -4..4\nspecies crystal\nmutate  2\n\n# standard genes (every DNA has them; the turtle applies them)\ngene hue 5 5 in 0..23\ngene opacity 40! 100 in 20..100\n# species genes\ngene arm 5! 4 in 3..8\ngene bud 35 35 in 0..90\n\nangle 90\nlet step  = arm + n0 % 3           # terroir: fine texture sets the cell size\nlet calm  = 45 + K * 2 + n3        # days are calm enough to grow when W < calm\nlet reach = 2 + n2 % 3             # side arm length\naxiom '(15) O(3) !(4) X\n\n# six arms on a cubic lattice. W is one roll per day for the whole crystal, so it stays symmetric\nX -> [ Y(0) ] [ +(90) Y(0) ] [ -(90) Y(0) ] [ ^(90) Y(0) ] [ &(90) Y(0) ] [ |(0) Y(0) ]\nY(k) if k < 16 and W < bud * calm / 100 -> '(12) F(step) O(1) [ +(90) Z(reach) ] [ -(90) Z(reach) ] [ ^(90) Z(reach-1) ] Y(k+1)\nY(k) if k < 16 and W < calm -> '(12) F(step) O(1) Y(k+1)\nZ(n) if n > 0 and W < calm -> '(14) F(step/2) O(1) Z(n-1)",
+    "other_genes_as_in_crystal_x_crystal": true,
+    "child_growth": {
+     "planted": 970400,
+     "clock": 974726,
+     "opacity": 40,
+     "vertices": 3678,
+     "sno_sha256": "5ce243633aebb519d093a538dfa14b350fb184325d72bf486f9168157b43577e"
+    }
+   },
+   {
+    "what": "crystal x crystal: neither declares opacity, so it is skipped, and the child has no opacity line",
+    "mother": "crystal",
+    "father": "crystal",
+    "word_from_block": 970536,
+    "mix_word": 3641337478,
+    "genes": [
+     {
+      "name": "size",
+      "index": 0,
+      "word": 2309687850,
+      "alleles_from": [
+       "A1",
+       "B2"
+      ],
+      "a": "100",
+      "b": "100",
+      "lo": 50,
+      "hi": 200,
+      "expressed": 100,
+      "mutated": null
+     },
+     {
+      "name": "hue",
+      "index": 1,
+      "word": 522686827,
+      "alleles_from": [
+       "A2",
+       "B2"
+      ],
+      "a": "5",
+      "b": "5",
+      "lo": 0,
+      "hi": 23,
+      "expressed": 5,
+      "mutated": null
+     },
+     {
+      "name": "tone",
+      "index": 2,
+      "word": 790635695,
+      "alleles_from": [
+       "A2",
+       "B2"
+      ],
+      "a": "0",
+      "b": "0",
+      "lo": -4,
+      "hi": 4,
+      "expressed": 0,
+      "mutated": null
+     },
+     {
+      "name": "arm",
+      "index": 3,
+      "word": 2736567998,
+      "alleles_from": [
+       "A1",
+       "B2"
+      ],
+      "a": "5!",
+      "b": "4",
+      "lo": 3,
+      "hi": 8,
+      "expressed": 5,
+      "mutated": null
+     },
+     {
+      "name": "bud",
+      "index": 4,
+      "word": 2868303016,
+      "alleles_from": [
+       "A1",
+       "B1"
+      ],
+      "a": "35",
+      "b": "35",
+      "lo": 0,
+      "hi": 90,
+      "expressed": 35,
+      "mutated": null
+     }
+    ],
+    "child_text": "dna crystal x crystal\ngene size 100 100 in 50..200\ngene tone 0 0 in -4..4\nspecies crystal\nmutate  2\n\n# standard genes (every DNA has them; the turtle applies them)\ngene hue 5 5 in 0..23\n# species genes\ngene arm 5! 4 in 3..8\ngene bud 35 35 in 0..90\n\nangle 90\nlet step  = arm + n0 % 3           # terroir: fine texture sets the cell size\nlet calm  = 45 + K * 2 + n3        # days are calm enough to grow when W < calm\nlet reach = 2 + n2 % 3             # side arm length\naxiom '(15) O(3) !(4) X\n\n# six arms on a cubic lattice. W is one roll per day for the whole crystal, so it stays symmetric\nX -> [ Y(0) ] [ +(90) Y(0) ] [ -(90) Y(0) ] [ ^(90) Y(0) ] [ &(90) Y(0) ] [ |(0) Y(0) ]\nY(k) if k < 16 and W < bud * calm / 100 -> '(12) F(step) O(1) [ +(90) Z(reach) ] [ -(90) Z(reach) ] [ ^(90) Z(reach-1) ] Y(k+1)\nY(k) if k < 16 and W < calm -> '(12) F(step) O(1) Y(k+1)\nZ(n) if n > 0 and W < calm -> '(14) F(step/2) O(1) Z(n-1)",
+    "other_genes_as_in_crystal_x_crystal": true,
+    "child_growth": {
+     "planted": 970400,
+     "clock": 974726,
+     "opacity": null,
+     "vertices": 3678,
+     "sno_sha256": "789c25359bb7c0a9bbe0b58ddc1c3b775c4591b252864cee09f8730918417a32"
+    }
+   }
+  ]
  }
 }

@@ -107,7 +107,11 @@ export const STD = [
   { name: 'hue', def: 0, lo: 0, hi: 23, min: 0, max: 23 },
   { name: 'tone', def: 0, lo: -4, hi: 4, min: -7, max: 7 },
 ]
-export const STD_NAMES = STD.map((g) => g.name)
+// DECK-0008 §3.3: the fourth standard gene. It stands last in the genome, after the DNA's own genes, so that
+// adding it moved no other gene's index in a mix (§6.4). Its default range, 100..100, keeps every bloom and
+// every mix of DNAs that never mention it exactly as before.
+export const OPACITY = { name: 'opacity', def: 100, lo: 100, hi: 100, min: 10, max: 100 }
+export const STD_NAMES = [...STD, OPACITY].map((g) => g.name)
 export const KEYWORDS = ['and', 'or', 'not', 'if', 'chance', 'in']
 const NAME_RE = /^[A-Za-z_][A-Za-z_0-9]*$/
 const WS = '[\\t\\n\\v\\f\\r ]'
@@ -241,7 +245,7 @@ export function parseDNA(text) {
     else if (kw === 'gene') {
       const m = /^([A-Za-z_][A-Za-z_0-9]*)[\t ]+(-?\d+)(!?)[\t ]+(-?\d+)(!?)[\t ]+in[\t ]+(-?\d+)\.\.(-?\d+)$/.exec(rest)
       if (!m) throw new Error(where + ': gene is "gene name 4! 7 in 1..12"')
-      const std = STD.find((x) => x.name === m[1])
+      const std = [...STD, OPACITY].find((x) => x.name === m[1])
       if ((names.has(m[1]) && !(std && !declared.has(m[1]))) || KEYWORDS.includes(m[1])) throw new Error(where + ': name "' + m[1] + '" is taken')
       const nums = [m[2], m[4], m[6], m[7]].map(Number)
       if (nums.some((v) => Math.abs(v) > LIMITS.value)) throw new Error(where + ': gene values are within 1,000,000')
@@ -270,9 +274,10 @@ export function parseDNA(text) {
     else { /* DECK-0008 §3.2: an unknown line is ignored; it still counts toward the size limit */ }
   })
   if (axiomSrc === null) throw new Error('no axiom')
-  const stdGenes = STD.map((x) => prog.genes.find((g) => g.name === x.name) ||
-    { name: x.name, a: { v: x.def, d: false }, b: { v: x.def, d: false }, lo: x.lo, hi: x.hi, std: true, implicit: true })
-  prog.genes = stdGenes.concat(prog.genes.filter((g) => !g.std))
+  const stdGene = (x) => prog.genes.find((g) => g.name === x.name) ||
+    { name: x.name, a: { v: x.def, d: false }, b: { v: x.def, d: false }, lo: x.lo, hi: x.hi, std: true, implicit: true }
+  // DECK-0008 §3.3: size, hue and tone, then the DNA's own genes in line order, then opacity
+  prog.genes = STD.map(stdGene).concat(prog.genes.filter((g) => !g.std), [stdGene(OPACITY)])
   prog.axiom = parseString(axiomSrc, names, axiomLine)
   if (ruleSrc.length > LIMITS.rules) throw new Error('more than ' + LIMITS.rules + ' rules')
   for (const [line, where] of ruleSrc) {
@@ -443,7 +448,8 @@ function interpret(prog, str, age, env, vertexCap) {
   return { V, C, F }
 }
 
-export function toSNO(name, geo, unit) {
+// `opacity` is the expressed standard gene (§5.4); the payload carries it after `faces`, only below 100 (§5.5)
+export function toSNO(name, geo, unit, opacity = 100) {
   const n = geo.V.length / 3, vertices = [], ticks = []; let ext = 1, zr = 0
   for (let i = 0; i < n; i++) {
     const t = [geo.V[3 * i], geo.V[3 * i + 1], geo.V[3 * i + 2]]
@@ -460,6 +466,7 @@ export function toSNO(name, geo, unit) {
   sno.mode = 'solid'; sno.vertices = vertices
   if (!allZero) sno.ticks = ticks
   sno.colors = geo.C.slice(); sno.faces = geo.F
+  if (opacity < 100) sno.opacity = opacity
   return sno
 }
 
@@ -480,7 +487,7 @@ export function grow({ prog, coord, planted, scale = 0, caps = BASE_CAPS, clock,
     str = rewrite(prog, env, str, k, word32(hash), caps.symbols)
   }
   const geo = interpret(prog, str, Math.max(0, age), env, caps.vertices)
-  const sno = toSNO(prog.name, geo, scale)
+  const sno = toSNO(prog.name, geo, scale, env.opacity)
   return { age, g, symbols: str.length, used, sno, json: JSON.stringify(sno) }
 }
 
@@ -548,8 +555,10 @@ export function mixDNA(A, B, s0, { name, hybrid = false } = {}) {
   const rate = Math.floor((A.mutate + B.mutate) / 2)
   const log = [], genes = []
   A.genes.forEach((ga, i) => {
-    const s = mix32(s0 ^ Math.imul(i + 1, 0x9E3779B1 | 0))
     const gb = B.genes.find((x) => x.name === ga.name)
+    // DECK-0008 §6.4: an opacity that neither parent declares is skipped, and the child's is implicit
+    if (ga.name === OPACITY.name && ga.implicit && gb.implicit) return
+    const s = mix32(s0 ^ Math.imul(i + 1, 0x9E3779B1 | 0))
     const ia = s & 1, ib = (s >>> 1) & 1
     const a = { ...(ia ? ga.b : ga.a) }
     const b = gb ? { ...(ib ? gb.b : gb.a) } : { ...(ia ? ga.a : ga.b) }
@@ -575,6 +584,9 @@ export function mixDNA(A, B, s0, { name, hybrid = false } = {}) {
   const head = ['dna ' + childName]
   if (!same) head.push('sterile')
   for (const s of STD) if (!A.genes.find((g) => g.name === s.name && !g.implicit)) head.push(geneLine(byName[s.name]))
+  // DECK-0008 §6.6: the father's declared opacity reaches the head when the mother has no opacity line of her own
+  const childOpacity = genes.find((g) => g.name === OPACITY.name)
+  if (childOpacity && A.genes.find((g) => g.name === OPACITY.name).implicit) head.push(geneLine(childOpacity))
   const out = []; let wroteHead = false
   for (const raw of A.text.split('\n')) {
     const t = trimWS(raw.replace(/#.*$/, ''))
