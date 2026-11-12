@@ -41,7 +41,7 @@ This DECK defines SEEDO completely enough for a second implementation, three eve
 - **Revision:** the version of SEEDO and of every rule of this DECK that decides a bloom, a mix, a price or an event's validity. A DNA declares it with its `seedo` line, and absent means 1 (§3.2, §3.10).
 - **DNA:** a definition: a genome, growth rules and declared caps, carried by a `kind 3350` event (§8.1). Publishing a DNA costs no work. A **written DNA** carries its SEEDO text in `content`. A **mixed DNA** has empty `content` and names two parent DNAs and a block; its text is computed (§6), and it carries work at the mix floor (§7).
 - **Gene:** a named integer with two **alleles**, each a value and a mark of whether it is **dominant**, and a range (§3.3). What a gene contributes to growth is its **expressed** value.
-- **Standard genes:** `size`, `hue` and `tone`. Every DNA has them, declared or not, and the turtle applies them (§3.3, §5.4).
+- **Standard genes:** `size`, `hue`, `tone` and `opacity`. Every DNA has them, declared or not. The turtle applies the first three, and the bloom's payload carries the fourth (§3.3, §5.4, §5.5).
 - **Seed:** one planting of a DNA: a `kind 3351` item that names a DNA, a coordinate, a planted height and a scale, and carries the work its DNA's caps price (§8.2).
 - **Price:** the NIP-13 difficulty, in bits, that a DNA's caps call for (§7). A seed pays its DNA's price; a mixed DNA pays the mix floor.
 - **Planted height:** the block height a seed states as its day 0. The **effective planted height** is that height after the clamp of §4.2.
@@ -172,23 +172,32 @@ A gene line is:
 gene <name> <allele> <allele> in <lo>..<hi>
 ```
 
-- `<name>` is a name (§3.4) that is not taken, with one exception: each of the standard gene names `size`, `hue` and `tone` MAY be declared once.
+- `<name>` is a name (§3.4) that is not taken, with one exception: each of the standard gene names `size`, `hue`, `tone` and `opacity` MAY be declared once.
 - Each `<allele>` is a whole number, optionally followed directly by `!`, which marks it dominant.
 - `<lo>` and `<hi>` are whole numbers with `lo ≤ hi`, written with `..` between them and no whitespace around it. The parts are separated by spaces or tabs, and `in` is lowercase.
 - A declared standard gene's range is first narrowed to its standard bounds (the table below); if nothing is left, the text is invalid.
 - Then, for every gene, standard or not, each allele's value is clamped to the gene's range: `gene leaf 0 9! in 1..6` holds the alleles `1` and `6!`.
 
-**Standard genes.** Every DNA has the three standard genes, in this order, before its own genes. A standard gene that a DNA does not declare is **implicit**: both alleles hold its default value, neither is dominant, and its range is its default range.
+**Standard genes.** Every DNA has the four standard genes. A standard gene that a DNA does not declare is **implicit**: both alleles hold its default value, neither is dominant, and its range is its default range.
 
-| Gene | What the turtle does with it (§5.4) | Default value | Default range | Standard bounds |
+| Gene | What it does (§5.4) | Default value | Default range | Standard bounds |
 |---|---|---|---|---|
 | `size` | scales every length, width and size, in percent | `100` | `50..200` | `10..400` |
 | `hue` | rotates the hue family of every palette color | `0` | `0..23` | `0..23` |
 | `tone` | shifts every shade lighter (positive) or darker | `0` | `-4..4` | `-7..7` |
+| `opacity` | sets how solid the whole bloom is drawn, in percent: the payload's `opacity` (§5.4, §5.5) | `100` | `100..100` | `10..100` |
 
-So size and color are breedable on every DNA, and a DNA that never mentions them is neutral.
+So size and color are breedable on every DNA, and a DNA that never mentions them is neutral. Opacity is breedable from the first DNA in a lineage that declares it, and a DNA that never mentions it is fully solid: its payload carries no `opacity`, and its hash is the hash it would have if `opacity` did not exist (§5.5).
 
-**The genome's order** is the three standard genes in the order of the table, then the DNA's own genes in the order their lines appear. Mixing (§6.4) walks genes in this order.
+**The genome's order** is `size`, `hue` and `tone`, in that order, then the DNA's own genes in the order their lines appear, then `opacity`. Mixing (§6.4) walks genes in this order. A declared standard gene takes its place in this order wherever its line stands in the text.
+
+**Why `opacity` is last (non-normative).** `opacity` was added on 2026-11-11, after the first three standard genes and after mixing had test vectors (§11). Mixing draws each gene's word from the mix word and the gene's index alone (§6.4), so no gene's draw takes anything from another gene's. Placing `opacity` after every one of the DNA's own genes leaves every other gene at the index it had before, with the same word, the same alleles and the same mutation, so every existing mix makes exactly the child it made before. Placed fourth, it would have moved every species gene one index along and changed every mix.
+
+**Why its default range is `100..100` (non-normative).** The default range is what an undeclared `opacity` brings to a mix: the child's range is the wider of the parents' two (§6.4), and mutation moves an allele only inside that range. With `100..100`, two parents that never mention opacity can only have a fully solid child, so transparency never appears in a lineage that nobody bred it into, and no existing mix or bloom changes. A wider default, such as `10..100`, would let mutation make a translucent child of two solid parents in any mix whose rate is not 0, which would change existing children and their payloads. With `100..100`, the range of a child of a solid parent and a parent that declares `opacity` runs from the declaring parent's low end to 100, so that parent alone decides how far its descendants can fade, and each child can carry the solid allele back.
+
+**Why its bounds are `10..100` (non-normative).** 100 is fully solid, the way every bloom was drawn before. DECK-0003 §1.11 draws any opacity from 1 to 9 at 10, so 10 is the faintest opacity that every reader draws as written, and a bound at 10 means that a bloom never carries a value that a reader repairs.
+
+**Opacity and revision 1 (non-normative).** `opacity` is part of SEEDO revision 1, added while this DECK is a Draft. Before it was added, `opacity` was an ordinary name: a text could declare a species gene of that name, or use it for a `let` or a rule parameter. Under this text, such a gene line declares the standard gene, with four effects: the bloom carries the payload's `opacity` when it is below 100, so its hash changes; the gene's range is narrowed to `10..100` and its alleles clamped into it, which changes what any expression reads from it, and a range wholly outside `10..100` makes the text invalid; the gene moves to the end of the genome, so every species gene declared after it moves one index down and draws a different word in a mix (§6.4); and the mix rules for `opacity` (§6.4, §6.6) apply to it. Such a `let` or rule parameter makes the text invalid, because the name is taken (§3.4).
 
 **Expression.** A gene's expressed value is the value of its dominant allele when exactly one allele is dominant. Otherwise, when both or neither are dominant, it is `floor((a + b) / 2)`, rounding toward minus infinity, so the two blend.
 
@@ -208,7 +217,7 @@ So size and color are breedable on every DNA, and a DNA that never mentions them
 | a `let`'s name | its value (§3.5) |
 | a rule parameter | the matched symbol's parameter (§3.7) |
 
-**Which names are in use where.** Every built-in name and the three standard genes are in use in every expression. A `let` expression also sees every gene and every `let` declared on an earlier line (§3.5). The axiom and every rule see every gene and every `let` of the text, on whatever line it is declared. A rule's own parameters are in use in its condition, its chance and its successor, and nowhere else.
+**Which names are in use where.** Every built-in name and the four standard genes are in use in every expression. A `let` expression also sees every gene and every `let` declared on an earlier line (§3.5). The axiom and every rule see every gene and every `let` of the text, on whatever line it is declared. A rule's own parameters are in use in its condition, its chance and its successor, and nowhere else.
 
 A name is **taken** when it is one of the nine built-in names above, one of the keywords `and`, `or`, `not`, `if`, `chance` and `in`, a standard gene's name, or the name of a gene or a `let` already declared. A rule parameter MUST NOT be a taken name, nor the name of a gene or a `let` declared on any line, before or after the rule. The parameters of one rule MUST be distinct.
 
@@ -251,7 +260,7 @@ Every value an expression can produce lies within `-1,000,000..1,000,000`, so 64
 let <name> = <expression>
 ```
 
-`<name>` is a name that is not taken. The expression MAY read `K`, `n0` to `n3`, `pl`, the three standard genes (declared anywhere, or implicit), every other gene declared on an earlier line, and every `let` declared on an earlier line. It MUST NOT read `w`, `W` or `g`. A reader evaluates every `let` once per seed, in the order of their lines, after the genes are expressed (§4.5).
+`<name>` is a name that is not taken. The expression MAY read `K`, `n0` to `n3`, `pl`, the four standard genes (declared anywhere, or implicit), every other gene declared on an earlier line, and every `let` declared on an earlier line. It MUST NOT read `w`, `W` or `g`. A reader evaluates every `let` once per seed, in the order of their lines, after the genes are expressed (§4.5).
 
 ### 3.6 Symbol strings and the axiom
 
@@ -535,15 +544,20 @@ else:        shade = min(7, max(0, (c mod 8) + tone))
 
 `size` scales lengths, leaf sizes, bead radii and widths through `SIZE` (§5.2, §5.3).
 
+The turtle applies `opacity` to no vertex, color or face, though an expression MAY read it like any gene (§3.4). Its expressed value is how solid the whole bloom is drawn, in percent, and the payload carries it as DECK-0003's `opacity` (§1.11) when it is below 100 (§5.5). A reader draws the bloom as it draws any SNO object with that opacity. The standard bounds keep the expressed value within `10..100`: both alleles lie inside the gene's range, the range lies inside the bounds, and the expressed value is one allele or the floor of their mean.
+
+**Why one opacity for the whole bloom (non-normative).** A bloom is one SNO object, and SNO has one opacity per object, never per face or per vertex: DECK-0003 §1.11 explains why translucency per face would ask every reader to sort an object's triangles every frame. arkinox ruled on 2026-11-11 that blooms get opacity for the whole bloom as a breedable trait, aimed first at crystals, and no transparency per part.
+
 ### 5.5 Emission to SNO
 
-The bloom is a SNO payload (DECK-0003 §1.1) written exactly as follows, in this key order: `v`, `name`, `unit`, `extent` (only when it is not 8), `mode`, `vertices`, `ticks` (only when present), `colors`, `faces`.
+The bloom is a SNO payload (DECK-0003 §1.1) written exactly as follows, in this key order: `v`, `name`, `unit`, `extent` (only when it is not 8), `mode`, `vertices`, `ticks` (only when present), `colors`, `faces`, `opacity` (only when it is below 100). This is the order of DECK-0003 §1.1's table, which places `opacity` after `faces` and `facecolors`. A bloom has no `facecolors`.
 
 - `v` is `2`. `name` is the DNA's name, cut to 64 code points. `unit` is the seed's scale `u`. `mode` is `"solid"`.
 - For each vertex, in the order written, with position `t` in ticks on each axis: its whole part `floor(t / 120)` goes into `vertices`, and its remainder `t - 120 × floor(t / 120)` into `ticks`.
 - `ticks` is run-length encoded as DECK-0003 §1.2 requires: a run of two or more zero remainders is one negative integer, a single zero remainder is `[0, 0, 0]`, and `ticks` is omitted when every remainder is zero.
 - `extent` is the larger of 1 and, over every vertex and axis, `|whole|` and `whole + 1` when its remainder is nonzero; then at most 64; omitted when it is 8.
 - `colors` holds each vertex's painted color, and `faces` the faces in the order written.
+- `opacity` is the expressed standard gene `opacity` (§3.3, §5.4), a JSON integer. It is omitted when it is 100, as DECK-0003 §1.2 requires, so the payload of a bloom whose `opacity` is 100, declared or implicit, is exactly the payload it would be if the gene did not exist.
 
 The payload is valid under DECK-0003 §1.9 by construction. A reader never publishes it. Where a hash of the payload is wanted, as in the vectors (§11), it is SHA-256 of the UTF-8 bytes of the payload's compact JSON in this key order: no whitespace, integers in decimal, and the one string, `name`, escaped as JSON requires: `"` as `\"`, `\` as `\\`, a tab (U+0009) as `\t`, and every other character written as itself, U+2028 and U+2029 included. A tab is the one control character a name can hold, because §3.1 allows it inside a line, and JSON does not allow it unescaped. No other escape arises: a name holds no other control character (§3.1, §6.6), and it is well-formed Unicode (§3.1), so it holds no unpaired surrogate. This is what `JSON.stringify` writes in JavaScript.
 
@@ -616,7 +630,7 @@ s0       = the weather word (§4.3) of mix_hash, written as 64 lowercase hex cha
 
 ### 6.4 Alleles, dominance and mutation
 
-The mother is `A` and the father `B`. The rate is `floor((A.mutate + B.mutate) / 2)`. For each gene of `A`'s genome, in genome order (§3.3), with index `i` from 0:
+The mother is `A` and the father `B`. The rate is `floor((A.mutate + B.mutate) / 2)`. For each gene of `A`'s genome, in genome order (§3.3), with index `i` from 0, except as the next paragraph says for `opacity`:
 
 1. `s = lowbias32(s0 XOR ((i + 1) × 0x9E3779B1 mod 2^32))`.
 2. `ia = s & 1` and `ib = (s >> 1) & 1`.
@@ -625,6 +639,10 @@ The mother is `A` and the father `B`. The rate is `floor((A.mutate + B.mutate) /
 5. **Mutation:** if `(s >> 8) mod 100` is less than the rate, then with `span = hi - lo`, `step = 1 + ((s >> 16) mod max(1, ceil(span / 6)))` and `sign = +1` if `(s >> 4) & 1` else `-1`, the allele chosen by `(s >> 2) & 1` (the first for 0, the second for 1) takes the value `min(hi, max(lo, value + sign × step))`. Its dominance mark does not change.
 
 Genes that `B` has and `A` does not are not passed on. All shifts are on the unsigned 32-bit `s`.
+
+**When neither parent declares `opacity`,** it is skipped: no word is computed for it, and the child's `opacity` is implicit. Both parents then hold `100` in the range `100..100`, so a draw could only give the child that same gene. When either parent declares it, it is drawn by steps 1 to 5 like any other gene, with `i` its index in `A`'s genome, which is the number of `A`'s other genes. Every DNA has an `opacity` gene, so `B` always has a gene of that name, declared or implicit.
+
+**Why no existing mix changes (non-normative).** A gene's word `s` depends only on `s0` and its index `i`, never on how many genes were drawn before it. `opacity` stands after every other gene of `A`'s genome (§3.3), so `size`, `hue`, `tone` and every species gene keep the index, and therefore the word, they had before `opacity` existed. A mix of two parents that never mention `opacity` makes the same alleles, the same mutations and the same child text as before, and the mix vectors of §11 are unchanged.
 
 **What this does (non-normative).** A trait carried by a recessive allele in both parents hides in their children and returns in about one grandchild in four. The prototype's sword fern carries a recessive blue `hue`, and the fiddlehead a recessive giant `size`; both vanish in every child of the two and return in 25 and 26 of 100 grandchildren. The coral carries a hidden green that a mix of coral with coral reveals in about 1 in 4.
 
@@ -640,7 +658,7 @@ Genes that `B` has and `A` does not are not passed on. All shifts are on the uns
 
 The child's text is computed from the mother's text, line by line, so that every reader computes the same text and a republished copy (§8.1) can be compared with it:
 
-1. The **head** is the line `dna <name>`, where `<name>` is the mixed DNA's `name` tag if it has one with a value that is not empty, and otherwise the mother's name, a space, `x`, a space and the father's name, cut to 64 code points. In a sterile hybrid the head continues with the line `sterile`. It then continues with a gene line (step 4) for each standard gene the mother does not declare, in the order `size`, `hue`, `tone`.
+1. The **head** is the line `dna <name>`, where `<name>` is the mixed DNA's `name` tag if it has one with a value that is not empty, and otherwise the mother's name, a space, `x`, a space and the father's name, cut to 64 code points. In a sterile hybrid the head continues with the line `sterile`. It then continues with a gene line (step 4) for each of `size`, `hue` and `tone` that the mother does not declare, in that order. When the father declares `opacity` and the mother does not, it continues with the child's `opacity` gene line. When neither declares it, the child's text has no `opacity` line, and its `opacity` is implicit, as §6.4 leaves it, with no draw.
 2. Walk the mother's lines in order, judging each by its keyword after comments are removed (§3.1). A rule line is copied unchanged. A `dna` or `seed` line is replaced by the head. A `sterile`, `planted` or `scale` line is dropped. A `gene` line is replaced by the child's gene line for the gene of that name. Every other line, comments and blank lines included, is copied unchanged.
 3. If the mother has no `dna` or `seed` line, the head is placed before her first line.
 4. A child's gene line is `gene <name> <first allele> <second allele> in <lo>..<hi>`, single spaces, where an allele is its value in decimal followed by `!` when it is dominant.
@@ -831,6 +849,8 @@ SEEDO's expression grammar and integer semantics (§3.4) and its fixed-point ari
 
 `seeds-vectors.json`, beside this DECK, is produced by `seeds-vectors.mjs` (Node 18 or later, no dependencies) from `seeds-reference.mjs`. It uses real Bitcoin blocks, whose hashes and header times are embedded in the generator. Its DNA events are unsigned stand-ins whose ids carry their NIP-13 work. Like the other vectors in this repository it is not normative: where it disagrees with this text, the text is right and the file is a bug.
 
+The file was generated before `opacity` existed, and adding it changed nothing in it: every section but `opacity` is byte for byte what it was. Outside the `opacity` section, the genomes listed in `accepted` leave out an implicit `opacity`, and the draws of `mixing` hold none, because no parent there declares it and §6.4 skips it.
+
 | Section | What it holds |
 |---|---|
 | `blocks` | every block hash the file uses, by height, in displayed order |
@@ -847,11 +867,13 @@ SEEDO's expression grammar and integer semantics (§3.4) and its fixed-point ari
 | `seeds` | five seeds as events, with the written DNA published without a caps tag that one of them plants: a planting of the fiddlehead (21 bits), of the first mixed child (21 bits) and of a DNA at the free caps (16 bits), each mined to its DNA's price; and two plantings of the fiddlehead that a reader skips, one with a committed target of 16 and one whose target says 21 on an id with fewer than 21 leading zero bits |
 | `price` | the price of ten sets of caps, four of them invalid |
 | `orientation` | seventeen sets of seed tags read under §5.7 (`turn`, `up`, `spin`), nine of them malformed, and one small bloom (the fiddlehead halfway through day 1) with its points in ticks of the payload, the same points in Cyberspace's axes, and those turned by six sets of quarter turns: what steps 2 and 3 of §5.7 draw, while the payload and its hash stay those of the `growth` section |
+| `opacity` | the fourth standard gene (§3.3): its bounds, default and default range; the **glass crystal**, the crystal with one more line, `gene opacity 40!  100  in 20..100`, grown at day 0 (whole payload) and at day 30 and 6 blocks, each with the SHA-256 of its payload and of the same payload with `opacity` taken out, which at day 30 is the crystal's own hash; the crystal declaring `opacity` 100 (no key, the crystal's hash) and 45 with 70 (57); three texts a reader MUST accept and five it MUST reject; and seven mix previews (§6.8), each with every gene's index and draw, the child's text and the child's payload hash: crystal with glass crystal twice (a glassy child and a solid one, both with an `opacity` line in the head), glass crystal with crystal (the mother's line replaced where it stands), and crystal with crystal (no draw and no line), in each of which every other gene is drawn exactly as in crystal with crystal under the same word; glass crystal with the **frost crystal**, a crystal declaring `gene opacity 70 25! in 10..90`, twice (both parents declare it, so the range spans both and only the mother's line stands, and a word that mutates it); and coral with glass crystal as a sterile hybrid (the father's `opacity` line follows `sterile` and the standard genes in the head) |
 
 Some single values, for a quick check:
 
 - The fiddlehead at day 30 and 6 blocks (clock 974,726), scale 0, caps 8,000, 6,000 and 40: generation 30, 2,106 vertices, SNO SHA-256 `438902f6f31616f6f8e00f0581d277ee2652d8ea9163564c0949d2e96ee8b463`.
 - The fiddlehead at exactly day 1 (clock 970,544): generation 1, its new symbols at length 0, so the payload equals day 0's, SHA-256 `4764aa4d16b449ff7301fd5bb598daf05de1b6f19fb16bdffa7ac5667566a602`.
+- The glass crystal at day 30 and 6 blocks, scale 0, caps 8,000, 6,000 and 40: opacity 40, SNO SHA-256 `4aa35eba084a894721fe897154cc43331f2cb766867ab422dcd29cf851e9d08b`. Without its `opacity` key the payload is the crystal's, SHA-256 `f0252ccc372cd51c436c9531b3b9958ebaece50b72019433bcc3e20bc39f5417`.
 - The first mix, fiddlehead with sword fern: anchor 970,500 (the clock block of a writer whose tip was 970,506), settled from clock 970,520, commit height 970,500, outcome height 970,536, commit id `00000ae79f8e1b8127b78bc2316d8a880fb8af35d83b0430e6570a8e8e31e0e6`, `mix_hash` `7294ec3cf1222c963acd6668831dd69f1bbb5ffaf56a6343fe78b6702bd63d90`, mix word 136500531.
 
 **Conformance with the prototype.** The prototype, unmodified, reproduces every growth vector at scale 0 with the prototype's caps (27 of them), every allele of the six mixes that make a child when it is given the same `mix_hash` as its block hash, and every terroir vector at scale 0 (6 of them). The vectors differ from the prototype only where this DECK changes it (§14).
@@ -929,6 +951,7 @@ The counts and bytes are those of the vectors (§11): day 30 and 6 blocks, growi
 - **Unknown lines and the language revision.** The prototype refuses any unknown keyword; here an unknown line is ignored, and the `seedo` line guards determinism instead (§3.2, arkinox's ruling of 2026-11-10).
 - **Stricter parsing**, each a case the prototype accepted: a rule parameter that shadows a gene, a `let` or a built-in name (in the prototype the parameter's value then leaked to every later symbol of the generation); header numbers that are not whole numbers (the prototype read `parseInt(...) || 0`); gene values beyond 1,000,000 and ranges that run high to low; a second `axiom` line (the prototype kept the last); a rule with two `->` (the prototype dropped everything after the second); a trailing empty argument such as `F(1,)` (the prototype dropped it); an empty rule parameter such as `A(k,)` (the prototype dropped it); `IN` in upper case in a gene line; control characters; and Unicode whitespace, which the prototype trimmed.
 - **Growing between generations** is always on; the prototype's switch to turn it off is a debugging view.
+- **The standard gene `opacity`** is new (§3.3, arkinox's ruling of 2026-11-11). The prototype has three standard genes, and its payloads carry no `opacity`. Every prototype DNA leaves `opacity` implicit, so this changes none of their blooms or mixes.
 - **Self-seeding** is left open (§13, question 6).
 
 **No client implements this DECK yet.** ONOSENDAI has no seeds; cyberspace-mcp has none.

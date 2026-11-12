@@ -678,6 +678,9 @@ const out = {
   blocks: BLOCKS.hashes,
 }
 const tryParse = (dna) => { try { S.parseDNA(dna); return null } catch (e) { return e.message } }
+// A genome as the file lists it: each gene's name, alleles, range and expressed value. An implicit opacity
+// (DECK-0008 §3.3) is left out, so the genomes listed before opacity existed are unchanged.
+const genomeRows = (p) => p.genes.filter((g) => !(g.name === S.OPACITY.name && g.implicit)).map((g) => [g.name, g.a.v + (g.a.d ? '!' : ''), g.b.v + (g.b.d ? '!' : ''), g.lo, g.hi, S.express(g)])
 
 // ---------- primitives ----------
 {
@@ -817,7 +820,7 @@ axiom F`
     'a misspelled keyword is an unknown line: mutat 4 leaves the rate at 0': 'dna x\nmutat 4\naxiom F',
     'a rule typed without its arrow is an unknown line: no rule': 'dna x\naxiom A\nA if g < 3 A A',
   }
-  out.accepted = Object.entries(ok).map(([why, dna]) => { const err = tryParse(dna); if (err) throw new Error('rejected: ' + why + ': ' + err); const p = S.parseDNA(dna); return { why, dna, name: p.name, mutate: p.mutate, rules: p.rules.length, genes: p.genes.map((g) => [g.name, g.a.v + (g.a.d ? '!' : ''), g.b.v + (g.b.d ? '!' : ''), g.lo, g.hi, S.express(g)]) } })
+  out.accepted = Object.entries(ok).map(([why, dna]) => { const err = tryParse(dna); if (err) throw new Error('rejected: ' + why + ': ' + err); const p = S.parseDNA(dna); return { why, dna, name: p.name, mutate: p.mutate, rules: p.rules.length, genes: genomeRows(p) } })
   // the axiom against the symbol cap, which needs the caps
   const ax = 'dna x\naxiom ' + 'F'.repeat(40)
   out.axiom_cap = [32, 40, 39].map((sym) => { let err = null; try { S.grow({ prog: S.parseDNA(ax), coord: coordA, planted: 970400, caps: { vertices: 2048, symbols: sym, generations: 32 }, clock: 970400, blockHash }) } catch (e) { err = e.message } return { dna: ax, symbol_cap: sym, valid: err === null } })
@@ -1003,6 +1006,123 @@ const settleClock = (createdAt) => { for (let c = 970410; c <= LAST; c++) if (S.
     tags: tags.map((t) => ({ tags: t, read: S.readOrientation(t) })),
     bloom: { dna: 'fiddlehead', coord: coordA, planted: P0, clock: P0 + 144 + 72, caps: CAPS, sno_sha256: S.sha256hex(Buffer.from(g.json)), points, in_cyberspace: points.map(S.intoCyberspace) },
     turned: [[1, 0, 0], [0, 1, 0], [0, 0, 1], [2, 0, 0], [1, 2, 3], [3, 3, 3]].map((turn) => ({ turn, points: points.map((p) => S.turnPoint(S.intoCyberspace(p), turn)) })),
+  }
+}
+
+// ---------- opacity, the fourth standard gene (DECK-0008 §3.3, §5.4, §5.5, §6.4, §6.6) ----------
+{
+  const P0 = 970400, clock = P0 + 30 * 144 + 6
+  // the crystal with one more line: the same name, species and rules, so its payload differs from the crystal's only by "opacity"
+  const glass = DNAS.crystal.replace('gene hue     0!   5    in 0..23    # cyan, hiding a violet\n',
+    'gene hue     0!   5    in 0..23    # cyan, hiding a violet\ngene opacity 40!  100  in 20..100  # glassy, dominant, hiding a solid allele\n')
+  if (glass === DNAS.crystal) throw new Error('the glass crystal is the crystal')
+  const G = S.parseDNA(glass)
+  const crystal30 = out.growth.cases.find((c) => c.dna === 'crystal' && c.what === 'day 30 and 6 blocks')
+  const growCase = (what, text, prog, at, full) => {
+    const r = S.grow({ prog, coord: coordA, planted: P0, scale: 0, caps: CAPS, clock: at, blockHash })
+    const c = { what, dna: text, coord: coordA, planted: P0, scale: 0, caps: CAPS, clock: at, generation: r.g, vertices: r.sno.vertices.length, faces: r.sno.faces.length, opacity: r.sno.opacity === undefined ? null : r.sno.opacity, sno_bytes: r.json.length, sno_sha256: S.sha256hex(Buffer.from(r.json, 'utf8')) }
+    // the same payload with the opacity key taken out
+    const { opacity, ...solid } = r.sno
+    c.sno_sha256_without_opacity = S.sha256hex(Buffer.from(JSON.stringify(solid), 'utf8'))
+    if (full) c.sno = r.sno
+    return c
+  }
+  const growth = [
+    growCase('the glass crystal at day 0: the bead of its axiom, at opacity 40', glass, G, P0, true),
+    growCase('the glass crystal at day 30 and 6 blocks: the crystal\'s payload with "opacity":40 after "faces"', glass, G, clock, false),
+  ]
+  if (growth[1].sno_sha256_without_opacity !== crystal30.sno_sha256) throw new Error('opacity changed more than the opacity key')
+  const solidText = DNAS.crystal.replace('angle 90', 'gene opacity 100 100 in 10..100\nangle 90')
+  growth.push(growCase('the crystal declaring opacity 100: no opacity key, the crystal\'s own hash', solidText, S.parseDNA(solidText), clock, false))
+  if (growth[2].sno_sha256 !== crystal30.sno_sha256) throw new Error('a declared opacity of 100 changed the payload')
+  const blendText = DNAS.crystal.replace('angle 90', 'gene opacity 45 70 in 10..100\nangle 90')
+  growth.push(growCase('the crystal declaring opacity 45 and 70, neither dominant: floor((45 + 70) / 2) = 57', blendText, S.parseDNA(blendText), clock, false))
+  // parsing: the standard bounds, the taken name, and the implicit value an expression reads
+  const ok = {
+    'opacity narrowed to its standard bounds 10..100, its alleles clamped into them': 'dna x\ngene opacity 5 300 in 0..400\naxiom A',
+    'an expression reads an implicit opacity as 100': 'dna x\nlet o = opacity\naxiom A(o)',
+    'a declared opacity, read by an expression on any line': 'dna x\naxiom A(opacity)\ngene opacity 30! 90 in 10..100',
+  }
+  const accepted = Object.entries(ok).map(([why, dna]) => {
+    const err = tryParse(dna); if (err) throw new Error('rejected: ' + why + ': ' + err)
+    const p = S.parseDNA(dna), env = S.makeEnv(p, coordA, 0)
+    return { why, dna, genes: p.genes.map((g) => [g.name, g.a.v + (g.a.d ? '!' : ''), g.b.v + (g.b.d ? '!' : ''), g.lo, g.hi, S.express(g)]), opacity: env.opacity, axiom_arguments: p.axiom.map((t) => t.args.map((f) => f(env))) }
+  })
+  const bad = {
+    'an opacity range wholly above the standard bounds': 'dna x\ngene opacity 50 50 in 101..200\naxiom A',
+    'an opacity range wholly below the standard bounds': 'dna x\ngene opacity 5 5 in 0..9\naxiom A',
+    'opacity declared twice': 'dna x\ngene opacity 50 50 in 10..100\ngene opacity 60 60 in 10..100\naxiom A',
+    'a let named opacity: the name is taken': 'dna x\nlet opacity = 1\naxiom A',
+    'a rule parameter named opacity: the name is taken': 'dna x\naxiom A(1)\nA(opacity) -> A(1)',
+  }
+  const rejected = Object.entries(bad).map(([why, dna]) => { const err = tryParse(dna); if (!err) throw new Error('accepted: ' + why); return { why, dna, error_in_reference: err } })
+  // mixing: previews (§6.8) with the weather word of a real block as the mix word
+  const C = P.crystal
+  const preview = (what, Aname, A, Bname, B, h) => {
+    const s0 = S.word32(blockHash(h))
+    const r = S.mixDNA(A, B, s0)
+    if (r.refused) throw new Error('refused: ' + what)
+    const v = { what, mother: Aname, father: Bname, word_from_block: h, mix_word: s0, genes: r.log.map((l) => ({ name: l.name, index: A.genes.findIndex((g) => g.name === l.name), word: l.s, alleles_from: l.from, a: S.geneLine(l.child).split(' ')[2], b: S.geneLine(l.child).split(' ')[3], lo: l.child.lo, hi: l.child.hi, expressed: l.expressed, mutated: l.mutated })), child_text: r.text }
+    // every gene but opacity is drawn exactly as in crystal x crystal with the same word
+    const plain = S.mixDNA(C, C, s0).log
+    v.other_genes_as_in_crystal_x_crystal = r.log.filter((l) => l.name !== 'opacity').every((l, k) => JSON.stringify(l) === JSON.stringify(plain[k])) && plain.length === r.log.filter((l) => l.name !== 'opacity').length
+    if (!v.other_genes_as_in_crystal_x_crystal) throw new Error('opacity moved another gene: ' + what)
+    const g = S.grow({ prog: r.prog, coord: coordA, planted: P0, scale: 0, caps: CAPS, clock, blockHash })
+    v.child_growth = { planted: P0, clock, opacity: g.sno.opacity === undefined ? null : g.sno.opacity, vertices: g.sno.vertices.length, sno_sha256: S.sha256hex(Buffer.from(g.json, 'utf8')) }
+    return v
+  }
+  // the first blocks from 970536 whose words give the child the father's glassy allele, and his solid one
+  const childOpacity = (h) => S.express(S.mixDNA(C, G, S.word32(blockHash(h))).log.find((l) => l.name === 'opacity').child)
+  let hGlass = 970536; while (childOpacity(hGlass) === 100) hGlass++
+  let hSolid = 970536; while (childOpacity(hSolid) !== 100) hSolid++
+  const mixes = [
+    preview('crystal x glass crystal: the father declares opacity, and the child takes his glassy allele and a line in its head', 'crystal', C, 'glass crystal', G, hGlass),
+    preview('crystal x glass crystal with another word: the child takes his solid allele, and keeps the line', 'crystal', C, 'glass crystal', G, hSolid),
+    preview('glass crystal x crystal: the mother declares opacity, and her line is replaced where it stands', 'glass crystal', G, 'crystal', C, hGlass),
+    preview('crystal x crystal: neither declares opacity, so it is skipped, and the child has no opacity line', 'crystal', C, 'crystal', C, hGlass),
+  ]
+  if (mixes[0].child_growth.opacity !== 40 || mixes[1].child_growth.opacity !== null) throw new Error('the previews no longer show both outcomes')
+  // more mixes: both parents declare opacity; a word that mutates it; a sterile hybrid whose father alone declares it
+  const frost = DNAS.crystal.replace('dna     crystal', 'dna     frost crystal').replace('gene hue     0!   5    in 0..23    # cyan, hiding a violet\n',
+    'gene hue     0!   5    in 0..23    # cyan, hiding a violet\ngene opacity 70   25!  in 10..90   # frosted: a faint dominant allele, hiding a paler one\n')
+  if (frost === DNAS.crystal) throw new Error('the frost crystal is the crystal')
+  const F = S.parseDNA(frost)
+  const mixCase = (what, Aname, A, Bname, B, h, hybrid = false) => {
+    const s0 = S.word32(blockHash(h))
+    const r = S.mixDNA(A, B, s0, { hybrid })
+    if (r.refused) throw new Error('refused: ' + what)
+    const v = { what, mother: Aname, father: Bname, hybrid, word_from_block: h, mix_word: s0, genes: r.log.map((l) => ({ name: l.name, index: A.genes.findIndex((g) => g.name === l.name), word: l.s, alleles_from: l.from, a: S.geneLine(l.child).split(' ')[2], b: S.geneLine(l.child).split(' ')[3], lo: l.child.lo, hi: l.child.hi, expressed: l.expressed, mutated: l.mutated })), child_text: r.text, child_sterile: r.prog.sterile }
+    const plain = S.mixDNA(C, C, s0).log
+    v.other_genes_as_in_crystal_x_crystal = r.log.filter((l) => l.name !== 'opacity').every((l, k) => JSON.stringify(l) === JSON.stringify(plain[k])) && plain.length === r.log.filter((l) => l.name !== 'opacity').length
+    const g = S.grow({ prog: r.prog, coord: coordA, planted: P0, scale: 0, caps: CAPS, clock, blockHash })
+    v.child_growth = { planted: P0, clock, opacity: g.sno.opacity === undefined ? null : g.sno.opacity, vertices: g.sno.vertices.length, sno_sha256: S.sha256hex(Buffer.from(g.json, 'utf8')) }
+    return v
+  }
+  const opacityDraw = (A, B, h, hybrid = false) => S.mixDNA(A, B, S.word32(blockHash(h)), { hybrid }).log.find((l) => l.name === 'opacity')
+  // the first block from 970536 whose word mutates the opacity of glass x frost (the rate is floor((2 + 2) / 2) = 2)
+  let hMut = 970536; while (blockHash(hMut) && !opacityDraw(G, F, hMut).mutated) hMut++
+  if (!blockHash(hMut)) throw new Error('no word in the window mutates the opacity of glass x frost')
+  // the first block from 970536 whose word gives the hybrid the father's glassy allele
+  let hMule = 970536; while (blockHash(hMule) && S.express(opacityDraw(P.coral, G, hMule, true).child) === 100) hMule++
+  if (!blockHash(hMule)) throw new Error('no word in the window gives the hybrid a glassy opacity')
+  const more = [
+    mixCase('glass crystal x frost crystal: both parents declare opacity, the range spans both, and the mother\'s line is replaced where it stands', 'glass crystal', G, 'frost crystal', F, hGlass),
+    mixCase('glass crystal x frost crystal with a word that mutates the opacity', 'glass crystal', G, 'frost crystal', F, hMut),
+    mixCase('coral x glass crystal as a sterile hybrid: the father alone declares opacity, so its line follows "sterile" and the standard genes in the head', 'coral', P.coral, 'glass crystal', G, hMule, true),
+  ]
+  if (more[0].genes.find((x) => x.name === 'opacity').mutated !== null) throw new Error('the both-parents preview mutates')
+  if (more[1].genes.find((x) => x.name === 'opacity').mutated === null) throw new Error('the mutation preview does not mutate')
+  if (!more[2].child_sterile || more[2].child_growth.opacity === null) throw new Error('the hybrid preview is not a glassy sterile child')
+  if (more[0].child_text.split('\n').filter((l) => /^gene opacity /.test(l)).length !== 1) throw new Error('the both-parents child has not exactly one opacity line')
+  mixes.push(...more)
+  out.opacity = {
+    note: 'The fourth standard gene, opacity (DECK-0008 §3.3): bounds 10..100, default 100, default range 100..100, last in the genome. A bloom whose expressed opacity is below 100 carries "opacity" after "faces" (§5.5); every other payload in this file is unchanged. Elsewhere in this file a listed genome leaves out an implicit opacity; here every genome is listed in full. `dnas` holds the texts of the two glassy crystals; the crystal and the coral are those of the `growth` section. A mix with `hybrid: true` is made with the `hybrid` tag (§6.5).',
+    standard_gene: S.OPACITY,
+    growth,
+    accepted,
+    rejected,
+    dnas: { 'glass crystal': glass, 'frost crystal': frost },
+    mixes,
   }
 }
 
