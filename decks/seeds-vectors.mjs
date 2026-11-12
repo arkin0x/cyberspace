@@ -967,6 +967,48 @@ const settleClock = (createdAt) => { for (let c = 970410; c <= LAST; c++) if (S.
   out.price = { mix_floor: S.MIX_FLOOR, rows }
 }
 
+// ---------- how a bloom stands (§5.7) ----------
+{
+  const P0 = 970400
+  // The payload's points in ticks: whole units times 120 plus the run-length encoded remainders (DECK-0003 §1.2).
+  const pointsOf = (sno) => {
+    const rest = []
+    for (const t of sno.ticks ?? []) {
+      if (typeof t === 'number') for (let i = 0; i < -t; i++) rest.push([0, 0, 0])
+      else rest.push(t)
+    }
+    while (rest.length < sno.vertices.length) rest.push([0, 0, 0])
+    return sno.vertices.map((v, i) => [v[0] * S.TICK + rest[i][0], v[1] * S.TICK + rest[i][1], v[2] * S.TICK + rest[i][2]])
+  }
+  const g = S.grow({ prog: S.parseDNA(DNAS.fiddlehead), coord: coordA, planted: P0, caps: CAPS, clock: P0 + 144 + 72, blockHash })
+  const points = pointsOf(g.sno)
+  const tags = [
+    [],
+    [['turn', '1', '0', '0']],
+    [['turn', '0', '3', '2'], ['up'], ['spin', '90']],
+    [['up']],
+    [['spin', '45']],
+    [['up'], ['spin', '0']],
+    [['up', 'true'], ['spin', '359']],
+    [['turn', '0', '0', '0', '0']],
+    [['turn', '4', '0', '0']],
+    [['turn', '01', '0', '0']],
+    [['turn', '1', '0']],
+    [['spin', '360']],
+    [['spin', '-90']],
+    [['spin', '90.0']],
+    [['spin']],
+    [['turn', '2', '2', '2'], ['turn', 'x', 'y', 'z']],
+    [['spin', '90', 'x']],
+  ]
+  out.orientation = {
+    note: 'A seed\'s orientation tags (DECK-0008 §5.7, §8.2), read: null means a malformed tag, and the reader skips the seed. Then the points of one small bloom (the fiddlehead halfway through day 1, at coordA, planted at 970,400): `points` in ticks of the payload\'s frame, `in_cyberspace` the same points placed into Cyberspace\'s axes (Z negated, DECK-0003 §2), and `turned` those turned by quarter turns about X, then Y, then Z, in Cyberspace\'s axes. The payload and its hash never change; only how the bloom is drawn does.',
+    tags: tags.map((t) => ({ tags: t, read: S.readOrientation(t) })),
+    bloom: { dna: 'fiddlehead', coord: coordA, planted: P0, clock: P0 + 144 + 72, caps: CAPS, sno_sha256: S.sha256hex(Buffer.from(g.json)), points, in_cyberspace: points.map(S.intoCyberspace) },
+    turned: [[1, 0, 0], [0, 1, 0], [0, 0, 1], [2, 0, 0], [1, 2, 3], [3, 3, 3]].map((turn) => ({ turn, points: points.map((p) => S.turnPoint(S.intoCyberspace(p), turn)) })),
+  }
+}
+
 // ---------- opacity, the fourth standard gene (DECK-0008 §3.3, §5.4, §5.5, §6.4, §6.6) ----------
 {
   const P0 = 970400, clock = P0 + 30 * 144 + 6
@@ -1040,12 +1082,46 @@ const settleClock = (createdAt) => { for (let c = 970410; c <= LAST; c++) if (S.
     preview('crystal x crystal: neither declares opacity, so it is skipped, and the child has no opacity line', 'crystal', C, 'crystal', C, hGlass),
   ]
   if (mixes[0].child_growth.opacity !== 40 || mixes[1].child_growth.opacity !== null) throw new Error('the previews no longer show both outcomes')
+  // more mixes: both parents declare opacity; a word that mutates it; a sterile hybrid whose father alone declares it
+  const frost = DNAS.crystal.replace('dna     crystal', 'dna     frost crystal').replace('gene hue     0!   5    in 0..23    # cyan, hiding a violet\n',
+    'gene hue     0!   5    in 0..23    # cyan, hiding a violet\ngene opacity 70   25!  in 10..90   # frosted: a faint dominant allele, hiding a paler one\n')
+  if (frost === DNAS.crystal) throw new Error('the frost crystal is the crystal')
+  const F = S.parseDNA(frost)
+  const mixCase = (what, Aname, A, Bname, B, h, hybrid = false) => {
+    const s0 = S.word32(blockHash(h))
+    const r = S.mixDNA(A, B, s0, { hybrid })
+    if (r.refused) throw new Error('refused: ' + what)
+    const v = { what, mother: Aname, father: Bname, hybrid, word_from_block: h, mix_word: s0, genes: r.log.map((l) => ({ name: l.name, index: A.genes.findIndex((g) => g.name === l.name), word: l.s, alleles_from: l.from, a: S.geneLine(l.child).split(' ')[2], b: S.geneLine(l.child).split(' ')[3], lo: l.child.lo, hi: l.child.hi, expressed: l.expressed, mutated: l.mutated })), child_text: r.text, child_sterile: r.prog.sterile }
+    const plain = S.mixDNA(C, C, s0).log
+    v.other_genes_as_in_crystal_x_crystal = r.log.filter((l) => l.name !== 'opacity').every((l, k) => JSON.stringify(l) === JSON.stringify(plain[k])) && plain.length === r.log.filter((l) => l.name !== 'opacity').length
+    const g = S.grow({ prog: r.prog, coord: coordA, planted: P0, scale: 0, caps: CAPS, clock, blockHash })
+    v.child_growth = { planted: P0, clock, opacity: g.sno.opacity === undefined ? null : g.sno.opacity, vertices: g.sno.vertices.length, sno_sha256: S.sha256hex(Buffer.from(g.json, 'utf8')) }
+    return v
+  }
+  const opacityDraw = (A, B, h, hybrid = false) => S.mixDNA(A, B, S.word32(blockHash(h)), { hybrid }).log.find((l) => l.name === 'opacity')
+  // the first block from 970536 whose word mutates the opacity of glass x frost (the rate is floor((2 + 2) / 2) = 2)
+  let hMut = 970536; while (blockHash(hMut) && !opacityDraw(G, F, hMut).mutated) hMut++
+  if (!blockHash(hMut)) throw new Error('no word in the window mutates the opacity of glass x frost')
+  // the first block from 970536 whose word gives the hybrid the father's glassy allele
+  let hMule = 970536; while (blockHash(hMule) && S.express(opacityDraw(P.coral, G, hMule, true).child) === 100) hMule++
+  if (!blockHash(hMule)) throw new Error('no word in the window gives the hybrid a glassy opacity')
+  const more = [
+    mixCase('glass crystal x frost crystal: both parents declare opacity, the range spans both, and the mother\'s line is replaced where it stands', 'glass crystal', G, 'frost crystal', F, hGlass),
+    mixCase('glass crystal x frost crystal with a word that mutates the opacity', 'glass crystal', G, 'frost crystal', F, hMut),
+    mixCase('coral x glass crystal as a sterile hybrid: the father alone declares opacity, so its line follows "sterile" and the standard genes in the head', 'coral', P.coral, 'glass crystal', G, hMule, true),
+  ]
+  if (more[0].genes.find((x) => x.name === 'opacity').mutated !== null) throw new Error('the both-parents preview mutates')
+  if (more[1].genes.find((x) => x.name === 'opacity').mutated === null) throw new Error('the mutation preview does not mutate')
+  if (!more[2].child_sterile || more[2].child_growth.opacity === null) throw new Error('the hybrid preview is not a glassy sterile child')
+  if (more[0].child_text.split('\n').filter((l) => /^gene opacity /.test(l)).length !== 1) throw new Error('the both-parents child has not exactly one opacity line')
+  mixes.push(...more)
   out.opacity = {
-    note: 'The fourth standard gene, opacity (DECK-0008 §3.3): bounds 10..100, default 100, default range 100..100, last in the genome. A bloom whose expressed opacity is below 100 carries "opacity" after "faces" (§5.5); every other payload in this file is unchanged. Elsewhere in this file a listed genome leaves out an implicit opacity; here every genome is listed in full.',
+    note: 'The fourth standard gene, opacity (DECK-0008 §3.3): bounds 10..100, default 100, default range 100..100, last in the genome. A bloom whose expressed opacity is below 100 carries "opacity" after "faces" (§5.5); every other payload in this file is unchanged. Elsewhere in this file a listed genome leaves out an implicit opacity; here every genome is listed in full. `dnas` holds the texts of the two glassy crystals; the crystal and the coral are those of the `growth` section. A mix with `hybrid: true` is made with the `hybrid` tag (§6.5).',
     standard_gene: S.OPACITY,
     growth,
     accepted,
     rejected,
+    dnas: { 'glass crystal': glass, 'frost crystal': frost },
     mixes,
   }
 }

@@ -116,6 +116,9 @@ export const KEYWORDS = ['and', 'or', 'not', 'if', 'chance', 'in']
 const NAME_RE = /^[A-Za-z_][A-Za-z_0-9]*$/
 const WS = '[\\t\\n\\v\\f\\r ]'
 const trimWS = (s) => s.replace(new RegExp('^' + WS + '+|' + WS + '+$', 'g'), '')
+// DECK-0008 §3.1: a comment runs from the first "#" on the line to its end, whatever follows it.
+// (A regular expression such as /#.*$/ would stop at a CR, U+2028 or U+2029 and remove nothing.)
+const stripComment = (raw) => { const h = raw.indexOf('#'); return h < 0 ? raw : raw.slice(0, h) }
 
 // Every compiled expression carries its node count (.n) and its depth (.d), DECK-0008 §3.4:
 // an atom is one node of depth 1; an operator is one node, of depth one more than its deepest operand;
@@ -211,17 +214,19 @@ const intLine = (rest, where, kw) => {
   const v = parseInt(rest, 10); if (Math.abs(v) > LIMITS.value) throw new Error(where + ': ' + kw + ' is out of range'); return v
 }
 
-export function parseDNA(text) {
-  // DECK-0008 §3.1: at most 8,192 bytes of UTF-8, and well-formed Unicode
+// `computed` is true for a mixed DNA's computed child text (§6.6), which the 8,192-byte limit does not
+// bound (§3.1). A copy of that text republished as a written DNA is parsed without it, and is bounded.
+export function parseDNA(text, { computed = false } = {}) {
+  // DECK-0008 §3.1: at most 8,192 bytes of UTF-8 (a written DNA only), and well-formed Unicode
   if (/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(text)) throw new Error('the text is not well-formed Unicode')
-  if (Buffer.byteLength(text, 'utf8') > LIMITS.textBytes) throw new Error('the text is longer than ' + LIMITS.textBytes + ' bytes')
+  if (!computed && Buffer.byteLength(text, 'utf8') > LIMITS.textBytes) throw new Error('the text is longer than ' + LIMITS.textBytes + ' bytes')
   const prog = { text, revision: 1, name: 'dna', species: '', planted: null, scale: null, mutate: 0, sterile: false, genes: [], angle: 30, width: 2, color: 7, lets: [], axiom: null, rules: [], letters: {} }
   const lines = text.split('\n')
   const names = new Set([...BUILTINS, ...STD_NAMES]); const declared = new Set()
   let axiomSrc = null, axiomLine = 0; const ruleSrc = []; const seen = new Set()
   lines.forEach((raw, n) => {
     const where = 'line ' + (n + 1)
-    const line = trimWS(raw.replace(/#.*$/, ''))
+    const line = trimWS(stripComment(raw))
     if (!line) return
     const kw0 = line.split(new RegExp(WS + '+'))[0]
     // DECK-0008 §3.1: inside a line, the only whitespace is space and tab, and there are no control characters
@@ -324,9 +329,11 @@ export function express(g) {
   if (g.b.d && !g.a.d) return g.b.v
   return Math.floor((g.a.v + g.b.v) / 2)
 }
+// Every name of §3.4 is an ordinary name, "__proto__" included, so the environment has no prototype:
+// on a plain object, assigning "__proto__" would set the object's prototype instead of a value.
 export function makeEnv(prog, coordHex, u) {
   const t = terroir(coordHex, u)
-  const env = { w: 0, W: 0, g: 0, K: t.K, n0: t.n0, n1: t.n1, n2: t.n2, n3: t.n3, pl: t.pl }
+  const env = Object.assign(Object.create(null), { w: 0, W: 0, g: 0, K: t.K, n0: t.n0, n1: t.n1, n2: t.n2, n3: t.n3, pl: t.pl })
   for (const g of prog.genes) env[g.name] = express(g)
   for (const l of prog.lets) env[l.name] = l.fn(env)
   return env
@@ -472,6 +479,8 @@ export function toSNO(name, geo, unit, opacity = 100) {
 
 // Grow one seed. `planted` is the effective planted height (after the clamp of §4.2),
 // `clock` the clock height (tip minus 6), `blockHash(h)` the block's hash as displayed.
+// DECK-0008 §4.1: a reader that lacks a driving block's hash draws the latest generation it can
+// compute and says that it is behind; the result then carries `behind: true` and the missing height.
 export function grow({ prog, coord, planted, scale = 0, caps = BASE_CAPS, clock, blockHash }) {
   // DECK-0008 §3.6: the axiom is at most the symbol cap, so no string ever exceeds it
   if (prog.axiom.length > caps.symbols) throw new Error('the axiom is longer than the symbol cap')
@@ -479,16 +488,21 @@ export function grow({ prog, coord, planted, scale = 0, caps = BASE_CAPS, clock,
   const age = clock - planted
   const g = age < 0 ? 0 : Math.min(Math.floor(age / N), caps.generations)
   let str = prog.axiom.map((t) => ({ c: t.c, p: t.args.map((f) => f(env)), b: 0 }))
-  const used = []
+  const used = []; let gen = 0, missing = null
   for (let k = 1; k <= g; k++) {
     const h = planted + k * N, hash = blockHash(h)
-    if (!hash) throw new Error('no hash for block ' + h)
+    if (!hash) { missing = h; break }
     used.push(h)
     str = rewrite(prog, env, str, k, word32(hash), caps.symbols)
+    gen = k
   }
   const geo = interpret(prog, str, Math.max(0, age), env, caps.vertices)
   const sno = toSNO(prog.name, geo, scale, env.opacity)
-  return { age, g, symbols: str.length, used, sno, json: JSON.stringify(sno) }
+  // JSON.stringify writes the payload as §5.5 says: compact, keys in insertion order, and the name
+  // escaped as JSON requires (a tab in a name as \t, a quote as \", a backslash as \\)
+  const r = { age, g: gen, symbols: str.length, used, sno, json: JSON.stringify(sno) }
+  if (missing !== null) { r.behind = true; r.missing = missing }
+  return r
 }
 
 // ---------- the planted-height clamp (DECK-0008 §4.2) ----------
@@ -498,7 +512,8 @@ export function grow({ prog, coord, planted, scale = 0, caps = BASE_CAPS, clock,
 // the same for every reader. E: the highest height whose header time is at most
 // created_at - 7200. F: the highest height whose header time is at most created_at + 7200.
 export const GENESIS_TIME = 1231006505   // block 0's header time; every later header time is greater
-const need = (h, times) => { if (times[h] === undefined) throw new Error('missing header ' + h); return times[h] }
+class MissingHeader extends Error {}
+const need = (h, times) => { if (times[h] === undefined) throw new MissingHeader('missing header ' + h); return times[h] }
 export function mtp(h, times) {
   const ts = []; for (let k = h - 10; k <= h; k++) ts.push(need(k, times))
   return ts.sort((a, b) => a - b)[5]
@@ -518,12 +533,16 @@ export function highestAtOrBelow(t, times, clock) {
 }
 // null while the height is not settled (the seed is drawn at generation 0; a mix is pending);
 // 'none' when no block qualifies for F (the seed cannot grow; a mixed DNA is invalid).
+// DECK-0008 §4.2: a reader that lacks a header it needs does not step over it, and the height is
+// not settled for that reader until it has the header, so a missing header also gives null.
 export function effectiveHeight(stated, createdAt, clock, times) {
-  if (!settled(createdAt, clock, times)) return null
-  const F = highestAtOrBelow(createdAt + CLAMP_MARGIN, times, clock)
-  if (F < 0) return 'none'
-  const E = highestAtOrBelow(createdAt - CLAMP_MARGIN, times, clock)
-  return Math.min(Math.max(stated, E), F)
+  try {
+    if (!settled(createdAt, clock, times)) return null
+    const F = highestAtOrBelow(createdAt + CLAMP_MARGIN, times, clock)
+    if (F < 0) return 'none'
+    const E = highestAtOrBelow(createdAt - CLAMP_MARGIN, times, clock)
+    return Math.min(Math.max(stated, E), F)
+  } catch (e) { if (e instanceof MissingHeader) return null; throw e }
 }
 
 // ---------- tag values (CYBERSPACE_V2 §10) ----------
@@ -580,25 +599,25 @@ export function mixDNA(A, B, s0, { name, hybrid = false } = {}) {
   const verdict = nameTagVerdict(name)
   if (verdict === 'invalid') return { refused: 'invalid name tag' }
   const childName = verdict === 'default' ? [...(A.name + ' x ' + B.name)].slice(0, 64).join('') : name
-  const byName = Object.fromEntries(genes.map((g) => [g.name, g]))
+  const byName = new Map(genes.map((g) => [g.name, g]))   // a Map, so a gene named "__proto__" is an ordinary key
   const head = ['dna ' + childName]
   if (!same) head.push('sterile')
-  for (const s of STD) if (!A.genes.find((g) => g.name === s.name && !g.implicit)) head.push(geneLine(byName[s.name]))
+  for (const s of STD) if (!A.genes.find((g) => g.name === s.name && !g.implicit)) head.push(geneLine(byName.get(s.name)))
   // DECK-0008 §6.6: the father's declared opacity reaches the head when the mother has no opacity line of her own
   const childOpacity = genes.find((g) => g.name === OPACITY.name)
   if (childOpacity && A.genes.find((g) => g.name === OPACITY.name).implicit) head.push(geneLine(childOpacity))
   const out = []; let wroteHead = false
   for (const raw of A.text.split('\n')) {
-    const t = trimWS(raw.replace(/#.*$/, ''))
+    const t = trimWS(stripComment(raw))
     const kw = t.split(new RegExp(WS + '+'))[0]
     if (!t.includes('->') && (kw === 'dna' || kw === 'seed')) { out.push(...head); wroteHead = true; continue }
     if (!t.includes('->') && ['sterile', 'planted', 'scale'].includes(kw)) continue
-    if (!t.includes('->') && kw === 'gene') { out.push(geneLine(byName[t.split(new RegExp(WS + '+'))[1]])); continue }
+    if (!t.includes('->') && kw === 'gene') { out.push(geneLine(byName.get(t.split(new RegExp(WS + '+'))[1]))); continue }
     out.push(raw)
   }
   if (!wroteHead) out.unshift(...head)
   const text = out.join('\n')
-  return { text, prog: parseDNA(text), log, same }
+  return { text, prog: parseDNA(text, { computed: true }), log, same }   // §3.1: not bounded by 8,192 bytes
 }
 
 // ---------- the price of caps (DECK-0008 §7) ----------
@@ -629,3 +648,40 @@ export function seedPrecheck(ev) {
 // NIP-01 event id and NIP-13 difficulty
 export const eventId = (ev) => sha256hex(Buffer.from(JSON.stringify([0, ev.pubkey, ev.created_at, ev.kind, ev.tags, ev.content]), 'utf8'))
 export function leadingZeroBits(hex) { let n = 0; for (const ch of hex) { const v = parseInt(ch, 16); if (v === 0) { n += 4; continue } n += Math.clz32(v) - 28; break } return n }
+
+// ---------- how a bloom stands (DECK-0008 §5.7) ----------
+
+/**
+ * A seed's orientation tags read (§8.2, §5.7): its quarter turns about X, Y
+ * and Z, whether it stands on Earth, and its spin. Null when a tag is
+ * malformed: the reader skips the seed. The first tag of each name is read.
+ */
+export function readOrientation(tags) {
+  const first = (n) => tags.find((t) => Array.isArray(t) && t[0] === n)
+  const t = first('turn'), s = first('spin'), u = first('up')
+  let turn = [0, 0, 0]
+  if (t) {
+    if (t.length !== 4 || !t.slice(1).every((v) => isDecimal(v) && Number(v) <= 3)) return null
+    turn = t.slice(1).map(Number)
+  }
+  let spin = 0
+  if (s) {
+    if (s.length !== 2 || !isDecimal(s[1]) || Number(s[1]) > 359) return null
+    spin = Number(s[1])
+  }
+  const up = u !== undefined
+  return { turn, up, spin: up ? spin : 0 }
+}
+
+/** One quarter turn, positive about X, Y and Z by the maps of §5.7, in Cyberspace's axes. */
+const QUARTER = [([x, y, z]) => [x, -z, y], ([x, y, z]) => [z, y, -x], ([x, y, z]) => [-y, x, z]]
+
+/** A point of the payload, in ticks, placed into Cyberspace's axes (its Z negated, DECK-0003 §2). */
+export const intoCyberspace = (p) => [p[0], p[1], 0 - p[2]]
+
+/** A point in Cyberspace's axes, turned: X turns first, then Y, then Z (§5.7). */
+export function turnPoint(p, turn) {
+  let q = [p[0], p[1], p[2]]
+  for (let a = 0; a < 3; a++) for (let k = 0; k < turn[a]; k++) q = QUARTER[a](q)
+  return q
+}
