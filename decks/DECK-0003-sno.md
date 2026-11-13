@@ -258,6 +258,8 @@ An application outside Cyberspace that has no natural base unit MAY treat `unit`
 
 `up`, when present, MUST be a boolean; a reader MUST reject any other type. `true` means the object is oriented against the surface of the Earth at the point where it is placed: the object's `+Y` axis points along the geodetic normal (local up), its `+X` points local east, and its `+Z` points local north. Absent, an object's axes are the application's axes.
 
+**Which axes (normative).** The `+X`, `+Y` and `+Z` of this section are the object's axes in Cyberspace, after the reader has placed it into Cyberspace as §2 says, with every Z negated. The `+Z` that points local north, and that faces the bearing `spin`, is therefore Cyberspace's `+Z`, which is the payload's `-Z`. A reader MUST stand an object in those axes. A reader that stood the payload's own axes instead, before the §2 negation, would draw every standing object mirrored north to south: east stays east, but every asymmetric object faces the other way and turns into its own mirror image. This is how ONOSENDAI stands every object, and DECK-0008 §5.7 says the same of a seed's bloom, which stands on Earth by the tags `up` and `spin` (arkin0x/cyberspace#98).
+
 `spin` is a whole number from `0` to `359`: the compass bearing the object's `+Z` faces, measured clockwise from north as seen from above. `0` faces north, `90` east, `180` south, `270` west. Absent with `up` true means `0`.
 
 A reader MUST reject a `spin` that is present and is not an integer in range, whether or not `up` is present, because a payload carrying a nonsense bearing is malformed even where the bearing is unused. A reader MUST ignore the value of `spin` when `up` is not `true`.
