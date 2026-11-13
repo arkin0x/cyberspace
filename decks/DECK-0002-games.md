@@ -117,14 +117,16 @@ By default a player can enter a game from anywhere. The `enter-virtual` action d
 
 | Tag | Value |
 |---|---|
-| `["enter-from", "<prefix>"]` | on an item stored inline in the world's bag, of any kind; the item that carries the `entry` tag may carry it too. `prefix` is a string of 1 to 64 lowercase hex characters, in the canonical form of `CYBERSPACE_V2.md` §2.5. It names a prefix region: every coordinate whose 64-character hex starts with it. Any further elements are ignored. |
+| `["enter-from", "<prefix>"]` | on an item stored inline in the world's bag and signed by the game key, of any kind; the item that carries the `entry` tag may carry it too. `prefix` is a string of 1 to 64 lowercase hex characters, in the canonical form of `CYBERSPACE_V2.md` §2.5. It names a prefix region: every coordinate whose 64-character hex starts with it. Any further elements are ignored. |
 
-A reader finds the requirement in the list of the game's newest world bag (§5.1), the same bag in which it finds the entry point (§2.2):
+A reader finds the requirement in the list of the game's newest world bag (§5.1), the same bag in which it finds the entry point (§2.2). A bag whose plaintext is opaque, not a list (`CYBERSPACE_V2.md` §7.6), carries no requirement.
 
-- It counts an `enter-from` tag only when the item that carries it is stored inline in the bag (not a reference, and not a sealed entry) and is authentic as an item of that bag (`CYBERSPACE_V2.md` §7.6: signed by the game key, or a rumor the bag vouches for), whatever the item's kind, including a kind the reader cannot read or draw. The item's own `C` plays no part in the requirement.
+- It counts an `enter-from` tag only when the item that carries it is stored inline in the bag (not a reference, and not a sealed entry) and is signed by the game key with a signature that verifies (`CYBERSPACE_V2.md` §7.6). A rumor does not count, because §7.6 lets a reader drop a rumor of most kinds, and two readers must never disagree on whether a requirement exists. Otherwise the item's kind and its `C` play no part: a reader counts the tag on an item of a kind it cannot read or draw, and on an item it would drop when drawing, one with no `C` for example.
 - It counts the tag only when its value is already in canonical form: 1 to 64 characters, each one of `0` to `9` and `a` to `f` (`CYBERSPACE_V2.md` §2.5). The lenient reading of §2.5 is for strings that people type or carry in links; a game writes this tag, and a reader does not repair it. A tag with any other value, or with no value, is skipped.
 - When at least one tag counts, the game has a **required place**: every coordinate inside at least one of the prefix regions those tags name. A game with several doors writes one tag for each, on one item or on several.
-- When no tag counts, or the reader finds no world bag, the game has no required place, and a player can enter it from anywhere.
+- When no tag counts, or the game has no world bag, the game has no required place, and a player can enter it from anywhere. A bag that a reader cannot fetch is not a bag that does not exist (below, Which world is read).
+
+**Which world is read.** The world is found from the region an entry names (§5.1), and the player's client writes that region (§2.1). A game, an arbiter, and any reader that counts play for a game whose region it knows (from the game's rules, or from where the game advertises it, `CYBERSPACE_V2.md` §8.11.7) MUST read the requirement from the world in the game's own region, whatever region the entry names, so that an entry cannot escape the requirement by naming a region where the game has no bag. Such a reader that knows the game has a world, and cannot fetch its bag, does not know whether the entry meets the requirement, and does not count it until it can.
 
 **Checking an entry.** The coordinate that is checked is the player's base position: the `c` of the `enter-virtual` action. A valid entry sets it to the `C` of the nearest recognized action before it, so it is on the player's chain in public (`CYBERSPACE_V2.md` §8.11.1, §8.11.5). The entry **meets the requirement** when the 64-character hex of its base position starts with the value of at least one counted `enter-from` tag. That is exactly the test of lying inside the tag's prefix region (`CYBERSPACE_V2.md` §2.5), and it needs nothing but a comparison of two strings.
 
@@ -136,17 +138,15 @@ A reader finds the requirement in the list of the game's newest world bag (§5.1
 
 **Before publishing.** A client that implements a game SHOULD read the game's newest world bag and check its player's base position against the requirement before it signs the entry, and SHOULD NOT publish an entry that does not meet it. When the player does not stand in the required place, the client SHOULD say where the game is entered from, so that the player can travel there.
 
-**Which version of the world counts.** An entry is judged against the newest world bag the reader holds when it judges, not against the bag that was current when the player entered. A game that changes or removes its `enter-from` tags therefore changes the verdict on entries already made, and a game that wants its earlier entries to keep counting does not narrow its required place. A client that comes back to an open bracket (§7) judges the entry again against the newest bag, and when the entry no longer meets the requirement, it offers only to leave.
+**Which version of the world counts.** An entry is judged against the newest world bag the reader holds when it judges, not against the bag that was current when the player entered. A game that changes or removes its `enter-from` tags therefore changes the verdict on entries already made, and a game that wants its earlier entries to keep counting does not narrow its required place. A client that comes back to an open bracket (§7) judges the entry again against the newest bag, and when the entry no longer meets the requirement, it offers only to leave. A verdict is therefore final only while the game keeps its required place as it is, and two readers that hold different bags, while a new bag reaches relays for example, can reach different verdicts. A reader that publishes a verdict on an entry SHOULD name the id of the bag it judged by.
 
-**Planes.** A string of 1 to 63 characters never fixes the plane (`CYBERSPACE_V2.md` §2.5). A required place written with one is therefore the same box in dataspace and in ideaspace, and a base position in either plane meets it. Only a string of 64 characters, which names one gibson, fixes the plane.
+**Planes.** Only a string of 64 characters fixes the plane (`CYBERSPACE_V2.md` §2.5), so a required place written with a shorter one is met by a base position in either plane.
 
 **Why a tag on an item of the world (non-normative):** The requirement is the game's, so it lives where the entry point lives, for the same reasons (§2.2): there is no game event, the world is the one place every client already reads with a key it already has, and a game moves its door by republishing its bag, as it changes anything else in its world. A tag on the `enter-virtual` action would have let every player write their own requirement. A reader that knows nothing of games ignores the tag, as it ignores any tag it does not read.
 
 **Why a prefix region (non-normative):** It is a primitive the base protocol already has, and places are already named by it: links such as `www.onosendai.tech/C/<hex>` and relay paths such as `relay.onosendai.tech/<hex>` carry the same string (`CYBERSPACE_V2.md` §2.5), and `region-prefix-vectors.json` already tests it. Checking it is a comparison of strings, so any reader can do it, including one that computes no keys and draws nothing. It names a box of any size from a sixteenth of cyberspace down to one gibson, and a cube whenever the length of the string is a multiple of 3: a string of 60 characters names a cube 32 gibsons on a side. The game's own region was not used as the place, because a game's world is often far from its door: the region says where the world is read, not where players come from.
 
-**Why the newest bag (non-normative):** A bag is addressable, so a relay keeps only the newest bag per author and region and discards the one it replaces (`CYBERSPACE_V2.md` §7.6). No reader can be sure which version was current at a past moment, because a bag's `created_at` is its signer's own claim and no verdict of a game rests on it (`CYBERSPACE_V2.md` §8.11.7). The newest bag is the one version every reader can fetch, so it is the one every reader judges by. The game key can rewrite its world at any time in any case (§10), so judging by the newest bag gives it no power it did not already have.
-
-**Why no new kind (non-normative):** The requirement is one tag on an item of a bag the game already publishes, read with a key a client already computes, and checked against a coordinate already on the player's chain.
+**Why the newest bag (non-normative):** A bag is addressable, so a relay keeps only the newest bag per author and region and discards the one it replaces (`CYBERSPACE_V2.md` §7.6). No reader can be sure which version was current at a past moment, and the `created_at` of the player's entry cannot settle it, because a game decides no verdict by `created_at` (`CYBERSPACE_V2.md` §8.11.7). The newest bag is the one version every reader can fetch, so it is the one every reader judges by. Which bag is newest is decided by the rule every bag already follows (`CYBERSPACE_V2.md` §7.6, Lifecycle), which relays apply themselves. That rule orders the game key's own declarations, one after another; it is how every reader of bags finds the current one, and it says nothing about when any player acted, so the verdict on an entry never rests on a timestamp of the player's. The game key can rewrite its world at any time in any case (§10), so judging by the newest bag gives it no power it did not already have.
 
 ## 3. Game positions (normative for games that have positions)
 
@@ -347,7 +347,8 @@ The entry point, an item inside the world's bag (a shard item, `kind 3330`, sign
   "created_at": 1794300006,
   "tags": [
     ["C", "<the entry point, inside R>"],
-    ["entry"]
+    ["entry"],
+    ["-"]
   ],
   "content": "<the marker's SNO payload>"
 }
@@ -380,7 +381,8 @@ The pad's teleport:
   "created_at": 1794300007,
   "tags": [
     ["C", "<inside R; it plays no part in the requirement>"],
-    ["enter-from", "c492492492492492492492edf5bee7267451c787d95ba4d7840c76d1e33c"]
+    ["enter-from", "c492492492492492492492edf5bee7267451c787d95ba4d7840c76d1e33c"],
+    ["-"]
   ],
   "content": "<the marker's SNO payload>"
 }
