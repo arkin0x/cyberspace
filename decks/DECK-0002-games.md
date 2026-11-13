@@ -5,8 +5,8 @@ Title: Games
 Status: Draft
 Mandatory: no
 Created: 2026-11-10
-Last updated: 2026-11-10
-Requires: `CYBERSPACE_V2.md` §2.2 (coordinates), §7.2 (region keys), §7.6 (the bag) and §8.11 (virtual brackets); DECK-0003 (SNO) for the objects a world is built from; NIP-01
+Last updated: 2026-11-13
+Requires: `CYBERSPACE_V2.md` §2.2 (coordinates), §2.5 (hex prefixes), §7.2 (region keys), §7.6 (the bag) and §8.11 (virtual brackets); DECK-0003 (SNO) for the objects a world is built from; NIP-01
 
 ## Abstract
 
@@ -16,13 +16,14 @@ This DECK says those things, and as little else as it can. It defines:
 
 - how a client enters a game and leaves it (§2, §7), which is the base protocol's bracket and nothing new, with the client's duties written down;
 - a game's **entry point**, where a player appears in the game by virtue of entering it, with no action published for the arrival (§2.2);
+- a **required place** that a game MAY declare, so that a player enters it only from that place, which any reader checks from public data (§2.4);
 - how a game writes a position inside the game, when it has positions (§3);
 - two recommended game actions, `teleport` and `move`, so that any client can draw a player's path through any game that uses them without knowing that game (§4);
 - where a game's world is and how a client reads it: the bags the game's pubkey seals to the game's region (§5);
 - that inside the bracket the game defines every action, and leaving is the one thing a player can always do (§2.3);
 - how a game's rapid actions go as ephemeral events, anchored now and then to a chain event so they can be checked later (§6).
 
-It defines no new event kind, and two tags: `entry`, which a game puts on one item of its own world, and `anchor`, which a player's chain event carries to commit to the game's ephemeral actions. A game is its pubkey (`CYBERSPACE_V2.md` §8.11.1, arkinox's ruling of 2026-10-02): there is no game event, and no registry of games. Everything else a game does, its rules, its mechanics, its scoring, its controls, is the game's own, and §8 records each part this DECK leaves to games and why.
+It defines no new event kind, and three tags: `entry`, which a game puts on one item of its own world, `enter-from`, which a game puts on an item of its own world to require that its players enter from a place, and `anchor`, which a player's chain event carries to commit to the game's ephemeral actions. A game is its pubkey (`CYBERSPACE_V2.md` §8.11.1, arkinox's ruling of 2026-10-02): there is no game event, and no registry of games. Everything else a game does, its rules, its mechanics, its scoring, its controls, is the game's own, and §8 records each part this DECK leaves to games and why.
 
 The first game shaped to this DECK is the tutorial dungeon of ONOSENDAI's first-arrival tutorial (§9): a newcomer enters a game, appears in a small dungeon built for it, far from where they stand, meets a mechanic cyberspace does not have, and leaves to stand exactly where they entered.
 
@@ -34,6 +35,7 @@ The first game shaped to this DECK is the tutorial dungeon of ONOSENDAI's first-
 - **Base position:** where the player stands in cyberspace for the whole bracket: the `c` of their `enter-virtual` action, which its `C` repeats (`CYBERSPACE_V2.md` §8.11.4, rule 1).
 - **Game position:** where the player is inside the game, for a game that has positions (§3). It is never a position in cyberspace.
 - **Entry point:** where a player appears in the game by virtue of entering it (§2.2). It is a game position, and it is not the game's spawn or respawn point in play.
+- **Required place:** the place a game requires its players to enter from, when it declares one (§2.4): every coordinate inside at least one of the prefix regions (`CYBERSPACE_V2.md` §2.5) named by the `enter-from` tags of its world. It is a place in cyberspace, and it is checked against the base position.
 - **Game action:** a virtual action (`CYBERSPACE_V2.md` §8.11.2): any event inside a bracket.
 - **World:** what a game draws for its players: the items of the bags its game key seals to its region (§5).
 - **In-game mode:** a client's state while its own player is inside a bracket of a game the client implements: it draws the game, and its controls make game actions (§2.3).
@@ -45,7 +47,7 @@ The first game shaped to this DECK is the tutorial dungeon of ONOSENDAI's first-
 
 | Step | What the player's client does | Published on the player's chain | Defined in |
 |---|---|---|---|
-| Enter | Publishes `enter-virtual` naming the game and its region, from where the player stands | `enter-virtual` | `CYBERSPACE_V2.md` §8.11.1; this DECK §2 |
+| Enter | Checks that the player stands in the game's required place, when the game declares one, then publishes `enter-virtual` naming the game and its region, from where the player stands | `enter-virtual` | `CYBERSPACE_V2.md` §8.11.1; this DECK §2, §2.4 |
 | Draw | Reads the world from the game's bags in the region, and draws it in place of cyberspace | nothing | §5 |
 | Arrive | Shows the player at the game's entry point, by virtue of having entered | nothing | §2.2 |
 | Play | Does whatever the game's rules allow, and nothing else | whatever the game puts on the record: chain game actions, and rapid actions as ephemeral events anchored to the chain now and then | §2.3, §4, §6 |
@@ -106,6 +108,45 @@ While its player is inside a bracket of a game it implements, a client is in **i
 - **Leaving is the one override.** Whatever the game's rules say, the player can always leave with `exit-virtual` (§7, `CYBERSPACE_V2.md` §8.11.6). A client MUST offer it at every moment of play.
 
 A client that does not implement the game whose bracket is open on its player's chain (the player entered from another client, for example) is not in in-game mode. It draws the player held at the base position, and it MUST NOT sign base actions either, for the same reason.
+
+### 2.4 A required place to enter from (normative for games that declare one, and for clients and readers)
+
+By default a player can enter a game from anywhere. The `enter-virtual` action does not move them, and the base protocol does not require their base position to lie in or near the game's region (`CYBERSPACE_V2.md` §8.11.1), so a player standing anywhere in cyberspace enters a game and appears at its entry point (§2.2). A game that wants its players to come to a place before they play, a door in a town or a room its dungeon is reached through, declares that place in its world. Any reader can then tell from public data whether an entry was made from it.
+
+**Where the requirement is written.** A game requires a place by putting an `enter-from` tag on an item of its world (§5.1):
+
+| Tag | Value |
+|---|---|
+| `["enter-from", "<prefix>"]` | on an item stored inline in the world's bag, of any kind; the item that carries the `entry` tag may carry it too. `prefix` is a string of 1 to 64 lowercase hex characters, in the canonical form of `CYBERSPACE_V2.md` §2.5. It names a prefix region: every coordinate whose 64-character hex starts with it. Any further elements are ignored. |
+
+A reader finds the requirement in the list of the game's newest world bag (§5.1), the same bag in which it finds the entry point (§2.2):
+
+- It counts an `enter-from` tag only when the item that carries it is stored inline in the bag (not a reference, and not a sealed entry) and is authentic as an item of that bag (`CYBERSPACE_V2.md` §7.6: signed by the game key, or a rumor the bag vouches for), whatever the item's kind, including a kind the reader cannot read or draw. The item's own `C` plays no part in the requirement.
+- It counts the tag only when its value is already in canonical form: 1 to 64 characters, each one of `0` to `9` and `a` to `f` (`CYBERSPACE_V2.md` §2.5). The lenient reading of §2.5 is for strings that people type or carry in links; a game writes this tag, and a reader does not repair it. A tag with any other value, or with no value, is skipped.
+- When at least one tag counts, the game has a **required place**: every coordinate inside at least one of the prefix regions those tags name. A game with several doors writes one tag for each, on one item or on several.
+- When no tag counts, or the reader finds no world bag, the game has no required place, and a player can enter it from anywhere.
+
+**Checking an entry.** The coordinate that is checked is the player's base position: the `c` of the `enter-virtual` action. A valid entry sets it to the `C` of the nearest recognized action before it, so it is on the player's chain in public (`CYBERSPACE_V2.md` §8.11.1, §8.11.5). The entry **meets the requirement** when the 64-character hex of its base position starts with the value of at least one counted `enter-from` tag. That is exactly the test of lying inside the tag's prefix region (`CYBERSPACE_V2.md` §2.5), and it needs nothing but a comparison of two strings.
+
+**An entry that does not meet the requirement is not an entry into the game.** For such an entry:
+
+- A client that implements the game MUST NOT start the game. It does not enter in-game mode (§2.3), it does not show the player at the entry point, and it signs no game action in the bracket. It SHOULD tell its player that the game is entered from a place, and SHOULD offer to leave (§7).
+- A game, an arbiter, and any reader that counts play MUST NOT count the entry, or any virtual action in its bracket, as play in the game: nothing in that bracket moves, scores, wins or loses in the game.
+- Nothing changes for the chain. The bracket is a bracket like any other: the base protocol checks it exactly as `CYBERSPACE_V2.md` §8.11.5 says, the chain stays valid, the player is held at the base position, no base action is allowed inside it (§2.3), and only an `exit-virtual` action closes it (§7). A client that does not implement the game reads it as it reads any bracket.
+
+**Before publishing.** A client that implements a game SHOULD read the game's newest world bag and check its player's base position against the requirement before it signs the entry, and SHOULD NOT publish an entry that does not meet it. When the player does not stand in the required place, the client SHOULD say where the game is entered from, so that the player can travel there.
+
+**Which version of the world counts.** An entry is judged against the newest world bag the reader holds when it judges, not against the bag that was current when the player entered. A game that changes or removes its `enter-from` tags therefore changes the verdict on entries already made, and a game that wants its earlier entries to keep counting does not narrow its required place. A client that comes back to an open bracket (§7) judges the entry again against the newest bag, and when the entry no longer meets the requirement, it offers only to leave.
+
+**Planes.** A string of 1 to 63 characters never fixes the plane (`CYBERSPACE_V2.md` §2.5). A required place written with one is therefore the same box in dataspace and in ideaspace, and a base position in either plane meets it. Only a string of 64 characters, which names one gibson, fixes the plane.
+
+**Why a tag on an item of the world (non-normative):** The requirement is the game's, so it lives where the entry point lives, for the same reasons (§2.2): there is no game event, the world is the one place every client already reads with a key it already has, and a game moves its door by republishing its bag, as it changes anything else in its world. A tag on the `enter-virtual` action would have let every player write their own requirement. A reader that knows nothing of games ignores the tag, as it ignores any tag it does not read.
+
+**Why a prefix region (non-normative):** It is a primitive the base protocol already has, and places are already named by it: links such as `www.onosendai.tech/C/<hex>` and relay paths such as `relay.onosendai.tech/<hex>` carry the same string (`CYBERSPACE_V2.md` §2.5), and `region-prefix-vectors.json` already tests it. Checking it is a comparison of strings, so any reader can do it, including one that computes no keys and draws nothing. It names a box of any size from a sixteenth of cyberspace down to one gibson, and a cube whenever the length of the string is a multiple of 3: a string of 60 characters names a cube 32 gibsons on a side. The game's own region was not used as the place, because a game's world is often far from its door: the region says where the world is read, not where players come from.
+
+**Why the newest bag (non-normative):** A bag is addressable, so a relay keeps only the newest bag per author and region and discards the one it replaces (`CYBERSPACE_V2.md` §7.6). No reader can be sure which version was current at a past moment, because a bag's `created_at` is its signer's own claim and no verdict of a game rests on it (`CYBERSPACE_V2.md` §8.11.7). The newest bag is the one version every reader can fetch, so it is the one every reader judges by. The game key can rewrite its world at any time in any case (§10), so judging by the newest bag gives it no power it did not already have.
+
+**Why no new kind (non-normative):** The requirement is one tag on an item of a bag the game already publishes, read with a key a client already computes, and checked against a coordinate already on the player's chain.
 
 ## 3. Game positions (normative for games that have positions)
 
@@ -227,7 +268,7 @@ A client leaves a game by publishing an `exit-virtual` action on its player's ch
 - The client SHOULD return its player to the view they had when they entered: the same place, the same zoom, the same direction of look, and the same mode of movement. The protocol restores the position (`CYBERSPACE_V2.md` §8.11.4, rule 2); the view is the client's to restore, and a player who comes back to a different view does not feel they came back to where they were.
 - A client MAY leave a game at any moment, the middle of play included: an `exit-virtual` action is always valid (`CYBERSPACE_V2.md` §8.11.6). What leaving means inside the game, for a game with stakes, is the game's rule (`CYBERSPACE_V2.md` §8.11.7).
 
-**Coming back to an open bracket.** A chain whose head is inside a bracket says, by itself, which game holds the player and where they entered from (`CYBERSPACE_V2.md` §8.11.4, rule 7). A client that reloads, or that opens on such a chain, and implements the game SHOULD offer both to go back into the game and to leave it. It builds the exit from the chain alone: the open `enter-virtual` action gives the entry id and the base position. Going back in, it shows the player at the game position of the last `teleport` or `move` in the bracket, or at the entry point when there is none. A client that does not implement the game says that a game holds the player and signs no base action (§2.3).
+**Coming back to an open bracket.** A chain whose head is inside a bracket says, by itself, which game holds the player and where they entered from (`CYBERSPACE_V2.md` §8.11.4, rule 7). A client that reloads, or that opens on such a chain, and implements the game SHOULD offer both to go back into the game and to leave it, or only to leave it when the entry does not meet the game's required place (§2.4). It builds the exit from the chain alone: the open `enter-virtual` action gives the entry id and the base position. Going back in, it shows the player at the game position of the last `teleport` or `move` in the bracket, or at the entry point when there is none. A client that does not implement the game says that a game holds the player and signs no base action (§2.3).
 
 **Who may publish the exit.** The base protocol lets the identity's own client publish an exit at any time. A client SHOULD publish an exit only for a game it implements, or when its player asks to leave a game it does not implement and has been told that the game may count leaving this way against them.
 
@@ -249,7 +290,7 @@ The owner's direction for this DECK (2026-11-07) is to keep it minimal: most of 
 | What an item of the world means (a pad, a goal, a door) | Game logic | A teleport pad in one game is a trap in another. The world carries shapes; the rules say what they do. |
 | Physics: gravity, speed, jump height, collision | Game logic | The racer, the dungeon and a card game want different physics, or none. A game may borrow a client's movement, and a client may hold a player at the faces of world shards whose `constrain` is not `off` (DECK-0003 §1.12), but that is the game's choice, not a rule of this DECK. |
 | Controls: keys, onscreen buttons, pads | Game logic, and each client's own | The base protocol reserved control definitions for this DECK (§8.11.7). They are left out until two games need the same controls: a client draws controls for the games it implements, and nothing on the wire needs them. |
-| Proximity: having to stand near the region to enter | Game logic | Already the game's in the base protocol (§8.11.1). A game that wants it checks the entry's base position against its region before honoring the entry. |
+| Proximity: having to stand at a place to enter | DECK, when the game declares it: an `enter-from` tag on an item of the world (§2.4) | Owner's direction 2026-11-13: entering from anywhere stays the default, and a game may require an entry position, declared in the game's own definition, as minimally and at as low a level of the protocol as possible. A shared tag lets every client check it the same way before it enters and every reader check it from public data. Any further rule of proximity a game wants, a distance from its region for example, is still game logic, as the base protocol says (§8.11.1). |
 | What a player can do inside the bracket, whether they move at all | Game logic | Owner, 2026-11-10: once you are in a game, the game fully controls what you can and cannot do. The DECK assumes no walking, steps or positions. |
 | Leaving | DECK (§2.3, §7) | The one thing a player can always do, whatever the game's rules (owner, 2026-11-10). |
 | Rapid actions as ephemeral events | DECK recommends it (§6) | Owner, 2026-11-10, as decided in the design notes of 2026-10-07: rapid actions use ephemeral events and anchor periodically to a chain event. |
@@ -330,12 +371,40 @@ The pad's teleport:
 }
 ```
 
+**A variant with a required place.** Suppose the tutorial game wants its dungeon entered only from a door in London (§2.4). Its world's bag carries, inline, an item signed by `G` with an `enter-from` tag whose value is the first 60 characters of the `london` vector of `CYBERSPACE_V2.md` §9.8. Sixty characters fix 80 bits of each axis and leave 5 free, so the required place is a cube 32 gibsons on a side, in either plane:
+
+```json
+{
+  "kind": 3330,
+  "pubkey": "<G>",
+  "created_at": 1794300007,
+  "tags": [
+    ["C", "<inside R; it plays no part in the requirement>"],
+    ["enter-from", "c492492492492492492492edf5bee7267451c787d95ba4d7840c76d1e33c"]
+  ],
+  "content": "<the marker's SNO payload>"
+}
+```
+
+A reader checks four entries by the `c` of each `enter-virtual` action, their base positions:
+
+| Base position | Hex of the base position | Meets the requirement |
+|---|---|---|
+| `london` itself | `c492492492492492492492edf5bee7267451c787d95ba4d7840c76d1e33c9940` | yes: it starts with the value |
+| the twin of `london` in ideaspace (plane bit set) | `c492492492492492492492edf5bee7267451c787d95ba4d7840c76d1e33c9941` | yes: 60 characters do not fix the plane |
+| 32 gibsons from `london` along Z, in the next cube | `c492492492492492492492edf5bee7267451c787d95ba4d7840c76d1e33d9940` | no: its 60th character is `d` |
+| `nyc` | `c4924924924924924924921f79235dae293ada913e78294253a235239a332854` | no |
+
+The two entries that do not meet it are valid brackets, and the players who made them stand held where they entered until they leave. They are not entries into the tutorial game: a client that implements it does not start the dungeon for them, and the game counts nothing in those brackets.
+
 ## 10. Security considerations
 
 - **Unanchored play is not verified** (§6). A modified client does anything in play that is neither on the chain nor anchored. Only chain actions and anchored runs can be checked, and only by a game that holds the run and checks it.
 - **An anchor commits, it does not reveal.** A run hash proves nothing until someone produces the ephemeral actions it covers, and relays do not keep them. A game that wants to check later keeps them itself, or has the player keep them.
 - **The game key owns the world.** Whoever holds the game key can rewrite the world, add to it or empty it, since the world is that key's bags (§5). A game keeps its key as carefully as an identity.
 - **The world is visible from cyberspace** to anyone in the region who computes its key (§5.3).
+- **A required place is as strong as the check of the chain** (§2.4). The base position is public, but only a chain that verifies up to the entry proves that the player reached it (`CYBERSPACE_V2.md` §7.7, Reading is not reaching). A game or reader that counts entries into a game with a required place SHOULD verify the player's chain up to the entry, at the verification level the stakes call for (`CYBERSPACE_V2.md` §8.7).
+- **A malformed `enter-from` tag fails open** (§2.4). A tag that is not in canonical form is skipped, and a world whose every `enter-from` tag is skipped has no required place. A game that requires a place checks its tags before it publishes its bag.
 - **Playing is public.** Every entry names the game in the clear, and relays index it, so anyone can list who entered which game and when (`CYBERSPACE_V2.md` §8.11.1). Every game action stays on the player's chain for good.
 - **Game actions are other people's text.** A client that reads another player's game actions reads their tags as data. A game action names no command for any reader.
 
@@ -346,3 +415,4 @@ The pad's teleport:
 3. **A world unseen from cyberspace.** The world is visible to anyone standing in the region (§5.3). If a game must hide it, its bags could be sealed with a key derived from both the region key and the game's pubkey. That is a new derivation, left out until a game asks for it.
 4. **Controls on the wire.** Whether a game should publish its controls (keys, buttons) so that a client that does not implement it can still offer them. Left out until two games share controls.
 5. **Collision as a shared default.** Whether in-game mode should hold a player at the faces of world shards by default (DECK-0003 §1.12), so that a game with walls needs no rule of its own for them.
+6. **A plane for a required place.** A required place written with fewer than 64 characters admits both planes (§2.4). If a game must admit only dataspace or only ideaspace, the `enter-from` tag could take the plane as a further element, which readers that predate it would ignore, admitting both planes. Left out until a game asks for it.
