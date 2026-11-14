@@ -1228,7 +1228,7 @@ def _self_test() -> None:
     # §1.14 and rule 17: motion, timed by Unix seconds. T0 is midnight UTC,
     # so every cycle whose b divides 86,400 starts there.
     T0 = 1_795_132_800
-    shuttle = ["path", 1, 60, 0, [0, 0, 0, 1], [0, 0, 0, 1], [1920, 0, 0, 2], [1920, 0, 0, 1], [0, 0, 0, 2]]
+    shuttle = ["path", 1, 60, 0, [0, 0, 0, 2], [1920, 0, 0, 2], [1920, 0, 0, 1], [0, 0, 0, 2]]
     poses = [
         # (motions, t, point in ticks, where it is drawn in ticks)
         ([["turn", "y", 1, 6, 0]], T0 + Fraction(3, 2), (120, 0, 0), (0, 0, -120)),
