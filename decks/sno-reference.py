@@ -19,12 +19,15 @@ payload that carries it. `objects` is the objects table: a JSON object whose
 keys are addresses such as "33331:<pubkey hex>:<d>" and whose values are the
 payloads of the objects those addresses name (§1.10). Rule 16 therefore
 carries cases of where each placement's object comes from instead: from the
-table, as a placeholder, or fetched from relays.
+table, as a placeholder, or fetched from relays. Rule 17 (`anim`) never
+rejects either: it carries read cases, and the vector table of §1.14, the
+pose of each motion at a given Unix time.
 """
 
 from __future__ import annotations
 
 import json
+import math
 import os
 import re
 from fractions import Fraction
@@ -471,6 +474,176 @@ def positions(payload: dict) -> Iterator[tuple[Fraction, Fraction, Fraction]]:
     for v, t in zip(payload["vertices"], ticks):
         x, y, z = (Fraction(v[a] * TICKS_PER_UNIT + t[a], TICKS_PER_UNIT) for a in range(3))
         yield (x, y, z * flip)
+
+
+
+# §1.14: motion. A motion's phase is a pure function of the time t in Unix
+# seconds, as the reader's clock reads it, so readers whose clocks agree draw
+# the same pose at the same moment. Nothing is fetched to animate.
+
+#: §1.14: the motion words' axes, and the bounds every motion keeps.
+MOTION_AXES = ("x", "y", "z")
+MAX_MOTIONS = 4
+MAX_RATE = 2  # cycles per second
+MAX_SECONDS = 31_536_000  # b, a year of 365 days
+REACH = 64 * 120  # the position bound of §1.8, in ticks
+MAX_LEG_WEIGHT = 1_000
+
+
+def _rate_ok(c: Any, b: Any) -> bool:
+    return (_is_int(c) and _is_int(b) and c != 0 and 1 <= b <= MAX_SECONDS
+            and abs(c) <= MAX_RATE * b)
+
+
+def _motion(m: Any) -> tuple | None:
+    """One motion, read; None for one a reader ignores (malformed, unknown, too fast)."""
+    if not isinstance(m, list) or not m or not isinstance(m[0], str):
+        return None
+    word, args = m[0], m[1:]
+    ints = lambda xs: all(_is_int(x) for x in xs)
+    if word in ("turn", "swing", "slide", "orbit", "lift"):
+        size = {"turn": 4, "swing": 5, "slide": 5, "orbit": 5, "lift": 6}[word]
+        if len(args) != size or args[0] not in MOTION_AXES or not isinstance(args[0], str):
+            return None
+        if not ints(args[1:]):
+            return None
+        c, b, phi = args[-3:]
+        if not _rate_ok(c, b) or not 0 <= phi <= 359:
+            return None
+        if word == "swing" and not 1 <= args[1] <= 180:
+            return None
+        if word in ("slide", "orbit") and not 1 <= args[1] <= REACH:
+            return None
+        if word == "lift" and (args[1] == 0 or not -REACH <= args[1] <= REACH or not 0 <= args[2] <= 49):
+            return None
+        return (word, *args)
+    if word == "path":
+        if not 5 <= len(args) <= 35 or not ints(args[:3]):
+            return None
+        c, b, phi = args[:3]
+        if not _rate_ok(c, b) or not 0 <= phi <= 359:
+            return None
+        points = args[3:]
+        for p in points:
+            if not isinstance(p, list) or len(p) != 4 or not ints(p):
+                return None
+            if not all(-REACH <= p[a] <= REACH for a in range(3)) or not 1 <= p[3] <= MAX_LEG_WEIGHT:
+                return None
+        return (word, c, b, phi, *[tuple(p) for p in points])
+    return None
+
+
+def motions_of(payload: dict) -> list[tuple]:
+    """§1.14: the motions a reader applies, in order, innermost first.
+
+    Read, never validated: an `anim` that is not a list means none; only its
+    first four entries are read; an entry that is malformed, has an unknown
+    word, or is faster than two cycles a second is ignored and the
+    rest still apply. The payload is never rejected for it.
+    """
+    value = payload.get("anim")
+    if not isinstance(value, list):
+        return []
+    return [m for m in (_motion(e) for e in value[:MAX_MOTIONS]) if m is not None]
+
+
+def motion_phase(c: int, b: int, phi: int, t: int | Fraction) -> Fraction:
+    """§1.14: u = frac(c × t / b + φ / 360), exactly, in [0, 1).
+
+    t is Unix seconds. Since c is a whole number, reducing t modulo b first
+    gives the same phase with smaller numbers.
+    """
+    t = Fraction(t)
+    x = Fraction(c) * (t % b) / b + Fraction(phi, 360)
+    return x - (x.numerator // x.denominator)
+
+
+def _turned(axis: str, degrees: float, p: tuple) -> tuple:
+    """p turned about the axis through the origin, right-handed (§2)."""
+    r = math.radians(degrees)
+    co, si = math.cos(r), math.sin(r)
+    x, y, z = p
+    if axis == "x":
+        return (x, y * co - z * si, y * si + z * co)
+    if axis == "y":
+        return (x * co + z * si, y, -x * si + z * co)
+    return (x * co - y * si, x * si + y * co, z)
+
+
+def _along(axis: str, d: float) -> tuple:
+    return tuple(d if a == axis else 0.0 for a in MOTION_AXES)
+
+
+def _plus(p: tuple, q: tuple) -> tuple:
+    return tuple(p[i] + q[i] for i in range(3))
+
+
+def lift_share(u: Fraction, dwell: int) -> Fraction:
+    """§1.14: how far along its travel a lift is at phase u, from 0 to 1."""
+    d = Fraction(dwell, 100)
+    ease = lambda x: 3 * x * x - 2 * x * x * x
+    if u < d:
+        return Fraction(0)
+    if u < Fraction(1, 2):
+        return ease((u - d) / (Fraction(1, 2) - d))
+    if u < Fraction(1, 2) + d:
+        return Fraction(1)
+    return 1 - ease((u - Fraction(1, 2) - d) / (Fraction(1, 2) - d))
+
+
+def path_offset(points: tuple, u: Fraction) -> tuple:
+    """§1.14: where a path's origin is at phase u, in ticks, exactly.
+
+    Leg i runs from the waypoint before it (for leg 0, the last waypoint) to
+    waypoint i, and takes the share w_i / Σw of the cycle.
+    """
+    total = sum(p[3] for p in points)
+    at = u * total
+    start = Fraction(0)
+    for i, p in enumerate(points):
+        if at < start + p[3] or i == len(points) - 1:
+            q = points[i - 1]
+            f = (at - start) / p[3]
+            return tuple(q[a] + (p[a] - q[a]) * f for a in range(3))
+        start += p[3]
+    raise AssertionError("unreachable")
+
+
+def move_point(motion: tuple, t: Fraction, p: tuple) -> tuple:
+    """§1.14: one motion applied to the point p (ticks, in the object's model frame)."""
+    word = motion[0]
+    if word == "path":
+        _, c, b, phi, *points = motion
+        return _plus(p, tuple(float(v) for v in path_offset(tuple(points), motion_phase(c, b, phi, t))))
+    c, b, phi = motion[-3:]
+    u = motion_phase(c, b, phi, t)
+    axis = motion[1]
+    wave = math.sin(2 * math.pi * float(u))
+    if word == "turn":
+        return _turned(axis, 360 * float(u), p)
+    if word == "swing":
+        return _turned(axis, motion[2] * wave, p)
+    if word == "slide":
+        return _plus(p, _along(axis, motion[2] * wave))
+    if word == "orbit":
+        start = _along(MOTION_AXES[(MOTION_AXES.index(axis) + 1) % 3], float(motion[2]))
+        return _plus(p, _turned(axis, 360 * float(u), start))
+    if word == "lift":
+        return _plus(p, _along(axis, motion[2] * float(lift_share(u, motion[3]))))
+    raise AssertionError(word)
+
+
+def animated_point(payload: dict, t: Fraction, p: tuple) -> tuple:
+    """§1.14: p moved by every motion of the payload, the first innermost.
+
+    p is a point of the object, or of anything it places, in the object's own
+    model frame (§2), in ticks. The result is in the same frame, before the
+    object's own placement or pose. A reader honoring reduced motion skips
+    this and uses p as written.
+    """
+    for m in motions_of(payload):
+        p = move_point(m, t, p)
+    return p
 
 
 
@@ -1051,6 +1224,86 @@ def _self_test() -> None:
     assert place_from(OTHER, root, own)[0] == "table"
     assert place_from("33331:" + "ef" * 32 + ":x", root, own)[0] == "fetch"
     print(f"{len(places) + 6} carried object cases (rule 16 never rejects the payload that carries it), every payload accepted")
+
+    # §1.14 and rule 17: motion, timed by Unix seconds. T0 is midnight UTC,
+    # so every cycle whose b divides 86,400 starts there.
+    T0 = 1_795_132_800
+    shuttle = ["path", 1, 60, 0, [0, 0, 0, 2], [1920, 0, 0, 2], [1920, 0, 0, 1], [0, 0, 0, 2]]
+    poses = [
+        # (motions, t, point in ticks, where it is drawn in ticks)
+        ([["turn", "y", 1, 6, 0]], T0 + Fraction(3, 2), (120, 0, 0), (0, 0, -120)),
+        ([["turn", "y", -1, 6, 0]], T0 + Fraction(3, 2), (120, 0, 0), (0, 0, 120)),
+        ([["turn", "y", 2, 1, 0]], T0 + Fraction(1, 8), (120, 0, 0), (0, 0, -120)),
+        ([["turn", "y", 1, 31_536_000, 0]], T0, (120, 0, 0), (106.328475, 0, 55.626033)),
+        ([["turn", "y", 7, 90, 30]], Fraction("1795171234.567"), (120, 0, 0), (-111.164515, 0, -45.19348)),
+        ([["swing", "x", 60, 1, 2, 0]], T0 + Fraction(1, 2), (0, 120, 0), (0, 60, 103.923048)),
+        ([["slide", "y", 240, 1, 4, 90]], T0 + Fraction(1, 2), (0, 0, 0), (0, 169.705627, 0)),
+        ([["orbit", "y", 480, 1, 8, 0]], T0 + 2, (120, 0, 0), (600, 0, 0)),
+        ([["orbit", "z", 480, 1, 8, 0]], T0 + 1, (0, 0, 0), (339.411255, 339.411255, 0)),
+        ([["lift", "y", 1440, 25, 1, 20, 0]], T0 + 2, (0, 0, 0), (0, 0, 0)),
+        ([["lift", "y", 1440, 25, 1, 20, 0]], T0 + Fraction(15, 2), (0, 0, 0), (0, 720, 0)),
+        ([["lift", "y", 1440, 25, 1, 20, 0]], T0 + 12, (0, 0, 0), (0, 1440, 0)),
+        ([["lift", "y", 1440, 25, 1, 20, 0]], T0 + 16, (0, 0, 0), (0, 1290.24, 0)),
+        ([["lift", "y", -480, 0, 1, 8, 0]], T0 + 1, (0, 0, 0), (0, -75, 0)),
+        ([shuttle], T0 + 6, (0, 0, 0), (0, 0, 0)),
+        ([shuttle], T0 + 30, (0, 0, 0), (1440, 0, 0)),
+        ([shuttle], T0 + 54, (0, 0, 0), (672, 0, 0)),
+        ([["turn", "z", 1, 8, 0], ["slide", "x", 120, 1, 2, 0]], T0 + Fraction(5, 2), (120, 0, 0), (74.077988, 110.865544, 0)),
+        ([["slide", "x", 120, 1, 2, 0], ["turn", "z", 1, 8, 0]], T0 + Fraction(5, 2), (120, 0, 0), (-91.844024, 221.731088, 0)),
+    ]
+    for anim, t, p, want in poses:
+        got = animated_point(validate({**APPENDIX_A, "anim": anim}), Fraction(t), p)
+        if any(abs(got[i] - want[i]) > 5e-7 for i in range(3)):
+            print(f"  POSE {anim} at {t}: {got}, expected {want}")
+            failures += 1
+    # Read, never rejected: what a reader keeps of each `anim`.
+    turn = ["turn", "y", 1, 1, 0]
+    reads = [
+        (absent, 0, "absent: still"),
+        ([], 0, "empty: still, and a publisher omits it"),
+        (None, 0, "null: still"),
+        ("turn", 0, "not a list: still"),
+        ({"turn": 1}, 0, "an object: still"),
+        ([turn], 1, "one motion"),
+        ([turn] * 5, 4, "only the first four entries are read"),
+        ([["spin", "y", 1, 1, 0], turn], 1, "an unknown word is ignored, the rest apply"),
+        ([["bob", "y", 12, 1, 1, 0]], 0, "bob is not a motion word: a bob is a slide on y"),
+        ([["turn", "Y", 1, 1, 0]], 0, "axis letters are lowercase"),
+        ([["turn", "w", 1, 1, 0]], 0, "no such axis"),
+        ([["turn", "y", 1, 1]], 0, "every integer is written, no default omitted"),
+        ([["turn", "y", 1, 1, 0, 0]], 0, "one integer too many"),
+        ([["turn", "y", 1.0, 1, 0]], 0, "a float is not an integer"),
+        ([["turn", "y", True, 1, 0]], 0, "a boolean is not an integer"),
+        ([["turn", "y", 0, 1, 0]], 0, "no cycles is malformed"),
+        ([["turn", "y", 1, 0, 0]], 0, "no seconds is malformed"),
+        ([["turn", "y", 1, 1, 360]], 0, "a phase past 359"),
+        ([["turn", "y", 2, 1, 0]], 1, "two cycles a second is the fastest allowed"),
+        ([["turn", "y", 3, 1, 0]], 0, "faster is held still"),
+        ([["turn", "y", 21, 10, 0]], 0, "2.1 cycles a second is held still"),
+        ([["turn", "y", -20, 10, 0]], 1, "negative cycles turn backward, at the same limit"),
+        ([["turn", "y", 1, 31_536_000, 0]], 1, "once a year is the slowest allowed"),
+        ([["turn", "y", 1, 31_536_001, 0]], 0, "seconds past a year"),
+        ([["swing", "x", 0, 1, 1, 0]], 0, "a swing of no reach"),
+        ([["swing", "x", 181, 1, 1, 0]], 0, "a swing past 180 degrees"),
+        ([["slide", "y", -12, 1, 1, 0]], 0, "a slide's reach is positive"),
+        ([["orbit", "y", 7681, 1, 1, 0]], 0, "an orbit past the position bound"),
+        ([["lift", "y", 0, 25, 1, 1, 0]], 0, "a lift that goes nowhere"),
+        ([["lift", "y", -7680, 49, 1, 1, 0]], 1, "a lift down, the longest dwell"),
+        ([["lift", "y", 120, 50, 1, 1, 0]], 0, "a dwell of half the cycle at each stop leaves no travel"),
+        ([["path", 1, 1, 0, [0, 0, 0, 1]]], 0, "a path of one waypoint"),
+        ([["path", 1, 1, 0] + [[0, 0, 0, 1]] * 32], 1, "32 waypoints"),
+        ([["path", 1, 1, 0] + [[0, 0, 0, 1]] * 33], 0, "33 waypoints"),
+        ([["path", 1, 1, 0, [0, 0, 0, 1], [120, 0, 0, 0]]], 0, "a leg of no weight"),
+        ([["path", 1, 1, 0, [0, 0, 0, 1], [120, 0, 0]]], 0, "a waypoint without its weight"),
+        ([shuttle, "junk", turn], 2, "a malformed entry is ignored, the rest apply"),
+    ]
+    for given, want, why in reads:
+        payload = dict(APPENDIX_A) if given is absent else {**APPENDIX_A, "anim": given}
+        got = len(motions_of(validate(payload)))
+        if got != want:
+            print(f"  ANIM {given!r}: read {got} motions, expected {want} ({why})")
+            failures += 1
+    print(f"{len(poses)} pose cases, {len(reads)} anim read cases (rule 17 never rejects)")
 
     if failures:
         raise SystemExit(1)
