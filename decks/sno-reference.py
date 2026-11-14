@@ -19,12 +19,16 @@ payload that carries it. `objects` is the objects table: a JSON object whose
 keys are addresses such as "33331:<pubkey hex>:<d>" and whose values are the
 payloads of the objects those addresses name (§1.10). Rule 16 therefore
 carries cases of where each placement's object comes from instead: from the
-table, as a placeholder, or fetched from relays.
+table, as a placeholder, or fetched from relays. Rule 18 (`anim`) never
+rejects either: it carries read cases, and the two vector tables of §1.14,
+the paced height at given moments and the pose of each motion at a given
+paced height.
 """
 
 from __future__ import annotations
 
 import json
+import math
 import os
 import re
 from fractions import Fraction
@@ -471,6 +475,218 @@ def positions(payload: dict) -> Iterator[tuple[Fraction, Fraction, Fraction]]:
     for v, t in zip(payload["vertices"], ticks):
         x, y, z = (Fraction(v[a] * TICKS_PER_UNIT + t[a], TICKS_PER_UNIT) for a in range(3))
         yield (x, y, z * flip)
+
+
+
+# §1.14: motion on the paced clock.
+#
+# The paced height β is a number that rises by one for every average block,
+# the average taken over Bitcoin's last completed 2016-block difficulty window.
+# It changes slope once per window, four hours after the window's last block,
+# and never jumps. A motion's phase is a pure function of β, so every reader
+# draws the same pose at the same moment, within its clock's error.
+
+#: §1.14: blocks in a difficulty window, and the delay from a window's last
+#: header time to the moment its pace takes effect.
+PACE_WINDOW = 2016
+PACE_SWITCH_DELAY = 14_400
+#: §1.14: the epoch. Window 483 is heights 973,728 to 975,743. Its end and the
+#: end before it are constants, so β can always be computed.
+PACE_EPOCH_WINDOW = 483
+PACE_EPOCH_ENDS = (1_793_300_370, 1_794_632_383)  # header times of 973,727 and 975,743
+PACE_EPOCH_HEIGHT = PACE_WINDOW * (PACE_EPOCH_WINDOW + 1)  # 975,744
+#: §1.14: a window's span is clamped as Bitcoin clamps its retarget, to a
+#: quarter and to four times two weeks. Never reached by a real window.
+PACE_MIN_SPAN = 302_400
+PACE_MAX_SPAN = 4_838_400
+
+#: §1.14: the motion words, and how many entries each has after the word.
+MOTION_AXES = ("x", "y", "z")
+MAX_MOTIONS = 4
+MAX_RATE = 600  # cycles per paced block
+MAX_BLOCKS = 1_000_000
+REACH = 64 * 120  # the position bound of §1.8, in ticks
+MAX_LEG_WEIGHT = 1_000
+
+
+def _pace(span: int) -> Fraction:
+    """T_k: seconds per paced block for a window whose ends are `span` apart."""
+    return Fraction(min(max(span, PACE_MIN_SPAN), PACE_MAX_SPAN), PACE_WINDOW)
+
+
+def paced_height(t: int | Fraction, later_ends: tuple[int, ...] = ()) -> Fraction:
+    """§1.14: β at Unix time `t`, exactly.
+
+    `later_ends` holds the header times of the ends of windows 484, 485, ...,
+    in order, as many as the reader knows. A reader that does not yet know a
+    window end whose switch has passed continues at the last pace it knows,
+    which is exactly what this returns when the list is short.
+    """
+    ends = PACE_EPOCH_ENDS + tuple(later_ends)
+    s = ends[1] + PACE_SWITCH_DELAY
+    beta = Fraction(PACE_EPOCH_HEIGHT)
+    pace = _pace(ends[1] - ends[0])
+    for i in range(2, len(ends)):
+        s_next = max(ends[i] + PACE_SWITCH_DELAY, s)
+        if t < s_next:
+            break
+        beta += (s_next - s) / pace
+        s = s_next
+        pace = _pace(ends[i] - ends[i - 1])
+    return beta + (Fraction(t) - s) / pace
+
+
+def _rate_ok(c: Any, b: Any) -> bool:
+    return (_is_int(c) and _is_int(b) and c != 0 and 1 <= b <= MAX_BLOCKS
+            and abs(c) <= MAX_RATE * b)
+
+
+def _motion(m: Any) -> tuple | None:
+    """One motion, read; None for one a reader ignores (malformed, unknown, too fast)."""
+    if not isinstance(m, list) or not m or not isinstance(m[0], str):
+        return None
+    word, args = m[0], m[1:]
+    ints = lambda xs: all(_is_int(x) for x in xs)
+    if word in ("turn", "swing", "slide", "orbit", "lift"):
+        size = {"turn": 4, "swing": 5, "slide": 5, "orbit": 5, "lift": 6}[word]
+        if len(args) != size or args[0] not in MOTION_AXES or not isinstance(args[0], str):
+            return None
+        if not ints(args[1:]):
+            return None
+        c, b, phi = args[-3:]
+        if not _rate_ok(c, b) or not 0 <= phi <= 359:
+            return None
+        if word == "swing" and not 1 <= args[1] <= 180:
+            return None
+        if word in ("slide", "orbit") and not 1 <= args[1] <= REACH:
+            return None
+        if word == "lift" and (args[1] == 0 or not -REACH <= args[1] <= REACH or not 0 <= args[2] <= 49):
+            return None
+        return (word, *args)
+    if word == "path":
+        if not 5 <= len(args) <= 35 or not ints(args[:3]):
+            return None
+        c, b, phi = args[:3]
+        if not _rate_ok(c, b) or not 0 <= phi <= 359:
+            return None
+        points = args[3:]
+        for p in points:
+            if not isinstance(p, list) or len(p) != 4 or not ints(p):
+                return None
+            if not all(-REACH <= p[a] <= REACH for a in range(3)) or not 1 <= p[3] <= MAX_LEG_WEIGHT:
+                return None
+        return (word, c, b, phi, *[tuple(p) for p in points])
+    return None
+
+
+def motions_of(payload: dict) -> list[tuple]:
+    """§1.14: the motions a reader applies, in order, innermost first.
+
+    Read, never validated: an `anim` that is not a list means none; only its
+    first four entries are read; an entry that is malformed, has an unknown
+    word, or is faster than 600 cycles per paced block is ignored and the
+    rest still apply. The payload is never rejected for it.
+    """
+    value = payload.get("anim")
+    if not isinstance(value, list):
+        return []
+    return [m for m in (_motion(e) for e in value[:MAX_MOTIONS]) if m is not None]
+
+
+def motion_phase(c: int, b: int, phi: int, beta: Fraction) -> Fraction:
+    """§1.14: u = frac(c × β / b + φ / 360), exactly, in [0, 1)."""
+    whole = beta.numerator // beta.denominator
+    reduced = (whole % b) + (beta - whole)  # the same phase, with small numbers
+    x = Fraction(c) * reduced / b + Fraction(phi, 360)
+    return x - (x.numerator // x.denominator)
+
+
+def _turned(axis: str, degrees: float, p: tuple) -> tuple:
+    """p turned about the axis through the origin, right-handed (§2)."""
+    r = math.radians(degrees)
+    co, si = math.cos(r), math.sin(r)
+    x, y, z = p
+    if axis == "x":
+        return (x, y * co - z * si, y * si + z * co)
+    if axis == "y":
+        return (x * co + z * si, y, -x * si + z * co)
+    return (x * co - y * si, x * si + y * co, z)
+
+
+def _along(axis: str, d: float) -> tuple:
+    return tuple(d if a == axis else 0.0 for a in MOTION_AXES)
+
+
+def _plus(p: tuple, q: tuple) -> tuple:
+    return tuple(p[i] + q[i] for i in range(3))
+
+
+def lift_share(u: Fraction, dwell: int) -> Fraction:
+    """§1.14: how far along its travel a lift is at phase u, from 0 to 1."""
+    d = Fraction(dwell, 100)
+    ease = lambda x: 3 * x * x - 2 * x * x * x
+    if u < d:
+        return Fraction(0)
+    if u < Fraction(1, 2):
+        return ease((u - d) / (Fraction(1, 2) - d))
+    if u < Fraction(1, 2) + d:
+        return Fraction(1)
+    return 1 - ease((u - Fraction(1, 2) - d) / (Fraction(1, 2) - d))
+
+
+def path_offset(points: tuple, u: Fraction) -> tuple:
+    """§1.14: where a path's origin is at phase u, in ticks, exactly.
+
+    Leg i runs from the waypoint before it (for leg 0, the last waypoint) to
+    waypoint i, and takes the share w_i / Σw of the cycle.
+    """
+    total = sum(p[3] for p in points)
+    at = u * total
+    start = Fraction(0)
+    for i, p in enumerate(points):
+        if at < start + p[3] or i == len(points) - 1:
+            q = points[i - 1]
+            f = (at - start) / p[3]
+            return tuple(q[a] + (p[a] - q[a]) * f for a in range(3))
+        start += p[3]
+    raise AssertionError("unreachable")
+
+
+def move_point(motion: tuple, beta: Fraction, p: tuple) -> tuple:
+    """§1.14: one motion applied to the point p (ticks, in the object's model frame)."""
+    word = motion[0]
+    if word == "path":
+        _, c, b, phi, *points = motion
+        return _plus(p, tuple(float(v) for v in path_offset(tuple(points), motion_phase(c, b, phi, beta))))
+    c, b, phi = motion[-3:]
+    u = motion_phase(c, b, phi, beta)
+    axis = motion[1]
+    wave = math.sin(2 * math.pi * float(u))
+    if word == "turn":
+        return _turned(axis, 360 * float(u), p)
+    if word == "swing":
+        return _turned(axis, motion[2] * wave, p)
+    if word == "slide":
+        return _plus(p, _along(axis, motion[2] * wave))
+    if word == "orbit":
+        start = _along(MOTION_AXES[(MOTION_AXES.index(axis) + 1) % 3], float(motion[2]))
+        return _plus(p, _turned(axis, 360 * float(u), start))
+    if word == "lift":
+        return _plus(p, _along(axis, motion[2] * float(lift_share(u, motion[3]))))
+    raise AssertionError(word)
+
+
+def animated_point(payload: dict, beta: Fraction, p: tuple) -> tuple:
+    """§1.14: p moved by every motion of the payload, the first innermost.
+
+    p is a point of the object, or of anything it places, in the object's own
+    model frame (§2), in ticks. The result is in the same frame, before the
+    object's own placement or pose. A reader honoring reduced motion skips
+    this and uses p as written.
+    """
+    for m in motions_of(payload):
+        p = move_point(m, beta, p)
+    return p
 
 
 
@@ -1051,6 +1267,103 @@ def _self_test() -> None:
     assert place_from(OTHER, root, own)[0] == "table"
     assert place_from("33331:" + "ef" * 32 + ":x", root, own)[0] == "fetch"
     print(f"{len(places) + 6} carried object cases (rule 16 never rejects the payload that carries it), every payload accepted")
+
+    # §1.14 and rule 18: motion on the paced clock. β is exact; the epoch's
+    # own switch is 975,744 by definition. The window end 1,795,841,983 for
+    # window 484 is hypothetical (exactly 600 s a block), and so is the one
+    # out of order, which tests the clamp and the monotone switch.
+    a483 = PACE_EPOCH_ENDS[1]
+    s483 = a483 + PACE_SWITCH_DELAY
+    a484 = a483 + 1_209_600
+    betas = [
+        (s483, (), "975744.000000000", "the epoch's switch moment"),
+        (a483, (), "975722.205618113", "before the switch, β runs back at the epoch's pace"),
+        (s483 + 86_400, (), "975874.766291320", "one day after the switch"),
+        (1_795_132_800, (), "976479.586118154", "2026-11-20 00:00:00 UTC"),
+        (a484 + PACE_SWITCH_DELAY - 1, (a484,), "977574.726564981", "a second before window 484's switch"),
+        (a484 + PACE_SWITCH_DELAY, (a484,), "977574.728078480", "window 484's switch: continuous"),
+        (a484 + PACE_SWITCH_DELAY + 6_000, (a484,), "977584.728078480", "6,000 s at 600 s a block is 10 more"),
+        (a484 + PACE_SWITCH_DELAY + 6_000, (), "977583.809070932", "the same moment, window 484's end not yet known"),
+        (s483 + 6_000, (a483 - 1_000,), "975784.000000000", "a window end out of order: switch held, span clamped to 150 s"),
+    ]
+    for t, later, want, why in betas:
+        got = paced_height(t, later)
+        shown = f"{float(got):.9f}"
+        if shown != want:
+            print(f"  PACED HEIGHT at {t} with {later}: {shown}, expected {want} ({why})")
+            failures += 1
+    shuttle = ["path", 10, 1, 0, [0, 0, 0, 1], [0, 0, 0, 1], [1920, 0, 0, 2], [1920, 0, 0, 1], [0, 0, 0, 2]]
+    poses = [
+        # (motions, β, point in ticks, where it is drawn in ticks)
+        ([["turn", "y", 100, 1, 0]], "975744.0025", (120, 0, 0), (0, 0, -120)),
+        ([["turn", "y", -1, 1, 0]], "975744.25", (120, 0, 0), (0, 0, 120)),
+        ([["swing", "x", 60, 25, 1, 0]], "975744.01", (0, 120, 0), (0, 60, 103.923048)),
+        ([["slide", "y", 240, 1, 4, 90]], "975744.5", (0, 0, 0), (0, 169.705627, 0)),
+        ([["orbit", "y", 480, 1, 2, 0]], "975744.5", (120, 0, 0), (600, 0, 0)),
+        ([["orbit", "z", 480, 1, 1, 0]], "975744.125", (0, 0, 0), (339.411255, 339.411255, 0)),
+        ([["lift", "y", 1440, 25, 1, 1, 0]], "975744.1", (0, 0, 0), (0, 0, 0)),
+        ([["lift", "y", 1440, 25, 1, 1, 0]], "975744.375", (0, 0, 0), (0, 720, 0)),
+        ([["lift", "y", 1440, 25, 1, 1, 0]], "975744.6", (0, 0, 0), (0, 1440, 0)),
+        ([["lift", "y", 1440, 25, 1, 1, 0]], "975744.8", (0, 0, 0), (0, 1290.24, 0)),
+        ([["lift", "y", -480, 0, 1, 1, 0]], "975744.125", (0, 0, 0), (0, -75, 0)),
+        ([shuttle], "975744.01", (0, 0, 0), (0, 0, 0)),
+        ([shuttle], "975744.05", (0, 0, 0), (1440, 0, 0)),
+        ([shuttle], "975744.09", (0, 0, 0), (672, 0, 0)),
+        ([["turn", "z", 1, 4, 0], ["slide", "x", 120, 1, 1, 0]], "975745.25", (120, 0, 0), (74.077988, 110.865544, 0)),
+        ([["slide", "x", 120, 1, 1, 0], ["turn", "z", 1, 4, 0]], "975745.25", (120, 0, 0), (-91.844024, 221.731088, 0)),
+        ([["turn", "y", 100, 1, 0]], paced_height(1_795_132_800), (120, 0, 0), (-91.583125, 0, 77.540514)),
+    ]
+    for anim, beta, p, want in poses:
+        got = animated_point(validate({**APPENDIX_A, "anim": anim}), Fraction(beta), p)
+        if any(abs(got[i] - want[i]) > 5e-7 for i in range(3)):
+            print(f"  POSE {anim} at {beta}: {got}, expected {want}")
+            failures += 1
+    # Read, never rejected: what a reader keeps of each `anim`.
+    turn = ["turn", "y", 1, 1, 0]
+    reads = [
+        (absent, 0, "absent: still"),
+        ([], 0, "empty: still, and a publisher omits it"),
+        (None, 0, "null: still"),
+        ("turn", 0, "not a list: still"),
+        ({"turn": 1}, 0, "an object: still"),
+        ([turn], 1, "one motion"),
+        ([turn] * 5, 4, "only the first four entries are read"),
+        ([["spin", "y", 1, 1, 0], turn], 1, "an unknown word is ignored, the rest apply"),
+        ([["bob", "y", 12, 1, 1, 0]], 0, "bob is not a motion word: a bob is a slide on y"),
+        ([["turn", "Y", 1, 1, 0]], 0, "axis letters are lowercase"),
+        ([["turn", "w", 1, 1, 0]], 0, "no such axis"),
+        ([["turn", "y", 1, 1]], 0, "every integer is written, no default omitted"),
+        ([["turn", "y", 1, 1, 0, 0]], 0, "one integer too many"),
+        ([["turn", "y", 1.0, 1, 0]], 0, "a float is not an integer"),
+        ([["turn", "y", True, 1, 0]], 0, "a boolean is not an integer"),
+        ([["turn", "y", 0, 1, 0]], 0, "no cycles is malformed"),
+        ([["turn", "y", 1, 0, 0]], 0, "no blocks is malformed"),
+        ([["turn", "y", 1, 1, 360]], 0, "a phase past 359"),
+        ([["turn", "y", 600, 1, 0]], 1, "600 cycles a block is the fastest allowed"),
+        ([["turn", "y", 601, 1, 0]], 0, "faster is held still"),
+        ([["turn", "y", -6000, 10, 0]], 1, "negative cycles turn backward, at the same limit"),
+        ([["turn", "y", 1, 1_000_001, 0]], 0, "blocks past a million"),
+        ([["swing", "x", 0, 1, 1, 0]], 0, "a swing of no reach"),
+        ([["swing", "x", 181, 1, 1, 0]], 0, "a swing past 180 degrees"),
+        ([["slide", "y", -12, 1, 1, 0]], 0, "a slide's reach is positive"),
+        ([["orbit", "y", 7681, 1, 1, 0]], 0, "an orbit past the position bound"),
+        ([["lift", "y", 0, 25, 1, 1, 0]], 0, "a lift that goes nowhere"),
+        ([["lift", "y", -7680, 49, 1, 1, 0]], 1, "a lift down, the longest dwell"),
+        ([["lift", "y", 120, 50, 1, 1, 0]], 0, "a dwell of half the cycle at each stop leaves no travel"),
+        ([["path", 1, 1, 0, [0, 0, 0, 1]]], 0, "a path of one waypoint"),
+        ([["path", 1, 1, 0] + [[0, 0, 0, 1]] * 32], 1, "32 waypoints"),
+        ([["path", 1, 1, 0] + [[0, 0, 0, 1]] * 33], 0, "33 waypoints"),
+        ([["path", 1, 1, 0, [0, 0, 0, 1], [120, 0, 0, 0]]], 0, "a leg of no weight"),
+        ([["path", 1, 1, 0, [0, 0, 0, 1], [120, 0, 0]]], 0, "a waypoint without its weight"),
+        ([shuttle, "junk", turn], 2, "a malformed entry is ignored, the rest apply"),
+    ]
+    for given, want, why in reads:
+        payload = dict(APPENDIX_A) if given is absent else {**APPENDIX_A, "anim": given}
+        got = len(motions_of(validate(payload)))
+        if got != want:
+            print(f"  ANIM {given!r}: read {got} motions, expected {want} ({why})")
+            failures += 1
+    print(f"{len(betas)} paced height cases, {len(poses)} pose cases, {len(reads)} anim read cases (rule 18 never rejects)")
 
     if failures:
         raise SystemExit(1)

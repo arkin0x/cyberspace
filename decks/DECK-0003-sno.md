@@ -5,12 +5,12 @@ Title: SNO (Simple Nostr Objects)
 Status: Draft
 Mandatory: no
 Created: 2026-09-14
-Last updated: 2026-11-10
+Last updated: 2026-11-14
 Requires: `CYBERSPACE_V2.md` (spec version `2026-03-16-h34-corrected`)
 
 ## Abstract
 
-A **Simple Nostr Object** (SNO) is a small three-dimensional object written as JSON, small enough to live inside one nostr event alongside everything else a note carries. It is a list of vertices on an integer lattice, one color per vertex, an optional list of triangles, and a word saying how to draw it. There are no textures, no materials, no normals (a face's winding says which way it looks), no bones, no animation, and no file to fetch. An object is the event.
+A **Simple Nostr Object** (SNO) is a small three-dimensional object written as JSON, small enough to live inside one nostr event alongside everything else a note carries. It is a list of vertices on an integer lattice, one color per vertex, an optional list of triangles, and a word saying how to draw it. There are no textures, no materials, no normals (a face's winding says which way it looks), no bones, no keyframes, and no file to fetch. An object may move, but only as a whole and in a loop, on a clock every reader shares (§1.14). An object is the event.
 
 This document codifies a format Cyberspace already depends on but has never written down. The base specification refers to it twice: §7 notes that ONOSENDAI hides `kind 3330` shards whose geometry is in `content`, and §8.10 computes the proof of work an avatar owes from that payload's `unit`, `vertices`, `ticks` and `faces` fields. Both passages assume a format defined nowhere. This DECK is that definition, written so that it stands on its own outside Cyberspace as well as inside it.
 
@@ -26,6 +26,7 @@ The design goal is not to compete with glTF or USD. It is to be the three-dimens
 | Model space | X right, Y up, +Z toward the viewer: right handed, the glTF convention (§2) |
 | Position lattice | whole units plus 120ths of a unit (§1.2) |
 | Size | no ceiling on vertices or faces; the event's size is the relay's concern, as for every other kind (§1.8) |
+| Motion | `anim`: loops that turn or move a whole object, timed by the paced height, a clock read from Bitcoin's block headers (§1.14) |
 | Credit for a copy | the NIP-18 `q` tag naming the original's address; a `p` naming its author on a public remix only (§3.5) |
 | Reference implementation | `decks/sno-reference.py`, which is §1.9 written as code |
 
@@ -44,6 +45,9 @@ The design goal is not to compete with glTF or USD. It is to be the three-dimens
 - **Opacity:** how solid an object is drawn, a whole percent from `1` to `100`. Absent means `100`, fully opaque (§1.11).
 - **Walker:** a viewer that a client moves through a scene a step at a time, as a person walks, rather than by jumping to a place (§1.12).
 - **Constraint (`constrain`):** whether an object's faces stop a walker: `"all"`, `"opaque"`, or `"off"` for none. Absent also means none to a reader, and means "not chosen" to an authoring tool, which writes `"opaque"` (§1.12).
+- **Paced height (`β`):** a number that rises by exactly one for every average Bitcoin block, the average taken over the last completed difficulty window. It is the one clock every motion runs on (§1.14).
+- **Motion (`anim`):** a loop that turns or moves a whole object, such as a platform that turns or a lift that rises and comes back, timed by the paced height. Absent means the object is still (§1.14).
+- **Rest pose:** an object as written, with no motion applied (§1.14).
 - **Extent:** the half-width of the grid the object was built on, in model units. A bound, not a size (§1.8).
 - **Address:** the name of an addressable nostr event, written the way a nostr `a` tag writes it: the event's kind, its author's pubkey as 64 lowercase hex characters, and its `d` tag, joined by colons. An object's address is `33331:<pubkey hex>:<d>`, for example `33331:79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798:5e0a3c91d27f4b68` (§1.10, §3.1).
 - **Ref:** one entry in an object's `refs` list. It names one object that this object places, the way a nostr tag names an event. The ref `["a", "33331:<pubkey hex>:<d>"]` names the object by its address. The ref `["e", "<event id hex>"]` names it by event id. Either shape may be followed by one relay URL as a hint, such as `["a", "33331:<pubkey hex>:<d>", "wss://relay.example"]` (§1.9 rule 11, §1.10).
@@ -77,6 +81,7 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | `facecolors` | array | no | One palette index per face, run-length encoded, for hard color seams (§1.4a). Absent means every face interpolates its vertices. |
 | `opacity` | integer | no | How solid the object is drawn, a percent, `1` to `100` (§1.11). Repaired, never rejected: absent or malformed means `100`, fully opaque. |
 | `constrain` | string | no | Whether the object's faces stop a walker: `"all"`, `"opaque"` or `"off"` (§1.12). `"off"` and absent mean they stop nothing; a malformed value is repaired to mean the same, never rejected. An authoring tool writes `"opaque"`, and never omits it, unless its author chooses otherwise. |
+| `anim` | array | no | Up to four motions that move the object in a loop on the paced height (§1.14). Read rather than validated: absent or malformed means the object is still, and a malformed motion is ignored while the rest apply. Never a rejection. |
 | `palette` | string or array | no | Which 256 colors the indices name (§1.3a). Absent means the built-in. |
 | `up` | boolean | no | `true` means the object stands on the Earth's surface where it is placed (§1.7). `false` means the same as absent. |
 | `spin` | integer | no | With `up`: the compass bearing the object's `+Z` faces, `0` to `359` (§1.7). |
@@ -119,7 +124,8 @@ A position is an exact rational, never a float. It is carried in two parts.
 - MUST omit `extent` when it is `8`;
 - MUST omit `opacity` when it is `100` (§1.11);
 - MUST omit `objects` when the table holds no entries, and MUST write the table's keys in ascending order of their Unicode code points (§1.10). For example, the key `"33331:<pubkey hex>:0d4b8f1e2c97a356"` is written before `"33331:<pubkey hex>:a7c2e9f04b1d3e68"`, because `0` (U+0030) comes before `a` (U+0061);
-- MUST NOT write `constrain` with any value but `"all"`, `"opaque"` or `"off"` (§1.12).
+- MUST NOT write `constrain` with any value but `"all"`, `"opaque"` or `"off"` (§1.12);
+- MUST omit `anim` when it holds no motions, and MUST write each motion with every integer of its shape and with its cycles and blocks in lowest terms (§1.14).
 
 An absent `constrain` and `"off"` are not two spellings of one object. A reader treats them alike, but an authoring tool does not, so each is canonical for what it says (§1.12). The value that authoring tools write by default, `"opaque"`, is not what an absent `constrain` means, so it is written and never omitted. This differs from `extent` `8` and `opacity` `100`, which are what an absent `extent` and an absent `opacity` mean, and so are omitted.
 
@@ -341,6 +347,7 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 14. `opacity`, if present, is repaired rather than validated (§1.11): a value that is not an integer in `1..100`, null included, means `100`, and an integer from `1` to `9` is drawn at `10`. It is never a reason to reject.
 15. `constrain`, if present, is read rather than validated (§1.12). `"off"` is a valid word, and means the object stops nothing. A value that is not exactly the string `"all"`, `"opaque"` or `"off"`, null included, is repaired to mean the same. It is never a reason to reject.
 16. `objects`, if present, is read rather than validated (§1.10). It is never a reason to reject this payload. A value that is not a JSON object, null included, is read as absent. A key that is not an address of the form `33331:<64 lowercase hex>:<d>` is ignored. For example, the key `"glass-tetra"` is ignored, and so is a key whose pubkey is written in uppercase hex. Each value is a payload. It is checked by rules 1 to 15, on its own, when a placement draws from it, and any `objects` field inside it is ignored. A value that fails is a placeholder for each placement that names it.
+18. `anim`, if present, is read rather than validated (§1.14). A value that is not an array, null included, means the object is still. Only its first four entries are read, and an entry that is malformed, names an unknown motion, or runs faster than 600 cycles per paced block is ignored while the rest apply. It is never a reason to reject.
 
 ---
 
@@ -380,7 +387,7 @@ Positions are ticks and turns are whole degrees because everything else in this 
 
 **Why the placements are in the payload and not in the event's tags.** A copy of the payload is the whole object, on the clipboard, in a bag, in another client; placements carried as tags would fall off it. Inside a bag the tags are encrypted with everything else, so nothing would be gained there. A publisher of a public `kind 33331` SHOULD also write each `refs` entry as an `e` or `a` tag on the event, unchanged, so a relay can answer "what places this object" (`#a`, `#e`); a reader MUST take the placements from the payload and MUST NOT read them from tags. A hidden object (§3.4) is also a `kind 33331`, but it MUST NOT carry these tags, because its tags are not encrypted (§3.4).
 
-**What a placed object keeps and what it loses.** A placed object keeps its own `palette`, `mode`, `opacity`, `constrain`, `facecolors` and geometry. It is drawn as its author drew it, and the parent's `opacity` and `constrain` do not reach it (§1.11, §1.12). It loses `up` and `spin`. The reason is that the parent's placement decides where it stands and which way it faces, and a parent standing on the Earth (§1.7) carries its parts with it. Its `extent` is ignored. Instead, the parent's extent is repaired to contain the placed objects' bounds, in the same way that it is repaired to contain the parent's own vertices (§1.8). A reader can only do this once it has each placed object, either fetched or read from an objects table (below). A parent's advertised extent may therefore be smaller than what is finally drawn.
+**What a placed object keeps and what it loses.** A placed object keeps its own `palette`, `mode`, `opacity`, `constrain`, `facecolors` and geometry. It is drawn as its author drew it, and the parent's `opacity` and `constrain` do not reach it (§1.11, §1.12). It also keeps its own `anim`, so it moves in its own frame wherever it is placed, and a parent's motion carries it (§1.14). It loses `up` and `spin`. The reason is that the parent's placement decides where it stands and which way it faces, and a parent standing on the Earth (§1.7) carries its parts with it. Its `extent` is ignored. Instead, the parent's extent is repaired to contain the placed objects' bounds, in the same way that it is repaired to contain the parent's own vertices (§1.8). A reader can only do this once it has each placed object, either fetched or read from an objects table (below). A parent's advertised extent may therefore be smaller than what is finally drawn.
 
 **Depth and cycles.** A placed object may itself have parts. A reader MUST follow placements no deeper than `4` levels from the object it is rendering. It MUST draw a placeholder in place of anything deeper. A reader MUST also treat a reference to any object already in the chain of parents as missing. For example, if object A places object B, and B places A again, that placement of A inside B is missing, and it is drawn as a placeholder. A reader can enforce both of these bounds by itself, without trusting the author of the object. This section states only bounds of that kind, because a bound that relies on the author's good behavior does not protect a reader from an author who ignores it.
 
@@ -629,6 +636,202 @@ A new field is ignored by those readers (§5). The `a` ref stays an ordinary ref
 
 (Non-normative: `decks/sno-reference.py` implements the table above as `walk_constraint` and `stops_walker`, and the authoring rule as `authored_constraint`, and its self-test carries a repair case for each kind of value in the table and an authoring case for each; there is no rejection case, because nothing in this section rejects. As with `opacity`, a reader that edits objects should keep fields it does not recognize when it writes an object back, or the first person to open a walled room in an older editor and publish it again would take its walls down for everyone after them.)
 
+### 1.14 Motion
+
+`anim` makes an object move by itself, in a loop, forever: a platform that turns, a pendulum that swings, a lift that rises and comes back, a shuttle that travels between two islands. It is a list of motions. Absent means the object is still, which is how every object was drawn before this field existed, and how every reader that does not know the field draws it still.
+
+```json
+"anim": [["turn", "y", 100, 1, 0]]
+```
+
+That object turns about its own `Y` axis 100 times in every paced block, which is about nine turns a minute at the pace of November 2026.
+
+**Every reader draws the same pose at the same moment.** A motion is a pure function of one number, the paced height `β`, which every reader computes alike from Bitcoin's block headers and its own clock. Two readers whose clocks agree draw a moving object in the same place. Two phones synced to network time agree to within tens of milliseconds, which is about three degrees of a platform that turns ten times a minute. Nothing is published to make an object move, nothing is hashed, and the payload never changes: the motion is written once, and the clock does the rest.
+
+This section has two parts. The clock, the field and the rules for reading it come first, and they hold for every motion. The motions themselves, their words and their integers, follow under **The motions**.
+
+#### The paced height
+
+**Rule: the paced height `β` rises by exactly one for every average block, the average taken over Bitcoin's last completed difficulty window. Its speed changes once per window, four hours after the window's last block, and `β` itself never jumps.** When blocks come faster, every moving object in the world speeds up a little at the next switch. When blocks come slower, everything slows.
+
+| Term | Definition |
+|---|---|
+| window `k` | Bitcoin's difficulty window `k`: the 2016 blocks at heights `2016k` to `2016k + 2015` |
+| window end `a_k` | the `time` field of the header of block `2016k + 2015`, the window's last block, in Unix seconds |
+| span `D_k` | `a_k - a_(k-1)`, taken as `302,400` if it is less, and as `4,838,400` if it is more |
+| pace `T_k` | `D_k / 2016` seconds per paced block, an exact rational |
+| switch moment `s_k` | `a_k + 14,400`, four hours after the window end, or `s_(k-1)` if that is later |
+| paced height `β(t)` | for `s_k ≤ t < s_(k+1)`: `β(s_k) + (t - s_k) / T_k`, where `t` is a moment in Unix seconds |
+
+**The epoch.** `β` is counted from window 483, heights 973,728 to 975,743. Its end and the end before it are constants of this section, and every reader carries them:
+
+| Constant | Value |
+|---|---|
+| `a_482`, the header time of block 973,727 | `1793300370` (2026-10-29 18:59:30 UTC) |
+| `a_483`, the header time of block 975,743 | `1794632383` (2026-11-14 04:59:43 UTC) |
+| `T_483` | `1332013 / 2016`, about 660.721 seconds |
+| `s_483` | `1794646783` (2026-11-14 08:59:43 UTC) |
+| `β(s_483)` | `975744`, the first height after the epoch's window |
+
+From the epoch on, `β` is continuous across every switch: `β(s_(k+1)) = β(s_k) + (s_(k+1) - s_k) / T_k`. Only its slope changes. Before `s_483`, `β(t) = 975744 + (t - s_483) / T_483`. Nothing needs that range, but `β` is defined at every moment.
+
+**The clamp on a span, and the order of switch moments, exist so that `β` is defined, rising and continuous for any header times at all.** They are the bounds Bitcoin's own retarget uses, a quarter and four times two weeks, and Bitcoin's retarget keeps a real window far from both: a window four times too long would need most of the network's hashrate to vanish at once. A window end earlier than the one before it would need miners to forge timestamps for two weeks. Neither is expected to change any value a reader computes.
+
+**Where window ends come from.** A reader takes each window end from the header of the window's last block, either from its own block source or from a verified `header` tag on a block anchor (DECK-0001 §2.5), and only from a header whose hash it accepts as Bitcoin's (DECK-0001 §2.5 sets out when a reader may). It MUST NOT take a window end from anything else, such as an anchor's `created_at`. Outside Cyberspace, any source of verified Bitcoin headers serves, since `β` depends on nothing but Bitcoin. A reader needs one header per window since the epoch, about 26 a year.
+
+**Why each choice (non-normative).**
+
+| Choice | Why |
+|---|---|
+| The completed window, not a rolling average | Two readers that see a block seconds apart would compute different rolling averages, and their objects would drift apart. A completed window is the same number for everyone. |
+| One header per window, measured end to end | The pace and the switch moment come from the same header, so the clock needs exactly one header per 2016 blocks. Bitcoin's own retarget measures from the first block to the last, which is 2015 intervals, a known off-by-one. End to end is 2016 intervals, the honest average, and costs no extra header. |
+| The header's time, not the median time past | The median time past needs eleven headers per window and runs about an hour behind. A miner can move one header's time by up to about two hours, which moves a pace by at most about 3.6 seconds, about half a percent. Every reader gets the same error. |
+| A clock that accumulates from a fixed epoch | Restarting the phase at each window end would make every moving object lurch to an arbitrary new angle once a fortnight. Accumulating from one epoch keeps `β` continuous. The cost is one header per window since the epoch. (Ruled 2026-11-10.) |
+| A four-hour delay before a new pace takes effect | If the new pace took effect at the window end itself, a reader that learned of the block an hour late would compute a `β` off by about a tenth of a paced block, which is ten whole turns of a platform that turns 100 times a block: a visible snap. Four hours after the header's time, every reader that is online has the block about twenty blocks deep. The delay also covers a header time that runs behind real time. |
+| The epoch at window 483 | It was the most recent window that had closed when this section was written, so both constants can be checked against any copy of Bitcoin's headers. |
+
+`β` is not the block height. It starts at a block height by design, and then drifts from the height by the difference between one window's pace and the next. It is only a clock, and an author who writes "turns 100 times a block" means a paced block.
+
+#### The field
+
+`anim` is a list of at most four motions. Each motion is one JSON array: a word, and then integers and, for most words, an axis letter. **The motions** gives every word and its shape. Every motion carries three integers that say how fast it runs: `c` cycles every `b` paced blocks, starting at a phase offset of `φ` whole degrees. Its phase at the moment `t` is
+
+`u = frac(c × β(t) / b + φ / 360)`
+
+where `frac` keeps the part in `[0, 1)`, so that `frac(-0.25)` is `0.75`. A negative `c` runs the cycle backward. `c` is a nonzero integer, `b` is an integer from `1` to `1,000,000`, `|c|` is at most `600 × b`, and `φ` is an integer from `0` to `359`.
+
+**The frame.** A motion acts in the object's own model frame (§2), after the version 1 negation, and about the object's own origin. A turn is right-handed: a positive turn about `Y` takes `+Z` toward `+X`, about `X` takes `+Y` toward `+Z`, and about `Z` takes `+X` toward `+Y`, as a placement's turns do (§1.10). A distance is in ticks of the object's own lattice (§1.2), so it grows with the object's `unit` and with a placement's scale step exactly as the object's vertices do. A point moved by a motion is then carried into its parent, and into the world, exactly as a vertex is.
+
+**The rest pose** is the object as written, with no motion applied. It is what a reader that does not know `anim` draws, and what every reader draws when its viewer has asked for reduced motion (below).
+
+**Several motions compose in the order written, the first innermost.** A point is moved by the first motion, then the result by the second, and so on. Order has meaning, since a turn followed by a slide is a different motion from a slide followed by a turn, so the order written is the meaning and not a spelling.
+
+**Parts.** Every object's `anim` moves that object, and everything it places, in its own frame, before its placement in its parent. For the root, it is applied before the root is posed in the world (§1.7). For a point `p` of an object placed two levels below the root:
+
+`world(p) = Pose_root ∘ Anim_root ∘ Place_1 ∘ Anim_1 ∘ Place_2 ∘ Anim_2 (p)`
+
+So a turning platform that places a turning sign carries the sign round while the sign turns about its own origin, and a still room that places a turning spinner shows the spinner turning where the room put it. A placed object keeps its own `anim` (§1.10). An author who wants one placement of a tile to move and another to stay still places a wrapper: an object with no geometry of its own that places the tile once and carries the `anim`. A wrapper counts as a level toward the depth bound of `4` (§1.10).
+
+**Why a placed object keeps its motion, when it loses `up` and `spin` (non-normative).** `up` and `spin` say where an object stands in the world, which is the parent's call. `anim` says how the object moves relative to itself, which is its author's call, as `mode`, `opacity` and `constrain` are. A spinner that stopped spinning whenever someone placed it would be a broken kit piece. A ninth integer on each placement would have given every placement its own motion, but §1.9 rule 12 rejects a placement that is not eight integers, so every reader written before this section would have refused the whole parent instead of drawing it still. The wrapper gives per-placement motion with no new mechanism. (Ruled 2026-11-10.)
+
+#### The motions
+
+Each word below is one motion. In every shape, `axis` is one of the strings `"x"`, `"y"` or `"z"`, and `c`, `b` and `φ` are as set out under **The field**.
+
+| Motion | Shape | What it does at phase `u` | Its own integers |
+|---|---|---|---|
+| `turn` | `["turn", axis, c, b, φ]` | turns about the axis by `360 × u` degrees | none |
+| `swing` | `["swing", axis, reach, c, b, φ]` | turns about the axis by `reach × sin(2πu)` degrees | `reach`: `1` to `180` |
+| `slide` | `["slide", axis, reach, c, b, φ]` | moves along the axis by `reach × sin(2πu)` ticks | `reach`: `1` to `7680` |
+| `orbit` | `["orbit", axis, radius, c, b, φ]` | moves by an offset of `radius` ticks along the next axis in the order `x`, `y`, `z`, `x`, turned about the axis by `360 × u` degrees. The object travels a circle and does not turn | `radius`: `1` to `7680` |
+| `lift` | `["lift", axis, travel, dwell, c, b, φ]` | moves along the axis by `travel × h(u)` ticks, with `h` in the table below: it rests, travels, rests at the far stop, and comes back | `travel`: `-7680` to `7680`, not `0`; `dwell`: `0` to `49` |
+| `path` | `["path", c, b, φ, [x, y, z, w], ...]` | moves by a point that travels a closed loop of waypoints, in straight legs | 2 to 32 waypoints; `x`, `y`, `z`: `-7680` to `7680`; `w`: `1` to `1000` |
+
+The bound of `7680` ticks is the 64-unit position bound of §1.8.
+
+**`lift`.** With `d = dwell / 100` and `ease(x) = 3x² - 2x³`, a lift is at the share `h(u)` of its travel:
+
+| `u` | `h(u)` |
+|---|---|
+| `0 ≤ u < d` | `0`: resting at its rest pose |
+| `d ≤ u < 1/2` | `ease((u - d) / (1/2 - d))`: going |
+| `1/2 ≤ u < 1/2 + d` | `1`: resting at the far stop |
+| `1/2 + d ≤ u < 1` | `1 - ease((u - 1/2 - d) / (1/2 - d))`: coming back |
+
+A lift arrives and leaves at zero speed, so a walker can step on and off at either stop. `dwell` is a share of the cycle rather than a number of seconds, so the rests stretch with the pace like everything else.
+
+**`path`.** Leg `i` runs from the waypoint before it to waypoint `i`, where the waypoint before the first is the last, and takes the share `w_i / Σw` of the cycle, at a steady speed along the leg. A waypoint written twice in a row is a rest. The offsets are from the rest pose, so a path whose last waypoint is `[0, 0, 0, w]` starts each cycle at the rest pose.
+
+**Not here.** A one-shot motion, such as a door that swings open when someone arrives, is not a loop on a shared clock, and this field does not describe it. `turn` is not called `spin`, because `spin` is already the bearing of an object standing on the Earth (§1.7).
+
+#### Reading and writing the field
+
+**It is read, never a reason to reject** (§1.9 rule 18). A reader:
+
+1. reads an `anim` that is not a JSON array, null included, as absent;
+2. reads only the first four entries, and ignores any after them;
+3. ignores an entry that is not a JSON array, whose first element is not one of the words under **The motions**, that does not have exactly the elements its word's shape gives, whose axis is not exactly `"x"`, `"y"` or `"z"`, or any of whose integers is not a JSON integer in its range, including a `c` and `b` faster than `600` cycles per paced block;
+4. applies every entry it did not ignore, in order;
+5. MUST NOT reject the payload for anything in `anim`.
+
+An ignored entry is held still, and the rest of the list still applies. This is the stance `constrain` (§1.12) takes: the field says how an object moves, never what shape it is, and an object drawn still is drawn the way every older reader draws it anyway.
+
+**A publisher** MUST write every integer as a JSON integer (digits only: `100`, never `100.0` or `1e2`), MUST write every integer of a motion's shape with none omitted, MUST write `c` and `b` with no common factor (so `["turn", "y", 1, 2, 0]` and never `["turn", "y", 2, 4, 0]`), MUST NOT write more than four motions or an entry a reader would ignore, and MUST omit `anim` when it has no motions (§1.2). A reader whose JSON parser cannot tell `100.0` from `100` MAY read such a value as `100`.
+
+**Reduced motion.** A reader whose viewer has asked for reduced motion, in a way the reader can detect, MUST draw every object at its rest pose, and its walker meets each object there. That changes nothing anyone else sees.
+
+**A rate above `600` cycles per paced block is ignored** because that is about one cycle a second at Bitcoin's nominal ten-minute block. Faster is a strobe, not a platform, and a strobe is a hazard to a viewer with photosensitive epilepsy.
+
+#### The reader's clock
+
+**The moment `t`** is the device's clock in Unix seconds, fractions included. A reader MAY correct its clock by an offset it measures against a time source it trusts, and SHOULD apply the correction only when it is more than 2 seconds. A device synced to network time is good to tens of milliseconds, and most sources a reader can reach report whole seconds, so below that threshold the device's own clock is the better one. (Non-normative: in a browser, the `Date` header of a response from the page's own origin is one such source; a reader takes the median of a few samples and corrects each for half its round trip. A `Date` header from another origin cannot be read without `Access-Control-Expose-Headers`.)
+
+**A reader that does not know every window end** continues `β` at the last pace it knows. That is the formula above, applied to the window ends the reader has. It happens while headers are still loading, and when a window end has not yet reached the reader although its switch moment has passed. A reader SHOULD show its viewer that its clock is approximate while it does this.
+
+**Catching up without a jump.** When a reader learns a window end it was missing, or corrects its clock, the true phase of each motion moves under its viewer. A reader SHOULD then ease each motion from where it is drawn to where it should be, by the shorter way round its cycle, rather than jump. With the error `e` wrapped into `[-1/2, 1/2)` of a cycle, the reader draws the phase `u - e × (1 - (3τ² - 2τ³))`, where `τ` goes from `0` to `1` over `min(3, max(0.5, |e| × P))` seconds, and `P` is the cycle's length in seconds, `b × T_k / |c|`. No object then moves more than half a cycle extra, at more than about two and a half times its own speed, or for longer than three seconds. On its first frame a reader has nothing to ease from, and draws the true pose at once.
+
+**Precision (non-normative).** A reader that computes in double precision should reduce `β`'s whole part modulo `b` before it multiplies by `c`, as `c × ((W mod b) + f) / b` with `W` the whole part of `β` and `f` its fraction. The numbers then stay small, and the phase is good to better than a millionth of a cycle at the fastest rate the field allows.
+
+#### What motion is, and is not
+
+**Shared within clock error, and part of no hash.** The payload, and so the event's id, never changes as an object moves. `β` is the same for every reader that has the same window ends, and a window end is final once its block is a few blocks deep. The pose of an object at a moment is shared only as well as two readers' clocks agree.
+
+**A courtesy, not a rule of the space.** Nothing in a chain records where a moving object stood. A reader MUST NOT reject, hide or mark another avatar's movement on the strength of where a moving object stood, and applies motion to its own viewer's walker only.
+
+**Walkers.** §1.12 tests an object's faces where the object is drawn. For a moving object, that is where it is drawn at the moment of the step. A client that constrains its walker SHOULD test a moving object's faces there. A moving face can reach a walker that stands still, so such a client SHOULD move its walker out of the way of a face that reaches it, and SHOULD let the face pass through the walker when there is nowhere to go, so that motion never shuts a walker in (§6). A client that does not test moving faces SHOULD let a moving object stop no walker, rather than hold its walker at faces where it does not draw them. (Non-normative: ONOSENDAI plans to carry a walker that stands on a moving face, publish nothing while it rides, as it publishes nothing while it falls, and publish the ride as the walker's own ordinary hops when it ends. The walker keeps no momentum when it leaves, and its facing does not turn with the platform.)
+
+**Bounds and regions.** `extent` is not grown for motion: it describes the lattice the object was built on (§1.8). A reader that culls or tests collisions SHOULD compute, once per object, a box that holds the object through its whole motion: for a turn or a swing, the farthest point from the axis, all the way round; for a slide, an orbit or a lift, the reach added along the axes it moves; for a path, the box of its waypoints added to the object's own. Where a reader draws only the part of a hidden object that lies inside its bag's region (`CYBERSPACE_V2.md` §7), it cuts the object where it is at each moment, so a platform that swings out of its region vanishes at the region's wall.
+
+**Avatars.** An avatar ignores `anim` (§3.3).
+
+**Blooms and items (non-normative).** DECK-0008 reads a SEEDO line that begins with `anim` as an unknown line today, so it changes no bloom. A later revision of DECK-0008 may let a DNA declare a whole-bloom motion, which a reader would apply outside the bloom's payload so that the bloom's hash stays what DECK-0008 says. An item that wears a model (DECK-0004 §2.5) may carry an `animate` tag as well: both apply, the model's `anim` inside and the item's local `animate` outside.
+
+**What it costs.** Thirty bytes for `,"anim":[["turn","y",100,1,0]]`, and nothing for an object that is still.
+
+**Versioning.** `anim` is a field whose absence has a meaning, so its addition does not bump `v` (§5). An older reader ignores it and draws the object still, at its rest pose.
+
+#### Vectors
+
+**The paced height.** Each `β` is exact, shown to nine decimals. The window end `1795841983` for window 484 is hypothetical, exactly 600 seconds a block after the epoch's end, and so is the window end out of order in the last row.
+
+| Moment `t` | Window ends known after the epoch | `β(t)` | What it shows |
+|---|---|---|---|
+| `1794646783` (`s_483`) | none | `975744.000000000` | the epoch's switch moment |
+| `1794632383` (`a_483`) | none | `975722.205618113` | before the switch, `β` runs back at the epoch's pace |
+| `1794733183` | none | `975874.766291320` | one day after the switch |
+| `1795132800` (2026-11-20 00:00:00 UTC) | none | `976479.586118154` | a turn of `["turn", "y", 100, 1, 0]` stands at 220.253526 degrees |
+| `1795856382` | `1795841983` | `977574.726564981` | one second before window 484's switch |
+| `1795856383` (`s_484`) | `1795841983` | `977574.728078480` | window 484's switch: no jump |
+| `1795862383` | `1795841983` | `977584.728078480` | 6,000 seconds at 600 seconds a block is 10 more |
+| `1795862383` | none | `977583.809070932` | the same moment, without window 484's end: still at the epoch's pace |
+| `1794652783` | `1794631383` | `975784.000000000` | a window end earlier than the epoch's: its switch is held at `s_483` and its span taken as `302400`, a pace of 150 seconds |
+
+**Poses.** Each row moves one point, in ticks, by the motions given, at the `β` given, and shows where it is drawn, in ticks, rounded to six decimals. The shuttle is `["path", 10, 1, 0, [0, 0, 0, 1], [0, 0, 0, 1], [1920, 0, 0, 2], [1920, 0, 0, 1], [0, 0, 0, 2]]`.
+
+| `anim` | `β` | `u` | Point | Drawn at |
+|---|---|---|---|---|
+| `[["turn", "y", 100, 1, 0]]` | `975744.0025` | `1/4` | `[120, 0, 0]` | `[0, 0, -120]` |
+| `[["turn", "y", -1, 1, 0]]` | `975744.25` | `3/4` | `[120, 0, 0]` | `[0, 0, 120]` |
+| `[["swing", "x", 60, 25, 1, 0]]` | `975744.01` | `1/4` | `[0, 120, 0]` | `[0, 60, 103.923048]` |
+| `[["slide", "y", 240, 1, 4, 90]]` | `975744.5` | `3/8` | `[0, 0, 0]` | `[0, 169.705627, 0]` |
+| `[["orbit", "y", 480, 1, 2, 0]]` | `975744.5` | `1/4` | `[120, 0, 0]` | `[600, 0, 0]` |
+| `[["orbit", "z", 480, 1, 1, 0]]` | `975744.125` | `1/8` | `[0, 0, 0]` | `[339.411255, 339.411255, 0]` |
+| `[["lift", "y", 1440, 25, 1, 1, 0]]` | `975744.1` | `1/10` | `[0, 0, 0]` | `[0, 0, 0]` |
+| `[["lift", "y", 1440, 25, 1, 1, 0]]` | `975744.375` | `3/8` | `[0, 0, 0]` | `[0, 720, 0]` |
+| `[["lift", "y", 1440, 25, 1, 1, 0]]` | `975744.6` | `3/5` | `[0, 0, 0]` | `[0, 1440, 0]` |
+| `[["lift", "y", 1440, 25, 1, 1, 0]]` | `975744.8` | `4/5` | `[0, 0, 0]` | `[0, 1290.24, 0]` |
+| `[["lift", "y", -480, 0, 1, 1, 0]]` | `975744.125` | `1/8` | `[0, 0, 0]` | `[0, -75, 0]` |
+| `[shuttle]` | `975744.01` | `1/10` | `[0, 0, 0]` | `[0, 0, 0]` |
+| `[shuttle]` | `975744.05` | `1/2` | `[0, 0, 0]` | `[1440, 0, 0]` |
+| `[shuttle]` | `975744.09` | `9/10` | `[0, 0, 0]` | `[672, 0, 0]` |
+| `[["turn", "z", 1, 4, 0], ["slide", "x", 120, 1, 1, 0]]` | `975745.25` | `5/16`, `1/4` | `[120, 0, 0]` | `[74.077988, 110.865544, 0]` |
+| `[["slide", "x", 120, 1, 1, 0], ["turn", "z", 1, 4, 0]]` | `975745.25` | `1/4`, `5/16` | `[120, 0, 0]` | `[-91.844024, 221.731088, 0]` |
+| `[["turn", "y", 100, 1, 0]]` | `β` at `1795132800`, above | `0.611815...` | `[120, 0, 0]` | `[-91.583125, 0, 77.540514]` |
+
+The last two composed rows hold the same two motions in the two orders, and land in different places.
+
+(Non-normative: `decks/sno-reference.py` implements this section as `paced_height`, `motions_of`, `motion_phase` and `animated_point`. It computes `β` and every phase exactly, as fractions, and its self-test carries every row of both tables, and a read case for each kind of malformed entry; there is no rejection case, because nothing in this section rejects. As with `opacity` and `constrain`, a reader that edits objects should keep fields it does not recognize when it writes an object back, or the first person to open a moving platform in an older editor and publish it again would stop it for everyone after them.)
+
 ## 2. Model space (normative)
 
 An object is built in a right-handed frame with Y up, which is the glTF and three.js convention:
@@ -698,6 +901,8 @@ An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload
 **An avatar is drawn opaque.** A reader MUST ignore `opacity` (§1.11) in an avatar's payload, and in every object the avatar places (§1.10), and draw the avatar fully opaque. The work an avatar owes prices its size and its detail, not its visibility, so a translucent avatar would buy a way to move unseen through a shared space for nothing, and an avatar is how one person knows another is present. `opacity` is not one of the fields the work is computed from, so the work an avatar owes is unchanged by it.
 
 **An avatar never stops a walker.** A reader MUST ignore `constrain` (§1.12) in an avatar's payload, and in every object the avatar places (§1.10). An avatar is a person, not a wall: one standing in a doorway would shut it for every walker whose client honors the field, and one that moves would carry a wall about with it, through which nobody could follow. `constrain` is not one of the fields the work is computed from, so the work an avatar owes is unchanged by it.
+
+**An avatar never moves by itself.** A reader MUST ignore `anim` (§1.14) in an avatar's payload, and in every object the avatar places (§1.10), and draw the avatar at its rest pose. An avatar is how one person knows where another stands, and a slide or an orbit of up to 64 units would draw the person somewhere they are not. `anim` is not one of the fields the work is computed from, so the work an avatar owes is unchanged by it.
 
 ### 3.4 A hidden object as its own event
 
@@ -786,7 +991,7 @@ A client MUST perform welding, deduplication and any equality test on the intege
 
 `v` is `1` or `2`, and a reader MUST support both and reject anything else. A version bump means the meaning of an existing field has changed, which is exactly what happened between the two: `v: 2` reads its Z as written and `v: 1` has it negated (§2). Nothing else differs, and nothing else should ever differ by so little: two versions are a cost, and this one buys a format that every other tool can read without a special case.
 
-A reader MUST ignore fields it does not recognize rather than rejecting them. This is what allows an optional field to be added without a version bump, and it is how `extent`, `ticks`, `up`, `spin`, `palette`, `facecolors`, `refs`, `parts`, `opacity`, `constrain` and `objects` were each added to a format already in use: an older reader sees an object with whole-unit positions on a grid of 8, unoriented, in the built-in colors, every face interpolating its corners, placing nothing, fully opaque, stopping no walker, carrying no other objects, and draws something correct rather than nothing.
+A reader MUST ignore fields it does not recognize rather than rejecting them. This is what allows an optional field to be added without a version bump, and it is how `extent`, `ticks`, `up`, `spin`, `palette`, `facecolors`, `refs`, `parts`, `opacity`, `constrain`, `objects` and `anim` were each added to a format already in use: an older reader sees an object with whole-unit positions on a grid of 8, unoriented, in the built-in colors, every face interpolating its corners, placing nothing, fully opaque, stopping no walker, carrying no other objects, standing still, and draws something correct rather than nothing.
 
 An extension that changes how an existing field is interpreted MUST bump `v`. An extension that adds a field whose absence has a well-defined meaning MUST NOT.
 
@@ -815,6 +1020,8 @@ Anyone implementing this deck should treat `v: 2` as meaning the palette-indexed
 **A constraint is not a wall** (non-normative). A walker held by `constrain` (§1.12) is held by its own client and by nothing else. A visitor whose client ignores the field, or who simply jumps, is through it, so a constrained object protects nothing: a vault whose walls are set to `"all"` is exactly as open to a determined visitor as one without, and what keeps its contents out of sight is enclosure, above, and what keeps them unread is encryption (§3.4). The field is a way to make a space feel built, not a way to keep anyone out.
 
 **A walker can be shut in.** An object can be hidden around a place where someone stands, and an object's setting can change while a walker is inside it. A walker inside a closed constrained object can then walk nowhere, since every way out crosses a face. A client that constrains its walker SHOULD therefore always leave it a way out that is not walking: a jump, a planned route, or a way to stop honoring the field for itself. ONOSENDAI's way out is HOP, its jump to a chosen coordinate, which no constraint touches. Because anyone may hide an object anywhere, a client MAY also let its viewer choose whose objects it honors the field on, as it would choose whose objects it draws.
+
+**Motion can harm a viewer.** A motion faster than 600 cycles per paced block, about one cycle a second, is ignored (§1.14), so no object can be made into a strobe, and a reader draws every object still for a viewer who has asked for reduced motion. A moving face is also one more way to reach a walker that stands still, which is why §1.14 asks a client to let a moving face pass through a walker that has nowhere to go.
 
 **No code, no fetches.** An SNO payload is data. It names no URL, embeds no script, and requires no network access to render. A reader that keeps it that way inherits none of the attack surface that formats with external references carry.
 
@@ -874,7 +1081,7 @@ One apparent gap is not one. SNO has per-vertex color and no material, which is 
 |---|---|
 | **UVs and textures** | A texture is kilobytes to megabytes, so it must live outside the event as a URL or a hash. That ends the property that an SNO renders with no network access and no external attack surface, which is most of what makes it simple. |
 | **Hierarchy and transforms** | Since 2026-09-24 these are `refs` and `parts` (§1.10): an object places others, and a scene is an object whose own geometry may be empty. What stays out is a scene graph richer than placement: constraints, parenting by name, per-instance overrides. |
-| **Animation, armatures, shape keys** | Each needs a time model and per-frame or per-bone data that dwarfs the geometry. |
+| **Keyframed animation, armatures, shape keys** | Each needs per-frame or per-bone data that dwarfs the geometry. Rigid loops of a whole object on a shared clock are §1.14, and need no per-frame data at all. |
 | **Level of detail** | Instancing is §1.10. Level of detail is not: one object is one mesh, and a reader that needs less draws less. |
 
 ### 7.4 What SNO has that the large formats do not
