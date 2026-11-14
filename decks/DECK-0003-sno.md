@@ -26,7 +26,7 @@ The design goal is not to compete with glTF or USD. It is to be the three-dimens
 | Model space | X right, Y up, +Z toward the viewer: right handed, the glTF convention (§2) |
 | Position lattice | whole units plus 120ths of a unit (§1.2) |
 | Size | no ceiling on vertices or faces; the event's size is the relay's concern, as for every other kind (§1.8) |
-| Motion | `anim`: loops that turn or move a whole object, timed by the paced height, a clock read from Bitcoin's block headers (§1.14) |
+| Motion | `anim`: loops that turn or move a whole object, timed by the reader's own clock in Unix seconds (§1.14) |
 | Credit for a copy | the NIP-18 `q` tag naming the original's address; a `p` naming its author on a public remix only (§3.5) |
 | Reference implementation | `decks/sno-reference.py`, which is §1.9 written as code |
 
@@ -45,9 +45,7 @@ The design goal is not to compete with glTF or USD. It is to be the three-dimens
 - **Opacity:** how solid an object is drawn, a whole percent from `1` to `100`. Absent means `100`, fully opaque (§1.11).
 - **Walker:** a viewer that a client moves through a scene a step at a time, as a person walks, rather than by jumping to a place (§1.12).
 - **Constraint (`constrain`):** whether an object's faces stop a walker: `"all"`, `"opaque"`, or `"off"` for none. Absent also means none to a reader, and means "not chosen" to an authoring tool, which writes `"opaque"` (§1.12).
-- **Paced height (`β`):** a number that rises by exactly one for every average Bitcoin block, the average taken over the last completed difficulty window. It is the one clock every motion runs on (§1.14).
-- **Paced block:** the amount by which the paced height rises: one average block of the window whose pace is in effect (§1.14).
-- **Motion (`anim`):** a loop that turns or moves a whole object, such as a platform that turns or a lift that rises and comes back, timed by the paced height. Absent means the object is still (§1.14).
+- **Motion (`anim`):** a loop that turns or moves a whole object, such as a platform that turns or a lift that rises and comes back, timed by the reader's clock in Unix seconds. Absent means the object is still (§1.14).
 - **Rest pose:** an object as written, with no motion applied (§1.14).
 - **Extent:** the half-width of the grid the object was built on, in model units. A bound, not a size (§1.8).
 - **Address:** the name of an addressable nostr event, written the way a nostr `a` tag writes it: the event's kind, its author's pubkey as 64 lowercase hex characters, and its `d` tag, joined by colons. An object's address is `33331:<pubkey hex>:<d>`, for example `33331:79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798:5e0a3c91d27f4b68` (§1.10, §3.1).
@@ -82,7 +80,7 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | `facecolors` | array | no | One palette index per face, run-length encoded, for hard color seams (§1.4a). Absent means every face interpolates its vertices. |
 | `opacity` | integer | no | How solid the object is drawn, a percent, `1` to `100` (§1.11). Repaired, never rejected: absent or malformed means `100`, fully opaque. |
 | `constrain` | string | no | Whether the object's faces stop a walker: `"all"`, `"opaque"` or `"off"` (§1.12). `"off"` and absent mean they stop nothing; a malformed value is repaired to mean the same, never rejected. An authoring tool writes `"opaque"`, and never omits it, unless its author chooses otherwise. |
-| `anim` | array | no | Up to four motions that move the object in a loop on the paced height (§1.14). Read rather than validated: absent or malformed means the object is still, and a malformed motion is ignored while the rest apply. Never a rejection. |
+| `anim` | array | no | Up to four motions that move the object in a loop, timed in seconds by the reader's clock (§1.14). Read rather than validated: absent or malformed means the object is still, and a malformed motion is ignored while the rest apply. Never a rejection. |
 | `palette` | string or array | no | Which 256 colors the indices name (§1.3a). Absent means the built-in. |
 | `up` | boolean | no | `true` means the object stands on the Earth's surface where it is placed (§1.7). `false` means the same as absent. |
 | `spin` | integer | no | With `up`: the compass bearing the object's `+Z` faces, `0` to `359` (§1.7). |
@@ -126,7 +124,7 @@ A position is an exact rational, never a float. It is carried in two parts.
 - MUST omit `opacity` when it is `100` (§1.11);
 - MUST omit `objects` when the table holds no entries, and MUST write the table's keys in ascending order of their Unicode code points (§1.10). For example, the key `"33331:<pubkey hex>:0d4b8f1e2c97a356"` is written before `"33331:<pubkey hex>:a7c2e9f04b1d3e68"`, because `0` (U+0030) comes before `a` (U+0061);
 - MUST NOT write `constrain` with any value but `"all"`, `"opaque"` or `"off"` (§1.12);
-- MUST omit `anim` when it holds no motions, and MUST write each motion with every integer of its shape and with its cycles and blocks in lowest terms, and a path's leg weights with no common factor (§1.14).
+- MUST omit `anim` when it holds no motions, and MUST write each motion with every integer of its shape and with its cycles and seconds in lowest terms, and a path's leg weights with no common factor (§1.14).
 
 An absent `constrain` and `"off"` are not two spellings of one object. A reader treats them alike, but an authoring tool does not, so each is canonical for what it says (§1.12). The value that authoring tools write by default, `"opaque"`, is not what an absent `constrain` means, so it is written and never omitted. This differs from `extent` `8` and `opacity` `100`, which are what an absent `extent` and an absent `opacity` mean, and so are omitted.
 
@@ -348,7 +346,7 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 14. `opacity`, if present, is repaired rather than validated (§1.11): a value that is not an integer in `1..100`, null included, means `100`, and an integer from `1` to `9` is drawn at `10`. It is never a reason to reject.
 15. `constrain`, if present, is read rather than validated (§1.12). `"off"` is a valid word, and means the object stops nothing. A value that is not exactly the string `"all"`, `"opaque"` or `"off"`, null included, is repaired to mean the same. It is never a reason to reject.
 16. `objects`, if present, is read rather than validated (§1.10). It is never a reason to reject this payload. A value that is not a JSON object, null included, is read as absent. A key that is not an address of the form `33331:<64 lowercase hex>:<d>` is ignored. For example, the key `"glass-tetra"` is ignored, and so is a key whose pubkey is written in uppercase hex. Each value is a payload. It is checked by rules 1 to 15, on its own, when a placement draws from it, and any `objects` field inside it is ignored. A value that fails is a placeholder for each placement that names it.
-17. `anim`, if present, is read rather than validated (§1.14). A value that is not an array, null included, means the object is still. Only its first four entries are read, and an entry that is malformed, names an unknown motion, or runs faster than 600 cycles per paced block is ignored while the rest apply. It is never a reason to reject.
+17. `anim`, if present, is read rather than validated (§1.14). A value that is not an array, null included, means the object is still. Only its first four entries are read, and an entry that is malformed, names an unknown motion, or runs faster than two cycles a second is ignored while the rest apply. It is never a reason to reject.
 
 ---
 
@@ -642,68 +640,28 @@ A new field is ignored by those readers (§5). The `a` ref stays an ordinary ref
 `anim` makes an object move by itself, in a loop, forever: a platform that turns, a pendulum that swings, a lift that rises and comes back, a shuttle that travels between two islands. It is a list of motions. Absent means the object is still, which is how every object was drawn before this field existed, and how every reader that does not know the field draws it still.
 
 ```json
-"anim": [["turn", "y", 100, 1, 0]]
+"anim": [["turn", "y", 1, 6, 0]]
 ```
 
-That object turns about its own `Y` axis 100 times in every paced block, which is about nine turns a minute at the pace of November 2026.
+That object turns about its own `Y` axis once every six seconds.
 
-**Every reader draws the same pose at the same moment.** A motion is a pure function of one number, the paced height `β`, which every reader computes alike from Bitcoin's block headers and its own clock. Two readers whose clocks agree draw a moving object in the same place. Two phones synced to network time agree to within tens of milliseconds, which is about three degrees of a platform that turns ten times a minute. Nothing is published to make an object move, nothing is hashed, and the payload never changes: the motion is written once, and the clock does the rest.
+**Every reader draws roughly the same pose at the same moment.** A motion is a pure function of one number, the time `t` in Unix seconds as the reader's clock reads it. Two readers whose clocks agree draw a moving object in the same place, and two readers whose clocks differ by a fraction of a second draw it a fraction of a second apart. Nothing is published to make an object move, nothing is fetched, nothing is hashed, and the payload never changes: the motion is written once, and each reader's clock does the rest. A reader needs no network data to animate, so a reader that is offline still animates.
 
-The clock, the field and the rules for reading and writing it hold for every motion. The motions themselves, their words and their integers, are kept together under **The motions**, between the field and the rules for reading it.
-
-#### The paced height
-
-**Rule: the paced height `β` rises by exactly one for every average block, the average taken over Bitcoin's last completed difficulty window. Its speed changes once per window, four hours after the window's last block, and `β` itself never jumps.** When blocks come faster, every moving object in the world speeds up a little at the next switch. When blocks come slower, everything slows.
-
-| Term | Definition |
-|---|---|
-| window `k` | Bitcoin's difficulty window `k`: the 2016 blocks at heights `2016k` to `2016k + 2015` |
-| window end `a_k` | the `time` field of the header of block `2016k + 2015`, the window's last block, in Unix seconds |
-| span `D_k` | `a_k - a_(k-1)`, taken as `302,400` if it is less, and as `4,838,400` if it is more |
-| pace `T_k` | `D_k / 2016` seconds per paced block, an exact rational |
-| switch moment `s_k` | `a_k + 14,400`, four hours after the window end, or `s_(k-1)` if that is later |
-| paced height `β(t)` | for `s_k ≤ t < s_(k+1)`: `β(s_k) + (t - s_k) / T_k`, where `t` is a moment in Unix seconds |
-
-**The epoch.** `β` is counted from window 483, heights 973,728 to 975,743. Its end and the end before it are constants of this section, and every reader carries them:
-
-| Constant | Value |
-|---|---|
-| `a_482`, the header time of block 973,727 | `1793300370` (2026-10-29 18:59:30 UTC) |
-| `a_483`, the header time of block 975,743 | `1794632383` (2026-11-14 04:59:43 UTC); the block's hash is `00000000000000000001d066b5480909335ca40adc4f9c0ac87c4526b2cad0d8` |
-| `T_483` | `1332013 / 2016`, about 660.721 seconds |
-| `s_483` | `1794646783` (2026-11-14 08:59:43 UTC) |
-| `β(s_483)` | `975744`, the first height after the epoch's window |
-
-From the epoch on, `β` is continuous across every switch: `β(s_(k+1)) = β(s_k) + (s_(k+1) - s_k) / T_k`. Only its slope changes. Before `s_483`, `β(t) = 975744 + (t - s_483) / T_483`. Nothing needs that range, but `β` is defined at every moment.
-
-**The clamp on a span, and the order of switch moments, exist so that `β` is defined, rising and continuous for any header times at all.** They are the bounds Bitcoin's own retarget uses, a quarter and four times two weeks, and Bitcoin's retarget keeps a real window far from both: a window four times too long would need most of the network's hashrate to vanish at once. A window end earlier than the one before it would need miners to forge timestamps for two weeks. Neither is expected to change any value a reader computes.
-
-**Where window ends come from.** A reader takes each window end from the header of the window's last block, either from its own block source or from a verified `header` tag on a block anchor (DECK-0001 §2.5), and only from a header whose hash it accepts as Bitcoin's (DECK-0001 §2.5 sets out when a reader may). It MUST NOT take a window end from anything else, such as an anchor's `created_at`. Outside Cyberspace, any source of verified Bitcoin headers serves, since `β` depends on nothing but Bitcoin. A reader uses window ends in order: when it is missing one, it uses none after it until the missing one arrives. A reader needs one header per window since the epoch, about 26 a year.
-
-**Why each choice (non-normative).**
-
-| Choice | Why |
-|---|---|
-| The completed window, not a rolling average | Two readers that see a block seconds apart would compute different rolling averages, and their objects would drift apart. A completed window is the same number for everyone. |
-| One header per window, measured end to end | The pace and the switch moment come from the same header, so the clock needs exactly one header per 2016 blocks. Bitcoin's own retarget measures from the first block to the last, which is 2015 intervals, a known off-by-one. End to end is 2016 intervals, the honest average, and costs no extra header. |
-| The header's time, not the median time past | The median time past needs eleven headers per window and runs about an hour behind. A miner can move one header's time by up to about two hours, which moves a pace by at most about 3.6 seconds, about half a percent. Every reader gets the same error. |
-| A clock that accumulates from a fixed epoch | Restarting the phase at each window end would make every moving object lurch to an arbitrary new angle once a fortnight. Accumulating from one epoch keeps `β` continuous. The cost is one header per window since the epoch. |
-| A four-hour delay before a new pace takes effect | If the new pace took effect at the window end itself, a reader that learned of the block an hour late would compute a `β` that is wrong by an hour's worth of the change in pace. For a change of a few percent, that is about a tenth of a paced block, which is ten whole turns of a platform that turns 100 times a block: a visible snap. Four hours after the header's time, every reader that is online typically has the block about twenty blocks deep. The delay also covers a header time that runs behind real time. |
-| The epoch at window 483 | It was the most recent window that had closed when this section was written, so both constants can be checked against any copy of Bitcoin's headers. |
-
-`β` is not the block height. It starts at a block height by design, and then drifts from the height by the difference between one window's pace and the next. It is only a clock, and an author who writes "turns 100 times a block" means a paced block.
+The field and the rules for reading and writing it hold for every motion. The motions themselves, their words and their integers, are kept together under **The motions**.
 
 #### The field
 
-`anim` is a list of at most four motions. Each motion is one JSON array: a word, and then integers and, for most words, an axis letter. **The motions** gives every word and its shape. Every motion carries three integers that say how fast it runs: `c` cycles every `b` paced blocks, starting at a phase offset of `φ` whole degrees. Its phase at the moment `t` is
+`anim` is a list of at most four motions. Each motion is one JSON array: a word, and then integers and, for most words, an axis letter. **The motions** gives every word and its shape. Every motion carries three integers that say how fast it runs: `c` cycles every `b` seconds, starting at a phase offset of `φ` whole degrees. Its phase at the moment `t` is
 
-`u = frac(c × β(t) / b + φ / 360)`
+`u = frac(c × t / b + φ / 360)`
 
-where `frac` keeps the part in `[0, 1)`, so that `frac(-0.25)` is `0.75`. A negative `c` runs the cycle backward. `c` is a nonzero integer, `b` is an integer from `1` to `1,000,000`, `|c|` is at most `600 × b`, and `φ` is an integer from `0` to `359`.
+where `t` is the time in Unix seconds, fractions included, and `frac` keeps the part in `[0, 1)`, so that `frac(-0.25)` is `0.75`. A negative `c` runs the cycle backward. `c` is a nonzero integer, `b` is an integer from `1` to `31,536,000` (a year of 365 days), `|c|` is at most `2 × b`, so that no motion runs faster than two cycles a second, and `φ` is an integer from `0` to `359`.
+
+**Computing the phase (non-normative).** A reader that computes in double precision may compute `c × t / b` directly: `c / b` is at most `2`, so the result is below about `4 × 10⁹`, and the phase is good to about a millionth of a cycle. Because `c` is a whole number, `frac(c × t / b)` also equals `frac(c × (t mod b) / b)`, and reducing `t` modulo `b` first keeps the numbers smaller still.
 
 **The frame.** A motion acts in the object's own model frame (§2), after the version 1 negation, and about the object's own origin. A turn is right-handed: a positive turn about `Y` takes `+Z` toward `+X`, about `X` takes `+Y` toward `+Z`, and about `Z` takes `+X` toward `+Y`, as a placement's turns do (§1.10). A distance is in ticks of the object's own lattice (§1.2), so it grows with the object's `unit` and with a placement's scale step exactly as the object's vertices do. A point moved by a motion is then carried into its parent, and into the world, exactly as a vertex is.
 
-**The rest pose** is the object as written, with no motion applied. An object moves when a reader applies at least one of its motions; an object whose every motion the reader ignores is still. It is what a reader that does not know `anim` draws, and what every reader draws when its viewer has asked for reduced motion (below).
+**The rest pose** is the object as written, with no motion applied. An object moves when a reader applies at least one of its motions; an object whose every motion the reader ignores is still. The rest pose is what a reader that does not know `anim` draws, and what every reader draws when its viewer has asked for reduced motion (below).
 
 **Several motions compose in the order written, the first innermost.** A point is moved by the first motion, then the result by the second, and so on. Order has meaning, since a turn followed by a slide is a different motion from a slide followed by a turn, so the order written is the meaning and not a spelling.
 
@@ -728,7 +686,7 @@ Each word below is one motion. In every shape, `axis` is one of the strings `"x"
 | `lift` | `["lift", axis, travel, dwell, c, b, φ]` | moves along the axis by `travel × h(u)` ticks, with `h` in the table below: it rests, travels, rests at the far stop, and comes back | `travel`: `-7680` to `7680`, not `0`; `dwell`: `0` to `49` |
 | `path` | `["path", c, b, φ, [x, y, z, w], ...]` | moves by a point that travels a closed loop of waypoints, in straight legs | 2 to 32 waypoints; `x`, `y`, `z`: `-7680` to `7680`; `w`: `1` to `1000` |
 
-The bound of `7680` ticks is the 64-unit position bound of §1.8.
+The bound of `7680` ticks is the 64-unit position bound of §1.8. An editor MAY offer familiar names as presets, such as a bob, a pendulum, a spinner or an elevator, but it writes one of the six words above.
 
 **`lift`.** With `d = dwell / 100` and `ease(x) = 3x² - 2x³`, a lift is at the share `h(u)` of its travel:
 
@@ -739,7 +697,7 @@ The bound of `7680` ticks is the 64-unit position bound of §1.8.
 | `1/2 ≤ u < 1/2 + d` | `1`: resting at the far stop |
 | `1/2 + d ≤ u < 1` | `1 - ease((u - 1/2 - d) / (1/2 - d))`: coming back |
 
-A lift arrives and leaves at zero speed, so a walker can step on and off at either stop. `dwell` is a share of the cycle rather than a number of seconds, so the rests stretch with the pace like everything else.
+A lift arrives and leaves at zero speed, so a walker can step on and off at either stop. `dwell` is a share of the cycle rather than a number of seconds, so the rests grow and shrink with the cycle, and can never be longer than it.
 
 **`path`.** Leg `i` runs from the waypoint before it to waypoint `i`, where the waypoint before the first is the last, and takes the share `w_i / Σw` of the cycle, at a steady speed along the leg. A waypoint written twice in a row is a rest. The offsets are from the rest pose, so a path whose last waypoint is `[0, 0, 0, w]` starts each cycle at the rest pose.
 
@@ -751,33 +709,33 @@ A lift arrives and leaves at zero speed, so a walker can step on and off at eith
 
 1. reads an `anim` that is not a JSON array, null included, as absent;
 2. reads only the first four entries, and ignores any after them;
-3. ignores an entry that is not a JSON array, whose first element is not one of the words under **The motions**, that does not have exactly the elements its word's shape gives (for `path`, from 2 to 32 waypoints of four integers each), whose axis is not exactly `"x"`, `"y"` or `"z"`, or any of whose integers is not a JSON integer in its range, including a `c` and `b` faster than `600` cycles per paced block;
+3. ignores an entry that is not a JSON array, whose first element is not one of the words under **The motions**, that does not have exactly the elements its word's shape gives (for `path`, from 2 to 32 waypoints of four integers each), whose axis is not exactly `"x"`, `"y"` or `"z"`, or any of whose integers is not a JSON integer in its range, including a `c` and `b` faster than two cycles a second;
 4. applies every entry it did not ignore, in order;
 5. MUST NOT reject the payload for anything in `anim`.
 
 An ignored entry is held still, and the rest of the list still applies. This is the stance `constrain` (§1.12) takes: the field says how an object moves, never what shape it is, and an object drawn still is drawn the way every older reader draws it anyway.
 
-**A publisher** MUST write every integer as a JSON integer (digits only: `100`, never `100.0` or `1e2`), MUST write every integer of a motion's shape with none omitted, MUST write `c` and `b` with no common factor (so `["turn", "y", 1, 2, 0]` and never `["turn", "y", 2, 4, 0]`), MUST write a path's leg weights with no common factor, since weights of `2` and `2` are the same path as `1` and `1`, MUST NOT write more than four motions or an entry a reader would ignore, and MUST omit `anim` when it has no motions (§1.2). A reader whose JSON parser cannot tell `100.0` from `100` MAY read such a value as `100`.
+**A publisher** MUST write every integer as a JSON integer (digits only: `6`, never `6.0` or `6e0`), MUST write every integer of a motion's shape with none omitted, MUST write `c` and `b` with no common factor (so `["turn", "y", 1, 3, 0]` and never `["turn", "y", 2, 6, 0]`), MUST write a path's leg weights with no common factor, since weights of `2` and `2` are the same path as `1` and `1`, MUST NOT write more than four motions or an entry a reader would ignore, and MUST omit `anim` when it has no motions (§1.2). A reader whose JSON parser cannot tell `6.0` from `6` MAY read such a value as `6`.
 
 **Reduced motion.** A reader whose viewer has asked for reduced motion, in a way the reader can detect, MUST draw every object at its rest pose, and its walker meets each object there. That changes nothing anyone else sees.
 
-**A rate above `600` cycles per paced block is ignored** because that is about one cycle a second at Bitcoin's nominal ten-minute block, and at most four a second at the fastest pace the clamp allows. A faster loop is a strobe, not a platform, and a strobe is a hazard to a viewer with photosensitive epilepsy. The cap bounds how often a loop repeats, not how often what a viewer sees flickers: a turning object with many spokes, or a path whose waypoints jump back and forth, can flicker several times in one cycle. An authoring tool SHOULD warn its user about a motion that flickers more than three times a second, and reduced motion (above) is the viewer's own backstop.
+**A rate above two cycles a second is ignored.** A faster loop is a strobe, not a platform, and flicker from about three a second upward is a hazard to a viewer with photosensitive epilepsy. Two a second leaves room below that line for a fan or a wheel that should look fast. The cap bounds how often a loop repeats, not how often what a viewer sees flickers: a turning object with many spokes, or a path whose waypoints jump back and forth, can flicker several times in one cycle. An authoring tool SHOULD warn its user about a motion that flickers more than three times a second, and reduced motion (above) is the viewer's own backstop.
 
 #### The reader's clock
 
-**The moment `t`** is the device's clock in Unix seconds, fractions included. A reader MAY correct its clock by an offset it measures against a time source it trusts, and SHOULD apply the correction only when it is more than 2 seconds. A device synced to network time is good to tens of milliseconds, and most sources a reader can reach report whole seconds, so below that threshold the device's own clock is the better one. (Non-normative: in a browser, the `Date` header of a response from the page's own origin is one such source; a reader takes the median of a few samples and corrects each for half its round trip. A `Date` header from another origin cannot be read without `Access-Control-Expose-Headers`.)
+**The moment `t`** is the reader's device clock in Unix seconds, fractions included. A reader SHOULD correct its clock when it is grossly wrong, by an offset it measures against a time source it trusts, and SHOULD apply the correction only when it is more than 2 seconds. Below that, the device's own clock is usually the better one: most sources a reader can reach report whole seconds, while a device synced to network time is usually good to a fraction of a second. (Non-normative: ONOSENDAI measures the offset from the timestamps in its relay's responses, takes the median of a few samples, and corrects each for half its round trip.)
 
-**A reader that does not know every window end** continues `β` at the last pace it knows. That is the formula above, applied to the window ends the reader has. It happens while headers are still loading, and when a window end has not yet reached the reader although its switch moment has passed. A reader SHOULD show its viewer that its clock is approximate while it does this.
+**Roughly in sync, not exactly.** This format does not promise that two readers draw the same pose, only that readers whose clocks agree do. A phone's clock is usually within a fraction of a second of true time. A clock corrected against a time source is good to about its round trip to that source, plus the source's own resolution. Two viewers standing together therefore see a moving platform within a fraction of a second of each other, which is enough for people to share a ride and not enough to referee a race (below).
 
-**Catching up without a jump.** When a reader learns a window end it was missing, or corrects its clock, the true phase of each motion moves under its viewer. A reader SHOULD then ease each motion from where it is drawn to where it should be, by the shorter way round its cycle, rather than jump. With the error `e`, the true phase minus the phase drawn on the frame before the change, wrapped into `[-1/2, 1/2)` of a cycle, the reader draws the phase `u - e × (1 - (3τ² - 2τ³))`, where `τ` goes from `0` to `1` over `min(3, max(0.5, |e| × P))` seconds, and `P` is the cycle's length in seconds, `b × T_k / |c|`. No object then moves more than half a cycle extra, at more than about two and a half times its own speed, or for longer than three seconds. On its first frame a reader has nothing to ease from, and draws the true pose at once. A reader MAY ease in the same way when its viewer turns reduced motion on or off.
+**Catching up without a jump.** When a reader corrects its clock, the true phase of each motion moves under its viewer. A reader SHOULD then ease each motion from where it is drawn to where it should be, by the shorter way round its cycle, rather than jump. With the error `e`, the true phase minus the phase drawn on the frame before the change, wrapped into `[-1/2, 1/2)` of a cycle, the reader draws the phase `u - e × (1 - (3τ² - 2τ³))`, where `τ` goes from `0` to `1` over `min(3, max(0.5, |e| × P))` seconds, and `P = b / |c|` is the cycle's length in seconds. No object then moves more than half a cycle extra, at more than about two and a half times its own speed, or for longer than three seconds. On its first frame a reader has nothing to ease from, and draws the true pose at once. A reader MAY ease in the same way when its viewer turns reduced motion on or off.
 
-**Precision (non-normative).** A reader that computes in double precision should reduce `β`'s whole part modulo `b` before it multiplies by `c`, as `c × ((W mod b) + f) / b` with `W` the whole part of `β` and `f` its fraction. The numbers then stay small, and the phase is good to better than a millionth of a cycle at the fastest rate the field allows.
+**Why Unix time (non-normative).** Every reader already has a clock, and a motion timed by it needs no data from anywhere: no headers to fetch, nothing to wait for, and nothing to go stale offline. The agreement between two readers is set by how well their clocks agree, which would be just as true of any other shared clock that a reader must read through its own device. Speeds in seconds are also what a designer thinks in: a platform that turns once every six seconds says so in its payload. An earlier draft timed motion by Bitcoin's block pace, and it was set aside for these reasons. Bitcoin's block height remains the clock of seeds (DECK-0008), where every reader must grow exactly the same bloom and be able to prove it. A motion needs no proof.
 
 #### What motion is, and is not
 
-**Shared within clock error, and part of no hash.** The payload, and so the event's id, never changes as an object moves. `β` is the same for every reader that has the same window ends, and a window end is final once its block is a few blocks deep. The pose of an object at a moment is shared only as well as two readers' clocks agree.
+**Shared within clock error, and part of no hash.** The payload, and so the event's id, never changes as an object moves. The pose of an object at a moment is shared only as well as two readers' clocks agree.
 
-**A courtesy, not a rule of the space.** Nothing in a chain records where a moving object stood. A reader MUST NOT reject, hide or mark another avatar's movement on the strength of where a moving object stood, and applies a moving face's push or carry to its own viewer's walker only.
+**A courtesy, not a rule of the space.** Nothing in a chain records where a moving object stood. A reader MUST NOT reject, hide or mark another avatar's movement on the strength of where a moving object stood, and applies a moving face's push or carry to its own viewer's walker only. Play that needs every party to agree on where a moving object was belongs in a game with an arbiter (DECK-0002), not in this field.
 
 **Walkers.** §1.12 tests an object's faces where the object is drawn. For a moving object, that is where it is drawn at the moment of the step. A client that constrains its walker SHOULD test a moving object's faces there. A moving face can reach a walker that stands still, so such a client SHOULD move its walker out of the way of a face that reaches it, and SHOULD let the face pass through the walker when there is nowhere to go, so that motion never shuts a walker in (§6). A client that does not test moving faces SHOULD let a moving object stop no walker, rather than hold its walker at faces where it does not draw them. (Non-normative: ONOSENDAI plans to carry a walker that stands on a moving face, publish nothing while it rides, as it publishes nothing while it falls, and publish the ride as the walker's own ordinary hops when it ends. The walker keeps no momentum when it leaves, and its facing does not turn with the platform.)
 
@@ -787,51 +745,39 @@ An ignored entry is held still, and the rest of the list still applies. This is 
 
 **Blooms and items (non-normative).** DECK-0008 reads a SEEDO line that begins with `anim` as an unknown line today, so it changes no bloom. A later revision of DECK-0008 may let a DNA declare a whole-bloom motion, which a reader would apply outside the bloom's payload so that the bloom's hash stays what DECK-0008 says. An item that wears a model (DECK-0004 §2.5) may carry an `animate` tag as well: both apply, the model's `anim` inside and the item's local `animate` outside. DECK-0004's centre and box for `animate` are measured at the rest pose today; a later amendment there should start them from the box that holds the model through its whole motion, above.
 
-**What it costs.** Thirty bytes for `,"anim":[["turn","y",100,1,0]]`, and nothing for an object that is still.
+**What it costs.** Twenty-eight bytes for `,"anim":[["turn","y",1,6,0]]`, and nothing for an object that is still.
 
 **Versioning.** `anim` is a field whose absence has a meaning, so its addition does not bump `v` (§5). An older reader ignores it and draws the object still, at its rest pose.
 
 #### Vectors
 
-**The paced height.** Each `β` is exact, shown to nine decimals. The window end `1795841983` for window 484 is hypothetical, exactly 600 seconds a block after the epoch's end, and so is the window end out of order in the last row.
+Each row moves one point, in ticks, by the motions given, at the Unix time `t` given, and shows where it is drawn, in ticks, rounded to six decimals. `T0` is `1795132800`, 2026-11-20 00:00:00 UTC, a whole number of days since the Unix epoch, so every cycle whose `b` divides 86,400 starts at `T0`. The shuttle is `["path", 1, 60, 0, [0, 0, 0, 1], [0, 0, 0, 1], [1920, 0, 0, 2], [1920, 0, 0, 1], [0, 0, 0, 2]]`, a minute out and back with a rest at each end.
 
-| Moment `t` | Window ends known after the epoch | `β(t)` | What it shows |
-|---|---|---|---|
-| `1794646783` (`s_483`) | none | `975744.000000000` | the epoch's switch moment |
-| `1794632383` (`a_483`) | none | `975722.205618113` | before the switch, `β` runs back at the epoch's pace |
-| `1794733183` | none | `975874.766291320` | one day after the switch |
-| `1795132800` (2026-11-20 00:00:00 UTC) | none | `976479.586118154` | a turn of `["turn", "y", 100, 1, 0]` stands at 220.253526 degrees |
-| `1795856382` | `1795841983` | `977574.726564981` | one second before window 484's switch |
-| `1795856383` (`s_484`) | `1795841983` | `977574.728078480` | window 484's switch: no jump |
-| `1795862383` | `1795841983` | `977584.728078480` | 6,000 seconds at 600 seconds a block is 10 more |
-| `1795862383` | none | `977583.809070932` | the same moment, without window 484's end: still at the epoch's pace |
-| `1794652783` | `1794631383` | `975784.000000000` | a window end earlier than the epoch's: its switch is held at `s_483` and its span taken as `302400`, a pace of 150 seconds |
-
-**Poses.** Each row moves one point, in ticks, by the motions given, at the `β` given, and shows where it is drawn, in ticks, rounded to six decimals. The shuttle is `["path", 10, 1, 0, [0, 0, 0, 1], [0, 0, 0, 1], [1920, 0, 0, 2], [1920, 0, 0, 1], [0, 0, 0, 2]]`.
-
-| `anim` | `β` | `u` | Point | Drawn at |
+| `anim` | `t` | `u` | Point | Drawn at |
 |---|---|---|---|---|
-| `[["turn", "y", 100, 1, 0]]` | `975744.0025` | `1/4` | `[120, 0, 0]` | `[0, 0, -120]` |
-| `[["turn", "y", -1, 1, 0]]` | `975744.25` | `3/4` | `[120, 0, 0]` | `[0, 0, 120]` |
-| `[["swing", "x", 60, 25, 1, 0]]` | `975744.01` | `1/4` | `[0, 120, 0]` | `[0, 60, 103.923048]` |
-| `[["slide", "y", 240, 1, 4, 90]]` | `975744.5` | `3/8` | `[0, 0, 0]` | `[0, 169.705627, 0]` |
-| `[["orbit", "y", 480, 1, 2, 0]]` | `975744.5` | `1/4` | `[120, 0, 0]` | `[600, 0, 0]` |
-| `[["orbit", "z", 480, 1, 1, 0]]` | `975744.125` | `1/8` | `[0, 0, 0]` | `[339.411255, 339.411255, 0]` |
-| `[["lift", "y", 1440, 25, 1, 1, 0]]` | `975744.1` | `1/10` | `[0, 0, 0]` | `[0, 0, 0]` |
-| `[["lift", "y", 1440, 25, 1, 1, 0]]` | `975744.375` | `3/8` | `[0, 0, 0]` | `[0, 720, 0]` |
-| `[["lift", "y", 1440, 25, 1, 1, 0]]` | `975744.6` | `3/5` | `[0, 0, 0]` | `[0, 1440, 0]` |
-| `[["lift", "y", 1440, 25, 1, 1, 0]]` | `975744.8` | `4/5` | `[0, 0, 0]` | `[0, 1290.24, 0]` |
-| `[["lift", "y", -480, 0, 1, 1, 0]]` | `975744.125` | `1/8` | `[0, 0, 0]` | `[0, -75, 0]` |
-| `[shuttle]` | `975744.01` | `1/10` | `[0, 0, 0]` | `[0, 0, 0]` |
-| `[shuttle]` | `975744.05` | `1/2` | `[0, 0, 0]` | `[1440, 0, 0]` |
-| `[shuttle]` | `975744.09` | `9/10` | `[0, 0, 0]` | `[672, 0, 0]` |
-| `[["turn", "z", 1, 4, 0], ["slide", "x", 120, 1, 1, 0]]` | `975745.25` | `5/16`, `1/4` | `[120, 0, 0]` | `[74.077988, 110.865544, 0]` |
-| `[["slide", "x", 120, 1, 1, 0], ["turn", "z", 1, 4, 0]]` | `975745.25` | `1/4`, `5/16` | `[120, 0, 0]` | `[-91.844024, 221.731088, 0]` |
-| `[["turn", "y", 100, 1, 0]]` | `β` at `1795132800`, above | `0.611815...` | `[120, 0, 0]` | `[-91.583125, 0, 77.540514]` |
+| `[["turn", "y", 1, 6, 0]]` | `T0 + 1.5` | `1/4` | `[120, 0, 0]` | `[0, 0, -120]` |
+| `[["turn", "y", -1, 6, 0]]` | `T0 + 1.5` | `3/4` | `[120, 0, 0]` | `[0, 0, 120]` |
+| `[["turn", "y", 2, 1, 0]]` | `T0 + 0.125` | `1/4` | `[120, 0, 0]` | `[0, 0, -120]` |
+| `[["turn", "y", 1, 31536000, 0]]` | `T0` | `337/365` | `[120, 0, 0]` | `[106.328475, 0, 55.626033]` |
+| `[["turn", "y", 7, 90, 30]]` | `1795171234.567` | `39469/90000` | `[120, 0, 0]` | `[-111.164515, 0, -45.19348]` |
+| `[["swing", "x", 60, 1, 2, 0]]` | `T0 + 0.5` | `1/4` | `[0, 120, 0]` | `[0, 60, 103.923048]` |
+| `[["slide", "y", 240, 1, 4, 90]]` | `T0 + 0.5` | `3/8` | `[0, 0, 0]` | `[0, 169.705627, 0]` |
+| `[["orbit", "y", 480, 1, 8, 0]]` | `T0 + 2` | `1/4` | `[120, 0, 0]` | `[600, 0, 0]` |
+| `[["orbit", "z", 480, 1, 8, 0]]` | `T0 + 1` | `1/8` | `[0, 0, 0]` | `[339.411255, 339.411255, 0]` |
+| `[["lift", "y", 1440, 25, 1, 20, 0]]` | `T0 + 2` | `1/10` | `[0, 0, 0]` | `[0, 0, 0]` |
+| `[["lift", "y", 1440, 25, 1, 20, 0]]` | `T0 + 7.5` | `3/8` | `[0, 0, 0]` | `[0, 720, 0]` |
+| `[["lift", "y", 1440, 25, 1, 20, 0]]` | `T0 + 12` | `3/5` | `[0, 0, 0]` | `[0, 1440, 0]` |
+| `[["lift", "y", 1440, 25, 1, 20, 0]]` | `T0 + 16` | `4/5` | `[0, 0, 0]` | `[0, 1290.24, 0]` |
+| `[["lift", "y", -480, 0, 1, 8, 0]]` | `T0 + 1` | `1/8` | `[0, 0, 0]` | `[0, -75, 0]` |
+| `[shuttle]` | `T0 + 6` | `1/10` | `[0, 0, 0]` | `[0, 0, 0]` |
+| `[shuttle]` | `T0 + 30` | `1/2` | `[0, 0, 0]` | `[1440, 0, 0]` |
+| `[shuttle]` | `T0 + 54` | `9/10` | `[0, 0, 0]` | `[672, 0, 0]` |
+| `[["turn", "z", 1, 8, 0], ["slide", "x", 120, 1, 2, 0]]` | `T0 + 2.5` | `5/16`, `1/4` | `[120, 0, 0]` | `[74.077988, 110.865544, 0]` |
+| `[["slide", "x", 120, 1, 2, 0], ["turn", "z", 1, 8, 0]]` | `T0 + 2.5` | `1/4`, `5/16` | `[120, 0, 0]` | `[-91.844024, 221.731088, 0]` |
 
-The last two composed rows hold the same two motions in the two orders, and land in different places.
+The last two rows hold the same two motions in the two orders, and land in different places. The fourth row is a cycle a year long, and the fifth an odd moment with a phase offset.
 
-(Non-normative: `decks/sno-reference.py` implements this section as `paced_height`, `motions_of`, `motion_phase` and `animated_point`. It computes `β` and every phase exactly, as fractions, and its self-test carries every row of both tables, and a read case for each kind of malformed entry; there is no rejection case, because nothing in this section rejects. As with `opacity` and `constrain`, a reader that edits objects should keep fields it does not recognize when it writes an object back, or the first person to open a moving platform in an older editor and publish it again would stop it for everyone after them.)
+(Non-normative: `decks/sno-reference.py` implements this section as `motions_of`, `motion_phase` and `animated_point`. It computes every phase exactly, as fractions, and its self-test carries every row of the table, and a read case for each kind of malformed entry; there is no rejection case, because nothing in this section rejects. As with `opacity` and `constrain`, a reader that edits objects should keep fields it does not recognize when it writes an object back, or the first person to open a moving platform in an older editor and publish it again would stop it for everyone after them.)
 
 ## 2. Model space (normative)
 
@@ -1022,7 +968,7 @@ Anyone implementing this deck should treat `v: 2` as meaning the palette-indexed
 
 **A walker can be shut in.** An object can be hidden around a place where someone stands, and an object's setting can change while a walker is inside it. A walker inside a closed constrained object can then walk nowhere, since every way out crosses a face. A client that constrains its walker SHOULD therefore always leave it a way out that is not walking: a jump, a planned route, or a way to stop honoring the field for itself. ONOSENDAI's way out is HOP, its jump to a chosen coordinate, which no constraint touches. Because anyone may hide an object anywhere, a client MAY also let its viewer choose whose objects it honors the field on, as it would choose whose objects it draws.
 
-**Motion can harm a viewer.** A motion faster than 600 cycles per paced block, about one cycle a second, is ignored (§1.14). That bounds how often a loop repeats, but it does not make strobing impossible, since a turning object with many spokes can flicker several times in one turn. The backstop is the viewer's own: a reader draws every object still for a viewer who has asked for reduced motion. A moving face is also one more way to reach a walker that stands still, which is why §1.14 asks a client to let a moving face pass through a walker that has nowhere to go.
+**Motion can harm a viewer.** A motion faster than two cycles a second is ignored (§1.14). That bounds how often a loop repeats, but it does not make strobing impossible, since a turning object with many spokes can flicker several times in one turn. The backstop is the viewer's own: a reader draws every object still for a viewer who has asked for reduced motion. A moving face is also one more way to reach a walker that stands still, which is why §1.14 asks a client to let a moving face pass through a walker that has nowhere to go.
 
 **No code, no fetches.** An SNO payload is data. It names no URL, embeds no script, and requires no network access to render. A reader that keeps it that way inherits none of the attack surface that formats with external references carry.
 
