@@ -19,7 +19,7 @@ payload that carries it. `objects` is the objects table: a JSON object whose
 keys are addresses such as "33331:<pubkey hex>:<d>" and whose values are the
 payloads of the objects those addresses name (§1.10). Rule 16 therefore
 carries cases of where each placement's object comes from instead: from the
-table, as a placeholder, or fetched from relays. Rule 18 (`anim`) never
+table, as a placeholder, or fetched from relays. Rule 17 (`anim`) never
 rejects either: it carries read cases, and the two vector tables of §1.14,
 the paced height at given moments and the pose of each motion at a given
 paced height.
@@ -1268,7 +1268,7 @@ def _self_test() -> None:
     assert place_from("33331:" + "ef" * 32 + ":x", root, own)[0] == "fetch"
     print(f"{len(places) + 6} carried object cases (rule 16 never rejects the payload that carries it), every payload accepted")
 
-    # §1.14 and rule 18: motion on the paced clock. β is exact; the epoch's
+    # §1.14 and rule 17: motion on the paced clock. β is exact; the epoch's
     # own switch is 975,744 by definition. The window end 1,795,841,983 for
     # window 484 is hypothetical (exactly 600 s a block), and so is the one
     # out of order, which tests the clamp and the monotone switch.
@@ -1363,7 +1363,7 @@ def _self_test() -> None:
         if got != want:
             print(f"  ANIM {given!r}: read {got} motions, expected {want} ({why})")
             failures += 1
-    print(f"{len(betas)} paced height cases, {len(poses)} pose cases, {len(reads)} anim read cases (rule 18 never rejects)")
+    print(f"{len(betas)} paced height cases, {len(poses)} pose cases, {len(reads)} anim read cases (rule 17 never rejects)")
 
     if failures:
         raise SystemExit(1)
