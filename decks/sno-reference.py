@@ -48,11 +48,21 @@ TICKS_PER_UNIT = 120
 
 MODES = ("solid", "points", "lines")
 
-#: §1.11. Opacity is a whole percent. Absent or malformed means fully opaque;
-#: a valid value below the floor is drawn at the floor, so that no object is
-#: ever wholly invisible.
+#: §1.11. Opacity is a whole percent from 0 to 100. Absent or malformed means
+#: fully opaque. There is no floor (since 2026-11-15): at 0 an object draws
+#: nothing of its own, and its glow (§1.16) still shows.
 OPACITY_OPAQUE = 100
-OPACITY_FLOOR = 10
+
+#: §1.15 and §1.16. The farthest a point size or a glow's radius reaches, in
+#: ticks: the 64-unit position bound of §1.8.
+GLOW_REACH = 64 * 120
+#: §1.16: the two glow words, lowercase and exact.
+GLOW_WORDS = ("light", "fog")
+
+#: §1.12. PLACEHOLDER, awaiting the owner's ruling (2026-11-15): whether
+#: "all" stops a walker at an object whose opacity is 0. Until it is ruled,
+#: "all" stops one at every opacity, 0 included, as §1.12's table reads.
+ALL_STOPS_AT_ZERO_OPACITY = True
 
 #: §1.12. The two words a walker is stopped by; anything else, absent
 #: included, stops nothing, and is reported here as "none".
@@ -279,6 +289,12 @@ def validate(payload: Any, fetched_palette: Any = None) -> dict:
     # it (see draw_carried). An entry that fails is a placeholder for that
     # placement. There is therefore nothing to check here, and nothing in
     # the field can reject this payload.
+
+    # 17. anim is read, never validated (§1.14): motions_of() says what moves.
+
+    # 18 and 19. pointsize and glow are read, never validated (§1.15, §1.16):
+    # drawn_pointsize() and drawn_glow() say what a reader draws, and nothing
+    # here rejects.
     return payload
 
 
@@ -302,12 +318,13 @@ def repaired_extent(declared: Any, vertices: list, ticks: list[list[int]]) -> in
 
 
 def drawn_opacity(payload: dict) -> int:
-    """§1.11: the percent a reader draws the object at, after repair and the floor.
+    """§1.11: the percent a reader draws the object's own faces, edges and points at.
 
-    Absent means 100. A value that is not an integer in 1..100 (0, above 100,
+    Absent means 100. A value that is not an integer in 0..100 (above 100,
     negative, fractional, a string, a boolean, null, an array, anything) is
     malformed and also means 100: repaired to opaque, exactly as if absent,
-    never a rejection. A valid value below 10 is drawn at 10, the floor.
+    never a rejection. There is no floor: 0 draws nothing of the object's
+    own. It never reaches the object's glow (drawn_glow).
 
     This is what an object asks for. A reader that cannot draw translucency
     MAY draw any object opaque, and an avatar (§3.3) is always drawn opaque
@@ -318,9 +335,48 @@ def drawn_opacity(payload: dict) -> int:
     # (§1.11); the difference is in how see-through it is drawn, never in
     # whether it is accepted.
     value = payload.get("opacity", OPACITY_OPAQUE)
-    if not _is_int(value) or not 1 <= value <= OPACITY_OPAQUE:
+    if not _is_int(value) or not 0 <= value <= OPACITY_OPAQUE:
         return OPACITY_OPAQUE
-    return max(value, OPACITY_FLOOR)
+    return value
+
+
+def drawn_pointsize(payload: dict) -> int | None:
+    """§1.15: how wide each point is drawn, in ticks of the object's lattice.
+
+    None means the reader's own size: the field is absent, malformed (not an
+    integer in 0..7680, null included), or the object is not in points mode,
+    where the field is kept and not drawn. 0 means no points. Never a
+    rejection. An avatar ignores it (§3.3); that is the reader's to apply.
+    """
+    if payload.get("mode") != "points":
+        return None
+    value = payload.get("pointsize")
+    return value if _is_int(value) and 0 <= value <= GLOW_REACH else None
+
+
+def drawn_glow(payload: dict) -> tuple[str, int, int] | None:
+    """§1.16: (word, radius in ticks, glow strength in percent), or None for no glow.
+
+    A glow is exactly three elements: "light" or "fog", lowercase and exact;
+    an integer radius in 1..7680; an integer glow strength in 1..100.
+    Anything else, null included, is no glow, and so is any glow on an
+    object not in points mode, where the field is kept and not drawn.
+    Never a rejection. The object's opacity does not multiply the strength.
+    An avatar ignores it (§3.3); that is the reader's to apply.
+    """
+    if payload.get("mode") != "points":
+        return None
+    g = payload.get("glow")
+    if not isinstance(g, list) or len(g) != 3:
+        return None
+    word, radius, strength = g
+    if not (isinstance(word, str) and word in GLOW_WORDS):
+        return None
+    if not (_is_int(radius) and 1 <= radius <= GLOW_REACH):
+        return None
+    if not (_is_int(strength) and 1 <= strength <= 100):
+        return None
+    return (word, radius, strength)
 
 
 def walk_constraint(payload: dict) -> str:
@@ -356,7 +412,9 @@ def authored_constraint(payload: dict) -> str:
 def stops_walker(payload: dict) -> bool:
     """§1.12: whether this object's own faces stop a walker.
 
-    "all" stops one in every mode and at every opacity. "opaque" stops one
+    "all" stops one in every mode and at every opacity; at an opacity of 0
+    that awaits the owner's ruling (§1.12 PLACEHOLDER), and follows
+    ALL_STOPS_AT_ZERO_OPACITY until then. "opaque" stops one
     only while the object is opaque, read from the payload and never from how
     a reader draws it: mode "solid" and an opacity of 100 after §1.11's repair.
     A placed object answers for itself (§1.10), and an avatar never stops a
@@ -365,7 +423,8 @@ def stops_walker(payload: dict) -> bool:
     """
     c = walk_constraint(payload)
     if c == "all":
-        return True
+        # PLACEHOLDER (§1.12): "all" at an opacity of 0 awaits a ruling.
+        return ALL_STOPS_AT_ZERO_OPACITY or drawn_opacity(payload) != 0
     if c == "opaque":
         return payload.get("mode") == "solid" and drawn_opacity(payload) == OPACITY_OPAQUE
     return False
@@ -1064,13 +1123,15 @@ def _self_test() -> None:
         (absent, 100, "absent is fully opaque"),
         (100, 100, "100 is fully opaque (and a publisher omits it)"),
         (50, 50, "a value in range is drawn as given"),
-        (10, 10, "the floor itself"),
-        (9, 10, "below the floor is drawn at the floor"),
-        (1, 10, "the faintest valid value is drawn at the floor"),
-        (0, 100, "zero is out of range: opaque, never invisible"),
+        (10, 10, "ten is drawn as given"),
+        (9, 9, "no floor: below ten is drawn as given"),
+        (1, 1, "the faintest visible value is drawn as given"),
+        (0, 0, "zero is valid: nothing of the object's own is drawn"),
         (101, 100, "above 100 is out of range: opaque"),
         (-5, 100, "negative: opaque"),
+        (-1, 100, "minus one: opaque"),
         (50.5, 100, "fractional: opaque"),
+        (0.0, 100, "a float zero is not an integer: opaque"),
         ("50", 100, "a string: opaque"),
         (True, 100, "a boolean is not an integer: opaque"),
         (None, 100, "null: opaque, the way a null extent means 8"),
@@ -1129,7 +1190,8 @@ def _self_test() -> None:
     # objects let one through, judged from the payload alone (§1.12).
     seen_through = [
         ({"opacity": 99}, False, "translucent: through"),
-        ({"opacity": 5}, False, "translucent, drawn at the floor: through"),
+        ({"opacity": 5}, False, "faint: through"),
+        ({"opacity": 0}, False, "nothing drawn: through (\"all\" at 0 awaits a ruling, ALL_STOPS_AT_ZERO_OPACITY)"),
         ({"opacity": 100}, True, "100 is opaque (and a publisher omits it)"),
         ({"opacity": 250}, True, "a malformed opacity is opaque (§1.11), so it holds"),
         ({"mode": "lines"}, False, "lines can be seen through"),
@@ -1304,6 +1366,75 @@ def _self_test() -> None:
             print(f"  ANIM {given!r}: read {got} motions, expected {want} ({why})")
             failures += 1
     print(f"{len(poses)} pose cases, {len(reads)} anim read cases (rule 17 never rejects)")
+
+    # §1.15, §1.16 and rules 18 and 19: pointsize and glow are read, never a
+    # rejection. Each case is a value in and what a reader draws out, for the
+    # Appendix A object in points mode; every payload must also validate.
+    points = {**APPENDIX_A, "mode": "points"}
+    sizes = [
+        (absent, None, "absent is the reader's own size"),
+        (48, 48, "a size in range"),
+        (1, 1, "the smallest point"),
+        (GLOW_REACH, GLOW_REACH, "the 64-unit bound"),
+        (0, 0, "zero is valid: no points"),
+        (-1, None, "negative: the reader's own size"),
+        (GLOW_REACH + 1, None, "past the bound: the reader's own size"),
+        (48.5, None, "fractional"),
+        (48.0, None, "a float is not an integer"),
+        ("48", None, "a string"),
+        (True, None, "a boolean"),
+        (None, None, "null"),
+        ([48], None, "an array"),
+        ({}, None, "an object"),
+    ]
+    for given, want, why in sizes:
+        payload = dict(points) if given is absent else {**points, "pointsize": given}
+        got = drawn_pointsize(validate(payload))
+        if got != want:
+            print(f"  POINTSIZE: {given!r} drew {got}, expected {want} ({why})")
+            failures += 1
+    glows = [
+        (absent, None, "absent is no glow"),
+        (["fog", 240, 35], ("fog", 240, 35), "a fog"),
+        (["light", 1, 1], ("light", 1, 1), "the smallest light"),
+        (["light", GLOW_REACH, 100], ("light", GLOW_REACH, 100), "the largest light"),
+        (["Light", 240, 35], None, "the words are lowercase and exact"),
+        (["FOG", 240, 35], None, "the words are lowercase and exact"),
+        (["smog", 240, 35], None, "smog is not a word the field has"),
+        (["haze", 240, 35], None, "haze is not a word the field has"),
+        (["fog", 0, 35], None, "a radius of nothing"),
+        (["fog", GLOW_REACH + 1, 35], None, "a radius past the bound"),
+        (["fog", 240.5, 35], None, "a fractional radius"),
+        (["fog", "240", 35], None, "a radius as a string"),
+        (["fog", 240, 0], None, "a glow strength of nothing"),
+        (["fog", 240, 101], None, "a glow strength past 100"),
+        (["fog", 240, 35.0], None, "a float glow strength"),
+        (["fog", 240, True], None, "a boolean glow strength"),
+        (["fog", 240], None, "two elements"),
+        (["fog", 240, 35, 0], None, "four elements"),
+        ([], None, "empty"),
+        ({"style": "fog", "radius": 240, "strength": 35}, None, "an object, not an array"),
+        ("fog", None, "a string"),
+        (None, None, "null"),
+    ]
+    for given, want, why in glows:
+        payload = dict(points) if given is absent else {**points, "glow": given}
+        got = drawn_glow(validate(payload))
+        if got != want:
+            print(f"  GLOW: {given!r} drew {got}, expected {want} ({why})")
+            failures += 1
+    # Kept, not drawn, outside points mode; and opacity never reaches a glow.
+    both = {**APPENDIX_A, "pointsize": 48, "glow": ["light", 240, 60]}
+    for mode in ("solid", "lines"):
+        kept = validate({**both, "mode": mode})
+        if drawn_pointsize(kept) is not None or drawn_glow(kept) is not None:
+            print(f"  POINTSIZE/GLOW drawn in {mode} mode")
+            failures += 1
+    unseen = validate({**both, "mode": "points", "opacity": 0})
+    if drawn_opacity(unseen) != 0 or drawn_glow(unseen) != ("light", 240, 60):
+        print("  GLOW: an object at opacity 0 lost its glow")
+        failures += 1
+    print(f"{len(sizes)} pointsize and {len(glows)} glow read cases (rules 18 and 19 never reject)")
 
     if failures:
         raise SystemExit(1)
