@@ -53,16 +53,12 @@ MODES = ("solid", "points", "lines")
 #: nothing of its own, and its glow (§1.16) still shows.
 OPACITY_OPAQUE = 100
 
-#: §1.15 and §1.16. The farthest a point size or a glow's radius reaches, in
-#: ticks: the 64-unit position bound of §1.8.
-GLOW_REACH = 64 * 120
+#: §1.15 and §1.16. The largest point size and the farthest a glow's radius
+#: reaches, in ticks: the 64-unit position bound of §1.8.
+TICK_REACH = 64 * 120
 #: §1.16: the two glow words, lowercase and exact.
 GLOW_WORDS = ("light", "fog")
 
-#: §1.12. PLACEHOLDER, awaiting the owner's ruling (2026-11-15): whether
-#: "all" stops a walker at an object whose opacity is 0. Until it is ruled,
-#: "all" stops one at every opacity, 0 included, as §1.12's table reads.
-ALL_STOPS_AT_ZERO_OPACITY = True
 
 #: §1.12. The two words a walker is stopped by; anything else, absent
 #: included, stops nothing, and is reported here as "none".
@@ -351,7 +347,7 @@ def drawn_pointsize(payload: dict) -> int | None:
     if payload.get("mode") != "points":
         return None
     value = payload.get("pointsize")
-    return value if _is_int(value) and 0 <= value <= GLOW_REACH else None
+    return value if _is_int(value) and 0 <= value <= TICK_REACH else None
 
 
 def drawn_glow(payload: dict) -> tuple[str, int, int] | None:
@@ -372,7 +368,7 @@ def drawn_glow(payload: dict) -> tuple[str, int, int] | None:
     word, radius, strength = g
     if not (isinstance(word, str) and word in GLOW_WORDS):
         return None
-    if not (_is_int(radius) and 1 <= radius <= GLOW_REACH):
+    if not (_is_int(radius) and 1 <= radius <= TICK_REACH):
         return None
     if not (_is_int(strength) and 1 <= strength <= 100):
         return None
@@ -412,9 +408,8 @@ def authored_constraint(payload: dict) -> str:
 def stops_walker(payload: dict) -> bool:
     """§1.12: whether this object's own faces stop a walker.
 
-    "all" stops one in every mode and at every opacity; at an opacity of 0
-    that awaits the owner's ruling (§1.12 PLACEHOLDER), and follows
-    ALL_STOPS_AT_ZERO_OPACITY until then. "opaque" stops one
+    "all" stops one in every mode and at every opacity, 0 included, where
+    the object draws nothing of its own (ruled 2026-11-15). "opaque" stops one
     only while the object is opaque, read from the payload and never from how
     a reader draws it: mode "solid" and an opacity of 100 after §1.11's repair.
     A placed object answers for itself (§1.10), and an avatar never stops a
@@ -423,8 +418,8 @@ def stops_walker(payload: dict) -> bool:
     """
     c = walk_constraint(payload)
     if c == "all":
-        # PLACEHOLDER (§1.12): "all" at an opacity of 0 awaits a ruling.
-        return ALL_STOPS_AT_ZERO_OPACITY or drawn_opacity(payload) != 0
+        # Ruled 2026-11-15 (§1.12): at an opacity of 0 too, an invisible wall.
+        return True
     if c == "opaque":
         return payload.get("mode") == "solid" and drawn_opacity(payload) == OPACITY_OPAQUE
     return False
@@ -1191,7 +1186,8 @@ def _self_test() -> None:
     seen_through = [
         ({"opacity": 99}, False, "translucent: through"),
         ({"opacity": 5}, False, "faint: through"),
-        ({"opacity": 0}, False, "nothing drawn: through (\"all\" at 0 awaits a ruling, ALL_STOPS_AT_ZERO_OPACITY)"),
+        ({"opacity": 0}, False, "nothing drawn: through, and \"all\" still holds it (an invisible wall)"),
+        ({"mode": "points", "pointsize": 0}, False, "no points drawn: through, and \"all\" still holds it"),
         ({"opacity": 100}, True, "100 is opaque (and a publisher omits it)"),
         ({"opacity": 250}, True, "a malformed opacity is opaque (§1.11), so it holds"),
         ({"mode": "lines"}, False, "lines can be seen through"),
@@ -1375,10 +1371,10 @@ def _self_test() -> None:
         (absent, None, "absent is the reader's own size"),
         (48, 48, "a size in range"),
         (1, 1, "the smallest point"),
-        (GLOW_REACH, GLOW_REACH, "the 64-unit bound"),
+        (TICK_REACH, TICK_REACH, "the 64-unit bound"),
         (0, 0, "zero is valid: no points"),
         (-1, None, "negative: the reader's own size"),
-        (GLOW_REACH + 1, None, "past the bound: the reader's own size"),
+        (TICK_REACH + 1, None, "past the bound: the reader's own size"),
         (48.5, None, "fractional"),
         (48.0, None, "a float is not an integer"),
         ("48", None, "a string"),
@@ -1397,13 +1393,17 @@ def _self_test() -> None:
         (absent, None, "absent is no glow"),
         (["fog", 240, 35], ("fog", 240, 35), "a fog"),
         (["light", 1, 1], ("light", 1, 1), "the smallest light"),
-        (["light", GLOW_REACH, 100], ("light", GLOW_REACH, 100), "the largest light"),
+        (["light", TICK_REACH, 100], ("light", TICK_REACH, 100), "the largest light"),
         (["Light", 240, 35], None, "the words are lowercase and exact"),
         (["FOG", 240, 35], None, "the words are lowercase and exact"),
         (["smog", 240, 35], None, "smog is not a word the field has"),
         (["haze", 240, 35], None, "haze is not a word the field has"),
+        ([1, 240, 35], None, "a word that is not a string"),
+        ([None, 240, 35], None, "a word that is null"),
         (["fog", 0, 35], None, "a radius of nothing"),
-        (["fog", GLOW_REACH + 1, 35], None, "a radius past the bound"),
+        (["fog", -240, 35], None, "a negative radius"),
+        (["fog", True, 35], None, "a boolean radius"),
+        (["fog", TICK_REACH + 1, 35], None, "a radius past the bound"),
         (["fog", 240.5, 35], None, "a fractional radius"),
         (["fog", "240", 35], None, "a radius as a string"),
         (["fog", 240, 0], None, "a glow strength of nothing"),
@@ -1430,6 +1430,10 @@ def _self_test() -> None:
         if drawn_pointsize(kept) is not None or drawn_glow(kept) is not None:
             print(f"  POINTSIZE/GLOW drawn in {mode} mode")
             failures += 1
+    faint = validate({**both, "mode": "points", "opacity": 40, "glow": ["fog", 240, 50]})
+    if drawn_opacity(faint) != 40 or drawn_glow(faint) != ("fog", 240, 50):
+        print("  GLOW: opacity reached the glow strength")
+        failures += 1
     unseen = validate({**both, "mode": "points", "opacity": 0})
     if drawn_opacity(unseen) != 0 or drawn_glow(unseen) != ("light", 240, 60):
         print("  GLOW: an object at opacity 0 lost its glow")
