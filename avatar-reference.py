@@ -99,7 +99,9 @@ def verify_avatar(event):
     if content_bytes(content) > AVATAR_CONTENT_MAX:
         return {"ok": False, "reason": "too-large"}
     try:
-        payload = json.loads(content, parse_constant=refuse_constant)  # NaN and Infinity are not JSON
+        # NaN and Infinity are not JSON. Integers are read as floats, as JSON.parse reads them, so
+        # one too long for a float becomes infinity instead of failing Python's integer-length limit.
+        payload = json.loads(content, parse_constant=refuse_constant, parse_int=float)
     except (ValueError, TypeError, RecursionError):
         return {"ok": False, "reason": "not-an-avatar"}
     if not readable(payload):
@@ -130,6 +132,11 @@ def synthetic_verdicts():
     # Two-byte characters: under the limit counted in characters, at and over it in bytes.
     wide_at = prefix + "é" * (fill_at_limit // 2) + suffix
     wide_over = prefix + "a" + "é" * (fill_at_limit // 2) + suffix
+    # Lone surrogates, three bytes each as a JavaScript TextEncoder writes them.
+    lone_n = (fill_at_limit - 2) // 3
+    lone_at = prefix + "a" * (fill_at_limit - 3 * lone_n) + "\ud800" * lone_n + suffix
+    lone_over = prefix + "a" * (fill_at_limit - 3 * lone_n + 1) + "\ud800" * lone_n + suffix
+    assert content_bytes(lone_at) == AVATAR_CONTENT_MAX and content_bytes(lone_over) == AVATAR_CONTENT_MAX + 1
     assert content_bytes(big) == AVATAR_CONTENT_MAX + 1 and content_bytes(at_limit) == AVATAR_CONTENT_MAX
     assert content_bytes(wide_at) == AVATAR_CONTENT_MAX and content_bytes(wide_over) == AVATAR_CONTENT_MAX + 1
     assert len(wide_over) < AVATAR_CONTENT_MAX
@@ -152,6 +159,10 @@ def synthetic_verdicts():
         ("a run of ticks that is not a whole number", ev(body='{"vertices":[[0,0,0]],"ticks":[-0.5]}')),
         ("a run of ticks far longer than the vertices", ev(body='{"vertices":[[0,0,0]],"ticks":[-1e300]}')),
         ("faces that are not a list", ev(body='{"vertices":[[0,0,0]],"faces":"abc"}')),
+        ("faces and ticks that are null are absent", ev(body='{"vertices":[[0,0,0]],"faces":null,"ticks":null}')),
+        ("a fourth entry in a vertex is not read", ev(body='{"vertices":[[0,0,0,"x"],[1,0]]}')),
+        ("NaN in a field the reader does not read", ev(body='{"vertices":[[0,0,0]],"note":NaN}')),
+        ("a 5,000-digit integer in a field the reader does not read", ev(body='{"vertices":[[0,0,0]],"note":' + "9" * 5000 + '}')),
         ("a NaN coordinate", ev(body='{"vertices":[[NaN,0,0]]}')),
         ("an integer too large for a float", ev(body='{"vertices":[[' + "9" * 400 + ',0,0]]}')),
         ("content at the limit", ev(body=at_limit)),
@@ -159,16 +170,19 @@ def synthetic_verdicts():
         ("content of two-byte characters at the limit in bytes", ev(body=wide_at)),
         ("content of two-byte characters one byte over the limit", ev(body=wide_over)),
         ("content over the limit that is not json: refused for its size", ev(body="x" * (AVATAR_CONTENT_MAX + 1))),
+        ("content of lone surrogates at the limit in bytes", ev(body=lone_at)),
+        ("content of lone surrogates one byte over the limit", ev(body=lone_over)),
     ]
     out = []
     for name, e in cases:
         v = verify_avatar(e)
-        if len(e["content"]) > 4096:
+        if len(e["content"]) > 8192:
             # Keep the file small: describe the content instead of carrying 128 KiB of it.
             c = e["content"]
             if c.startswith(prefix):
                 body = c[len(prefix):-len(suffix)]
-                lead = "a" if body[:1] == "a" and body[1:2] == "é" else ""
+                rest = body.lstrip("a")
+                lead = body[: len(body) - len(rest)] if rest[:1] in ("é", "\ud800") else ""
                 recipe = {"prefix": prefix + lead, "fill": body[len(lead)], "count": len(body) - len(lead), "suffix": suffix}
             else:
                 recipe = {"prefix": "", "fill": c[0], "count": len(c), "suffix": ""}
@@ -184,7 +198,7 @@ def build(corpus):
             "about": "Golden vectors of what a reader checks on an avatar event, CYBERSPACE_V2.md section 8.10, written by avatar-reference.py. Not normative: where they disagree with the text, the text is right. The verdicts cover section 8.10 only; a reader still validates a payload by DECK-0003 section 1.9 before drawing it, and some payloads here are not valid SNO. An avatar carries no proof of work: no verdict reads a tag.",
             "constants": "The constants of section 8.10.",
             "content_limit": "Content lengths in bytes (UTF-8) and whether a reader refuses them.",
-            "corpus": "Avatars measured in 2026-11 (the three then published, a 98 KB figure, generated shapes): bytes (UTF-8 length of the content), vertices, faces and refused (content over the limit: a reader draws the default). The payloads are not reproduced.",
+            "corpus": "Avatars measured in 2026-11 (the three then published, marked published, a 98 KB figure, generated shapes): bytes (UTF-8 length of the content), vertices, faces and refused (content over the limit: a reader draws the default). The payloads are not reproduced.",
             "verdicts": "Events and the verdict section 8.10 reaches on each, {ok, reason}, reason one of ok, not-an-avatar, too-large. Ids are made up and events unsigned: a verdict reads neither. An event whose content is null carries content_recipe instead: prefix, then fill repeated count times, then suffix.",
         },
         "constants": {"kind": AVATAR_KIND, "content_max": AVATAR_CONTENT_MAX},
@@ -192,6 +206,10 @@ def build(corpus):
         "corpus": corpus,
         "verdicts": synthetic_verdicts(),
     }
+
+
+# The three avatars published before 2026-11-16, as fetched from relay.onosendai.tech.
+PUBLISHED = {"xor-stella-octangula", "ship", "guy"}
 
 
 def read_corpus(directory):
@@ -202,14 +220,15 @@ def read_corpus(directory):
         with open(os.path.join(directory, f), encoding="utf-8") as fh:
             content = fh.read().strip()
         payload = json.loads(content)
-        rows.append({"name": f[: -len(".sno.json")], "bytes": content_bytes(content),
+        rows.append({"name": f[: -len(".sno.json")], "published": f[: -len(".sno.json")] in PUBLISHED, "bytes": content_bytes(content),
                      "vertices": len(payload["vertices"]), "faces": len(payload.get("faces") or []),
                      "refused": content_bytes(content) > AVATAR_CONTENT_MAX})
     return rows
 
 
 def dump(data):
-    return json.dumps(data, indent=1, ensure_ascii=False) + "\n"
+    # ASCII only, so that lone surrogates are written as escapes a JSON parser reads back.
+    return json.dumps(data, indent=1, ensure_ascii=True) + "\n"
 
 
 def self_check(data):
@@ -227,6 +246,7 @@ def self_check(data):
     names = {c["name"]: c for c in data["corpus"]}
     if names:
         assert not names["operative-v3"]["refused"] and names["ps1-knight-plus"]["refused"]
+        assert sum(c["published"] for c in data["corpus"]) == 3 and not any(c["refused"] for c in data["corpus"] if c["published"])
 
 
 def main():
@@ -243,7 +263,7 @@ def main():
     if args.corpus:
         corpus = read_corpus(args.corpus)
     else:
-        corpus = [{k: c[k] for k in ("name", "bytes", "vertices", "faces", "refused")} for c in (json.loads(on_disk)["corpus"] if on_disk else [])]
+        corpus = [{k: c[k] for k in ("name", "published", "bytes", "vertices", "faces", "refused")} for c in (json.loads(on_disk)["corpus"] if on_disk else [])]
     data = build(corpus)
     self_check(data)
     text = dump(data)

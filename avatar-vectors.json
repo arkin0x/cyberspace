@@ -3,7 +3,7 @@
   "about": "Golden vectors of what a reader checks on an avatar event, CYBERSPACE_V2.md section 8.10, written by avatar-reference.py. Not normative: where they disagree with the text, the text is right. The verdicts cover section 8.10 only; a reader still validates a payload by DECK-0003 section 1.9 before drawing it, and some payloads here are not valid SNO. An avatar carries no proof of work: no verdict reads a tag.",
   "constants": "The constants of section 8.10.",
   "content_limit": "Content lengths in bytes (UTF-8) and whether a reader refuses them.",
-  "corpus": "Avatars measured in 2026-11 (the three then published, a 98 KB figure, generated shapes): bytes (UTF-8 length of the content), vertices, faces and refused (content over the limit: a reader draws the default). The payloads are not reproduced.",
+  "corpus": "Avatars measured in 2026-11 (the three then published, marked published, a 98 KB figure, generated shapes): bytes (UTF-8 length of the content), vertices, faces and refused (content over the limit: a reader draws the default). The payloads are not reproduced.",
   "verdicts": "Events and the verdict section 8.10 reaches on each, {ok, reason}, reason one of ok, not-an-avatar, too-large. Ids are made up and events unsigned: a verdict reads neither. An event whose content is null carries content_recipe instead: prefix, then fill repeated count times, then suffix."
  },
  "constants": {
@@ -39,6 +39,7 @@
  "corpus": [
   {
    "name": "blockbot",
+   "published": false,
    "bytes": 8242,
    "vertices": 178,
    "faces": 324,
@@ -46,6 +47,7 @@
   },
   {
    "name": "bust",
+   "published": false,
    "bytes": 41114,
    "vertices": 796,
    "faces": 1580,
@@ -53,6 +55,7 @@
   },
   {
    "name": "critter",
+   "published": false,
    "bytes": 11462,
    "vertices": 240,
    "faces": 444,
@@ -60,6 +63,7 @@
   },
   {
    "name": "cube-one",
+   "published": false,
    "bytes": 300,
    "vertices": 8,
    "faces": 12,
@@ -67,6 +71,7 @@
   },
   {
    "name": "cube-quarter",
+   "published": false,
    "bytes": 389,
    "vertices": 8,
    "faces": 12,
@@ -74,6 +79,7 @@
   },
   {
    "name": "dragon",
+   "published": false,
    "bytes": 87918,
    "vertices": 1662,
    "faces": 3172,
@@ -81,6 +87,7 @@
   },
   {
    "name": "guy",
+   "published": true,
    "bytes": 2470,
    "vertices": 62,
    "faces": 148,
@@ -88,6 +95,7 @@
   },
   {
    "name": "hero-statue",
+   "published": false,
    "bytes": 112880,
    "vertices": 2077,
    "faces": 4136,
@@ -95,6 +103,7 @@
   },
   {
    "name": "hoverbike",
+   "published": false,
    "bytes": 16951,
    "vertices": 344,
    "faces": 664,
@@ -102,6 +111,7 @@
   },
   {
    "name": "icosphere-1",
+   "published": false,
    "bytes": 1847,
    "vertices": 42,
    "faces": 80,
@@ -109,6 +119,7 @@
   },
   {
    "name": "icosphere-3",
+   "published": false,
    "bytes": 32411,
    "vertices": 642,
    "faces": 1280,
@@ -116,6 +127,7 @@
   },
   {
    "name": "mech",
+   "published": false,
    "bytes": 54878,
    "vertices": 1072,
    "faces": 2076,
@@ -123,6 +135,7 @@
   },
   {
    "name": "octa-four",
+   "published": false,
    "bytes": 236,
    "vertices": 6,
    "faces": 8,
@@ -130,6 +143,7 @@
   },
   {
    "name": "operative-v3",
+   "published": false,
    "bytes": 98097,
    "vertices": 1906,
    "faces": 3604,
@@ -137,6 +151,7 @@
   },
   {
    "name": "padded-cube",
+   "published": false,
    "bytes": 129999,
    "vertices": 8,
    "faces": 12,
@@ -144,6 +159,7 @@
   },
   {
    "name": "ps1-knight-10k",
+   "published": false,
    "bytes": 211107,
    "vertices": 3403,
    "faces": 6772,
@@ -151,6 +167,7 @@
   },
   {
    "name": "ps1-knight-plus",
+   "published": false,
    "bytes": 137341,
    "vertices": 2243,
    "faces": 4452,
@@ -158,6 +175,7 @@
   },
   {
    "name": "ps1-knight",
+   "published": false,
    "bytes": 130932,
    "vertices": 2144,
    "faces": 4254,
@@ -165,6 +183,7 @@
   },
   {
    "name": "ship",
+   "published": true,
    "bytes": 715,
    "vertices": 18,
    "faces": 24,
@@ -172,6 +191,7 @@
   },
   {
    "name": "tank",
+   "published": false,
    "bytes": 75486,
    "vertices": 1429,
    "faces": 2784,
@@ -179,6 +199,7 @@
   },
   {
    "name": "tetra-half",
+   "published": false,
    "bytes": 225,
    "vertices": 4,
    "faces": 4,
@@ -186,6 +207,7 @@
   },
   {
    "name": "torus-dense",
+   "published": false,
    "bytes": 98332,
    "vertices": 1792,
    "faces": 3584,
@@ -193,6 +215,7 @@
   },
   {
    "name": "wisp",
+   "published": false,
    "bytes": 4080,
    "vertices": 92,
    "faces": 168,
@@ -200,6 +223,7 @@
   },
   {
    "name": "xor-stella-octangula",
+   "published": true,
    "bytes": 313,
    "vertices": 8,
    "faces": 8,
@@ -583,6 +607,86 @@
    }
   },
   {
+   "name": "faces and ticks that are null are absent",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ]
+    ],
+    "content": "{\"vertices\":[[0,0,0]],\"faces\":null,\"ticks\":null}",
+    "id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   "verdict": {
+    "ok": true,
+    "reason": "ok"
+   }
+  },
+  {
+   "name": "a fourth entry in a vertex is not read",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ]
+    ],
+    "content": "{\"vertices\":[[0,0,0,\"x\"],[1,0]]}",
+    "id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   "verdict": {
+    "ok": true,
+    "reason": "ok"
+   }
+  },
+  {
+   "name": "NaN in a field the reader does not read",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ]
+    ],
+    "content": "{\"vertices\":[[0,0,0]],\"note\":NaN}",
+    "id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   "verdict": {
+    "ok": false,
+    "reason": "not-an-avatar"
+   }
+  },
+  {
+   "name": "a 5,000-digit integer in a field the reader does not read",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ]
+    ],
+    "content": "{\"vertices\":[[0,0,0]],\"note\":99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999}",
+    "id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   "verdict": {
+    "ok": true,
+    "reason": "ok"
+   }
+  },
+  {
    "name": "a NaN coordinate",
    "event": {
     "kind": 11333,
@@ -690,7 +794,7 @@
     "id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
     "content_recipe": {
      "prefix": "{\"vertices\":[[0,0,0]],\"faces\":[],\"pad\":\"",
-     "fill": "é",
+     "fill": "\u00e9",
      "count": 65515,
      "suffix": "\"}"
     }
@@ -716,7 +820,7 @@
     "id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
     "content_recipe": {
      "prefix": "{\"vertices\":[[0,0,0]],\"faces\":[],\"pad\":\"a",
-     "fill": "é",
+     "fill": "\u00e9",
      "count": 65515,
      "suffix": "\"}"
     }
@@ -745,6 +849,58 @@
      "fill": "x",
      "count": 131073,
      "suffix": ""
+    }
+   },
+   "verdict": {
+    "ok": false,
+    "reason": "too-large"
+   }
+  },
+  {
+   "name": "content of lone surrogates at the limit in bytes",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ]
+    ],
+    "content": null,
+    "id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "content_recipe": {
+     "prefix": "{\"vertices\":[[0,0,0]],\"faces\":[],\"pad\":\"aa",
+     "fill": "\ud800",
+     "count": 43676,
+     "suffix": "\"}"
+    }
+   },
+   "verdict": {
+    "ok": true,
+    "reason": "ok"
+   }
+  },
+  {
+   "name": "content of lone surrogates one byte over the limit",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ]
+    ],
+    "content": null,
+    "id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "content_recipe": {
+     "prefix": "{\"vertices\":[[0,0,0]],\"faces\":[],\"pad\":\"aaa",
+     "fill": "\ud800",
+     "count": 43676,
+     "suffix": "\"}"
     }
    },
    "verdict": {

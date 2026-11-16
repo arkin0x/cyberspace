@@ -281,7 +281,7 @@ A reader that does not implement `up` draws the object in the application's axes
 
 | Limit | Value | Why |
 |---|---|---|
-| vertices, faces, refs, parts | **none** | the size of an event is the relay's concern, as it is for every other kind of event; see below |
+| vertices, faces, refs, parts | **none** | the size of an event is the relay's concern, as it is for every other kind of event; see below. An avatar is the one exception: `CYBERSPACE_V2.md` §8.10 limits its content to 131,072 bytes, and a larger payload is still valid SNO but is not drawn as an avatar |
 | nesting depth | 4 | how far a reader follows placements (§1.10). A bound on the reader's work, not on the object |
 | `extent` | 1 to 64 model units | a hint at the lattice size, so a reader can size a grid before it reads the data |
 | `unit` | 0 to 84 | the Cyberspace address space is `2^85` gibsons on a side |
@@ -975,7 +975,7 @@ A publisher SHOULD carry a large object by reference: a bag is one event shared 
 
 ### 3.3 As an avatar
 
-An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload in its `content`, or empty content for the default avatar. That section limits the content to 131,072 bytes; the rules below say how a reader draws what it carries.
+An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload in its `content`, or empty content for the default avatar. That section limits the content to 131,072 bytes; the limit counts the avatar's own content, its objects table included (§1.10), while an object it places by reference is fetched as any placed object is. The rules below say how a reader draws what it carries.
 
 **An avatar is drawn opaque.** A reader MUST ignore `opacity` (§1.11) in an avatar's payload, and in every object the avatar places (§1.10), and draw the avatar fully opaque. An avatar is how one person knows another is present, so a translucent avatar would be a way to move unseen through a shared space.
 
