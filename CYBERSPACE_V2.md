@@ -2004,7 +2004,7 @@ Inside a virtual bracket the rules of §8.11 apply instead of the rules above: e
 
 ### 8.10 Avatar event
 
-An avatar is the shape an identity is drawn as. It is the one thing in cyberspace that lands on other people's screens whether they asked for it or not: everyone near its owner sees it, at every zoom. Its size and its detail are therefore paid for in work, on the event that publishes it, and a client draws nothing it cannot verify has paid.
+An avatar is the shape an identity is drawn as. It is the one thing in cyberspace that lands on other people's screens whether they asked for it or not: everyone near its owner sees it, at every zoom. Its size on the wire is therefore limited, relays limit how often one identity replaces it, and each viewer decides whose avatars it draws.
 
 - Avatar events: `kind = 11333`
 - `kind 11333` is replaceable: relays keep the newest event per `(pubkey, kind)`, so an identity has exactly one avatar and the newest replaces it
@@ -2015,59 +2015,26 @@ The change is a clean break rather than a migration. At the time it was made, a 
 
 `11333` was chosen by querying for it rather than by reading a registry. The registry of kinds and the NIPs index both list only what has been written down, and the replaceable range is full of numbers that are in daily use and appear in neither: `10333` carries Podcasting 2.0 favourites, `10086` a relay indexer's lists across eighty pubkeys, `10088` something Amethyst writes. A kind is free when the relays say so.
 
-Required tags:
-- `nonce` tag: `["nonce", "<nonce>", "<target>"]` per NIP-13, where `target` is the leading zero bits the publisher committed to before mining
-
 Optional tags:
 - `name` tag: `["name", "<name>"]`, the shape's name for humans
 
-Content: a shard payload as bags carry them, or empty. The work reads these fields of it: `unit` (a model unit is `2^unit` gibsons), `vertices` (whole units per vertex), `ticks` (the fraction of a unit per vertex, in 120ths, packed so that `-N` stands for `N` zero triples) and `faces`. Empty content means the default avatar and owes no work.
+An avatar carries no proof of work. An avatar published before 2026-11 carries a `nonce` tag (NIP-13) with the work it once had to pay; a reader ignores it, whatever target it commits to and whatever the `id` carries, and a publisher need not write one.
 
-An avatar's content is at most 131,072 bytes (128 KiB), counted as the UTF-8 length of the `content` string, a `nonce` field (below) and the zeros that lead it included. The limit is the avatar's own, not the relay's: a relay may take more, and a client still does not draw it.
+Content: a shard payload as bags carry them (DECK-0003), or empty. Empty content means the default avatar.
+
+An avatar's content is at most 131,072 bytes (128 KiB), counted as the UTF-8 length of the `content` string. The limit is the avatar's own, not the relay's: a relay may take more, and a client still does not draw it.
 
 *Remote signers (non-normative).* Some remote signers (NIP-46) refuse to sign an avatar whose content is near 64 KB or larger. The request to the signer carries the whole event, its content escaped a second time, and older NIP-44 libraries refuse to encrypt more than 65,535 bytes, so such a signer fails at about 65,200 bytes of content; a relay that carries the request (`kind 24133`, base64 and so a third larger) may refuse it sooner if it caps events at 64 KiB. A browser extension, or a key the client holds itself, signs a large avatar as it signs any other event. A client that publishes avatars should warn its user, when an avatar's content is over 64,000 bytes, that a remote signer may refuse it.
 
 No `d` tag: a replaceable kind has no second key, and writing one would only invite a reader to filter on it.
 
-**The work (normative):**
+**Verification:** compare the content's length with the limit, then parse the content. The length is compared first, so a reader never parses content it would refuse. Content a client cannot read includes a payload whose `vertices` is not a list of lists of numbers, whose `ticks` holds anything but lists of numbers and runs (whole numbers, zero or below), or whose `faces` is not a list. Nothing here reads a tag or hashes anything.
 
-```python
-AVATAR_FLOOR_BITS  = 10   # every avatar
-AVATAR_SIZE_BITS   = 2    # per doubling of reach
-AVATAR_DETAIL_BITS = 1.5  # per doubling of detail beyond the free thirty-two (three per fourfold)
-AVATAR_DETAIL_FREE = 32
-AVATAR_CONTENT_MAX = 131072  # bytes of content, UTF-8
+**Drawing (normative):** a client MUST NOT draw an avatar event whose content exceeds 131,072 bytes, or that carries content it cannot read; it draws its default avatar for that identity instead. A client MUST NOT reject, hide or replace an avatar for carrying no proof of work, or too little, or for the target its `nonce` tag commits to. A client SHOULD draw an avatar at true scale, one model unit as `2^unit` gibsons, wherever it would draw the default. A client MAY decline to draw an avatar its viewer has muted.
 
-def avatar_work(payload) -> int:
-    # reach: the farthest any vertex lies from the build origin, on any axis,
-    # in gibsons at true scale; never below one gibson, and one gibson with no vertices
-    reach  = max(1.0, max(abs(v + t / 120) for every vertex coordinate) * 2 ** payload.unit)
-    detail = max(AVATAR_DETAIL_FREE, len(payload.vertices) + len(payload.faces))
-    # the terms are summed as real numbers and the total is rounded up once, never term by term
-    return ceil(AVATAR_FLOOR_BITS + AVATAR_SIZE_BITS * log2(reach) + AVATAR_DETAIL_BITS * log2(detail / AVATAR_DETAIL_FREE))
-```
+**Relays (normative):** a relay that carries avatars SHOULD limit how many `kind 11333` events it accepts from one pubkey in an hour; a few an hour is enough for a person trying shapes on, and for an agent that sets one now and then.
 
-An avatar event is **paid** when its first `nonce` tag's committed `target`, a string of the ASCII digits `0` to `9`, is at least `avatar_work(payload)` for the payload its content holds, and its `id` carries at least `target` leading zero bits. Both conditions are required: committing the target before mining is what stops a lucky id from being claimed against a lower bar than it was mined for (NIP-13).
-
-**Verification:** compare the content's length with the limit, parse the content, compute `avatar_work`, read the `nonce` tag, count the id's leading zero bits, apply the two conditions. The length is compared first, so a reader never parses content it would refuse. Content a client cannot read includes a payload whose `vertices` is not a list of lists of numbers, whose `ticks` holds anything but lists of numbers and runs (whole numbers, zero or below), or whose `faces` is not a list: none of these is an avatar, whatever work it carries, since a price computed from a coordinate that is not a number means nothing. A `unit` that is absent or not a number is read as `0` here; DECK-0003 §1.9 decides whether such a payload is drawn. Nothing here needs more than one hash and a walk over the vertices, on any device.
-
-**Mining (normative).** The work is counted on the event's `id`, and a reader checks only the `id` and the committed target; how a publisher finds the `id` is its own business, and the nonce it varies may stand anywhere in the event. The `id` is the SHA-256 of the serialized event, SHA-256 reads its input from front to back, and the content is the last field the serialization holds. A publisher that varies only the end of the content can therefore hash everything before it once and hash only the last block or two on each try, so the time a try takes does not depend on the avatar's size.
-
-A publisher MAY write a field named `nonce` as the last field of the payload, a string of decimal digits, and vary it while mining. Every reader ignores it, as DECK-0003 §1.1 requires of a field a reader does not recognize. A tool that copies an avatar's shape into an object of its own MUST drop it, since no other object uses the name (DECK-0003 §3.3). A publisher that mines this way still writes the `nonce` tag with its committed target, and writes `0` as the tag's first value. A reader MUST NOT read meaning into the first value of the `nonce` tag; only the committed target is read.
-
-*Midstate mining (non-normative).* SHA-256 works through its input in blocks of 64 bytes, carrying a state of 32 bytes from one block to the next. A miner that keeps the state reached after the last whole block before the nonce, its midstate, starts every try from that state, and a try costs one or two blocks instead of the whole event: for an avatar of 98 KB, about 1,500 blocks fewer per try. When the bytes left before the nonce in its block leave too little room for the nonce's digits, the end of the serialization and SHA-256's padding, a miner may lead the nonce with zeros up to the next block boundary; the field stays a string of decimal digits, and every try is then exactly one block. `avatar-reference.py` (§14) mines this way, and `avatar-vectors.json` carries events it mined, with the zeros it led the nonce with and the tries it took, so that a port can check its own miner byte for byte. Pure JavaScript does about two million such tries a second on one desktop core.
-
-**Relays (normative):** the work makes a large or busy avatar cost more than a plain one, but at a floor of ten bits it does not stop one identity from replacing its avatar over and over. A relay that carries avatars SHOULD limit how many `kind 11333` events it accepts from one pubkey in an hour; a few an hour is enough for a person trying shapes on, and for an agent that sets one now and then.
-
-**Drawing (normative):** a client MUST NOT draw an avatar event that is not paid, whose content exceeds 131,072 bytes, or that carries content it cannot read; it draws its default avatar for that identity instead. A client SHOULD draw a paid avatar at true scale, one model unit as `2^unit` gibsons, wherever it would draw the default.
-
-**Why the price is shaped this way (non-normative).** Reach is priced at two bits per doubling, so a shape twice as far across costs four times the work, and the ladder it makes is: one gibson 10 bits, two gibsons 12, four 14, sixteen 18, a thousand 30, and one the size of cyberspace 180, which is to say never. Reach is the term that matters to other people, since a large avatar is the one that gets in everyone's way, and the slope is set so that a sector-sized avatar is out of reach of any hash power. Reach is measured from the build origin, not from the shape's own centre, so a shape is priced as its builder placed it against the reference avatar on the bench.
-
-Detail is priced at three bits for every fourfold increase beyond thirty-two vertices and faces, which is one and a half bits per doubling, below the two that reach costs, because a busy small avatar troubles nobody much: a phone draws a few thousand triangles for an avatar with ease, and what a viewer downloads with an avatar event is bounded by the limit on content. Bytes are not priced by the work. An earlier version of this section said they were, because every nonce hashed the whole serialized event; that was true only of a miner that kept its nonce in the tags, and a miner that varies the end of the content pays the same per try for a cube as for a model of a hundred thousand bytes. The limit on content bounds them instead, and every reader checks it without hashing anything.
-
-The floor is ten bits, about a thousand tries, which is a moment on any device. It is not what stops one identity from replacing its avatar over and over, since a plain avatar costs almost nothing at any floor a phone can pay; the relays limit that by key (above). Nor is it what keeps a crowd of new identities away, each wearing an avatar: being present at all costs each of them its own movement work.
-
-The slope of detail was three bits per doubling and the floor sixteen bits until 2026-11, set while this format still capped an object at 512 vertices and 1,024 faces. When DECK-0003 removed that cap on 2026-09-24, the same price asked 42 bits for a three-gibson figure of 5,510 vertices and faces, which is years of work on any device a person owns, all the more since that miner hashed its 98 KB once per try. At the present price it is 25 bits, a few seconds on a desktop and under a minute on a phone. No shape costs more under the present price than under the old one, so every avatar published before the change remains paid, and drawn unless its content is over the limit, which none of the three published by then was.
+**Why an avatar carries no proof of work (non-normative).** Until 2026-11 an avatar paid proof of work on its own event, priced by its size and its detail: sixteen bits, plus two for each doubling of its reach in gibsons, plus three for each doubling of its vertices and faces beyond thirty-two. The price assumed that every try of the work hashed the whole serialized event, so that bytes were charged as well. That was true only of a miner that kept its nonce in the tags. The content is the last field the `id` hashes, and a miner that varies the end of the content hashes everything before it once and only the last block of SHA-256 on each try, whatever the avatar's size; pure JavaScript does some two million such tries a second on one desktop core and more on a recent phone. With that miner the work stopped meaning anything. A price that kept bytes in check would have had to be raised far beyond what a phone pays for a plain avatar, and a price a phone pays easily is no obstacle to anyone. So the work was dropped, and what it was meant to do is done where it can be done. The limit on content bounds what a viewer downloads with an avatar event, and every reader checks it without hashing anything. A relay limits how often one identity replaces its avatar. A viewer mutes an identity whose avatar it does not want to see, and a client may adopt a policy of its own for the large avatars of strangers. A crowd of new identities, each wearing an avatar, is held back by what being present costs each of them in movement work, not by what its avatar costs. Every avatar published before the change remains drawn: none was over the limit, and its `nonce` tag is ignored.
 
 Reference implementations: `avatar.ts` in cyberspace-core and `cyberspace_core/avatar.py` in cyberspace-cli. `avatar-reference.py` (§14) writes `avatar-vectors.json`, which both copy unchanged and test against. The verdict these vectors pin covers this section only: a reader still validates a payload by DECK-0003 §1.9 before it draws one.
 
@@ -2644,7 +2611,7 @@ This repository also carries stdlib-only reference scripts that are executable s
 - `hint-reference.py`: §7.7 and the §10 rule for bags: canonical form, containment, sector tags, seeker work, malformed hints and plane preservation, locking the golden vectors of §7.7
 - `decks/landfall-reference.py`: landfall derivation (DECK-0001 §1.2)
 - `decks/kinds-vectors.mjs`: deterministic events for the DECKs that hide things in bags, and for the sealed entries of §7.6, written into `decks/kinds-vectors.json` (needs `nostr-tools` 2.x); §7.6 lists the sealed-entry values
-- `avatar-reference.py`: the work an avatar owes (§8.10): the price, the limit on content, the verdict a reader reaches and a midstate miner with the nonce at the end of the content; it writes `avatar-vectors.json`, the golden vectors of §8.10 (prices for payloads and for reach and detail pairs, avatars measured in 2026-11 (the three then published, a 98 KB figure and generated shapes up to 206 KiB), content lengths around the limit, verdicts, and events its miner mined), and with `--check` it reports whether the file on disk is what it would write. Like `hop-residue-vectors.json`, the file is not normative.
+- `avatar-reference.py`: what a reader checks on an avatar (§8.10): the limit on content and a payload it can read; it writes `avatar-vectors.json`, the golden vectors of §8.10 (content lengths around the limit, avatars measured in 2026-11 with their sizes, and verdicts, among them events whose `nonce` tags a reader ignores), and with `--check` it reports whether the file on disk is what it would write. Like `hop-residue-vectors.json`, the file is not normative.
 
 This repository also carries machine-readable golden vectors of the hop proof, written from its reference script, so that a port in any language can test itself against the same values without running Python:
 - `hop-residue-vectors.py`: the stdlib-only script that imports `hop-residue-reference.py` by path, checks every value against it and produces `hop-residue-vectors.json`, byte for byte the same on every run; with `--check` it reports whether the file on disk is what it would produce, and it refuses to run when the reference's SHA-256 is not the one it records, so the file's provenance never goes stale

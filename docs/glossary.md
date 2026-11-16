@@ -573,9 +573,9 @@ The spec's §7.6 also says "placement" for putting an event in a bag. [DECK-0003
 
 #### Avatar
 
-`spec` The shape you are drawn as, paid for with proof of work by its size and detail.
+`spec` The shape you are drawn as.
 
-**Wire:** `kind 11333`, one per identity, its content at most 128 KiB. A client draws no avatar that has not paid, or whose content is larger. [§8.10](../CYBERSPACE_V2.md#810-avatar-event), [DECK-0003 §3.3](../decks/DECK-0003-sno.md#33-as-an-avatar)
+**Wire:** `kind 11333`, one per identity, its content at most 128 KiB. A client draws the default for a larger one. [§8.10](../CYBERSPACE_V2.md#810-avatar-event), [DECK-0003 §3.3](../decks/DECK-0003-sno.md#33-as-an-avatar)
 
 #### Look
 
