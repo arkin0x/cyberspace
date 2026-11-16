@@ -5,7 +5,7 @@ Title: Items, Chests and Doors
 Status: Draft
 Mandatory: no
 Created: 2026-10-15
-Last updated: 2026-11-10
+Last updated: 2026-11-16
 Requires: `CYBERSPACE_V2.md` §7.2 (keys), §7.6 (the bag) and §8.6 (its event); DECK-0003 (SNO objects, for looks, and its objects table, §1.10, for carried parts); NIP-01, NIP-09, NIP-44 v2, NIP-70, NIP-92; BIP-340
 
 ## Abstract
@@ -159,7 +159,7 @@ When both turns are present, the turn about X is inside the turn about Y (a poin
 3. For `bob`, add the bob's reach to Y on both sides.
 4. Convert to gibsons and round each axis up to a whole number, never less than 1. An object that fits in 2 by 1 by 1 gibsons and does not turn gets a box of 2 by 1 by 1.
 
-The box is centred on the item's place. Nothing about the box or the object is limited except by the region: both are cut at the walls of the region of the bag that holds the item, exactly as a hidden shard is cut at them (`CYBERSPACE_V2.md` §7.6). Because the object moves inside walls that do not, the cut is made where the object is at each moment, not once where it starts.
+The box is centred on the item's place. Nothing about the box or the object is limited except by the region: both are cut at the region cut of the bag that holds the item, exactly as a hidden shard is cut (DECK-0003 §1.12): the bag's region grown by half a gibson on every side. Because the object moves inside walls that do not, the cut is made where the object is at each moment, not once where it starts.
 
 **Why by address, and what a fetch reveals (non-normative):** An address follows the author's edits, which is what someone dressing an item in their own object wants. The fetch is a query to relays for one public object, the same query any client makes to draw a placed object; it names the object, never the item, the bag, or where either is. A relay that sees it learns that someone asked for that object, which is already true of every placement of it.
 
@@ -283,7 +283,7 @@ Only then does the reader check the payload of each look that counts, under DECK
 - The origin of the payload, the point `[0, 0, 0]`, stands at the chest's coordinate (its `C` tag), at the middle of that gibson.
 - One model unit is 2^`unit` gibsons (DECK-0003 §1.6). In the example above, `"unit": 0` builds the panel on a lattice one gibson wide, so its vertex `[1, 3, 0]` stands 1 gibson along X and 3 gibsons along Y from the chest's place. The panel's origin is the middle of its bottom edge.
 - The look is posed by its own payload, through its `up` and `spin` fields (DECK-0003 §1.7).
-- The look is cut at the walls of the region of the bag that holds the chest, or of the room bag (§3.7) that holds it. No part of the look is drawn outside that region.
+- The look is cut at the region cut (DECK-0003 §1.12) of the bag that holds the chest, or of the room bag (§3.7) that holds it. No part of the look is drawn outside that cut.
 
 **Why the origin, and not the centre:** An item's `model` (§2.5) is placed differently: its centre floats on the item's point. A look is placed by its origin, so the look's author decides where the look stands relative to the chest's place. For example, a treasure chest built with its origin at the middle of its base sits on the floor it is placed on. A door panel built with its origin at the middle of its bottom edge stands in the doorway it is placed in.
 
