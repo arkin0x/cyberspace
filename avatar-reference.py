@@ -59,6 +59,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -78,11 +79,14 @@ BEFORE_DETAIL_BITS = 3
 
 
 def unpack_ticks(packed, count):
-    """The ticks column, one triple per vertex; -N stands for N zero triples."""
+    """The ticks column, one triple per vertex; -N stands for N zero triples. Stops at `count`
+    triples, so a run of a billion zero triples costs nothing."""
     out = []
     for item in packed or []:
-        if isinstance(item, int) and not isinstance(item, bool):
-            out.extend([[0, 0, 0]] * (-item))
+        if len(out) >= count:
+            break
+        if is_number(item):
+            out.extend([[0, 0, 0]] * min(int(-item), count - len(out)))
         else:
             out.append([item[a] if len(item) > a else 0 for a in range(3)])
     while len(out) < count:
@@ -90,9 +94,31 @@ def unpack_ticks(packed, count):
     return out[:count]
 
 
+def is_number(x):
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
+
+
+def readable(payload):
+    """Whether the work can be read from a payload at all: content a client cannot read is not an
+    avatar. vertices is a list of lists whose first three entries, where present, are numbers;
+    ticks, where present, is a list whose entries are a run (a whole number, zero or below) or a
+    list whose first three entries, where present, are numbers; faces, where present, is a list."""
+    if not isinstance(payload, dict) or not isinstance(payload.get("vertices"), list):
+        return False
+    triple = lambda v: isinstance(v, list) and all(is_number(x) for x in v[:3])
+    if not all(triple(v) for v in payload["vertices"]):
+        return False
+    ticks = payload.get("ticks")
+    if ticks is not None and not (isinstance(ticks, list) and all(
+            (is_number(t) and t <= 0 and t == int(t)) or triple(t) for t in ticks)):
+        return False
+    faces = payload.get("faces")
+    return faces is None or isinstance(faces, list)
+
+
 def avatar_reach(payload):
     """The farthest any vertex lies from the build origin, on any axis, in gibsons at true scale."""
-    unit = payload.get("unit", 0) or 0
+    unit = payload.get("unit") if is_number(payload.get("unit")) else 0
     vertices = payload["vertices"]
     ticks = unpack_ticks(payload.get("ticks"), len(vertices))
     reach = 0.0
@@ -128,7 +154,8 @@ def avatar_work(payload):
 
 
 def content_bytes(content):
-    return len(content.encode("utf-8"))
+    # A lone surrogate counts three bytes, as a JavaScript TextEncoder writes it.
+    return len(content.encode("utf-8", errors="surrogatepass"))
 
 
 def leading_zero_bits(hex_str):
@@ -177,11 +204,11 @@ def verify_avatar(event):
         payload = json.loads(content)
     except (ValueError, TypeError):
         return {**verdict, "reason": "not-an-avatar"}
-    if not isinstance(payload, dict) or not isinstance(payload.get("vertices"), list):
+    if not readable(payload):
         return {**verdict, "reason": "not-an-avatar"}
     required = avatar_work(payload)
     nonce = next((t for t in event.get("tags", []) if t and t[0] == "nonce"), None)
-    committed = int(nonce[2]) if nonce and len(nonce) > 2 and str(nonce[2]).isdigit() else None
+    committed = int(nonce[2]) if nonce and len(nonce) > 2 and re.fullmatch(r"[0-9]+", str(nonce[2])) else None
     verdict = {**verdict, "required": required, "committed": committed}
     if committed is None:
         return {**verdict, "reason": "no-nonce"}
@@ -198,15 +225,22 @@ NONCE_DIGITS_MAX = 16   # the most digits a try's nonce has; room is kept for th
 MARK = "\u0000NONCE\u0000"
 
 
+MINED_TAIL = re.compile(r',"nonce":"[0-9]+"(\}\s*)$')
+MINED_ONLY = re.compile(r'^(\{\s*)"nonce":"[0-9]+"(\}\s*)$')
+
+
 def tailed_content(content, nonce):
-    """The content with a `nonce` field as the last field of the payload (any earlier one dropped)."""
+    """The content with a `nonce` field as the last field of the payload. A nonce this miner wrote
+    before (the content ends with it) is cut off as text, so the rest stays byte for byte as it
+    was; any other `nonce` field is dropped by writing the payload again."""
+    content = MINED_ONLY.sub(r"\1\2", MINED_TAIL.sub(r"\1", content))
     payload = json.loads(content)
+    if not isinstance(payload, dict):
+        raise ValueError("the content is not a JSON object")
     if "nonce" in payload:
         del payload["nonce"]
         content = json.dumps(payload, separators=(",", ":"), ensure_ascii=False)
     stripped = content.rstrip()
-    if not stripped.endswith("}"):
-        raise ValueError("the content is not a JSON object")
     body = stripped[:-1]
     sep = "" if body.rstrip().endswith("{") else ","
     return body + sep + '"nonce":"' + nonce + '"}'
@@ -315,6 +349,8 @@ def mined_vectors():
         ("Ship, nonce at the end, at its price", ship, [["name", "Ship"]], None),
         ("Ship, nonce at the end, at the price before 2026-11", ship, [["name", "Ship"]], "before"),
         ("one gibson, nonce led with zeros to a block boundary", plain, [["name", long_name]], avatar_bits(1, 32)),
+        ("one gibson mined again: the earlier nonce is cut off as text", plain[:-1] + ',"nonce":"000123"}', [["name", "one"]], avatar_bits(1, 32)),
+        ("a payload with numbers JSON writes in more than one way, mined again", '{"vertices":[[0,0,0]],"faces":[],"scale":1.0,"tiny":1e-7,"big":12345678901234567890,"nonce":"99"}', [["name", "odd"]], avatar_bits(1, 32)),
     ]:
         payload = json.loads(content)
         reach, detail = avatar_reach(payload), avatar_detail(payload)
@@ -353,6 +389,14 @@ def synthetic_verdicts():
         ("another kind", ev(20, "10", kind=1)),
         ("content that is not json", ev(20, "10", body="not json")),
         ("vertices that are not a list", ev(20, "10", body='{"vertices":"no"}')),
+        ("a coordinate that is not a number", ev(20, "0", body='{"vertices":[["x",0,0],[1000000,0,0],[0,1000000,0]]}')),
+        ("a coordinate that is null", ev(20, "0", body='{"vertices":[[null,0,0],[1000000,0,0]]}')),
+        ("a vertex that is not a list", ev(20, "10", body='{"vertices":[null]}')),
+        ("a tick that is not a number", ev(20, "0", body='{"vertices":[[0,0,0],[1000000,0,0]],"ticks":[["zz",0,0],-1]}')),
+        ("a run of ticks that is not a whole number", ev(20, "10", body='{"vertices":[[0,0,0]],"ticks":[-0.5]}')),
+        ("faces that are not a list", ev(20, "10", body='{"vertices":[[0,0,0]],"faces":"abc"}')),
+        ("a run of ticks far longer than the vertices", ev(12, "10", body='{"vertices":[[0,0,0]],"ticks":[-1e300]}')),
+        ("a target in digits that are not ASCII", ev(20, "\u0661\u0660")),
         ("content at the limit, paid", ev(12, "10", body=at_limit)),
         ("content one byte over the limit, paid", ev(12, "10", body=big)),
     ]
@@ -445,7 +489,10 @@ def self_check(data):
         assert event_id(e) == e["id"], v["name"]
         assert leading_zero_bits(e["id"]) >= v["target"], v["name"]
         assert verify_avatar(e) == v["verdict"] and v["verdict"]["ok"], v["name"]
-        assert json.loads(e["content"])["nonce"].isdigit()
+        assert re.fullmatch(r"[0-9]+", json.loads(e["content"])["nonce"])
+        # Mined again, the content keeps every byte before the nonce.
+        before = MINED_TAIL.sub(r"\1", v["template"]["content"])
+        assert e["content"].startswith(before[:-1])
         assert e["content"].endswith('"}') and '"nonce":"' in e["content"][-40 - len(v["lead"]):]
     # The ladder section 8.10 quotes.
     assert [avatar_bits(r, 32) for r in (1, 2, 4, 16, 1000)] == [10, 12, 14, 18, 30]

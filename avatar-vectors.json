@@ -3997,6 +3997,230 @@
    }
   },
   {
+   "name": "a coordinate that is not a number",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ],
+     [
+      "nonce",
+      "12345",
+      "0"
+     ]
+    ],
+    "content": "{\"vertices\":[[\"x\",0,0],[1000000,0,0],[0,1000000,0]]}",
+    "id": "00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   "verdict": {
+    "ok": false,
+    "required": 0,
+    "committed": null,
+    "zeros": 20,
+    "reason": "not-an-avatar"
+   }
+  },
+  {
+   "name": "a coordinate that is null",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ],
+     [
+      "nonce",
+      "12345",
+      "0"
+     ]
+    ],
+    "content": "{\"vertices\":[[null,0,0],[1000000,0,0]]}",
+    "id": "00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   "verdict": {
+    "ok": false,
+    "required": 0,
+    "committed": null,
+    "zeros": 20,
+    "reason": "not-an-avatar"
+   }
+  },
+  {
+   "name": "a vertex that is not a list",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ],
+     [
+      "nonce",
+      "12345",
+      "10"
+     ]
+    ],
+    "content": "{\"vertices\":[null]}",
+    "id": "00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   "verdict": {
+    "ok": false,
+    "required": 0,
+    "committed": null,
+    "zeros": 20,
+    "reason": "not-an-avatar"
+   }
+  },
+  {
+   "name": "a tick that is not a number",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ],
+     [
+      "nonce",
+      "12345",
+      "0"
+     ]
+    ],
+    "content": "{\"vertices\":[[0,0,0],[1000000,0,0]],\"ticks\":[[\"zz\",0,0],-1]}",
+    "id": "00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   "verdict": {
+    "ok": false,
+    "required": 0,
+    "committed": null,
+    "zeros": 20,
+    "reason": "not-an-avatar"
+   }
+  },
+  {
+   "name": "a run of ticks that is not a whole number",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ],
+     [
+      "nonce",
+      "12345",
+      "10"
+     ]
+    ],
+    "content": "{\"vertices\":[[0,0,0]],\"ticks\":[-0.5]}",
+    "id": "00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   "verdict": {
+    "ok": false,
+    "required": 0,
+    "committed": null,
+    "zeros": 20,
+    "reason": "not-an-avatar"
+   }
+  },
+  {
+   "name": "faces that are not a list",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ],
+     [
+      "nonce",
+      "12345",
+      "10"
+     ]
+    ],
+    "content": "{\"vertices\":[[0,0,0]],\"faces\":\"abc\"}",
+    "id": "00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   "verdict": {
+    "ok": false,
+    "required": 0,
+    "committed": null,
+    "zeros": 20,
+    "reason": "not-an-avatar"
+   }
+  },
+  {
+   "name": "a run of ticks far longer than the vertices",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ],
+     [
+      "nonce",
+      "12345",
+      "10"
+     ]
+    ],
+    "content": "{\"vertices\":[[0,0,0]],\"ticks\":[-1e300]}",
+    "id": "000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   "verdict": {
+    "ok": true,
+    "required": 10,
+    "committed": 10,
+    "zeros": 12,
+    "reason": "ok"
+   }
+  },
+  {
+   "name": "a target in digits that are not ASCII",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ],
+     [
+      "nonce",
+      "12345",
+      "١٠"
+     ]
+    ],
+    "content": "{\"unit\":0,\"vertices\":[[0,0,0],[1,0,0],[0,1,0],[0,0,1]],\"faces\":[[0,1,2],[0,2,3]]}",
+    "id": "00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   "verdict": {
+    "ok": false,
+    "required": 10,
+    "committed": null,
+    "zeros": 20,
+    "reason": "no-nonce"
+   }
+  },
+  {
    "name": "content at the limit, paid",
    "event": {
     "kind": 11333,
@@ -4229,6 +4453,92 @@
     ],
     "content": "{\"unit\":0,\"vertices\":[[0,0,0],[1,0,0],[0,1,0],[0,0,1]],\"faces\":[[0,1,2],[0,2,3]],\"nonce\":\"00000000000000000000000000000678\"}",
     "id": "0017deeb90a2107d08f23779ed74c4e3a71cfcb375fa51bf29594a7dc1770fce"
+   },
+   "verdict": {
+    "ok": true,
+    "required": 10,
+    "committed": 10,
+    "zeros": 11,
+    "reason": "ok"
+   }
+  },
+  {
+   "name": "one gibson mined again: the earlier nonce is cut off as text",
+   "template": {
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "kind": 11333,
+    "tags": [
+     [
+      "name",
+      "one"
+     ]
+    ],
+    "content": "{\"unit\":0,\"vertices\":[[0,0,0],[1,0,0],[0,1,0],[0,0,1]],\"faces\":[[0,1,2],[0,2,3]],\"nonce\":\"000123\"}"
+   },
+   "target": 10,
+   "lead": "",
+   "tries": 590,
+   "event": {
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "kind": 11333,
+    "tags": [
+     [
+      "name",
+      "one"
+     ],
+     [
+      "nonce",
+      "0",
+      "10"
+     ]
+    ],
+    "content": "{\"unit\":0,\"vertices\":[[0,0,0],[1,0,0],[0,1,0],[0,0,1]],\"faces\":[[0,1,2],[0,2,3]],\"nonce\":\"589\"}",
+    "id": "0020b8c62c47b24b9101f55f290cae346add7c3d120767239d70f03c54d24d6a"
+   },
+   "verdict": {
+    "ok": true,
+    "required": 10,
+    "committed": 10,
+    "zeros": 10,
+    "reason": "ok"
+   }
+  },
+  {
+   "name": "a payload with numbers JSON writes in more than one way, mined again",
+   "template": {
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "kind": 11333,
+    "tags": [
+     [
+      "name",
+      "odd"
+     ]
+    ],
+    "content": "{\"vertices\":[[0,0,0]],\"faces\":[],\"scale\":1.0,\"tiny\":1e-7,\"big\":12345678901234567890,\"nonce\":\"99\"}"
+   },
+   "target": 10,
+   "lead": "00000000000000000000000000",
+   "tries": 696,
+   "event": {
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "kind": 11333,
+    "tags": [
+     [
+      "name",
+      "odd"
+     ],
+     [
+      "nonce",
+      "0",
+      "10"
+     ]
+    ],
+    "content": "{\"vertices\":[[0,0,0]],\"faces\":[],\"scale\":1.0,\"tiny\":1e-7,\"big\":12345678901234567890,\"nonce\":\"00000000000000000000000000695\"}",
+    "id": "00190816e0b0f3bb18beda35eea0d2a99ca11d2092d9b37a33090c84ce918a0a"
    },
    "verdict": {
     "ok": true,
