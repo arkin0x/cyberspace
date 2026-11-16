@@ -5,7 +5,7 @@ Title: Seeds
 Status: Draft
 Mandatory: no
 Created: 2026-11-10
-Last updated: 2026-11-10
+Last updated: 2026-11-15
 Requires: `CYBERSPACE_V2.md` §2 (coordinates), §4.7 (region integers, for tending), §5.2 (terrain `K`), §5.9 and §5.10 (residues and the re-roll attempt, for tending), §7.2 (region keys), §7.6 (the bag), §7.7 (contents), §8.6 (its event) and §10 (decimal tag values); DECK-0003 (SNO, the output format, and its built-in palette); DECK-0004 §3 (chests); DECK-0006 §2.2 (lineage); NIP-01, NIP-13, NIP-18, NIP-31, NIP-70; Bitcoin block headers and BIP-113 (median time past)
 
 ## Abstract
@@ -195,7 +195,7 @@ So size and color are breedable on every DNA, and a DNA that never mentions them
 
 **Why its default range is `100..100` (non-normative).** The default range is what an undeclared `opacity` brings to a mix: the child's range is the wider of the parents' two (§6.4), and mutation moves an allele only inside that range. With `100..100`, two parents that never mention opacity can only have a fully solid child, so transparency never appears in a lineage that nobody bred it into, and no existing mix or bloom changes. A wider default, such as `10..100`, would let mutation make a translucent child of two solid parents in any mix whose rate is not 0, which would change existing children and their payloads. With `100..100`, the range of a child of a solid parent and a parent that declares `opacity` runs from the declaring parent's low end to 100, so that parent alone decides how far its descendants can fade, and each child can carry the solid allele back.
 
-**Why its bounds are `10..100` (non-normative).** 100 is fully solid, the way every bloom was drawn before. DECK-0003 §1.11 draws any opacity from 1 to 9 at 10, so 10 is the faintest opacity that every reader draws as written, and a bound at 10 means that a bloom never carries a value that a reader repairs.
+**Why its bounds are `10..100` (non-normative).** 100 is fully solid, the way every bloom was drawn before. When this gene was added, DECK-0003 §1.11 drew any opacity from 1 to 9 at 10, so 10 was the faintest opacity that every reader drew as written. DECK-0003 has had no floor since 2026-11-15, and the bound stays at 10 all the same. A bloom is grown to be seen. A lower bound would change which values the alleles of any DNA whose range reaches below 10 are clamped to, and so the hash of blooms already grown from it. And the one thing an object at 0 is for, casting a glow without drawing a point (DECK-0003 §1.16), is not something a bloom carries.
 
 **Opacity and revision 1 (non-normative).** `opacity` is part of SEEDO revision 1, added while this DECK is a Draft. Before it was added, `opacity` was an ordinary name: a text could declare a species gene of that name, or use it for a `let` or a rule parameter. Under this text, such a gene line declares the standard gene, with four effects: the bloom carries the payload's `opacity` when it is below 100, so its hash changes; the gene's range is narrowed to `10..100` and its alleles clamped into it, which changes what any expression reads from it, and a range wholly outside `10..100` makes the text invalid; the gene moves to the end of the genome, so every species gene declared after it moves one index down and draws a different word in a mix (§6.4); and the mix rules for `opacity` (§6.4, §6.6) apply to it. Such a `let` or rule parameter makes the text invalid, because the name is taken (§3.4).
 

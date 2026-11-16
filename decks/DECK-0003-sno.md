@@ -5,7 +5,7 @@ Title: SNO (Simple Nostr Objects)
 Status: Draft
 Mandatory: no
 Created: 2026-09-14
-Last updated: 2026-11-14
+Last updated: 2026-11-15
 Requires: `CYBERSPACE_V2.md` (spec version `2026-03-16-h34-corrected`)
 
 ## Abstract
@@ -27,10 +27,11 @@ The design goal is not to compete with glTF or USD. It is to be the three-dimens
 | Position lattice | whole units plus 120ths of a unit (§1.2) |
 | Size | no ceiling on vertices or faces; the event's size is the relay's concern, as for every other kind (§1.8) |
 | Motion | `anim`: loops that turn or move a whole object, timed by the reader's own clock in Unix seconds (§1.14) |
+| Point size and glow | `pointsize` and `glow`: how wide an object's points are drawn, and a light or a fog around each, in `points` mode (§1.15, §1.16) |
 | Credit for a copy | the NIP-18 `q` tag naming the original's address; a `p` naming its author on a public remix only (§3.5) |
 | Reference implementation | `decks/sno-reference.py`, which is §1.9 written as code |
 
-**Conformance.** `decks/sno-reference.py` implements §1.9 with no dependencies and carries a rejection case for every numbered rule that rejects. It was checked against [sno-core](https://github.com/arkin0x/sno-core), the independent TypeScript library that ONOSENDAI, snocrash and cyberspace-mcp all read and write objects with, and the two agree on every case, including the three places where this format is deliberately forgiving rather than strict (last checked 2026-10-15, against sno-core 0.1.12: all 35 rejection cases, and Appendix A). A third implementation can be checked against the same table.
+**Conformance.** `decks/sno-reference.py` implements §1.9 with no dependencies and carries a rejection case for every numbered rule that rejects. It was checked against [sno-core](https://github.com/arkin0x/sno-core), the independent TypeScript library that ONOSENDAI, snocrash and cyberspace-mcp all read and write objects with, and the two agree on every case, including the three places where this format is deliberately forgiving rather than strict (last checked 2026-10-15, against sno-core 0.1.12: all 35 rejection cases, and Appendix A). Since then an opacity of `0` became valid and the floor of `10` was taken away (§1.11); sno-core reads opacity that way from 0.1.29, and the agreement on opacity is owed a fresh check against it. A third implementation can be checked against the same table.
 
 ---
 
@@ -42,11 +43,14 @@ The design goal is not to compete with glTF or USD. It is to be the three-dimens
 - **Vertex:** a point, its position given as whole units plus ticks, carrying one RGB color.
 - **Face:** a triangle, three vertex indices.
 - **Mode:** which of the three drawings of the same vertex list a client should produce: `solid`, `points` or `lines` (§1.5).
-- **Opacity:** how solid an object is drawn, a whole percent from `1` to `100`. Absent means `100`, fully opaque (§1.11).
+- **Opacity:** how solid an object is drawn, a whole percent from `0` to `100`. Absent means `100`, fully opaque. At `0` the object draws nothing of its own, and its glow, in `points` mode, still shows (§1.11).
 - **Walker:** a viewer that a client moves through a scene a step at a time, as a person walks, rather than by jumping to a place (§1.12).
 - **Constraint (`constrain`):** whether an object's faces stop a walker: `"all"`, `"opaque"`, or `"off"` for none. Absent also means none to a reader, and means "not chosen" to an authoring tool, which writes `"opaque"` (§1.12).
 - **Motion (`anim`):** a loop that turns or moves a whole object, such as a platform that turns or a lift that rises and comes back, timed by the reader's clock in Unix seconds. Absent means the object is still (§1.14).
 - **Rest pose:** an object as written, with no motion applied (§1.14).
+- **Point size (`pointsize`):** how wide each point of an object in `points` mode is drawn, in ticks of the object's own lattice. `0` means no points. Absent means the reader's own size (§1.15).
+- **Glow (`glow`):** a light or a fog around each point of an object in `points` mode, in the point's own color, reaching a radius given in ticks of the object's own lattice. Absent means no glow (§1.16).
+- **Glow strength:** how strong a glow is at each point's center, a whole percent from `1` to `100`. It is the glow's own, and the object's opacity never multiplies it (§1.16).
 - **Extent:** the half-width of the grid the object was built on, in model units. A bound, not a size (§1.8).
 - **Address:** the name of an addressable nostr event, written the way a nostr `a` tag writes it: the event's kind, its author's pubkey as 64 lowercase hex characters, and its `d` tag, joined by colons. An object's address is `33331:<pubkey hex>:<d>`, for example `33331:79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798:5e0a3c91d27f4b68` (§1.10, §3.1).
 - **Ref:** one entry in an object's `refs` list. It names one object that this object places, the way a nostr tag names an event. The ref `["a", "33331:<pubkey hex>:<d>"]` names the object by its address. The ref `["e", "<event id hex>"]` names it by event id. Either shape may be followed by one relay URL as a hint, such as `["a", "33331:<pubkey hex>:<d>", "wss://relay.example"]` (§1.9 rule 11, §1.10).
@@ -78,7 +82,9 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | `colors` | array | yes | One palette index per vertex, parallel to `vertices` (§1.3). |
 | `faces` | array | yes | Triangles as `[a, b, c]` vertex indices (§1.4). MAY be empty. |
 | `facecolors` | array | no | One palette index per face, run-length encoded, for hard color seams (§1.4a). Absent means every face interpolates its vertices. |
-| `opacity` | integer | no | How solid the object is drawn, a percent, `1` to `100` (§1.11). Repaired, never rejected: absent or malformed means `100`, fully opaque. |
+| `opacity` | integer | no | How solid the object is drawn, a percent, `0` to `100` (§1.11). At `0` the object draws nothing of its own, and its glow, in `points` mode, still shows. Repaired, never rejected: absent or malformed means `100`, fully opaque. |
+| `pointsize` | integer | no | How wide each point is drawn in `points` mode, in ticks of the object's lattice, `0` to `7680`; `0` means no points (§1.15). Read rather than validated: absent or malformed means the reader's own size. Kept, not drawn, in `solid` and `lines`. Never a rejection. |
+| `glow` | array | no | A light or a fog around each point in `points` mode: the word `"light"` or `"fog"`, a radius in ticks and a glow strength in percent (§1.16). Read rather than validated: absent or malformed means no glow. Kept, not drawn, in `solid` and `lines`. Never a rejection. |
 | `constrain` | string | no | Whether the object's faces stop a walker: `"all"`, `"opaque"` or `"off"` (§1.12). `"off"` and absent mean they stop nothing; a malformed value is repaired to mean the same, never rejected. An authoring tool writes `"opaque"`, and never omits it, unless its author chooses otherwise. |
 | `anim` | array | no | Up to four motions that move the object in a loop, timed in seconds by the reader's clock (§1.14). Read rather than validated: absent or malformed means the object is still, and a malformed motion is ignored while the rest apply. Never a rejection. |
 | `palette` | string or array | no | Which 256 colors the indices name (§1.3a). Absent means the built-in. |
@@ -249,7 +255,7 @@ The canonical form of §1.2 extends unchanged: a publisher MUST write a run of t
 | `points` | the vertices, each at its own color |
 | `lines` | the edges of the faces, each drawn once, colors interpolated along each edge; with no faces, one polyline through the vertices in order |
 
-A client SHOULD also draw the vertices as points in every mode, so that an object remains visible when it is smaller on screen than a triangle.
+A client SHOULD also draw the vertices as points in every mode, so that an object remains visible when it is smaller on screen than a triangle. There are two exceptions, both chosen by the object's author: an object at an opacity of `0` draws nothing of its own (§1.11), and an object in `points` mode with a `pointsize` of `0` draws no points (§1.15).
 
 ### 1.6 Scale
 
@@ -343,10 +349,12 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 11. `refs`, if present, is an array whose entries are each `["e", <64 lowercase hex>]` or `["a", "33331:<64 lowercase hex>:<d>"]`, optionally followed by one relay URL (§1.10).
 12. `parts`, if present, is an array whose entries are each eight integers: a `refs` index in range, three tick offsets each in `-7680..7680`, three whole degrees each in `0..359`, and a scale step such that the placed object's unit stays in `0..84` (§1.10). `parts` without `refs`, or a `refs` index past the end, is a reason to reject.
 13. A payload with `parts` and no `vertices` of its own is valid: an object may be nothing but the arrangement of others (§1.10).
-14. `opacity`, if present, is repaired rather than validated (§1.11): a value that is not an integer in `1..100`, null included, means `100`, and an integer from `1` to `9` is drawn at `10`. It is never a reason to reject.
+14. `opacity`, if present, is repaired rather than validated (§1.11): a value that is not an integer in `0..100`, null included, means `100`. `0` is valid, and there is no floor. It is never a reason to reject.
 15. `constrain`, if present, is read rather than validated (§1.12). `"off"` is a valid word, and means the object stops nothing. A value that is not exactly the string `"all"`, `"opaque"` or `"off"`, null included, is repaired to mean the same. It is never a reason to reject.
 16. `objects`, if present, is read rather than validated (§1.10). It is never a reason to reject this payload. A value that is not a JSON object, null included, is read as absent. A key that is not an address of the form `33331:<64 lowercase hex>:<d>` is ignored. For example, the key `"glass-tetra"` is ignored, and so is a key whose pubkey is written in uppercase hex. Each value is a payload. It is checked by rules 1 to 15, on its own, when a placement draws from it, and any `objects` field inside it is ignored. A value that fails is a placeholder for each placement that names it.
 17. `anim`, if present, is read rather than validated (§1.14). A value that is not an array, null included, means the object is still. Only its first four entries are read, and an entry that is malformed, names an unknown motion, or runs faster than two cycles a second is ignored while the rest apply. It is never a reason to reject.
+18. `pointsize`, if present, is read rather than validated (§1.15): a value that is not a JSON integer in `0..7680`, null included, means the reader's own size. It is never a reason to reject.
+19. `glow`, if present, is read rather than validated (§1.16): a value that is not a JSON array of exactly three elements, the word `"light"` or `"fog"`, a JSON integer in `1..7680` and a JSON integer in `1..100`, null included, means no glow. It is never a reason to reject.
 
 ---
 
@@ -386,7 +394,7 @@ Positions are ticks and turns are whole degrees because everything else in this 
 
 **Why the placements are in the payload and not in the event's tags.** A copy of the payload is the whole object, on the clipboard, in a bag, in another client; placements carried as tags would fall off it. Inside a bag the tags are encrypted with everything else, so nothing would be gained there. A publisher of a public `kind 33331` SHOULD also write each `refs` entry as an `e` or `a` tag on the event, unchanged, so a relay can answer "what places this object" (`#a`, `#e`); a reader MUST take the placements from the payload and MUST NOT read them from tags. A hidden object (§3.4) is also a `kind 33331`, but it MUST NOT carry these tags, because its tags are not encrypted (§3.4).
 
-**What a placed object keeps and what it loses.** A placed object keeps its own `palette`, `mode`, `opacity`, `constrain`, `facecolors` and geometry. It is drawn as its author drew it, and the parent's `opacity` and `constrain` do not reach it (§1.11, §1.12). It also keeps its own `anim`, so it moves in its own frame wherever it is placed, and a parent's motion carries it (§1.14). It loses `up` and `spin`. The reason is that the parent's placement decides where it stands and which way it faces, and a parent standing on the Earth (§1.7) carries its parts with it. Its `extent` is ignored. Instead, the parent's extent is repaired to contain the placed objects' bounds, in the same way that it is repaired to contain the parent's own vertices (§1.8). A reader can only do this once it has each placed object, either fetched or read from an objects table (below). A parent's advertised extent may therefore be smaller than what is finally drawn.
+**What a placed object keeps and what it loses.** A placed object keeps its own `palette`, `mode`, `opacity`, `constrain`, `pointsize`, `glow`, `facecolors` and geometry. It is drawn as its author drew it, and the parent's `opacity` and `constrain` do not reach it (§1.11, §1.12). It also keeps its own `anim`, so it moves in its own frame wherever it is placed, and a parent's motion carries it (§1.14). It loses `up` and `spin`. The reason is that the parent's placement decides where it stands and which way it faces, and a parent standing on the Earth (§1.7) carries its parts with it. Its `extent` is ignored. Instead, the parent's extent is repaired to contain the placed objects' bounds, in the same way that it is repaired to contain the parent's own vertices (§1.8). A reader can only do this once it has each placed object, either fetched or read from an objects table (below). A parent's advertised extent may therefore be smaller than what is finally drawn.
 
 **Depth and cycles.** A placed object may itself have parts. A reader MUST follow placements no deeper than `4` levels from the object it is rendering. It MUST draw a placeholder in place of anything deeper. A reader MUST also treat a reference to any object already in the chain of parents as missing. For example, if object A places object B, and B places A again, that placement of A inside B is missing, and it is drawn as a placeholder. A reader can enforce both of these bounds by itself, without trusting the author of the object. This section states only bounds of that kind, because a bound that relies on the author's good behavior does not protect a reader from an author who ignores it.
 
@@ -486,7 +494,7 @@ The rules follow. They are listed in the order a reader comes to them when it re
 - **A key that no placement names is ignored.** A reader draws only what a placement names. A publisher SHOULD NOT write a key that no placement in the build names. Such an entry is carried to every reader and drawn by none. When the table holds no entries at all, the publisher omits the `objects` field, as §1.2 requires.
 - **Each entry is checked on its own** (§1.9 rule 16). A reader validates an entry when a placement draws from it, separately from the payload that carries it. An entry that fails §1.9 is drawn as a placeholder at each placement that names it, in the same way as a fetched object that fails (above). A reader MUST NOT fetch that address instead. A table entry is never fetched, even when it fails, for the reasons given under **Why a table entry is never fetched**, below. The parent is unaffected. For example, an entry with `"v": 3` fails rule 1 and is drawn as a placeholder, and the reader still does not ask relays for its address.
 - **The field is never a reason to reject.** An `objects` value that is not a JSON object, such as `null`, an array or a string, is read as absent. A key that is not an address of the form above is ignored. A reader MUST NOT reject a payload for anything in `objects`.
-- **Depth, cycles and each object's own fields are unchanged.** A placement drawn from the table counts toward the depth bound of `4`, and toward the chain of parents, exactly as a fetched placement does. When an entry places its own address, or the address of any object above it, that placement is therefore missing. An object in the table keeps its own `palette`, `mode`, `opacity`, `constrain`, `facecolors` and `anim`, as every placed object does (above). In the example, the water stays translucent and lets a walker in, and the floor stays opaque and holds one. Nothing is merged into the parent.
+- **Depth, cycles and each object's own fields are unchanged.** A placement drawn from the table counts toward the depth bound of `4`, and toward the chain of parents, exactly as a fetched placement does. When an entry places its own address, or the address of any object above it, that placement is therefore missing. An object in the table keeps its own `palette`, `mode`, `opacity`, `constrain`, `pointsize`, `glow`, `facecolors` and `anim`, as every placed object does (above). In the example, the water stays translucent and lets a walker in, and the floor stays opaque and holds one. Nothing is merged into the parent.
 - **A reader that does not support the field** ignores it, as §1.1 requires of every field that a reader does not recognize. It fetches each address as usual and draws what it finds. Where nothing was published under the address, it draws a placeholder. Where something was published, it draws the object's newest published version, which need not be the same as the copy the table carries. It MUST NOT reject the parent because of the field.
 - **What an older reader asks relays for.** A reader that predates this field fetches every carried address, so it asks public relays for each one. A publisher SHOULD therefore key a carried object that has no event of its own under a `d` that says nothing about the object, such as random hex. This means it SHOULD NOT key the object under its name, or under the path of a kit that the object came from. For example, `33331:<pubkey hex>:5e0a3c91d27f4b68` says nothing about the object, while `33331:<pubkey hex>:dungeon-kit/secret-door` names the piece to every relay that an older reader asks. The reason is that the `d` is sent to public relays by every reader that predates this field, while the name inside the payload stays sealed with the bag.
 - **A table taken from a bag stays out of the clear.** A tool that publishes in the clear a payload taken from a bag MUST NOT include that payload's objects table unless its user chose to. A payload taken from a bag is the payload of an item (§3.2) or of a hidden object (§3.4) that the tool decrypted from a bag, including one its user has since edited. Its user chose to only when the tool offered to keep the table and the user accepted. Choosing to publish the object is not that choice. An event published in the clear is, for example, a public object (§3.1) or an avatar (§3.3). Anyone can read such an event, so the carried objects would be published with it. For example, a tool that copies an item out of a bag and publishes it as a public object leaves out the item's `objects` field, unless its user chose to keep it. Inside a bag, the table is encrypted with everything else. An item (§3.2) is sealed with the bag, and a hidden object (§3.4) is encrypted with the bag's region key. Keeping unpublished objects private in this way is what this field is for.
@@ -532,24 +540,30 @@ A new field is ignored by those readers (§5). The `a` ref stays an ordinary ref
 
 ### 1.11 Opacity
 
-`opacity` says how solid an object is drawn. It is a whole number of percent from `1` to `100`, and absent means `100`: fully opaque, which is how every object was drawn before this field existed and how every object without it is drawn still.
+`opacity` says how solid an object is drawn. It is a whole number of percent from `0` to `100`, and absent means `100`: fully opaque, which is how every object was drawn before this field existed and how every object without it is drawn still.
 
 | `opacity` | Drawn at |
 |---|---|
 | absent | `100`, fully opaque |
-| `10` to `100` | that percent |
-| `1` to `9` | `10`, the floor (below) |
-| anything else: `0`, above `100`, negative, fractional, a string, a boolean, an array, an object, null | `100`, fully opaque, exactly as if it were absent |
+| `1` to `100` | that percent |
+| `0` | nothing of the object's own: no faces, no edges, no points. Its glow, if it has one and is in `points` mode, still shows (§1.16) |
+| anything else: above `100`, negative, fractional, a string, a boolean, an array, an object, null | `100`, fully opaque, exactly as if it were absent |
 
-**It applies to everything the object draws.** The faces of `solid`, the edges of `lines`, the points of `points`, and the vertices a client draws as points in every mode (§1.5) all take the one opacity. There is no opacity per vertex, per face or per palette entry, and the end of this section says why.
+**It applies to everything the object draws, except its glow.** The faces of `solid`, the edges of `lines`, the points of `points`, and the vertices a client draws as points in every mode (§1.5) all take the one opacity. A glow (§1.16) does not: it is drawn at its own glow strength whatever the object's opacity is, so that an object can cast a light or a fog without drawing a point. There is no opacity per vertex, per face or per palette entry, and the end of this section says why.
 
 **It is repaired, never a reason to reject.** A reader MUST draw an object whose `opacity` is malformed as fully opaque, and MUST NOT reject the payload for it (§1.9 rule 14). Opacity is a matter of how an object looks, never of what shape it is, and an object drawn opaque is still that object, drawn the way every reader that predates this field draws it anyway. A strict rule would make a reader that knows the field draw less than one that does not: the older reader ignores the field and draws the object, while a strict newer reader would draw nothing. For this field, knowing more must never mean drawing less, so a malformed value means the default, and the default is the value every reader already uses. That is what sets `opacity` apart from fields such as `facecolors` and `spin`, whose malformed values are rejections (§1.9 rules 8c and 10). Those were strict from the day they were added, and a guess at what a broken one meant could draw the object wrongly. `opacity`'s default is exactly the opaque drawing every existing reader already makes, and the field was ruled forgiving from the day it was added. This is the same stance `extent` takes (§1.8), and for the same reason. A publisher MUST NOT write a malformed value; the repair exists for readers.
 
-**The floor.** A value from `1` to `9` is valid and is drawn at `10`. An object drawn at one percent is invisible in practice, and an invisible object in a shared space is not an object so much as a trap: something a camera can be put inside, a selection can land on by accident, or a person can be watched from, with nothing on the screen to say it is there. §1.5 already asks a client to keep every object visible however small it is on screen; the floor makes the same promise however faint the author asked for it to be. Ten percent is faint enough for haze and clear glass and still plainly something. The values below it are not errors, so an author who asked for "as faint as possible" gets the faintest the format allows rather than an opaque object. They record what the author asked for and are not other spellings of `10`, so canonical form leaves them as written; a publisher SHOULD still write `10` or more, so that what is written is what is drawn.
+**Zero, and why there is no floor.** An object at `0` draws nothing of its own. It is there for its glow (§1.16): a mist that is all fog and no specks, the light from a lamp whose bulb is out of sight, a warm haze over a field. Until 2026-11-15 the range was `1` to `100` with a floor of `10`, because an object drawn at one percent is invisible in practice, and an invisible object in a shared space can be a trap: something a camera can be put inside, a selection can land on by accident, or a person can be watched from, with nothing on the screen to say it is there. The floor was taken away so that a glow can be cast without a point, and the trap is answered in other ways instead:
 
-**Canonical form.** A publisher MUST omit `opacity` when it is `100`, as it omits `extent` when it is `8` (§1.2), so an opaque object is written exactly as it was before this field existed and there is still one way to write it.
+- An object at `0` is still an object. A reader that lists, selects or edits objects SHOULD show such an object to the object's author in a way the author can find and select, for example as an outline in an editor, and a reader MAY do the same for any viewer who asks.
+- It encloses nothing and hides nothing (§6): something behind it is drawn as if it were not there.
+- Its faces still stop a walker if its `constrain` says so, and a client hints where a walker meets one (§1.12).
 
-**A reader that cannot draw translucency MAY draw any object opaque.** That is always a correct drawing of the object, and it is what every reader written before this section does, because a reader ignores a field it does not recognize (§5). §4 says how a reader that can draw it should, and §6 says what translucency does not do: it does not hide anything.
+A value from `1` to `9` is drawn as written, as faint as the author asked. Values from `1` to `9` written before 2026-11-15, which readers then drew at `10`, are drawn fainter now, and closer to what their authors asked for.
+
+**Canonical form.** A publisher MUST omit `opacity` when it is `100`, as it omits `extent` when it is `8` (§1.2), so an opaque object is written exactly as it was before this field existed and there is still one way to write it. `0` is written as `0`.
+
+**A reader that cannot draw translucency MAY draw any object from `1` to `99` opaque.** That is always a correct drawing of the object, and it is what every reader written before this section does, because a reader ignores a field it does not recognize (§5). An object at `0` is different: a reader that knows the field SHOULD draw nothing of it, which needs no translucency, only that the object be left out. A reader written before this section draws it opaque and shows its geometry, which its author chose not to show; that is the price of a field old readers cannot see. §4 says how a reader that can draw translucency should, and §6 says what translucency does not do: it does not hide anything.
 
 **Placed objects and avatars.** A placed object keeps its own opacity, and its parent's does not reach it (§1.10). A parent at `40` placing a tile drawn opaque draws the tile opaque; an author who wants the tile faint places a faint tile. This is the rule `mode` and `palette` already follow, and it means every object on the screen is drawn at an opacity its own author chose, never at the product of a chain of other people's choices. An avatar ignores `opacity` altogether (§3.3).
 
@@ -567,7 +581,7 @@ A new field is ignored by those readers (§5). The `a` ref stays an ordinary ref
 
 **What it costs.** Thirteen bytes for a two-digit value, `,"opacity":40`, and nothing for an opaque object, which omits it. Appendix A carries an example.
 
-**Versioning.** `opacity` is a field whose absence has a meaning, so its addition does not bump `v` (§5). An older reader ignores it and draws the object opaque.
+**Versioning.** `opacity` is a field whose absence has a meaning, so its addition does not bump `v` (§5). An older reader ignores it and draws the object opaque. Widening the range to `0` and taking away the floor on 2026-11-15 did not bump `v` either. `0` was a value a publisher MUST NOT write, so no object written to this section said `0` and meant something else by it. The values `1` to `9` always recorded what their author asked for and were never other spellings of `10`, so what changed is only how faint they are drawn, toward what was asked. A reader written before that date draws an object at `0` opaque, which is the fallback this section already allows. One difference reaches walking: such a reader repairs `0` to `100`, so an object at `0` set to `"opaque"` holds its walker there, as a wall it can see, where a newer reader lets the walker through. Every reader that reads opacity as this section now does holds a walker at the same objects (§1.12), and an older reader's drawing stays a correct one, which is what §5 asks of a field added or widened without a bump. Naming `"off"` (§1.12) was done the same way.
 
 (Non-normative: `decks/sno-reference.py` implements the table above as `drawn_opacity`, and its self-test carries a repair case for each kind of value in it; there is no rejection case, because nothing in this section rejects. A reader that edits objects should keep fields it does not recognize when it writes an object back, or the first person to open a translucent object in an older editor and publish it again would make it opaque for everyone after them.)
 
@@ -579,7 +593,7 @@ A new field is ignored by those readers (§5). The `a` ref stays an ordinary ref
 |---|---|
 | absent | none |
 | `"off"` | none: the author chose no constraint |
-| `"all"` | every face, in every mode, at every opacity |
+| `"all"` | every face, in every mode, at every opacity, `0` included (below) |
 | `"opaque"` | every face while the object is opaque, which is `mode` `solid` with an opacity of `100` (§1.11); none while it can be seen through |
 | anything else: `"none"`, `"OFF"`, `"ALL"`, `"Opaque"`, a number, a boolean, an array, an object, null | none, exactly as if it were absent |
 
@@ -596,7 +610,11 @@ A new field is ignored by those readers (§5). The `a` ref stays an ordinary ref
 - A face the walker already stands on, at the very start of the segment, does not hold it, so a walker can always step off a surface it is touching. A step that would end exactly on a face does cross it: a walker never lands on a wall.
 - The faces are tested where the object is drawn: after `up` and `spin` (§1.7), through every placement (§1.10), and, where a reader draws only the part of a hidden object that lies inside its bag's region (`CYBERSPACE_V2.md` §7), only that part, so that a walker is held only where the object is drawn. For an object that moves (§1.14), that is where it is drawn at the moment of the step.
 
-`mode` does not change which triangles exist. An object in `lines` or `points` mode still has its faces, and `"all"` makes them walls although the reader draws them as edges or dots. That is deliberate: `"all"` is the author saying the object is solid to a walker however it is drawn, and every such object still shows, since its edges or its points are drawn (§1.5). An author who wants a walker held only by what looks solid writes `"opaque"`. An object with no faces has nothing to cross, whatever it says.
+**An object nobody can see still holds a walker** (ruled 2026-11-15). An object that draws nothing of its own, because its opacity is `0` (§1.11) or because it is in `points` mode with a `pointsize` of `0` (§1.15), keeps its `constrain` exactly as the table gives it. Set to `"all"`, its faces stop a walker although nothing of it is drawn: an invisible wall, a floor of glass that cannot be seen, a fence around a garden that only its fog shows. This is a building tool and was ruled one on purpose. `"opaque"` never stops a walker at such an object, since an object at an opacity of `0`, or in `points` mode, is not opaque, and `"off"` and absent never stop one. A glow (§1.16) never stops a walker.
+
+A walker that meets a wall it cannot see should not be left wondering what stopped it. A client that holds its walker at a face of an object that draws nothing of its own SHOULD show, briefly and faintly, where the walker met it, for example by flashing the outline of the face or of the object for a moment, and SHOULD NOT draw anything of the object otherwise. How the hint looks is the client's. Such an object still encloses nothing and hides nothing (§6): stopping a walker is all it does.
+
+`mode` does not change which triangles exist. An object in `lines` or `points` mode still has its faces, and `"all"` makes them walls although the reader draws them as edges or dots. That is deliberate: `"all"` is the author saying the object is solid to a walker however it is drawn. Such an object shows its edges or its points (§1.5), unless its author made it draw nothing of its own (§1.11, §1.15), and then a client hints where a walker meets it (above). An author who wants a walker held only by what looks solid writes `"opaque"`. An object with no faces has nothing to cross, whatever it says.
 
 **Exact where the lattice is exact.** Positions here are exact rationals (§1.2), and a walker's offset from an object is a whole number of gibsons. A reader SHOULD subtract the object's position from the walker's in integers before anything becomes a float, and SHOULD first set aside, still in integers, every object whose bounds the step's segment misses, so that nothing far away is ever measured in floats. It SHOULD then test what remains in the object's own frame. For an object at a small `unit`, placed with quarter turns and steps of scale, every number in that test is a whole number of ticks or a power of two of modest size, and double precision decides it exactly, touching cases included. At a large `unit` a gibson is a tiny fraction of a tick, and a turn of any other whole degree, or a pose on the Earth (§1.7), brings in irrational values; there a reader decides a touching case with a small tolerance toward crossing, since a wall that leaks is a worse failure than one a hair thicker than drawn.
 
@@ -779,6 +797,116 @@ The last two rows hold the same two motions in the two orders, and land in diffe
 
 (Non-normative: `decks/sno-reference.py` implements this section as `motions_of`, `motion_phase` and `animated_point`. It computes every phase exactly, as fractions, and its self-test carries every row of the table, and a read case for each kind of malformed entry; there is no rejection case, because nothing in this section rejects. As with `opacity` and `constrain`, a reader that edits objects should keep fields it does not recognize when it writes an object back, or the first person to open a moving platform in an older editor and publish it again would stop it for everyone after them.)
 
+### 1.15 Point size
+
+`pointsize` says how wide each point of an object in `points` mode is drawn. It is a whole number of ticks of the object's own lattice (§1.2), from `0` to `7680`, and it is a width: a point of `pointsize` `120` is one model unit across. Absent means the reader's own size, which is how every point was drawn before this field existed and how every point without it is drawn still.
+
+```json
+"pointsize": 48
+```
+
+That object's points are each 48 ticks across, two fifths of a model unit.
+
+| `pointsize` | Drawn at |
+|---|---|
+| absent | the reader's own size |
+| `1` to `7680` | that many ticks across |
+| `0` | no points at all: the object draws its vertices as nothing, and only its glow (§1.16) shows |
+| anything else: negative, above `7680`, fractional, a string, a boolean, an array, an object, null | the reader's own size, exactly as if it were absent |
+
+**It is read only in `points` mode.** In `solid` and `lines` the field is kept and not drawn, and the points a client draws under the faces or the edges (§1.5) keep the client's own size, `0` included: a `pointsize` of `0` on a `solid` object does not take away the points §1.5 asks a client to draw under its faces. An object whose mode is changed back to `points` draws at its `pointsize` again.
+
+**It scales with the object.** A tick grows with `unit` (§1.6) and with a placement's scale step (§1.10), exactly as a vertex's position does, so an object scaled up keeps the proportion between its points and the gaps between them. A point is drawn as a round dot facing the viewer, and it keeps its perspective: a near point is larger on the screen than a far one.
+
+**`0` draws no points.** A `pointsize` of `0` is a valid value, not a malformed one. It is how an author makes an object whose vertices exist only to carry a glow (§1.16): a mist that is all fog and no specks, a light with no bulb. It is one of the two exceptions to §1.5's advice that every mode draw its vertices as points; the other is an opacity of `0` (§1.11). An object at `0` with no glow draws nothing at all in `points` mode, exactly as an object at an opacity of `0` draws nothing of its own (§1.11), and a reader treats it the same way: it is still an object, it still has its faces for `constrain` (§1.12), and a reader that lists, selects or edits objects SHOULD show it to the object's author, for example as an outline in an editor, so that it can be found again (§1.11).
+
+**What a reader may do with the screen.** A reader SHOULD keep every point it draws visible however small its `pointsize` makes it on the screen, as §1.5 asks for every object, for example by drawing no point smaller than a pixel or two. A reader MAY limit how large a point is drawn on the screen, so that a point near the viewer does not cover the view. A graphics processor limits the size of a point it draws natively, and the limit can be small: some draw no point wider than 64 device pixels. A reader that needs a point larger than its device draws natively SHOULD draw it as a disc facing the viewer, of the same size, instead of drawing it smaller. None of these changes what the object is.
+
+**It is read, never a reason to reject** (§1.9 rule 18). `pointsize` says how an object looks, never what shape it is, and a malformed value means the size every reader that predates this field already draws. For this field, as for `opacity`, knowing more must never mean drawing less. A publisher MUST write it as a JSON integer (digits only: `48`, never `48.0` or `4.8e1`), MUST NOT write a malformed value, and MUST omit it when its author has not chosen a size; the repair exists for readers. A reader whose JSON parser cannot tell `48.0` from `48` MAY read such a value as `48`.
+
+**Placed objects and avatars.** A point of a placed object is as wide as that object's own `pointsize` says, at that object's own scale; its parent's does not reach it (§1.10), which is the rule `mode` and `opacity` already follow. An avatar ignores `pointsize` (§3.3).
+
+**Why ticks, and not pixels.** Every distance an object carries is in ticks of its own lattice: its positions, a motion's reach, a placement's offset. A size in pixels would be the one number that meant something different on every screen, and an object scaled up by `unit` would keep pixel-sized points, so a forest of points made large would turn to dust.
+
+**Why one number for the whole object.** A size for each point would cost bytes for every vertex, and would go wrong whenever an editor that does not know the field added or removed a point (the note that closes §1.11). An author who wants two sizes of point in one build makes two objects and places them (§1.10), which is already how one build combines two modes or two opacities.
+
+**What it costs.** Fifteen bytes for `,"pointsize":48`, and nothing for an object that leaves it out.
+
+**Versioning.** `pointsize` is a field whose absence has a meaning, so its addition does not bump `v` (§5). An older reader ignores it and draws its points at its own size.
+
+(Non-normative: `decks/sno-reference.py` implements the table above as `drawn_pointsize`, and its self-test carries a read case for each kind of value in it; there is no rejection case, because nothing in this section rejects.)
+
+### 1.16 Glow
+
+`glow` gives each point of an object in `points` mode a light or a fog around it, in that point's own color: a field of grass in morning sun, a lamp, fireflies, a forest in mist, the smog over a ruin. It is one JSON array of exactly three elements, a word and two whole numbers:
+
+```json
+"glow": ["fog", 240, 35]
+```
+
+That object's points each carry a fog in their own color, strongest at the point, where it is drawn at a glow strength of 35 percent, and fading to nothing 240 ticks (two model units) from the point's center.
+
+| Element | What it says |
+|---|---|
+| the word | `"light"` or `"fog"`, below |
+| the radius | how far from each point's center the glow reaches before it fades to nothing, a whole number of ticks of the object's lattice (§1.2), from `1` to `7680` |
+| the glow strength | how strong the glow is at each point's center, a whole percent from `1` to `100` |
+
+Absent means no glow, which is how every point was drawn before this field existed and how every point without it is drawn still.
+
+**The two words.**
+
+| Word | What it does to what is behind it |
+|---|---|
+| `light` | adds the point's color to it, as light does: a bright color brightens what it reaches, a dark color adds almost nothing, and nothing is ever darkened |
+| `fog` | lays the point's color over it, as mist or smoke does: a dark color dims what it covers, a pale color veils it in white or gray, and any color can be a haze |
+
+The words are lowercase and exact, as `mode`'s are.
+
+**Why a word, and not the color's brightness.** Bright light and dark smog are the cases everyone pictures first, and a rule that read the style from the color would draw both. It would also draw pale mist, the commonest fog there is, as glare, a green smog as a neon glow, and an object painted in several colors as a mixture of lights and fogs. Two readers that measured brightness differently would draw the same object two ways, and changing the palette (§1.3a) would change the style. Six bytes buy the author's own choice. An editor MAY suggest the word from the color, and SHOULD let its user change it.
+
+**The color is each point's own.** There is no color of the glow apart from the color of its point (§1.3), so painting a point paints its glow, and an object whose points differ in color has glows that differ in color.
+
+**It is read only in `points` mode.** In `solid` and `lines` the field is kept and not drawn, and the points a client draws under the faces or the edges (§1.5) never glow. An object whose mode is changed back to `points` glows again. An author who wants a glowing lamp places a small object in `points` mode, with a glow, inside a lamp that is `solid` (§1.10).
+
+**The glow strength is its own, and opacity does not reach it.** An object's `opacity` (§1.11) applies to everything the object draws except its glow. The glow is drawn at its own glow strength whatever the object's opacity is: an object at `40` with a glow strength of `50` glows at fifty percent at its points, and its points are drawn at forty. This is what lets an object cast a light or a fog without drawing a point: at an opacity of `0`, the object draws nothing of its own and its glow still shows, which is a mist with no specks in it, or the light of a lamp whose bulb is out of sight. A `pointsize` of `0` (§1.15) does the same for the points alone. The glow strength has no floor beyond its range: a faint glow is a faint glow, and §6 says why that traps nothing.
+
+**With point size.** `pointsize` (§1.15) is the dot; the glow is the halo around it. The point is drawn on top of its own glow. A radius smaller than half the point's width is hidden behind the point, which is allowed and needs no rule.
+
+**With motion.** A glow is drawn around its point wherever the point is drawn, so a motion (§1.14) carries it exactly as it carries the point. Nothing in this field moves the glow away from its point. A reader MAY give a glow a texture that drifts slowly inside it, and MUST draw that texture still for a viewer who has asked for reduced motion (§1.14).
+
+**It scales with the object.** The radius is in ticks, so it grows with `unit` (§1.6) and with a placement's scale step (§1.10), as `pointsize` does and for the same reason.
+
+**What a reader may do.** A reader SHOULD draw a glow strongest at the point and fading smoothly to nothing at the radius; the shape of the fade is the reader's. A glow behind an opaque face is not seen through it. Where a reader draws only the part of a hidden object that lies inside its bag's region (`CYBERSPACE_V2.md` §7), it SHOULD cut the glow at the same walls, so a glow never leaks out of a region its object is confined to. A reader that culls objects by their bounds SHOULD widen an object's bounds by its glow's radius, at the object's scale, so that a glow does not vanish while the edge of its light is still on the screen. A reader MAY limit how many glows it draws, how large a glow is drawn on the screen and how much of the screen glows altogether, drawing the nearest first, and MAY let its viewer turn glows off. A reader that cannot draw a glow, or chooses not to, draws the points without it. That is always a correct drawing of the object, and it is what every reader written before this section does.
+
+**It is read, never a reason to reject** (§1.9 rule 19). A reader reads a `glow` that is not a JSON array of exactly three elements, whose word is not exactly `"light"` or `"fog"`, or whose radius or glow strength is not a JSON integer in its range, null included, as absent, and draws no glow. So `"Light"`, `"smog"` and `"haze"` are malformed, and so is a glow strength of `0`. A reader MUST NOT reject the payload for it. For this field, as for `opacity`, knowing more must never mean drawing less, and no glow is what every older reader already draws. A publisher MUST write the radius and the glow strength as JSON integers, MUST NOT write a malformed value, and MUST omit `glow` when the object has none. A reader whose JSON parser cannot tell `240.0` from `240` MAY read such a value as `240`.
+
+**It encloses nothing, hides nothing, and stops no walker.** A glow is not a face. It never stops a walker (§1.12), and it never counts toward enclosing anything (§6). A fog looks as if it hides what is behind it, and does not: a reader that draws no glow, or draws fewer glows than an object asks for, shows everything behind it. An application MUST NOT rely on a fog to keep anything out of sight.
+
+**Placed objects and avatars.** A placed object keeps its own glow, and its parent's does not reach it (§1.10). An avatar ignores `glow` (§3.3).
+
+**Why one glow for the whole object.** A radius or a glow strength for each point would cost bytes for every vertex, would go wrong whenever an editor that does not know the field added or removed a point (the note that closes §1.11), and would ask an author to select points before setting a glow. An object with two glows is two objects placed together (§1.10), which is already how one build combines two modes or two opacities.
+
+**Why the word comes first.** It reads the way a motion reads (§1.14): what it is, then its numbers. `"glow": ["fog", 240, 35]` says what it means by eye. And a glow is one thing: three separate fields could be two thirds valid, where one array is either a glow or not, and not means no glow.
+
+**A forest.** A tree drawn as points in a dark green, with specks a fifth of a unit across and a fog around each, in mist at its feet:
+
+```json
+"mode": "points", "pointsize": 24, "glow": ["fog", 360, 30]
+```
+
+and a few mushrooms placed among the trees (§1.10), drawn as points in a pale blue with a light and no specks, so that the fog has something to dim:
+
+```json
+"mode": "points", "pointsize": 0, "glow": ["light", 120, 80]
+```
+
+**What it costs.** Twenty-two bytes for `,"glow":["fog",240,35]`, and nothing for an object without a glow.
+
+**Versioning.** `glow` is a field whose absence has a meaning, so its addition does not bump `v` (§5). An older reader ignores it and draws the points without a glow.
+
+(Non-normative: `decks/sno-reference.py` implements the table above as `drawn_glow`, and its self-test carries a read case for each kind of value in it; there is no rejection case, because nothing in this section rejects. As with `opacity`, a reader that edits objects should keep fields it does not recognize when it writes an object back, or the first person to open a glowing forest in an older editor and publish it again would put its lights out for everyone after them.)
+
 ## 2. Model space (normative)
 
 An object is built in a right-handed frame with Y up, which is the glTF and three.js convention:
@@ -849,6 +977,8 @@ An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload
 
 **An avatar never stops a walker.** A reader MUST ignore `constrain` (§1.12) in an avatar's payload, and in every object the avatar places (§1.10). An avatar is a person, not a wall: one standing in a doorway would shut it for every walker whose client honors the field, and one that moves would carry a wall about with it, through which nobody could follow. `constrain` is not one of the fields the work is computed from, so the work an avatar owes is unchanged by it.
 
+**An avatar has no point size and no glow.** A reader MUST ignore `pointsize` (§1.15) and `glow` (§1.16) in an avatar's payload, and in every object the avatar places (§1.10), and draw an avatar's points at its own size, without a glow. The work an avatar owes prices its size and its detail, and a point as large as its author likes, or a light or a fog reaching sixty-four units from every vertex, would let an avatar take more of everyone's screen than it paid for. Neither field is one of the fields the work is computed from, so the work an avatar owes is unchanged by them.
+
 **An avatar never moves by itself.** A reader MUST ignore `anim` (§1.14) in an avatar's payload, and in every object the avatar places (§1.10), and draw the avatar at its rest pose. An avatar is how one person knows where another stands, and a slide or an orbit of up to 64 units would draw the person somewhere they are not. `anim` is not one of the fields the work is computed from, so the work an avatar owes is unchanged by it.
 
 ### 3.4 A hidden object as its own event
@@ -909,7 +1039,7 @@ That is what makes the author's clients tell them their object was remixed. "Pub
 
 A client MUST NOT render an object that fails §1.9.
 
-A client SHOULD render all three modes; a client that renders only `points` still shows every object, which is why the vertex list is the one required part of the format.
+A client SHOULD render all three modes; a client that renders only `points` still shows every object, except one whose author made it draw nothing of its own (§1.11, §1.15), which is why the vertex list is the one required part of the format.
 
 **Shading is decided here rather than left to taste**, because per-vertex color forces the question and implementers who are not told will answer it differently, which makes the same object look like two objects.
 
@@ -921,7 +1051,7 @@ A client MAY light an object instead, and many will, because a lit object sits b
 
 A client MUST NOT invent geometry: no subdivision, no smoothing that moves a vertex, no hole filling. The lattice is exact and a renderer that moves a vertex has broken the one guarantee the format makes. A motion (§1.14) does not break it: it moves the whole object, and everything it places, rigidly, so no vertex ever moves relative to another.
 
-**Translucency** (§1.11). A client SHOULD draw an object whose opacity is below `100` blended over what is behind it at that opacity; a client that cannot draw translucency MAY draw it opaque (§1.11). The default reading stays unlit: opacity changes how much of a face is drawn, not what color it is, and a client that lights objects lights a translucent face exactly as it lights an opaque one.
+**Translucency** (§1.11). A client SHOULD draw an object whose opacity is from `1` to `99` blended over what is behind it at that opacity; a client that cannot draw translucency MAY draw it opaque (§1.11). An object at `0` is left out, below. The default reading stays unlit: opacity changes how much of a face is drawn, not what color it is, and a client that lights objects lights a translucent face exactly as it lights an opaque one.
 
 What follows is advice rather than requirement. It is how renderers in common use draw translucency correctly, and it is written down so an implementer does not have to find each failure on their own.
 
@@ -929,6 +1059,16 @@ What follows is advice rather than requirement. It is how renderers in common us
 - It is drawn after every opaque object, so nothing opaque behind it is painted over it. Translucent objects are ordered back to front by their distance from the viewer. The triangles inside one object need no sorting: an object has one opacity, and layers of one color at one opacity blend to the same result in any order. An object whose colors vary and which overlaps itself may show its layers in a different order as the viewer moves; that is accepted as the price of not sorting triangles.
 - Both sides of every face are still drawn (§1.4), and one draw of both sides together is enough. (Some engines draw a translucent two-sided surface as two passes by default, the backs and then the fronts. For this content the second pass buys almost nothing, and in at least one engine it cost an allocation for every object on every frame, which a scene of a few hundred objects turned into gigabytes a minute.)
 - A client that runs a post-processing pass keyed on what was drawn (a glow, an outline) should check that a translucent surface does not change how the things behind it are treated, only how they look.
+
+**Opacity `0`** (§1.11). A client SHOULD skip drawing the faces, edges and points of an object at an opacity of `0` rather than draw them at no opacity: the result is the same, and nothing is spent on it. Its glow is drawn at its own glow strength (§1.16).
+
+**Point size and glow** (§1.15, §1.16). A client SHOULD draw a point of a given `pointsize` as a round disc facing the viewer, and a glow as §1.16 describes, `light` added to what is behind it and `fog` laid over it. What follows is advice, from building one.
+
+- A graphics processor's native points are capped in size, at 64 device pixels on some common devices, which is only about 21 CSS pixels on a screen of three device pixels to the CSS pixel. Large points and every glow are better drawn as quads that face the viewer, one per point, drawn together in one call.
+- One blend serves both words: the color times the glow's strength at that pixel, added to what is behind it times one minus an alpha, where the alpha is that strength for `fog` and `0` for `light`.
+- A glow's cost is the screen it covers, not how many there are: a few hundred glows the size of a thumbnail cost a phone more than thousands the size of a pixel, and a viewer standing inside a fog cloud can be covered by every glow in it at once. A client SHOULD limit the total screen its glows cover, cap the size of each on screen, draw the nearest first, and fade a glow out as the viewer comes inside it. §1.16 allows all of these.
+- A glow is already light. A client that runs a post-processing pass keyed on what was drawn, such as a bloom that brightens whatever is not black, should check that a glow is not counted twice, since a pass of that kind would turn a pale fog into glare.
+- A glow that meets an opaque face reads better when it fades out where it touches the face than when it is cut off in a hard line.
 
 A client MUST perform welding, deduplication and any equality test on the integer lattice rather than on floats derived from it (§1.2).
 
@@ -938,7 +1078,7 @@ A client MUST perform welding, deduplication and any equality test on the intege
 
 `v` is `1` or `2`, and a reader MUST support both and reject anything else. A version bump means the meaning of an existing field has changed, which is exactly what happened between the two: `v: 2` reads its Z as written and `v: 1` has it negated (§2). Nothing else differs, and nothing else should ever differ by so little: two versions are a cost, and this one buys a format that every other tool can read without a special case.
 
-A reader MUST ignore fields it does not recognize rather than rejecting them. This is what allows an optional field to be added without a version bump, and it is how `extent`, `ticks`, `up`, `spin`, `palette`, `facecolors`, `refs`, `parts`, `opacity`, `constrain`, `objects` and `anim` were each added to a format already in use: an older reader sees an object with whole-unit positions on a grid of 8, unoriented, in the built-in colors, every face interpolating its corners, placing nothing, fully opaque, stopping no walker, carrying no other objects, standing still, and draws something correct rather than nothing.
+A reader MUST ignore fields it does not recognize rather than rejecting them. This is what allows an optional field to be added without a version bump, and it is how `extent`, `ticks`, `up`, `spin`, `palette`, `facecolors`, `refs`, `parts`, `opacity`, `constrain`, `objects`, `anim`, `pointsize` and `glow` were each added to a format already in use: an older reader sees an object with whole-unit positions on a grid of 8, unoriented, in the built-in colors, every face interpolating its corners, placing nothing, fully opaque, stopping no walker, carrying no other objects, standing still, with its points at the reader's own size and no glow, and draws something correct rather than nothing.
 
 An extension that changes how an existing field is interpreted MUST bump `v`. An extension that adds a field whose absence has a well-defined meaning MUST NOT.
 
@@ -960,11 +1100,13 @@ Anyone implementing this deck should treat `v: 2` as meaning the palette-indexed
 
 **Objects are not attribution.** A `kind 3330` event inside a bag may be unsigned (`CYBERSPACE_V2.md` §7), in which case its `pubkey` is a claim and a client MUST NOT present it as verified authorship.
 
-**Screen real estate is a resource.** An object drawn in a shared space is seen by people who did not ask for it. Cyberspace's answer for avatars is to price size and detail in proof of work (`CYBERSPACE_V2.md` §8.10). Any application that renders objects from strangers without a cost or a filter should expect to be flooded, and the format cannot solve that for it.
+**Screen real estate is a resource.** An object drawn in a shared space is seen by people who did not ask for it. Cyberspace's answer for avatars is to price size and detail in proof of work (`CYBERSPACE_V2.md` §8.10). Any application that renders objects from strangers without a cost or a filter should expect to be flooded, and the format cannot solve that for it. A glow (§1.16) can cover far more of the screen than the object that casts it, and costs a reader for every pixel it covers. That is why §1.16 lets a reader limit how many glows it draws and how much of the screen they cover, and lets a viewer turn them off, and why an avatar ignores it (§3.3).
 
-**Translucency does not hide** (non-normative). An object with an opacity below `100` does not occlude what is behind it, at any opacity: in a test render at `70`, an object hidden beneath translucent water showed as plainly as if the water were not there, only tinted. The floor of §1.11 does not change that, and no opacity short of `100` hides anything. The same is true of an object drawn in `points` or `lines` mode, which never hid what was behind it. An application that relies on enclosure to keep something out of sight, such as a maze whose rooms are sealed so that what is in one cannot be seen from another, or a vault, has to treat every such object as enclosing nothing, whether or not that application's own reader draws translucency, since other readers will, and should check its enclosure against the opaque `solid` objects alone. Each placed object is judged by its own opacity and its own mode, not its parent's (§1.10): a translucent pane placed inside an opaque frame encloses nothing, and an opaque wall placed by a translucent parent still does.
+**Translucency does not hide** (non-normative). An object with an opacity below `100` does not occlude what is behind it, at any opacity: in a test render at `70`, an object hidden beneath translucent water showed as plainly as if the water were not there, only tinted. No opacity short of `100` hides anything, and an object at `0` hides nothing at all. The same is true of an object drawn in `points` or `lines` mode, which never hid what was behind it, and of a glow (§1.16): a `fog` looks as if it covers what is behind it, and a reader that draws no glow, or fewer glows than an object asks for, shows everything there. An application that relies on enclosure to keep something out of sight, such as a maze whose rooms are sealed so that what is in one cannot be seen from another, or a vault, has to treat every such object as enclosing nothing, whether or not that application's own reader draws translucency, since other readers will, and should check its enclosure against the opaque `solid` objects alone. Each placed object is judged by its own opacity and its own mode, not its parent's (§1.10): a translucent pane placed inside an opaque frame encloses nothing, and an opaque wall placed by a translucent parent still does.
 
 **A constraint is not a wall** (non-normative). A walker held by `constrain` (§1.12) is held by its own client and by nothing else. A visitor whose client ignores the field, or who simply jumps, is through it, so a constrained object protects nothing: a vault whose walls are set to `"all"` is exactly as open to a determined visitor as one without, and what keeps its contents out of sight is enclosure, above, and what keeps them unread is encryption (§3.4). The field is a way to make a space feel built, not a way to keep anyone out.
+
+**An object nobody can see** (non-normative). An object at an opacity of `0` (§1.11), or in `points` mode with a `pointsize` of `0` (§1.15), draws nothing of its own on the screen, and nothing at all without a glow. It is still in the space: it can be placed around a viewer, a selection can land on it, and, if a client honors its `constrain`, it stops a walker (§1.12), which is why a client hints where a walker meets it. It never counts toward enclosure. This is the trap §1.11's old floor of `10` was there to prevent. It was taken away so that a light or a fog can be cast without a point, and a client answers the trap instead by showing such objects to their authors in an editor, by hinting where a walker meets one, by letting a viewer choose whose objects it draws and honors (below), and by keeping a walker a way out that is not walking.
 
 **A walker can be shut in.** An object can be hidden around a place where someone stands, and an object's setting can change while a walker is inside it. A walker inside a closed constrained object can then walk nowhere, since every way out crosses a face. A client that constrains its walker SHOULD therefore always leave it a way out that is not walking: a jump, a planned route, or a way to stop honoring the field for itself. ONOSENDAI's way out is HOP, its jump to a chosen coordinate, which no constraint touches. Because anyone may hide an object anywhere, a client MAY also let its viewer choose whose objects it honors the field on, as it would choose whose objects it draws.
 
@@ -1014,7 +1156,7 @@ None of these needs a version bump, because each is an optional field whose abse
 |---|---|---|---|
 | **Smooth shading** | With no normals every surface is faceted, so a sphere reads as a golf ball | one object-wide boolean telling the renderer to average face normals at shared vertices | one field, no per-vertex data |
 | ~~Per-face color~~ | **Added in §1.4a**, and made affordable by §1.3's palette index, which took a color from 21 bytes to 4. It was the one absence that made the format's own best style its most expensive | | |
-| **Emission** | The one thing a glowing object needs, and Cyberspace is made of glowing objects | an optional material block with an emissive flag and a strength | one small object |
+| **Emission** | The one thing a glowing object needs, and Cyberspace is made of glowing objects. Points can glow now (§1.16), as a light or a fog around each point of an object in `points` mode; faces still cannot | an optional material block with an emissive flag and a strength | one small object |
 | **Roughness, metalness** | The sliders every modeler reaches for after base color | two numbers in the same block | included above |
 | ~~Alpha~~ | **Added in §1.11** as one opacity for the whole object, a percent, which every older reader ignores and draws opaque. Alpha inside the palette was the obvious place and the one place every existing reader would have rejected | | |
 
@@ -1087,6 +1229,8 @@ The same object with a palette of its own, which for four colors costs less than
 And the same object again with all four faces one color, which is what `facecolors` is for: adding `"facecolors": [238, -3]` gives four flat red triangles with hard edges between them, for 22 more bytes (160 bytes compact without it, 182 with).
 
 The same object as tinted glass is the first document with `"opacity": 40` added, for 13 more bytes (173 compact). A reader draws it at forty percent, or opaque if it cannot draw translucency (§1.11); a reader written before §1.11 ignores the field and draws it opaque.
+
+The same object as four specks in a mist is the first document with `"mode": "points"` in place of `"solid"`, and `"pointsize": 24, "glow": ["fog", 360, 30]` added, for 38 more bytes (198 compact): four points a fifth of a unit across, each in a fog of its own color reaching three units. With `"opacity": 0, "glow": ["light", 240, 60]` in place of the point size and the fog, still in `points` mode, for 37 more bytes (197 compact), it is four lights with no points: the object draws nothing of its own, and its four lights, red, green, blue and white, each reach two units (§1.11, §1.16). A reader written before §1.15 and §1.16 draws the four points at its own size and no glow, and one written before an opacity of `0` was allowed draws them opaque.
 
 The same object as a solid that a walker whose client honors the field cannot pass through is the first document with `"constrain": "all"` added, for 18 more bytes (178 compact). A client that walks its viewer stops the walker at its faces (§1.12); every other reader, and every reader written before §1.12, ignores the field and draws the object exactly as before.
 
