@@ -1715,11 +1715,14 @@ A bag MAY say in public what it holds, by kind and count, so that a seeker knows
 - An entry carried in a sealed entry (§7.6 Sealed entries) is counted by the item it holds, exactly as if that item stood inline: a message in a sealed entry counts as `message`, a key item as `key`, and so on. A writer knows that item because it read it when it opened the bag, or kept it when it sealed it. A reference whose item the writer has not read, such as one it carried forward without understanding it, or one it could not fetch, counts as nothing. A reference to a `kind 33331` object counts as `shard` from its coordinate alone, whether or not the writer fetched it.
 - A bag MUST carry at most one `contents` tag per kind, and SHOULD write them in the order above. A kind the bag does not hold is left out; a count of zero is never written.
 - A writer that publishes contents MUST compute them from the plaintext it is sealing, and from the items of the sealed entries that plaintext names (above), every time it publishes the bag, so that they are never stale. Because a bag is rewritten whole (§7.6 Lifecycle), this costs nothing extra.
-- Money alone: a writer MAY publish only that money is inside, as `["contents", "cashu"]` with no count, and only while the bag holds a Cashu token. There is no such form for any other kind; in particular, an NFT is not money, and `["contents", "nft"]` without a count says nothing.
+- Claimable kinds: `cashu` and `nft` are **claimable**. Whoever reads a Cashu token or an NFT claim link can redeem it, so whoever finds the bag can take what it stands for. This is a statement about claimability, not about value: an NFT is not money, and nothing in this section treats it as money. A writer MUST leave the claimable kinds out of the contents unless the hider has chosen to publish them. A client that offers that choice MUST start it off, so that a hider who never touched it publishes no claimable kind. A client MAY offer one choice for both claimable kinds or one for each, and it is separate from the choice to publish contents at all. A rewrite of a bag that hides nothing new in it, such as removing an item or publishing the same bag again, MAY keep the claimable rows the bag already says, since the hider chose them, but MUST NOT add a claimable row the bag did not say before.
+- Claimable kinds left out: a writer that publishes contents but not the claimable kinds writes no `cashu` row and no `nft` row, with or without a count, and writes every other kind exactly as it would if the bag held no token and no link. Nothing in the tags may tell such a bag apart from one without them: there is no total, and a message that holds a token or a link is counted as a `message`, as any other message is (above).
+- Claimable kinds published: a writer that publishes contents and the claimable kinds writes their counts beside the other kinds, as `["contents", "cashu", "<count>"]` and `["contents", "nft", "<count>"]`.
+- Claimable alone: a writer that does not publish contents MAY still publish only that something claimable is inside, when the hider has chosen to publish the claimable kinds. It writes `["contents", "cashu"]` with no count while the bag holds a Cashu token, and `["contents", "nft"]` with no count while it holds an NFT claim link, and nothing for a kind the bag does not hold. A row with no count says that kind is inside and says nothing about how many. There is no such form for any kind that is not claimable.
 
-**Reading contents (normative):** a reader MUST ignore a `contents` tag whose kind it does not know, and one whose count is present but is not a positive integer. Contents never invalidate a bag, and a reader MUST NOT treat a bag as holding less than it finds, or more, because of them: what the bag holds is decided by its plaintext alone (§7.6).
+**Reading contents (normative):** a reader MUST ignore a `contents` tag whose kind it does not know, and one whose count is present but is not a positive integer. A `cashu` or `nft` row with no count says that kind is inside, and nothing about how many (Claimable alone, above); a row of any other kind with no count says nothing. A reader written before this rule reads an `nft` row with no count as saying nothing, which is safe: it reads less than the bag says, never more. Contents never invalidate a bag, and a reader MUST NOT treat a bag as holding less than it finds, or more, because of them: what the bag holds is decided by its plaintext alone (§7.6).
 
-**Contents are a claim (non-normative):** nothing verifies them until the bag is opened. A token or a link counted in public may already have been spent, claimed or cancelled by the time a seeker opens the bag; the count says what was sealed, not what is still there. A hider who publishes that an NFT or money is inside invites sweepers (Reading is not reaching, above: anyone who derives the key reads the bag from anywhere), and may prefer to hide it inside a chest as well.
+**Contents are a claim (non-normative):** nothing verifies them until the bag is opened. A token or a link counted in public may already have been spent, claimed or cancelled by the time a seeker opens the bag; the count says what was sealed, not what is still there. A hider who publishes that an NFT or money is inside invites sweepers (Reading is not reaching, above: anyone who derives the key reads the bag from anywhere), which is why the claimable kinds are left out unless the hider chooses to publish them (above). A hider who does publish them may prefer to hide them inside a chest as well.
 
 ### 7.8 Holding a region (non-normative)
 
@@ -1833,7 +1836,7 @@ Optional tags:
 - `H` tag: `["H", "<height>"]` (decimal string, no sign, no leading zeros except `"0"`): the height of the region whose key encrypts the content, which is the discovery radius of §7.3; at least 1 (§7.6). This is the bag's **height tag**.
 - `hint` tag: `["hint", "<coord_hex>", "<Hx>", "<Hy>", "<Hz>"]`: the hider's coarse statement of where the bag can be found (§7.7)
 - Sector tags `X`, `Y`, `Z`, `S`: required on a bag that carries a `hint` tag, for each axis whose hint height is at most 30 (§7.7, §10); MUST NOT appear otherwise
-- `contents` tags: `["contents", "<kind>", "<count>"]`, the hider's public statement of what the bag holds, by kind (`shard`, `message`, `key`, `chest`, `cashu`, `nft`, `audio`, `door`, `seed`, `dna`) and count, or `["contents", "cashu"]` alone to say only that money is inside (§7.7 Contents)
+- `contents` tags: `["contents", "<kind>", "<count>"]`, the hider's public statement of what the bag holds, by kind (`shard`, `message`, `key`, `chest`, `cashu`, `nft`, `audio`, `door`, `seed`, `dna`) and count, with the claimable kinds `cashu` and `nft` left out unless the hider chose to publish them, or `["contents", "cashu"]` or `["contents", "nft"]` with no count to say only that a token or a claim link is inside (§7.7 Contents)
 
 **Sealed entries:** an entry moved out of a bag is published beside it as a `kind 33335` event, a sealed entry, and the bag names it by an `a` reference in its plaintext. Its format and its rules are in §7.6 (Sealed entries). It is addressable, carries a fresh random `d`, a fixed preview, and one `["encrypted", "aes-256-gcm", "<payload>", "cyberspace:region"]` tag sealed with this bag's key, and nothing that says where it is.
 
@@ -2004,54 +2007,39 @@ Inside a virtual bracket the rules of §8.11 apply instead of the rules above: e
 
 ### 8.10 Avatar event
 
-An avatar is the shape an identity is drawn as. It is the one thing in cyberspace that lands on other people's screens whether they asked for it or not: everyone near its owner sees it, at every zoom. Its size and its detail are therefore paid for in work, on the event that publishes it, and a client draws nothing it cannot verify has paid.
+An avatar is the shape an identity is drawn as. It is the one thing in cyberspace that lands on other people's screens whether they asked for it or not: everyone near its owner sees it, at every zoom. Its size on the wire is therefore limited, relays limit how often one identity replaces it, and each viewer decides whose avatars it draws.
 
 - Avatar events: `kind = 11333`
 - `kind 11333` is replaceable: relays keep the newest event per `(pubkey, kind)`, so an identity has exactly one avatar and the newest replaces it
 
 An avatar is one per identity, which is what a replaceable event is for. This was `kind 33331`, addressable, with a `d` tag fixed at `"avatar"`: a constant `d` is emulating replaceable semantics with the wrong tool, and it asks every reader to trust a convention where the relay could enforce the rule. Everything in nostr that is one per person is replaceable, including metadata, contacts, relay lists and DM relay lists; addressable is for the other case, many per author told apart by `d`, as long-form articles and wiki pages and classified listings are.
 
-The change is a clean break rather than a migration. At the time it was made, a query for `kind 33331` across twelve relays, including the one this protocol uses, returned nothing, while the same query returned bags and movement events. An identity that had adopted an avatar without publishing it re-mines once, which is the work it paid the first time.
+The change is a clean break rather than a migration. At the time it was made, a query for `kind 33331` across twelve relays, including the one this protocol uses, returned nothing, while the same query returned bags and movement events. An identity that had adopted an avatar without publishing it publishes it once under `kind 11333`.
 
 `11333` was chosen by querying for it rather than by reading a registry. The registry of kinds and the NIPs index both list only what has been written down, and the replaceable range is full of numbers that are in daily use and appear in neither: `10333` carries Podcasting 2.0 favourites, `10086` a relay indexer's lists across eighty pubkeys, `10088` something Amethyst writes. A kind is free when the relays say so.
-
-Required tags:
-- `nonce` tag: `["nonce", "<nonce>", "<target>"]` per NIP-13, where `target` is the leading zero bits the publisher committed to before mining
 
 Optional tags:
 - `name` tag: `["name", "<name>"]`, the shape's name for humans
 
-Content: a shard payload as bags carry them, or empty. The work reads these fields of it: `unit` (a model unit is `2^unit` gibsons), `vertices` (whole units per vertex), `ticks` (the fraction of a unit per vertex, in 120ths, packed so that `-N` stands for `N` zero triples) and `faces`. Empty content means the default avatar and owes no work.
+An avatar carries no proof of work. An avatar published before 2026-11 carries a `nonce` tag (NIP-13) with the work it once had to pay; a reader ignores it, whatever target it commits to and whatever the `id` carries, and a publisher need not write one.
+
+Content: a shard payload as bags carry them (DECK-0003), or empty. Empty content means the default avatar.
+
+An avatar's content is at most 131,072 bytes (128 KiB), counted as the UTF-8 length of the `content` string. The limit is the avatar's own, not the relay's: a relay may take more, and a client still does not draw it.
+
+**Remote signers (non-normative).** Some remote signers (NIP-46) refuse to sign an avatar whose content is near 64 KB or larger. The request to the signer carries the whole event, its content escaped a second time, and older NIP-44 libraries refuse to encrypt more than 65,535 bytes, so such a signer fails at about 65,200 bytes of content; a relay that carries the request (`kind 24133`, base64 and so a third larger) may refuse it sooner if it caps events at 64 KiB. A browser extension, or a key the client holds itself, signs a large avatar as it signs any other event. A client that publishes avatars should warn its user, when an avatar's content is over 64,000 bytes, that a remote signer may refuse it.
 
 No `d` tag: a replaceable kind has no second key, and writing one would only invite a reader to filter on it.
 
-**The work (normative):**
+**Verification:** compare the content's length with the limit, then parse the content. The length is compared first, so a reader never parses content it would refuse. Content a client cannot read includes content that is not a JSON object, or that its JSON parser refuses (some parsers refuse nesting or numbers beyond what they support), and a payload whose `vertices` is missing or is not a list of lists whose first three entries, where present, are numbers; whose `ticks`, when present and not null, holds anything but such lists and runs (whole numbers, zero or below; DECK-0003 §1.9 decides the rest); or whose `faces`, when present and not null, is not a list. Nothing here reads a tag or hashes anything.
 
-```python
-AVATAR_FLOOR_BITS  = 16   # every avatar
-AVATAR_SIZE_BITS   = 2    # per doubling of reach
-AVATAR_DETAIL_BITS = 3    # per doubling of detail beyond the free thirty-two
-AVATAR_DETAIL_FREE = 32
-
-def avatar_work(payload) -> int:
-    # reach: the farthest any vertex lies from the build origin, on any axis,
-    # in gibsons at true scale; never below one gibson
-    reach  = max(1.0, max(abs(v + t / 120) for every vertex coordinate) * 2 ** payload.unit)
-    detail = max(AVATAR_DETAIL_FREE, len(payload.vertices) + len(payload.faces))
-    return ceil(AVATAR_FLOOR_BITS + AVATAR_SIZE_BITS * log2(reach) + AVATAR_DETAIL_BITS * log2(detail / AVATAR_DETAIL_FREE))
-```
-
-An avatar event is **paid** when its `nonce` tag's committed `target` is at least `avatar_work(content)` and its `id` carries at least `target` leading zero bits. Both conditions are required: committing the target before mining is what stops a lucky id from being claimed against a lower bar than it was mined for (NIP-13).
-
-**Verification:** parse the content, compute `avatar_work`, read the `nonce` tag, count the id's leading zero bits, apply the two conditions. One hash and a walk over the vertices, on any device.
-
-**Drawing (normative):** a client MUST NOT draw an avatar event that is not paid, or that carries content it cannot read; it draws its default avatar for that identity instead. A client SHOULD draw a paid avatar at true scale, one model unit as `2^unit` gibsons, wherever it would draw the default.
+**Drawing (normative):** a client MUST NOT draw an avatar event whose content exceeds 131,072 bytes, or that carries content it cannot read; it draws its default avatar for that identity instead. A client MUST NOT reject, hide or replace an avatar for carrying no proof of work, or too little, or for the target its `nonce` tag commits to. A client SHOULD draw an avatar at true scale, one model unit as `2^unit` gibsons, wherever it would draw the default. A client MAY decline to draw an avatar its viewer has muted.
 
 **The eye.** A client that shows its own viewer the world from inside the viewer's avatar looks from the avatar's eye (DECK-0003 §1.17): the payload's `eye` when it has one, else one eighth of the avatar's height below its top, and for the default avatar the same rule applied to the shape the client draws. Nobody else's screen changes.
 
-**Why the price is shaped this way (non-normative).** Reach is priced at two bits per doubling, so a shape twice as far across costs four times the work, and the ladder it makes is: one gibson 16 bits, two gibsons 18, four 20, sixteen 24, a thousand 36, and one the size of cyberspace about 190, which is to say never. Reach is the term that matters to other people, since a large avatar is the one that gets in everyone's way, and the slope is set so that a modest shape of a few gibsons costs minutes on a phone while a sector-sized one is out of reach of any hash power. Detail is priced at three bits per doubling beyond thirty-two vertices and faces, because a busy small avatar troubles nobody much, and because bytes are charged already without a term: every nonce hashes the whole serialized event, so an avatar at the vertex and face caps runs about thirty times more slowly per try than a plain one. The sixteen-bit floor is seconds on a phone today and is set with a hundred-year horizon of growing hash power in mind; it is the one constant this section expects to be revisited. Reach is measured from the build origin, not from the shape's own centre, so a shape is priced as its builder placed it against the reference avatar on the bench.
+**Why an avatar carries no proof of work (non-normative).** Until 2026-11 an avatar paid proof of work on its own event, priced by its size and its detail: sixteen bits, plus two for each doubling of its reach in gibsons, plus three for each doubling of its vertices and faces beyond thirty-two. The price assumed that every try hashed the whole serialized event, so that bytes were charged as well. That held only for a miner that kept its nonce in the tags. The content is the last field the `id` hashes, so a miner that varies the end of the content hashes everything before it once and only one block of SHA-256 per try, whatever the avatar's size: about two million tries a second on one core of a desktop or a recent phone, in pure JavaScript. A price a phone pays easily is then no obstacle to anyone, so the work was dropped. The limit on content bounds the data an avatar event carries, and every reader checks it without hashing anything. Relays limit how many `kind 11333` events they take from one pubkey in an hour, so one identity cannot replace its avatar over and over. A viewer mutes an identity whose avatar it does not want to see, and a client may adopt a policy of its own for the large avatars of strangers. Every avatar published before the change remains drawn: none was over the limit, and its `nonce` tag is ignored.
 
-Reference implementations: `avatar.ts` in cyberspace-core and `cyberspace_core/avatar.py` in cyberspace-cli, pinned to one set of golden vectors.
+Reference implementations: `avatar.ts` in cyberspace-core and `cyberspace_core/avatar.py` in cyberspace-cli. `avatar-reference.py` (§14) writes `avatar-vectors.json`, which both copy unchanged and test against. The verdict these vectors pin covers this section only: a reader still validates a payload by DECK-0003 §1.9 before it draws one.
 
 ### 8.11 Virtual brackets (normative)
 
@@ -2626,6 +2614,7 @@ This repository also carries stdlib-only reference scripts that are executable s
 - `hint-reference.py`: §7.7 and the §10 rule for bags: canonical form, containment, sector tags, seeker work, malformed hints and plane preservation, locking the golden vectors of §7.7
 - `decks/landfall-reference.py`: landfall derivation (DECK-0001 §1.2)
 - `decks/kinds-vectors.mjs`: deterministic events for the DECKs that hide things in bags, and for the sealed entries of §7.6, written into `decks/kinds-vectors.json` (needs `nostr-tools` 2.x); §7.6 lists the sealed-entry values
+- `avatar-reference.py`: what a reader checks on an avatar (§8.10): the limit on content and a payload it can read; it writes `avatar-vectors.json`, the golden vectors of §8.10 (content lengths around the limit, avatars measured in 2026-11 with their sizes, and verdicts, among them events whose `nonce` tags a reader ignores), and with `--check` it reports whether the file on disk is what it would write. Like `hop-residue-vectors.json`, the file is not normative.
 
 This repository also carries machine-readable golden vectors of the hop proof, written from its reference script, so that a port in any language can test itself against the same values without running Python:
 - `hop-residue-vectors.py`: the stdlib-only script that imports `hop-residue-reference.py` by path, checks every value against it and produces `hop-residue-vectors.json`, byte for byte the same on every run; with `--check` it reports whether the file on disk is what it would produce, and it refuses to run when the reference's SHA-256 is not the one it records, so the file's provenance never goes stale
