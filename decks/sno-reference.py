@@ -575,6 +575,21 @@ def drawn_eye(payload: dict) -> tuple[int, int, int]:
 
 
 
+FACE_MODES = ("path", "upright")
+
+
+def drawn_face(payload: dict) -> str:
+    """§1.18: how a worn avatar turns as it moves: "path" or "upright".
+
+    Exactly one of the two names, lowercase, else "path": absent, null, an
+    unknown name (a later revision may add one), another case, a number, a
+    boolean, an array or an object. Never a rejection.
+    """
+    face = payload.get("face")
+    return face if isinstance(face, str) and face in FACE_MODES else "path"
+
+
+
 # §1.14: motion. A motion's phase is a pure function of the time t in Unix
 # seconds, as the reader's clock reads it, so readers whose clocks agree draw
 # the same pose at the same moment. Nothing is fetched to animate.
@@ -1543,6 +1558,31 @@ def _self_test() -> None:
         print("  EYE AUTO: a v1 avatar's automatic eye is not on its origin's line")
         failures += 1
     print(f"{len(eyes)} eye read cases and {len(autos) + 3} automatic or frame cases (rule 20 never rejects)")
+
+    # §1.18 and rule 21: face is read, never a rejection. Only the two names,
+    # exact and lowercase, are read as written; everything else is "path".
+    faces = [
+        (absent, "path", "absent turns along its path"),
+        ("path", "path", "path written"),
+        ("upright", "upright", "upright"),
+        ("Upright", "path", "another case"),
+        ("UPRIGHT", "path", "upper case"),
+        (" upright", "path", "a space"),
+        ("", "path", "empty"),
+        ("level", "path", "a name a later revision may add"),
+        (1, "path", "a number"),
+        (True, "path", "a boolean"),
+        (["upright"], "path", "an array"),
+        ({"face": "upright"}, "path", "an object"),
+        (None, "path", "null"),
+    ]
+    for given, want, why in faces:
+        payload = dict(APPENDIX_A) if given is absent else {**APPENDIX_A, "face": given}
+        got = drawn_face(validate(payload))
+        if got != want:
+            print(f"  FACE: {given!r} read {got!r}, expected {want!r} ({why})")
+            failures += 1
+    print(f"{len(faces)} face read cases (rule 21 never rejects)")
 
     if failures:
         raise SystemExit(1)
