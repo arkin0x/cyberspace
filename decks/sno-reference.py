@@ -1495,6 +1495,8 @@ def _self_test() -> None:
         ([-12, 30, -480], (-12, 30, -480), "behind and to one side: not held to it"),
         ([TICK_REACH, -TICK_REACH, 0], (TICK_REACH, -TICK_REACH, 0), "the 64-unit bound"),
         ([0, TICK_REACH + 1, 0], (0, 210, 0), "past the bound"),
+        ([0, -TICK_REACH - 1, 0], (0, 210, 0), "past the bound below"),
+        ([[0], 159, 0], (0, 210, 0), "a nested element"),
         ([0, 159.5, 0], (0, 210, 0), "fractional"),
         ([0, 159.0, 0], (0, 210, 0), "a float is not an integer"),
         ([0, "159", 0], (0, 210, 0), "a string"),
@@ -1536,7 +1538,11 @@ def _self_test() -> None:
     if drawn_eye(validate(v1)) != (0, 30, -120):
         print("  EYE: a v1 eye is not negated in Z with its positions")
         failures += 1
-    print(f"{len(eyes)} eye read cases and {len(autos) + 2} automatic or frame cases (rule 20 never rejects)")
+    v1_auto = {**APPENDIX_A, "v": 1, "colors": [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]}
+    if drawn_eye(validate(v1_auto)) != (0, 210, 0):
+        print("  EYE AUTO: a v1 avatar's automatic eye is not on its origin's line")
+        failures += 1
+    print(f"{len(eyes)} eye read cases and {len(autos) + 3} automatic or frame cases (rule 20 never rejects)")
 
     if failures:
         raise SystemExit(1)
