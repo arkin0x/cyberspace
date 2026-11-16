@@ -530,6 +530,50 @@ def positions(payload: dict) -> Iterator[tuple[Fraction, Fraction, Fraction]]:
         yield (x, y, z * flip)
 
 
+def read_eye(value: Any) -> tuple[int, int, int] | None:
+    """§1.17: a written eye, three integers of ticks each in -7680..7680, or None.
+
+    None means the automatic eye: absent, null, two or four elements, a
+    fraction, a number out of range, a string, a boolean, an object. Never a
+    rejection.
+    """
+    if not isinstance(value, list) or len(value) != 3:
+        return None
+    if not all(_is_int(c) and -TICK_REACH <= c <= TICK_REACH for c in value):
+        return None
+    return (value[0], value[1], value[2])
+
+
+def auto_eye(payload: dict) -> tuple[int, int, int]:
+    """§1.17: the automatic eye, in ticks. Validate first.
+
+    One eighth of the avatar's height below its top, in integers:
+    top - floor((top - bottom) / 8), over the Y of its own vertices, and 0 on
+    X and on Z. At the origin for an avatar with no vertices of its own.
+    """
+    ticks = expand_ticks(payload.get("ticks"), len(payload["vertices"]))
+    ys = [v[1] * TICKS_PER_UNIT + t[1] for v, t in zip(payload["vertices"], ticks)]
+    if not ys:
+        return (0, 0, 0)
+    top, bottom = max(ys), min(ys)
+    return (0, top - (top - bottom) // 8, 0)
+
+
+def drawn_eye(payload: dict) -> tuple[int, int, int]:
+    """§1.17: where a viewer wearing this object looks from, in ticks, frame of §2.
+
+    The written eye when it is well formed, else the automatic eye. A written
+    eye is in the payload's own frame, as its positions are, so a v1 eye has
+    its Z negated with them (positions). It is not held to the avatar's
+    shape. Validate first. Never a rejection.
+    """
+    eye = read_eye(payload.get("eye"))
+    if eye is None:
+        return auto_eye(payload)
+    flip = -1 if payload.get("v") == 1 else 1
+    return (eye[0], eye[1], eye[2] * flip)
+
+
 
 # §1.14: motion. A motion's phase is a pure function of the time t in Unix
 # seconds, as the reader's clock reads it, so readers whose clocks agree draw
@@ -1439,6 +1483,66 @@ def _self_test() -> None:
         print("  GLOW: an object at opacity 0 lost its glow")
         failures += 1
     print(f"{len(sizes)} pointsize and {len(glows)} glow read cases (rules 18 and 19 never reject)")
+
+    # §1.17 and rule 20: eye is read, never a rejection. The Appendix A
+    # tetrahedron stands 0 to 2 units tall, so its automatic eye is
+    # 240 - floor(240 / 8) = 210 ticks up; every payload must also validate.
+    eyes = [
+        (absent, (0, 210, 0), "absent is the automatic eye"),
+        ([0, 159, 0], (0, 159, 0), "a written eye"),
+        ([0, 0, 0], (0, 0, 0), "the origin is a choice, not absent"),
+        ([0, 600, 0], (0, 600, 0), "above the shape: not held to it"),
+        ([-12, 30, -480], (-12, 30, -480), "behind and to one side: not held to it"),
+        ([TICK_REACH, -TICK_REACH, 0], (TICK_REACH, -TICK_REACH, 0), "the 64-unit bound"),
+        ([0, TICK_REACH + 1, 0], (0, 210, 0), "past the bound"),
+        ([0, -TICK_REACH - 1, 0], (0, 210, 0), "past the bound below"),
+        ([[0], 159, 0], (0, 210, 0), "a nested element"),
+        ([0, 159.5, 0], (0, 210, 0), "fractional"),
+        ([0, 159.0, 0], (0, 210, 0), "a float is not an integer"),
+        ([0, "159", 0], (0, 210, 0), "a string"),
+        ([0, True, 0], (0, 210, 0), "a boolean"),
+        ([0, None, 0], (0, 210, 0), "null inside"),
+        ([0, 159], (0, 210, 0), "two elements"),
+        ([0, 159, 0, 0], (0, 210, 0), "four elements"),
+        ([], (0, 210, 0), "empty"),
+        ({"x": 0, "y": 159, "z": 0}, (0, 210, 0), "an object, not an array"),
+        ("0,159,0", (0, 210, 0), "a string"),
+        (None, (0, 210, 0), "null"),
+    ]
+    for given, want, why in eyes:
+        payload = dict(APPENDIX_A) if given is absent else {**APPENDIX_A, "eye": given}
+        got = drawn_eye(validate(payload))
+        if got != want:
+            print(f"  EYE: {given!r} read {got}, expected {want} ({why})")
+            failures += 1
+    autos = [
+        ([[0, 0, 0], [0, 2, 0], [1, 0, 0]], None, (0, 210, 0), "built from its origin up to two units"),
+        ([[0, 0, 0], [0, 1, 0], [1, 1, 0]], [[0, 96, 0], [0, 48, 0], [0, 0, 0]], (0, 159, 0), "a ship 0.8 to 1.4 units up"),
+        ([[0, -1, 0], [0, 1, 0], [1, 0, 0]], None, (0, 90, 0), "centered, one unit each way"),
+        ([[0, 0, 0], [0, 0, 0], [1, 0, 0]], [[0, 0, 0], [0, 10, 0], [0, 0, 0]], (0, 9, 0), "ten ticks tall: the eighth rounds down"),
+        ([[0, -2, 0], [0, -1, 0], [1, -2, 0]], None, (0, -135, 0), "wholly below its origin"),
+    ]
+    for verts, ticks, want, why in autos:
+        payload = {**APPENDIX_A, "vertices": verts, "colors": [238, 235, 239], "faces": [[0, 1, 2]]}
+        if ticks is not None:
+            payload["ticks"] = ticks
+        got = drawn_eye(validate(payload))
+        if got != want:
+            print(f"  EYE AUTO: {why}: {got}, expected {want}")
+            failures += 1
+    parts_only = validate({**APPENDIX_A, "vertices": [], "colors": [], "faces": [], "refs": [["a", GLASS]], "parts": [[0, 0, 0, 0, 0, 0, 0, 0]]})
+    if drawn_eye(parts_only) != (0, 0, 0):
+        print("  EYE AUTO: an avatar with no vertices of its own is not at its origin")
+        failures += 1
+    v1 = {**APPENDIX_A, "v": 1, "colors": [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]], "eye": [0, 30, 120]}
+    if drawn_eye(validate(v1)) != (0, 30, -120):
+        print("  EYE: a v1 eye is not negated in Z with its positions")
+        failures += 1
+    v1_auto = {**APPENDIX_A, "v": 1, "colors": [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]]}
+    if drawn_eye(validate(v1_auto)) != (0, 210, 0):
+        print("  EYE AUTO: a v1 avatar's automatic eye is not on its origin's line")
+        failures += 1
+    print(f"{len(eyes)} eye read cases and {len(autos) + 3} automatic or frame cases (rule 20 never rejects)")
 
     if failures:
         raise SystemExit(1)
