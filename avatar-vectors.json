@@ -1,10 +1,10 @@
 {
  "format": {
-  "about": "Golden vectors of the work an avatar owes, CYBERSPACE_V2.md section 8.10, written by avatar-reference.py. Not normative: where they disagree with the text, the text is right.",
+  "about": "Golden vectors of the work an avatar owes, CYBERSPACE_V2.md section 8.10, written by avatar-reference.py. Not normative: where they disagree with the text, the text is right. The verdicts cover section 8.10 only; a reader still validates a payload by DECK-0003 section 1.9 before drawing it, and some payloads here are not valid SNO.",
   "constants": "The constants of section 8.10.",
   "price": "Payloads: reach (gibsons, before the floor of one), detail (vertices plus faces, before the floor of 32), raw_bits (the sum before rounding, to 9 places), required (the bits owed), required_before_2026_11 (the bits the rule before 2026-11 asked; never less than required).",
   "bits": "Reach and detail pairs, without payloads, with the same fields. A port tests its price function on them directly.",
-  "corpus": "The avatars measured in the 2026-11 avatar study: bytes (UTF-8 length of the content), vertices, faces, reach, required, required_before_2026_11 and refused (content over the limit: a reader draws the default whatever work it carries). The payloads are not reproduced; a port tests its price function on reach and vertices plus faces.",
+  "corpus": "Avatars measured in 2026-11 (the three then published, a 98 KB figure, generated shapes): bytes (UTF-8 length of the content), vertices, faces, reach, required, required_before_2026_11 and refused (content over the limit: a reader draws the default whatever work it carries). The payloads are not reproduced; a port tests its price function on reach and vertices plus faces.",
   "content_limit": "Content lengths in bytes and whether a reader refuses them.",
   "verdicts": "Events and the verdict section 8.10 reaches on each. Synthetic events carry made-up ids with a given number of zeros. An event whose content is null carries content_recipe instead: prefix, then fill repeated count times, then suffix.",
   "mined": "Events mined by this file's miner with the nonce as the last field of the content (non-normative; the verdict does not depend on how an id was found). template is the event before mining, target the committed bits, lead the zeros the miner put before the nonce's digits, tries the nonces it tried from 0. The events are unsigned: a verdict never reads the signature."
@@ -3195,7 +3195,7 @@
    "required_before_2026_11": 18
   },
   {
-   "name": "negative unit",
+   "name": "negative unit (priced; DECK-0003 rejects it)",
    "payload": {
     "unit": -1,
     "vertices": [
@@ -3401,6 +3401,13 @@
    "raw_bits": 12.047368753,
    "required": 13,
    "required_before_2026_11": 19
+  },
+  {
+   "reach": 1.1,
+   "detail": 40,
+   "raw_bits": 10.75789919,
+   "required": 11,
+   "required_before_2026_11": 18
   },
   {
    "reach": 3,
@@ -4286,6 +4293,215 @@
     "committed": null,
     "zeros": 12,
     "reason": "too-large"
+   }
+  },
+  {
+   "name": "content of two-byte characters at the limit in bytes, paid",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ],
+     [
+      "nonce",
+      "12345",
+      "10"
+     ]
+    ],
+    "content": null,
+    "id": "000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "content_recipe": {
+     "prefix": "{\"vertices\":[[0,0,0]],\"faces\":[],\"pad\":\"",
+     "fill": "é",
+     "count": 65515,
+     "suffix": "\"}"
+    }
+   },
+   "verdict": {
+    "ok": true,
+    "required": 10,
+    "committed": 10,
+    "zeros": 12,
+    "reason": "ok"
+   }
+  },
+  {
+   "name": "content of two-byte characters one byte over the limit, paid",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ],
+     [
+      "nonce",
+      "12345",
+      "10"
+     ]
+    ],
+    "content": null,
+    "id": "000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "content_recipe": {
+     "prefix": "{\"vertices\":[[0,0,0]],\"faces\":[],\"pad\":\"a",
+     "fill": "é",
+     "count": 65515,
+     "suffix": "\"}"
+    }
+   },
+   "verdict": {
+    "ok": false,
+    "required": 0,
+    "committed": null,
+    "zeros": 12,
+    "reason": "too-large"
+   }
+  },
+  {
+   "name": "several nonce tags: only the first is read",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "nonce",
+      "0",
+      "16"
+     ],
+     [
+      "nonce",
+      "0",
+      "10"
+     ]
+    ],
+    "content": "{\"unit\":0,\"vertices\":[[0,0,0],[1,0,0],[0,1,0],[0,0,1]],\"faces\":[[0,1,2],[0,2,3]]}",
+    "id": "000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   "verdict": {
+    "ok": false,
+    "required": 10,
+    "committed": 16,
+    "zeros": 12,
+    "reason": "unpaid"
+   }
+  },
+  {
+   "name": "a NaN coordinate",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ],
+     [
+      "nonce",
+      "12345",
+      "10"
+     ]
+    ],
+    "content": "{\"vertices\":[[NaN,0,0]]}",
+    "id": "00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   "verdict": {
+    "ok": false,
+    "required": 0,
+    "committed": null,
+    "zeros": 20,
+    "reason": "not-an-avatar"
+   }
+  },
+  {
+   "name": "a tick that is a boolean",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ],
+     [
+      "nonce",
+      "12345",
+      "10"
+     ]
+    ],
+    "content": "{\"vertices\":[[2,0,0],[0,0,0]],\"ticks\":[true,[240,0,0]]}",
+    "id": "00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   "verdict": {
+    "ok": false,
+    "required": 0,
+    "committed": null,
+    "zeros": 20,
+    "reason": "not-an-avatar"
+   }
+  },
+  {
+   "name": "a unit that is not a number is read as zero",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ],
+     [
+      "nonce",
+      "12345",
+      "12"
+     ]
+    ],
+    "content": "{\"unit\":true,\"vertices\":[[2,0,0]]}",
+    "id": "000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   "verdict": {
+    "ok": true,
+    "required": 12,
+    "committed": 12,
+    "zeros": 12,
+    "reason": "ok"
+   }
+  },
+  {
+   "name": "an integer too large for a float",
+   "event": {
+    "kind": 11333,
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "created_at": 1763251200,
+    "tags": [
+     [
+      "name",
+      "one"
+     ],
+     [
+      "nonce",
+      "12345",
+      "10"
+     ]
+    ],
+    "content": "{\"vertices\":[[9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999,0,0]]}",
+    "id": "00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   "verdict": {
+    "ok": false,
+    "required": 0,
+    "committed": null,
+    "zeros": 20,
+    "reason": "not-an-avatar"
    }
   }
  ],

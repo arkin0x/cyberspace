@@ -39,12 +39,16 @@ The file holds these groups (see the "format" field of the vectors):
     bits the same shape owed before 2026-11 (never less than now)
   * bits: reach and detail pairs with the bits owed, including sums whose terms are fractional,
     which show that the total is rounded up and not each term
-  * corpus: the avatars measured in the 2026-11 avatar study (the three published at the time,
-    a 98 KB figure and generated shapes from 225 bytes to 206 KiB), with their size, reach and
-    detail and the bits owed; their payloads are not reproduced here
+  * corpus: avatars measured in 2026-11 (the three published at the time, a 98 KB figure and
+    generated shapes from 225 bytes to 206 KiB), with their size, reach and detail and the bits
+    owed; their payloads are not reproduced here
   * content_limit: content lengths at and around the limit, refused or not
   * verdicts: avatar events and the verdict a reader reaches on each, among them events mined
     by this file's miner with the nonce at the end of the content, whose ids are real
+
+The verdict covers section 8.10 only. Some payloads here are not valid SNO (they lack `v`, `name`
+or `colors`, or use a unit DECK-0003 rejects): a reader still validates a payload by DECK-0003
+section 1.9 before it draws one, and that is not this file's to test.
 
 Usage:
   python3 -I avatar-reference.py                      runs the self-check and prints a summary
@@ -95,7 +99,12 @@ def unpack_ticks(packed, count):
 
 
 def is_number(x):
-    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
+    if isinstance(x, bool) or not isinstance(x, (int, float)):
+        return False
+    try:
+        return math.isfinite(float(x))
+    except OverflowError:
+        return False  # an integer too large for a float, which JSON.parse reads as Infinity
 
 
 def readable(payload):
@@ -125,7 +134,10 @@ def avatar_reach(payload):
     for i, v in enumerate(vertices):
         for a in range(3):
             reach = max(reach, abs((v[a] if len(v) > a else 0) + ticks[i][a] / TICKS_PER_UNIT))
-    return reach * (2 ** unit)
+    try:
+        return reach * (2.0 ** unit)
+    except OverflowError:
+        return math.inf  # a unit too large for a float: no work can pay for it
 
 
 def avatar_detail(payload):
@@ -141,7 +153,8 @@ def raw_bits(reach, detail, floor=AVATAR_FLOOR_BITS, detail_bits=AVATAR_DETAIL_B
 
 def avatar_bits(reach, detail):
     """The bits owed for a reach in gibsons and a detail: the sum, rounded up once."""
-    return math.ceil(raw_bits(reach, detail))
+    raw = raw_bits(reach, detail)
+    return raw if math.isinf(raw) else math.ceil(raw)
 
 
 def avatar_bits_before(reach, detail):
@@ -184,6 +197,10 @@ def event_id(event):
     return hashlib.sha256(serialize(event).encode("utf-8")).hexdigest()
 
 
+def refuse_constant(name):
+    raise ValueError(f"{name} is not JSON")
+
+
 def verify_avatar(event):
     """The verdict of section 8.10 on an avatar event: ok, required, committed, zeros, reason.
 
@@ -198,11 +215,13 @@ def verify_avatar(event):
     if event.get("kind") != AVATAR_KIND:
         return {**verdict, "reason": "not-an-avatar"}
     content = event.get("content", "")
+    if not isinstance(content, str):
+        return {**verdict, "reason": "not-an-avatar"}
     if content_bytes(content) > AVATAR_CONTENT_MAX:
         return {**verdict, "reason": "too-large"}
     try:
-        payload = json.loads(content)
-    except (ValueError, TypeError):
+        payload = json.loads(content, parse_constant=refuse_constant)  # NaN and Infinity are not JSON
+    except (ValueError, TypeError, RecursionError):
         return {**verdict, "reason": "not-an-avatar"}
     if not readable(payload):
         return {**verdict, "reason": "not-an-avatar"}
@@ -258,6 +277,9 @@ def tail_split(event, target):
     pre, post = ser.split(mark)
     rem = len(pre) % 64
     lead = "0" * (64 - rem) if rem + NONCE_DIGITS_MAX + len(post) + 9 > 64 else ""
+    # Refuse before mining what would be over the limit once mined.
+    if content_bytes(tailed_content(event["content"], lead + "9" * NONCE_DIGITS_MAX)) > AVATAR_CONTENT_MAX:
+        raise ValueError("the content is over the limit once mined")
     return pre, post, lead
 
 
@@ -307,19 +329,20 @@ PRICE_CASES = [
     ("detailed but small", small_and_busy()),
     ("packed zero ticks", {"unit": 0, "vertices": [[3, 0, 0], [0, 0, 0]], "ticks": [-2], "faces": []}),
     ("a gibson and a half, ticks", {"unit": 0, "vertices": [[1, 0, 0], [0, 0, 0]], "ticks": [[60, 0, 0], -1], "faces": []}),
-    ("negative unit", cube(4, unit=-1)),
+    ("negative unit (priced; DECK-0003 rejects it)", cube(4, unit=-1)),
 ]
 
 BITS_CASES = [
     # (reach, detail): the floor, then each term alone, then sums of fractional terms
     (1, 8), (0.25, 31), (1, 32), (1, 33), (1, 64), (1, 128), (1, 1024), (2, 32), (4, 32), (16, 32), (1000, 32),
-    (2 ** 85, 32), (1.5, 48), (3, 32), (3, 5510), (1.4, 42), (5, 210), (3, 6398), (4, 6213), (2, 1008),
+    (2 ** 85, 32), (1.5, 48), (1.1, 40), (3, 32), (3, 5510), (1.4, 42), (5, 210), (3, 6398), (4, 6213), (2, 1008),
 ]
 
 CONTENT_LIMIT_CASES = [0, 65536, 131071, 131072, 131073, 262144]
 
-# A throwaway pubkey (no one holds its secret key); the mined vectors are unsigned, since a
-# verdict never reads the signature: a reader checks it as it checks any event's.
+# The secp256k1 generator point, whose secret key is 1 and known to everyone: never use it for a
+# real event. The mined vectors are unsigned, since a verdict never reads the signature; a reader
+# checks it as it checks any event's.
 VECTOR_PUBKEY = "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
 VECTOR_CREATED_AT = 1763251200
 
@@ -377,6 +400,11 @@ def synthetic_verdicts():
     fill_at_limit = AVATAR_CONTENT_MAX - len(prefix) - len(suffix)
     at_limit = prefix + "a" * fill_at_limit + suffix
     big = prefix + "a" * (fill_at_limit + 1) + suffix
+    # Two-byte characters: under the limit counted in characters, at and over it in bytes.
+    wide_at = prefix + "\u00e9" * (fill_at_limit // 2) + suffix
+    wide_over = prefix + "a" + "\u00e9" * (fill_at_limit // 2) + suffix
+    assert content_bytes(wide_at) == AVATAR_CONTENT_MAX and content_bytes(wide_over) == AVATAR_CONTENT_MAX + 1
+    assert len(wide_over) < AVATAR_CONTENT_MAX
     assert content_bytes(big) == AVATAR_CONTENT_MAX + 1 and content_bytes(at_limit) == AVATAR_CONTENT_MAX
     cases = [
         ("paid at the floor", ev(12, "10")),
@@ -399,15 +427,25 @@ def synthetic_verdicts():
         ("a target in digits that are not ASCII", ev(20, "\u0661\u0660")),
         ("content at the limit, paid", ev(12, "10", body=at_limit)),
         ("content one byte over the limit, paid", ev(12, "10", body=big)),
+        ("content of two-byte characters at the limit in bytes, paid", ev(12, "10", body=wide_at)),
+        ("content of two-byte characters one byte over the limit, paid", ev(12, "10", body=wide_over)),
+        ("several nonce tags: only the first is read", {**ev(12, "16"), "tags": [["nonce", "0", "16"], ["nonce", "0", "10"]]}),
+        ("a NaN coordinate", ev(20, "10", body='{"vertices":[[NaN,0,0]]}')),
+        ("a tick that is a boolean", ev(20, "10", body='{"vertices":[[2,0,0],[0,0,0]],"ticks":[true,[240,0,0]]}')),
+        ("a unit that is not a number is read as zero", ev(12, "12", body='{"unit":true,"vertices":[[2,0,0]]}')),
+        ("an integer too large for a float", ev(20, "10", body='{"vertices":[[' + "9" * 400 + ',0,0]]}')),
     ]
     out = []
     for name, e in cases:
         v = verify_avatar(e)
         if len(e["content"]) > 1024:
             # Keep the file small: describe the content instead of carrying 128 KiB of it.
-            count = len(e["content"]) - len(prefix) - len(suffix)
-            assert e["content"] == prefix + "a" * count + suffix
-            e = {**e, "content": None, "content_recipe": {"prefix": prefix, "fill": "a", "count": count, "suffix": suffix}}
+            body = e["content"][len(prefix):-len(suffix)]
+            lead = "a" if body[:1] == "a" and body[1:2] == "\u00e9" else ""
+            fill = body[len(lead)]
+            count = len(body) - len(lead)
+            assert e["content"] == prefix + lead + fill * count + suffix
+            e = {**e, "content": None, "content_recipe": {"prefix": prefix + lead, "fill": fill, "count": count, "suffix": suffix}}
         out.append({"name": name, "event": e, "verdict": v})
     return out
 
@@ -424,11 +462,11 @@ def build(corpus):
     limit = [{"bytes": b, "refused": b > AVATAR_CONTENT_MAX} for b in CONTENT_LIMIT_CASES]
     return {
         "format": {
-            "about": "Golden vectors of the work an avatar owes, CYBERSPACE_V2.md section 8.10, written by avatar-reference.py. Not normative: where they disagree with the text, the text is right.",
+            "about": "Golden vectors of the work an avatar owes, CYBERSPACE_V2.md section 8.10, written by avatar-reference.py. Not normative: where they disagree with the text, the text is right. The verdicts cover section 8.10 only; a reader still validates a payload by DECK-0003 section 1.9 before drawing it, and some payloads here are not valid SNO.",
             "constants": "The constants of section 8.10.",
             "price": "Payloads: reach (gibsons, before the floor of one), detail (vertices plus faces, before the floor of 32), raw_bits (the sum before rounding, to 9 places), required (the bits owed), required_before_2026_11 (the bits the rule before 2026-11 asked; never less than required).",
             "bits": "Reach and detail pairs, without payloads, with the same fields. A port tests its price function on them directly.",
-            "corpus": "The avatars measured in the 2026-11 avatar study: bytes (UTF-8 length of the content), vertices, faces, reach, required, required_before_2026_11 and refused (content over the limit: a reader draws the default whatever work it carries). The payloads are not reproduced; a port tests its price function on reach and vertices plus faces.",
+            "corpus": "Avatars measured in 2026-11 (the three then published, a 98 KB figure, generated shapes): bytes (UTF-8 length of the content), vertices, faces, reach, required, required_before_2026_11 and refused (content over the limit: a reader draws the default whatever work it carries). The payloads are not reproduced; a port tests its price function on reach and vertices plus faces.",
             "content_limit": "Content lengths in bytes and whether a reader refuses them.",
             "verdicts": "Events and the verdict section 8.10 reaches on each. Synthetic events carry made-up ids with a given number of zeros. An event whose content is null carries content_recipe instead: prefix, then fill repeated count times, then suffix.",
             "mined": "Events mined by this file's miner with the nonce as the last field of the content (non-normative; the verdict does not depend on how an id was found). template is the event before mining, target the committed bits, lead the zeros the miner put before the nonce's digits, tries the nonces it tried from 0. The events are unsigned: a verdict never reads the signature.",
@@ -476,7 +514,7 @@ def self_check(data):
         assert avatar_bits(v["reach"], detail) == v["required"], v
         # No shape costs more than it did before 2026-11.
         assert v["required"] <= v["required_before_2026_11"], v
-    for v in data["content_limit"]:
+    for v in data["content_limit"] + data["corpus"]:
         assert (v["bytes"] > AVATAR_CONTENT_MAX) == v["refused"]
     for v in data["verdicts"]:
         e = dict(v["event"])
@@ -497,8 +535,9 @@ def self_check(data):
     # The ladder section 8.10 quotes.
     assert [avatar_bits(r, 32) for r in (1, 2, 4, 16, 1000)] == [10, 12, 14, 18, 30]
     assert avatar_bits(2 ** 85, 32) == 180
-    # The rounding is of the sum, not of each term: 1.17 + 0.88 is 2.05, which rounds up to 3, not to 1 + 1.
-    assert avatar_bits(1.5, 48) == 13
+    # The rounding is of the sum, not of each term: reach 1.1 and detail 40 are 0.275 + 0.483 bits
+    # beyond the floor, 10.76 in all, which rounds up to 11; rounding each term up would make 12.
+    assert avatar_bits(1.1, 40) == 11
     # A reach under a gibson and a detail under 32 cost nothing beyond the floor.
     assert avatar_bits(0.25, 8) == AVATAR_FLOOR_BITS
     # Detail is priced below reach, per doubling.
