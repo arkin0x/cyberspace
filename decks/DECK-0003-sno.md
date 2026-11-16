@@ -28,6 +28,7 @@ The design goal is not to compete with glTF or USD. It is to be the three-dimens
 | Size | no ceiling on vertices or faces; the event's size is the relay's concern, as for every other kind (§1.8) |
 | Motion | `anim`: loops that turn or move a whole object, timed by the reader's own clock in Unix seconds (§1.14) |
 | Point size and glow | `pointsize` and `glow`: how wide an object's points are drawn, and a light or a fog around each, in `points` mode (§1.15, §1.16) |
+| Eye | `eye`: where a viewer looks from when it wears the object as an avatar and sees in first person (§1.17) |
 | Credit for a copy | the NIP-18 `q` tag naming the original's address; a `p` naming its author on a public remix only (§3.5) |
 | Reference implementation | `decks/sno-reference.py`, which is §1.9 written as code |
 
@@ -51,6 +52,7 @@ The design goal is not to compete with glTF or USD. It is to be the three-dimens
 - **Point size (`pointsize`):** how wide each point of an object in `points` mode is drawn, in ticks of the object's own lattice. `0` means no points. Absent means the reader's own size (§1.15).
 - **Glow (`glow`):** a light or a fog around each point of an object in `points` mode, in the point's own color, reaching a radius given in ticks of the object's own lattice. Absent means no glow (§1.16).
 - **Glow strength:** how strong a glow is at each point's center, a whole percent from `1` to `100`. It is the glow's own, and the object's opacity never multiplies it (§1.16).
+- **Eye (`eye`):** where a viewer's eyes are on an avatar, for a client that shows its viewer the world in first person from inside it, in ticks of the object's own lattice. Absent means the automatic eye, one eighth of the avatar's height below its top (§1.17).
 - **Extent:** the half-width of the grid the object was built on, in model units. A bound, not a size (§1.8).
 - **Address:** the name of an addressable nostr event, written the way a nostr `a` tag writes it: the event's kind, its author's pubkey as 64 lowercase hex characters, and its `d` tag, joined by colons. An object's address is `33331:<pubkey hex>:<d>`, for example `33331:79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798:5e0a3c91d27f4b68` (§1.10, §3.1).
 - **Ref:** one entry in an object's `refs` list. It names one object that this object places, the way a nostr tag names an event. The ref `["a", "33331:<pubkey hex>:<d>"]` names the object by its address. The ref `["e", "<event id hex>"]` names it by event id. Either shape may be followed by one relay URL as a hint, such as `["a", "33331:<pubkey hex>:<d>", "wss://relay.example"]` (§1.9 rule 11, §1.10).
@@ -85,6 +87,7 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | `opacity` | integer | no | How solid the object is drawn, a percent, `0` to `100` (§1.11). At `0` the object draws nothing of its own, and its glow, in `points` mode, still shows. Repaired, never rejected: absent or malformed means `100`, fully opaque. |
 | `pointsize` | integer | no | How wide each point is drawn in `points` mode, in ticks of the object's lattice, `0` to `7680`; `0` means no points (§1.15). Read rather than validated: absent or malformed means the reader's own size. Kept, not drawn, in `solid` and `lines`. Never a rejection. |
 | `glow` | array | no | A light or a fog around each point in `points` mode: the word `"light"` or `"fog"`, a radius in ticks and a glow strength in percent (§1.16). Read rather than validated: absent or malformed means no glow. Kept, not drawn, in `solid` and `lines`. Never a rejection. |
+| `eye` | array | no | Where a viewer looks from when it wears the object as an avatar and sees in first person: three whole numbers of ticks of the object's lattice, `-7680` to `7680` each, in the payload's own frame (§1.17). Read rather than validated: absent or malformed means the automatic eye, one eighth of the avatar's height below its top. Kept, not used, by an object that is not worn. Never a rejection. |
 | `constrain` | string | no | Whether the object's faces stop a walker: `"all"`, `"opaque"` or `"off"` (§1.12). `"off"` and absent mean they stop nothing; a malformed value is repaired to mean the same, never rejected. An authoring tool writes `"opaque"`, and never omits it, unless its author chooses otherwise. |
 | `anim` | array | no | Up to four motions that move the object in a loop, timed in seconds by the reader's clock (§1.14). Read rather than validated: absent or malformed means the object is still, and a malformed motion is ignored while the rest apply. Never a rejection. |
 | `palette` | string or array | no | Which 256 colors the indices name (§1.3a). Absent means the built-in. |
@@ -355,6 +358,7 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 17. `anim`, if present, is read rather than validated (§1.14). A value that is not an array, null included, means the object is still. Only its first four entries are read, and an entry that is malformed, names an unknown motion, or runs faster than two cycles a second is ignored while the rest apply. It is never a reason to reject.
 18. `pointsize`, if present, is read rather than validated (§1.15): a value that is not a JSON integer in `0..7680`, null included, means the reader's own size. It is never a reason to reject.
 19. `glow`, if present, is read rather than validated (§1.16): a value that is not a JSON array of exactly three elements, the word `"light"` or `"fog"`, a JSON integer in `1..7680` and a JSON integer in `1..100`, null included, means no glow. It is never a reason to reject.
+20. `eye`, if present, is read rather than validated (§1.17): a value that is not a JSON array of exactly three JSON integers, each in `-7680..7680`, null included, means the automatic eye. It is never a reason to reject.
 
 ---
 
@@ -911,6 +915,59 @@ and a few mushrooms placed among the trees (§1.10), drawn as points in a pale b
 
 (Non-normative: `decks/sno-reference.py` implements the table above as `drawn_glow`, and its self-test carries a read case for each kind of value in it; there is no rejection case, because nothing in this section rejects. As with `opacity`, a reader that edits objects should keep fields it does not recognize when it writes an object back, or the first person to open a glowing forest in an older editor and publish it again would put its lights out for everyone after them.)
 
+### 1.17 Eye
+
+`eye` says where a viewer's eyes are on an avatar, when the viewer's client shows them the world in first person from inside it. It is one JSON array of three whole numbers, X, Y and Z, in ticks of the object's own lattice (§1.2), in the payload's own frame (§2), the frame its positions are written in:
+
+```json
+"eye": [0, 159, 0]
+```
+
+That avatar's eyes are 159 ticks above its origin, a unit and a little over three tenths.
+
+| `eye` | The viewer looks from |
+|---|---|
+| absent | the automatic eye, below |
+| three JSON integers, each `-7680` to `7680` | that point |
+| anything else: two or four elements, a fraction, a number out of range, a string, an object, null | the automatic eye, exactly as if it were absent |
+
+**It is read only for an avatar's own viewer.** A client that shows its viewer the world from inside the viewer's own avatar, as ONOSENDAI's WALK does, SHOULD put the camera at the avatar's eye. Nobody else's screen changes: other people draw the avatar where its chain says and facing the way it says, and an eye is never drawn. An object that is not worn keeps the field and does not use it, so an object made into an avatar later still has its eye. An `eye` on an object an avatar places is not read (§1.10); only the worn payload's own is.
+
+**The automatic eye.** A reader works it out from the avatar's own vertices, in integers, so that every reader puts it in the same place. Let `bottom` and `top` be the lowest and highest Y of those vertices, in ticks (§1.2). The automatic eye is at Y `top - floor((top - bottom) / 8)`, one eighth of the avatar's height below its top, and at `0` on X and on Z, straight above or below the origin. An avatar with no vertices of its own has its automatic eye at its origin.
+
+| Avatar | Lowest and highest Y, in ticks | Automatic eye |
+|---|---|---|
+| built from its origin up to two units | `0` and `240` | `[0, 210, 0]` |
+| a ship built 0.8 to 1.4 units above its origin | `96` and `168` | `[0, 159, 0]` |
+| centered on its origin, one unit each way | `-120` and `120` | `[0, 90, 0]` |
+| ten ticks tall, from `0` | `0` and `10` | `[0, 9, 0]` |
+
+(Non-normative: a person's eyes are near the top of the head, and the margin keeps the eye beneath the top face rather than on it, where it would see that face edge-on. X and Z stay on the origin's line, which the avatar turns about, so that an eye never swings round when its viewer turns.)
+
+**The default avatar.** A client's default avatar (empty content, `CYBERSPACE_V2.md` §8.10) is the client's own shape, not a payload. A client SHOULD give it an eye by this same rule applied to the shape it draws, so that a viewer without an avatar of their own does not look out from inside the floor. ONOSENDAI draws a wireframe icosahedron one cell across, centered on the walker's point, so its eye is `0.5 - 1/8`, 0.375 of a cell above its center. A client that draws a custom avatar as its default shape, for example when it is too small on the screen to draw, uses the default shape's eye while it does.
+
+**The eye may be anywhere in reach.** A reader does not hold a written eye to the avatar's own shape. An author may put it behind the avatar and a little above, for a view of the avatar from behind (third person), or off to one side, in a cockpit on a wing. Its only bound is the 64-unit bound of a position (§1.8). A client that draws avatars within a size limit of its own, for example by shrinking an avatar that reaches further than it allows, holds the eye within the same limit.
+
+**It never looks through a wall.** A client SHOULD bring the camera nearer the walker's point, along the line between them, so that the camera does not look from the far side of a face that stops a walker (§1.12), or from so near one that the client's own near plane cuts the face away. The eye then sits short of a low ceiling over a tall avatar, and short of a wall behind an avatar seen from behind. A face through the walker's own point, the floor it walks along (§1.12), lets the eye rise away from it and holds an eye below it. A client MUST NOT move the camera further from the walker than the eye. (Non-normative: in open air, with no face between them, a high eye sees further than the walker stands. A maze that does not want to be seen from above has a ceiling.)
+
+**It turns with the avatar.** The eye is in the avatar's own frame, so a client that turns the avatar turns the eye with it. A client that turns its viewer's avatar to face the way the viewer looks SHOULD turn the avatar about the viewer's up only, put the eye at the turned point, and turn the camera about the eye when the viewer looks up or down, so that looking down does not tip the avatar or swing the eye about the origin.
+
+**It scales with the avatar.** A tick grows with `unit` (§1.6), and a client that draws an avatar smaller or larger than true scale draws its eye at the same scale, as it draws its vertices.
+
+**It moves nobody.** The eye is where the camera is, never where the walker is. A walker stays a point at the center of its gibson (§1.12), and every wall, floor and step is tested from that point. An eye placed high on a tall avatar sees over a wall the walker cannot cross, and the walker stays on its own side of it.
+
+**It is read, never a reason to reject** (§1.9 rule 20). A reader reads an `eye` that is not a JSON array of exactly three JSON integers, each in `-7680..7680`, as absent, and uses the automatic eye. A reader MUST NOT reject the payload for it. A publisher MUST write it as three JSON integers, MUST NOT write a malformed value, and MUST omit it when its author has not chosen an eye; an editor shows the automatic eye in that case and writes nothing, so the automatic eye follows the shape as it is edited. `[0, 0, 0]` is a choice, not a spelling of absent: it keeps the eye at the origin, where readers written before this section put it. A reader whose JSON parser cannot tell `159.0` from `159` MAY read such a value as `159`.
+
+**Why ticks.** Every distance an object carries is in ticks of its own lattice: its positions, a placement's offset, a point's size, a glow's reach, a motion's travel. An eye in ticks is exact, grows with the avatar, and lands where a vertex would. A fraction of the height would move whenever a vertex was added on top, and a vertex index would name the wrong point after any editor that does not know the field added or removed one (the note that closes §1.11).
+
+**Why `eye` and not `camera`.** In a 3D format a camera reads as a viewpoint for looking at the object from outside, which is what glTF's cameras are, and a thumbnail or a preview could reasonably frame the object from one. `eye` says first person and nothing else.
+
+**What it costs.** Sixteen bytes for `,"eye":[0,159,0]`, and nothing for an avatar that leaves it out.
+
+**Versioning.** `eye` is a field whose absence has a meaning, so its addition does not bump `v` (§5). A reader written before this section puts the camera at the origin, as it always has.
+
+(Non-normative: `decks/sno-reference.py` implements the table above and the automatic eye as `drawn_eye`, and its self-test carries a read case for each kind of value in it; there is no rejection case, because nothing in this section rejects. As with `opacity`, a reader that edits objects should keep fields it does not recognize when it writes an object back, or the first person to open an avatar in an older editor and publish it again would put its eyes back at its feet.)
+
 ## 2. Model space (normative)
 
 An object is built in a right-handed frame with Y up, which is the glTF and three.js convention:
@@ -982,6 +1039,8 @@ An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload
 **An avatar never stops a walker.** A reader MUST ignore `constrain` (§1.12) in an avatar's payload, and in every object the avatar places (§1.10). An avatar is a person, not a wall: one standing in a doorway would shut it for every walker whose client honors the field, and one that moves would carry a wall about with it, through which nobody could follow. `constrain` is not one of the fields the work is computed from, so the work an avatar owes is unchanged by it.
 
 **An avatar has no point size and no glow.** A reader MUST ignore `pointsize` (§1.15) and `glow` (§1.16) in an avatar's payload, and in every object the avatar places (§1.10), and draw an avatar's points at its own size, without a glow. The work an avatar owes prices its size and its detail, and a point as large as its author likes, or a light or a fog reaching sixty-four units from every vertex, would let an avatar take more of everyone's screen than it paid for. Neither field is one of the fields the work is computed from, so the work an avatar owes is unchanged by them.
+
+**An avatar has an eye.** A client that shows its viewer the world from inside the viewer's own avatar SHOULD look from the avatar's `eye` (§1.17), or from the automatic eye when it has none, and SHOULD give its default avatar an eye by the same rule. The eye moves only that viewer's camera: nobody else draws it, and it changes neither where the avatar stands nor how it faces.
 
 **An avatar never moves by itself.** A reader MUST ignore `anim` (§1.14) in an avatar's payload, and in every object the avatar places (§1.10), and draw the avatar at its rest pose. An avatar is how one person knows where another stands, and a slide or an orbit of up to 64 units would draw the person somewhere they are not. `anim` is not one of the fields the work is computed from, so the work an avatar owes is unchanged by it.
 
@@ -1082,7 +1141,7 @@ A client MUST perform welding, deduplication and any equality test on the intege
 
 `v` is `1` or `2`, and a reader MUST support both and reject anything else. A version bump means the meaning of an existing field has changed, which is exactly what happened between the two: `v: 2` reads its Z as written and `v: 1` has it negated (§2). Nothing else differs, and nothing else should ever differ by so little: two versions are a cost, and this one buys a format that every other tool can read without a special case.
 
-A reader MUST ignore fields it does not recognize rather than rejecting them. This is what allows an optional field to be added without a version bump, and it is how `extent`, `ticks`, `up`, `spin`, `palette`, `facecolors`, `refs`, `parts`, `opacity`, `constrain`, `objects`, `anim`, `pointsize` and `glow` were each added to a format already in use: an older reader sees an object with whole-unit positions on a grid of 8, unoriented, in the built-in colors, every face interpolating its corners, placing nothing, fully opaque, stopping no walker, carrying no other objects, standing still, with its points at the reader's own size and no glow, and draws something correct rather than nothing.
+A reader MUST ignore fields it does not recognize rather than rejecting them. This is what allows an optional field to be added without a version bump, and it is how `extent`, `ticks`, `up`, `spin`, `palette`, `facecolors`, `refs`, `parts`, `opacity`, `constrain`, `objects`, `anim`, `pointsize`, `glow` and `eye` were each added to a format already in use: an older reader sees an object with whole-unit positions on a grid of 8, unoriented, in the built-in colors, every face interpolating its corners, placing nothing, fully opaque, stopping no walker, carrying no other objects, standing still, with its points at the reader's own size and no glow, and worn with its eye at its origin, and draws something correct rather than nothing.
 
 An extension that changes how an existing field is interpreted MUST bump `v`. An extension that adds a field whose absence has a well-defined meaning MUST NOT.
 
