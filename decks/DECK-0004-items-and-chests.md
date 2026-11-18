@@ -5,7 +5,7 @@ Title: Items, Chests and Doors
 Status: Draft
 Mandatory: no
 Created: 2026-10-15
-Last updated: 2026-11-16
+Last updated: 2026-11-18
 Requires: `CYBERSPACE_V2.md` §7.2 (keys), §7.6 (the bag) and §8.6 (its event); DECK-0003 (SNO objects, for looks, and its objects table, §1.10, for carried parts); NIP-01, NIP-09, NIP-44 v2, NIP-70, NIP-92; BIP-340
 
 ## Abstract
@@ -304,6 +304,34 @@ A look MAY also carry objects that its author never published, in an objects tab
 
 Note (non-normative): whether a look is a copy or a live placement follows where its author took the object from, as DECK-0003 §1.10 describes for parts. An object taken from the author's own workshop becomes a look that is the object itself, with any parts its author never published carried in its objects table. An object picked from the feed becomes a look whose only content is one placement of the public object. That look can be turned and scaled, and it still follows its author's edits.
 
+**A look sealed as its own event:** A look MAY be carried as an event of its own instead of inside the tag, so that a large look does not ride in every rewrite of the bag (see **Size**, below). The event is a hidden object (DECK-0003 §3.4), and the `look` tag holds a small look whose only content is one placement of it. Such a look is called a **sealed look**.
+
+- **The event:** a `kind 33331` hidden object exactly as DECK-0003 §3.4 defines it. Its payload is the look's payload, the very JSON the tag would otherwise carry, encrypted with the key of the bag that holds the chest. For a chest in an ordinary bag that key is the bag's region key (`CYBERSPACE_V2.md` §7.2). For a chest in a room bag it is the room key (§3.7.2). It carries nothing that says where it is, as DECK-0003 §3.4 requires, and a writer SHOULD give it a `d` of fresh random hex, such as 32 hex characters, which says nothing about the chest or the look.
+- **Its signer:** the chest's signer. A sealed look names an event of the chest's own author, and of no one else.
+- **The look in the tag:** a payload with no geometry of its own and no objects table. Its `refs` holds exactly one `a` ref, which names the event, `["a", "33331:<chest signer pubkey hex>:<d>"]`, with or without a relay hint. Its `parts` holds exactly one placement of that ref, at the origin, unturned, at its own size: `[0, 0, 0, 0, 0, 0, 0, 0]`. Its `unit` SHOULD be the unit of the sealed payload.
+
+For example, this tag gives a chest a closed look that is sealed as its own event. The tag is under 300 bytes, whatever the size of the look it names:
+
+```
+["look", "{\"v\":2,\"name\":\"Dragon hoard\",\"unit\":0,\"mode\":\"solid\",\"vertices\":[],\"colors\":[],\"faces\":[],\"refs\":[[\"a\",\"33331:<chest signer pubkey hex>:9f3c0a5e71d24b68c0e19a7f2d5b8e43\"]],\"parts\":[[0,0,0,0,0,0,0,0]]}"]
+```
+
+An open look is sealed the same way, in an event of its own, and named from the `look` tag whose third element is `open`. A chest MAY seal one of its two looks and carry the other in its tag.
+
+**Reading a sealed look:** A reader that comes to a look of exactly this shape, whose one ref names a `kind 33331` address under the chest's signer, fetches the event that the ref names, as it fetches any placed object (DECK-0003 §1.10). Then:
+
+1. When the event is signed by the chest's signer, carries the `d` that the address names, and carries an `encrypted` tag that opens with the key of the bag that holds the chest, the reader reads the decrypted payload as the look, exactly as if the `look` tag had carried that payload. It checks the payload under DECK-0003 §1.9, as it checks a payload in the tag. The pubkey that counts for the payload's objects table is the chest's signer (DECK-0003 §1.10), which is also the event's signer. The key is the one the reader already used to open the bag. A reader MUST NOT ask anyone for it (`cyberspace:region`, DECK-0003 §3.4).
+2. When the event cannot be fetched, does not open with that key, or opens to a payload that fails DECK-0003 §1.9, the reader MUST read the chest as one without that look, as it does for a payload in the tag that fails (see **Which tags count**, above). It MUST NOT draw the hidden object's public preview as a look.
+3. When the event is a public object, one with no `encrypted` tag, the look is an ordinary look placing a public object (see **A copy, with live parts**, above), and the reader draws it as one.
+
+A reader SHOULD draw the chest as one without that look while it fetches the event, so that something stands at the chest's place in the meantime. A reader MUST NOT wait for a sealed look before it lets its user open the chest: a look only says how a chest is drawn.
+
+**Why a sealed look is a hidden object:** A look in the tag rides in every rewrite of the bag. A sealed look is published once, and the bag carries only the small look that names it. It is encrypted with the key of the bag that holds the chest, so exactly the readers who can read the chest can draw its look, and nobody else can. Its objects table is encrypted with it, so the parts its author never published stay out of the clear (DECK-0003 §1.10). Using the form of DECK-0003 §3.4 means that no new kind is needed, and a client that knows FF-1 shows the event as a preview.
+
+**Moving a sealed look:** A sealed look is tied to the key of the bag that holds its chest (DECK-0003 §3.4, "One key opens the place and everything referenced from it"). A writer that moves a chest into a bag with another key MUST seal the look again under the new key. It MAY do this under the same address, which replaces the event, or under a new address that the chest's rewritten `look` tag names. A copy of a chest that a finder takes and hides elsewhere keeps its look tag, and in its new bag the event does not open, so the copy is drawn as a chest without that look. A writer that removes a chest, or moves it to a new address, SHOULD retract each sealed look it no longer names (NIP-09), once no bag of the writer's names the chest that named it.
+
+**Older readers and sealed looks:** A reader that predates sealed looks fetches the event as a placed object, finds only the preview in its content, and draws a placeholder where the look would stand (DECK-0003 §1.10). It never rejects the chest.
+
 **Drawing it:** A reader draws the closed look until its user has opened the chest or door. After that, the reader draws the open look, if there is one. When there is no open look, an opened door is not drawn at all, and an opened chest keeps its closed look. When there is no closed look, a reader draws whatever it draws for a chest.
 
 **Walkers:** A walker is a viewer that a reader moves through the world a step at a time, as a person walks (DECK-0003 §1.12). Some readers stop a walker at the faces of objects, as each object's `constrain` field says. A reader that does this SHOULD stop walkers at a look's faces by the look's own `constrain`, exactly as it does at a hidden shard's faces. This applies to:
@@ -314,7 +342,7 @@ Note (non-normative): whether a look is a copy or a live placement follows where
 
 A closed door therefore stops a walker who has not opened it, as far as its closed look's `constrain` says. §6 explains why this is a courtesy and not a lock.
 
-**Size:** A look rides inside the bag with everything else the bag holds. Every rewrite of the bag therefore carries the look again. A writer SHOULD keep looks small. (Non-normative: ONOSENDAI's design refuses a look over 16,384 bytes. That is the size above which it hides a shard by reference instead of inline, DECK-0003 §3.2.)
+**Size:** A look in a `look` tag rides inside the bag with everything else the bag holds. Every rewrite of the bag therefore carries the look again. A writer SHOULD keep the looks it carries in tags small, and SHOULD seal a large look as its own event (see **A look sealed as its own event**, above). A sealed look counts toward the size of its own event, not toward the size of the bag. (Non-normative: ONOSENDAI carries a look of up to 16,384 bytes in its tag. That is the size above which it hides a shard by reference instead of inline, DECK-0003 §3.2. It seals a larger look as its own event, and refuses one whose sealed event would be larger than 240,000 bytes, the size it holds a bag and a sealed entry to, `CYBERSPACE_V2.md` §7.6, Size.)
 
 **Older readers:** A reader that does not know `look` draws the chest as it always has.
 
@@ -674,7 +702,7 @@ The `sealed_entries` section of `kinds-vectors.json` (`CYBERSPACE_V2.md` §7.6) 
 - **A door secret is knowledge:** Whoever has opened a door can give its secret to anyone. Whoever receives the secret can open the room from anywhere, as long as they can compute the place's location key. Rotation (§3.7.7) protects only what the room holds after the rotation.
 - **Two bags in time:** Nothing in a room bag's content or tags links it to its place. A relay does see when the room bag was published. A room bag published moments after the bag that holds its door ties the two bags to one author and one moment. A writer that wants to hide even that link may publish the two bags at different times.
 - **The door secret is the only way to edit a room:** A door's secret is sealed to its lock and nowhere else. Only a device that sealed the door, or that has opened it, can therefore hide more in its room, rotate the room, or find its room bag. An author who loses that device, and holds no copy of the item that opens the door, can still remove the door. That author cannot edit the room or delete its room bag (§3.7.8). An author who wants to keep editing keeps a copy of each key item.
-- **A look is public to its finders, and its live parts belong to their authors:** A look's live parts (§3.6) name public objects, and their authors can replace or delete them. A door or a chest can therefore change its appearance after it was hidden. A look carries no secret: whoever can see the chest can read its look.
+- **A look is public to its finders, and its live parts belong to their authors:** A look's live parts (§3.6) name public objects, and their authors can replace or delete them. A door or a chest can therefore change its appearance after it was hidden. A look carries no secret: whoever can see the chest can read its look. A sealed look (§3.6) is no exception. It is encrypted with the key of the bag that holds the chest, so whoever can see the chest can read it, and whoever cannot see the chest cannot.
 - **A message in a chest proves its author only in place:** It is a rumor, so a finder who copies it out cannot publish it as a note its hider signed, and the hider's signed items carry `-`, so a relay that honours NIP-70 refuses a copy published by anyone but the hider; a relay that does not honour it still accepts one. Neither is deniability: whoever publishes the bag with its region key, together with what opens the chest, can show what the chest held, signed by its author.
 - **A model is someone else's object:** An item's `model` names a public object that its author can replace at any time (§2.5), so what an item looks like can change after it was hidden, and an author who deletes the object leaves every item that wears it drawn without a model. A forger who wants the look fixed names an object they authored.
 - **The `requires` label is the hider's text:** It is shown to readers who cannot open the chest and may say anything; it is data, never an instruction.
