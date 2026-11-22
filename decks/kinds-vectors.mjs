@@ -56,6 +56,29 @@ if (hex(convSeal) !== hex(convOpen)) throw new Error('conversation keys differ')
 if (nip44.decrypt(payload, convOpen) !== chestPlaintext) throw new Error('chest does not open')
 const chest = sign({ pubkey: hider, created_at: T, kind: 3341, content: payload, tags: [['C', C], ['title', 'Vault'], ['lock', item, sender], ['requires', 'Vapor Key'], ['-']] }, hiderSk)
 
+// DECK-0004 §3.2, Size: a chest at the cap, 131,072 bytes of contents, the
+// largest a chest may hold. Past 65,535 bytes NIP-44 v2 writes the extended
+// length prefix: two zero bytes, then the length as a 4-byte big-endian
+// integer. The plaintext and the payload are too large to print, so the
+// plaintext is given by its recipe (one message rumor whose content is the
+// letter x repeated) and both by their lengths and SHA-256.
+const CHEST_MAX = 131072
+const largeSenderSk = key('large chest sender'); const largeSender = getPublicKey(largeSenderSk)
+const largeMessageOf = (n) => rumorOf({ pubkey: hider, created_at: T, kind: 1, content: 'x'.repeat(n), tags: [['C', C], ['-']] })
+const largeFill = CHEST_MAX - Buffer.byteLength(JSON.stringify([largeMessageOf(0)]), 'utf8')
+const largeMessage = largeMessageOf(largeFill)
+const largePlaintext = JSON.stringify([largeMessage])
+if (Buffer.byteLength(largePlaintext, 'utf8') !== CHEST_MAX) throw new Error('the large chest is not at the cap')
+const largeConv = nip44.utils.getConversationKey(largeSenderSk, item)
+const largePayload = nip44.encrypt(largePlaintext, largeConv, nonce32('large chest'))
+if (nip44.decrypt(largePayload, nip44.utils.getConversationKey(itemSk, largeSender)) !== largePlaintext) throw new Error('the large chest does not open')
+const nip44Chars = (n, prefix) => 4 * Math.ceil((1 + 32 + prefix + nip44.utils.calcPaddedLen(n) + 32) / 3)
+// The extended prefix is six bytes; the standard one would make the payload four characters shorter.
+if (largePayload.length !== nip44Chars(CHEST_MAX, 6)) throw new Error('the large chest was not sealed with the extended prefix')
+const largePadded = Buffer.from(largePayload, 'base64').length - 1 - 32 - 32
+const largeChest = sign({ pubkey: hider, created_at: T, kind: 3341, content: largePayload, tags: [['C', C], ['title', 'Hoard'], ['lock', item, largeSender], ['requires', 'Vapor Key'], ['-']] }, hiderSk)
+const largeChestJson = JSON.stringify(largeChest)
+
 // DECK-0004 §4: an item listing.
 const proofMessage = sha(`cyberspace:item-listing:${hider}:${item}`)
 const proof = hex(schnorr.sign(proofMessage, itemSk, AUX))
@@ -273,6 +296,17 @@ console.log(JSON.stringify({
   keys: { hider_secret: hex(hiderSk), hider, item_secret: hex(itemSk), item, chest_sender_secret: hex(senderSk), chest_sender: sender, speaker_secret: hex(speakerSk), speaker, region_key: hex(regionKey), lookup_id: lookupId },
   key_item: keyItem,
   chest: { plaintext: chestPlaintext, nip44_nonce: hex(nonce32('chest')), conversation_key: hex(convSeal), event: chest },
+  large_chest: {
+    note: 'DECK-0004 §3.2, Size. A chest at the cap, sealed to the same item with the NIP-44 v2 extended length prefix. The plaintext is a list of one message rumor whose content is the letter x repeated message_content_x_count times; event is the chest with its content left out, and payload_sha256 is the SHA-256 of that content as ASCII. sealed_entry_payload_chars is the base64 length of the chest carried alone in a sealed entry (CYBERSPACE_V2.md §7.6), nonce, ciphertext and tag. over_cap is one byte past the cap, which a writer refuses.',
+    message_content_x_count: largeFill, message_id: largeMessage.id,
+    plaintext_bytes: CHEST_MAX, plaintext_sha256: hex(sha(largePlaintext)),
+    nip44_nonce: hex(nonce32('large chest')), conversation_key: hex(largeConv),
+    length_prefix_hex: '0000' + CHEST_MAX.toString(16).padStart(8, '0'), padded_bytes: nip44.utils.calcPaddedLen(CHEST_MAX), padded_with_prefix_bytes: largePadded,
+    payload_chars: largePayload.length, payload_sha256: hex(sha(largePayload)),
+    event: (({ content, ...rest }) => rest)(largeChest), event_bytes: Buffer.byteLength(largeChestJson, 'utf8'),
+    sealed_entry_payload_chars: 4 * Math.ceil((12 + Buffer.byteLength(largeChestJson, 'utf8') + 16) / 3),
+    over_cap: { plaintext_bytes: CHEST_MAX + 1, padded_bytes: nip44.utils.calcPaddedLen(CHEST_MAX + 1), payload_chars: nip44Chars(CHEST_MAX + 1, 6) },
+  },
   item_listing: { proof_message: hex(proofMessage), event: listing },
   chat: { rumor, envelope_plaintext: chatPlain, aes_nonce: hex(nonce12('chat')), envelope },
   comment: { plaintext: commentText, aes_nonce: hex(nonce12('comment')), event: comment },
