@@ -76,6 +76,9 @@ const nip44Chars = (n, prefix) => 4 * Math.ceil((1 + 32 + prefix + nip44.utils.c
 // The extended prefix is six bytes; the standard one would make the payload four characters shorter.
 if (largePayload.length !== nip44Chars(CHEST_MAX, 6)) throw new Error('the large chest was not sealed with the extended prefix')
 const largePadded = Buffer.from(largePayload, 'base64').length - 1 - 32 - 32
+// The prefix NIP-44 writes before the padded plaintext: two zero bytes, then the length as a 4-byte big-endian integer.
+const largePrefixHex = hex(nip44.utils.pad(largePlaintext).subarray(0, 6))
+if (largePrefixHex !== '0000' + CHEST_MAX.toString(16).padStart(8, '0')) throw new Error('the large chest\'s prefix is not the extended one')
 const largeChest = sign({ pubkey: hider, created_at: T, kind: 3341, content: largePayload, tags: [['C', C], ['title', 'Hoard'], ['lock', item, largeSender], ['requires', 'Vapor Key'], ['-']] }, hiderSk)
 const largeChestJson = JSON.stringify(largeChest)
 
@@ -301,7 +304,7 @@ console.log(JSON.stringify({
     message_content_x_count: largeFill, message_id: largeMessage.id,
     plaintext_bytes: CHEST_MAX, plaintext_sha256: hex(sha(largePlaintext)),
     nip44_nonce: hex(nonce32('large chest')), conversation_key: hex(largeConv),
-    length_prefix_hex: '0000' + CHEST_MAX.toString(16).padStart(8, '0'), padded_bytes: nip44.utils.calcPaddedLen(CHEST_MAX), padded_with_prefix_bytes: largePadded,
+    length_prefix_hex: largePrefixHex, padded_bytes: nip44.utils.calcPaddedLen(CHEST_MAX), padded_with_prefix_bytes: largePadded,
     payload_chars: largePayload.length, payload_sha256: hex(sha(largePayload)),
     event: (({ content, ...rest }) => rest)(largeChest), event_bytes: Buffer.byteLength(largeChestJson, 'utf8'),
     sealed_entry_payload_chars: 4 * Math.ceil((12 + Buffer.byteLength(largeChestJson, 'utf8') + 16) / 3),
