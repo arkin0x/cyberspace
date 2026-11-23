@@ -317,7 +317,7 @@ The position bound is stated as an obligation on publishers rather than readers:
 | 32,768 | 1.00, and 0.8% of neighbouring ticks draw in the same place | visibly wrong |
 | 65,536 | 2.10, and 9.6% of neighbouring ticks draw in the same place | broken |
 
-`4096` is the largest power of two whose every tick is drawn within a quarter of a tick of where it belongs. A larger bound would need camera-relative rendering, in which a reader subtracts the camera's position from each vertex in 64-bit arithmetic before anything is rounded to 32 bits. That is a change to how readers draw, not to this format, and it is left for later. The bound does not change what a tick is: a position is still an exact pair of integers (§1.2), and welding and equality are still exact at any distance from the origin.
+`4096` is the largest power of two that keeps every tick within a quarter of a tick of where it belongs in every sample, with room to spare; at 8,192 some samples cross that line. A larger bound would need camera-relative rendering, in which a reader subtracts the camera's position from each vertex in 64-bit arithmetic before anything is rounded to 32 bits. That is a change to how readers draw, not to this format, and it is left for later. The bound does not change what a tick is: a position is still an exact pair of integers (§1.2), and welding and equality are still exact at any distance from the origin.
 
 **Readers that enforce the former bound (non-normative).** A reader written before 2026-11-23 knows `64` and `7680`. Such a reader treats an object that uses the larger bound as follows:
 

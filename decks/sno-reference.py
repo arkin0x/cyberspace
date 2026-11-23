@@ -300,7 +300,7 @@ def repaired_extent(declared: Any, vertices: list, ticks: list[list[int]]) -> in
 
     A declared extent that is absent, not an integer, or outside 1..4096 becomes
     the default of 8. The result then grows until every vertex is inside it.
-    There is deliberately no ceiling on the grown value: §8 question 6 records
+    There is deliberately no ceiling on the grown value: §8 question 3 records
     that this leaves a payload free to place a vertex arbitrarily far out, and
     why the bound sits on publishers rather than readers for now.
     """
