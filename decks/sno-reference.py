@@ -36,7 +36,8 @@ from typing import Any, Iterator
 # DECK-0003 §1.8. There is no ceiling on vertices or faces (removed 2026-09-24):
 # the event's size is the relay's concern, as it is for every other kind.
 MIN_EXTENT = 1
-MAX_EXTENT = 64
+#: The position bound of §1.8 in model units: 4,096 since 2026-11-23 (it was 64).
+MAX_EXTENT = 4096
 DEFAULT_EXTENT = 8
 MAX_UNIT = 84
 MAX_NAME = 64
@@ -54,8 +55,8 @@ MODES = ("solid", "points", "lines")
 OPACITY_OPAQUE = 100
 
 #: §1.15 and §1.16. The largest point size and the farthest a glow's radius
-#: reaches, in ticks: the 64-unit position bound of §1.8.
-TICK_REACH = 64 * 120
+#: reaches, in ticks: the 4,096-unit position bound of §1.8, 4096 x 120.
+TICK_REACH = MAX_EXTENT * 120
 #: §1.16: the two glow words, lowercase and exact.
 GLOW_WORDS = ("light", "fog")
 
@@ -149,7 +150,7 @@ def expand_face_colors(entries: Any, count: int, palette_len: int) -> list[int]:
 # §1.10: the reference shapes, and the position bound of §1.8 in ticks.
 _HEX64 = re.compile(r"[0-9a-f]{64}")
 _ADDRESS = re.compile(r"33331:[0-9a-f]{64}:")
-PART_REACH = 64 * 120
+PART_REACH = TICK_REACH
 
 
 def validate(payload: Any, fetched_palette: Any = None) -> dict:
@@ -253,7 +254,7 @@ def validate(payload: Any, fetched_palette: Any = None) -> dict:
             raise SnoError("rule 11: a refs entry is neither an e nor an a reference")
 
     # 12. parts: eight integers each, a refs index in range, ticks within the
-    # 64-unit bound, whole degrees. The scale bound names the placed object's
+    # 4,096-unit bound, whole degrees. The scale bound names the placed object's
     # unit, which is known only once it is fetched; a reader draws an
     # out-of-range one as a placeholder (§1.10), so here it is only an integer.
     parts = payload.get("parts", [])
@@ -265,7 +266,7 @@ def validate(payload: Any, fetched_palette: Any = None) -> dict:
         if not 0 <= p[0] < len(refs):
             raise SnoError("rule 12: a placement names no refs entry")
         if not all(-PART_REACH <= x <= PART_REACH for x in p[1:4]):
-            raise SnoError("rule 12: a placement stands past the 64-unit bound")
+            raise SnoError("rule 12: a placement stands past the 4,096-unit bound")
         if not all(0 <= x <= 359 for x in p[4:7]):
             raise SnoError("rule 12: a turn is not whole degrees 0..359")
 
@@ -297,7 +298,7 @@ def validate(payload: Any, fetched_palette: Any = None) -> dict:
 def repaired_extent(declared: Any, vertices: list, ticks: list[list[int]]) -> int:
     """§1.8: the bounding hint, corrected against the data.
 
-    A declared extent that is absent, not an integer, or outside 1..64 becomes
+    A declared extent that is absent, not an integer, or outside 1..4096 becomes
     the default of 8. The result then grows until every vertex is inside it.
     There is deliberately no ceiling on the grown value: §8 question 6 records
     that this leaves a payload free to place a vertex arbitrarily far out, and
@@ -340,7 +341,7 @@ def drawn_pointsize(payload: dict) -> int | None:
     """§1.15: how wide each point is drawn, in ticks of the object's lattice.
 
     None means the reader's own size: the field is absent, malformed (not an
-    integer in 0..7680, null included), or the object is not in points mode,
+    integer in 0..491520, null included), or the object is not in points mode,
     where the field is kept and not drawn. 0 means no points. Never a
     rejection. An avatar ignores it (§3.3); that is the reader's to apply.
     """
@@ -354,7 +355,7 @@ def drawn_glow(payload: dict) -> tuple[str, int, int] | None:
     """§1.16: (word, radius in ticks, glow strength in percent), or None for no glow.
 
     A glow is exactly three elements: "light" or "fog", lowercase and exact;
-    an integer radius in 1..7680; an integer glow strength in 1..100.
+    an integer radius in 1..491520; an integer glow strength in 1..100.
     Anything else, null included, is no glow, and so is any glow on an
     object not in points mode, where the field is kept and not drawn.
     Never a rejection. The object's opacity does not multiply the strength.
@@ -531,7 +532,7 @@ def positions(payload: dict) -> Iterator[tuple[Fraction, Fraction, Fraction]]:
 
 
 def read_eye(value: Any) -> tuple[int, int, int] | None:
-    """§1.17: a written eye, three integers of ticks each in -7680..7680, or None.
+    """§1.17: a written eye, three integers of ticks each in -491520..491520, or None.
 
     None means the automatic eye: absent, null, two or four elements, a
     fraction, a number out of range, a string, a boolean, an object. Never a
@@ -599,7 +600,7 @@ MOTION_AXES = ("x", "y", "z")
 MAX_MOTIONS = 4
 MAX_RATE = 2  # cycles per second
 MAX_SECONDS = 31_536_000  # b, a year of 365 days
-REACH = 64 * 120  # the position bound of §1.8, in ticks
+REACH = TICK_REACH  # the position bound of §1.8, in ticks
 MAX_LEG_WEIGHT = 1_000
 
 
@@ -961,7 +962,7 @@ def _rejections() -> list[tuple[str, dict]]:
         ("rule 11", variant(refs=[["e", "cd" * 32, "wss://x", "extra"]])),
         ("rule 12", variant(parts=[[0, 0, 0, 0, 0, 0, 0, 0]])),            # parts without refs
         ("rule 12", variant(refs=[["e", "cd" * 32]], parts=[[1, 0, 0, 0, 0, 0, 0, 0]])),
-        ("rule 12", variant(refs=[["e", "cd" * 32]], parts=[[0, 7681, 0, 0, 0, 0, 0, 0]])),
+        ("rule 12", variant(refs=[["e", "cd" * 32]], parts=[[0, 491521, 0, 0, 0, 0, 0, 0]])),  # past the bound
         ("rule 12", variant(refs=[["e", "cd" * 32]], parts=[[0, 0, 0, 0, 360, 0, 0, 0]])),
         ("rule 12", variant(refs=[["e", "cd" * 32]], parts=[[0, 0, 0, 0, 0, 0, 0]])),
     ]
@@ -1136,6 +1137,18 @@ def _self_test() -> None:
     assert validate({**APPENDIX_A, "extent": 0})["extent"] == 8
     assert validate({**APPENDIX_A, "up": False})["up"] is False
     print("extent repairs: a vertex at 9 units grows the hint from 8 to 9, and extent 0 becomes 8")
+
+    # §1.8: the position bound is 4,096 units (491520 ticks), not 64.
+    assert validate({**APPENDIX_A, "extent": 4096})["extent"] == 4096
+    assert validate({**APPENDIX_A, "extent": 65})["extent"] == 65
+    assert validate({**APPENDIX_A, "extent": 4097})["extent"] == 8
+    far = {**APPENDIX_A, "vertices": [[0, 0, 0], [2, 0, 0], [1, 0, 2], [4095, -4096, 0]],
+           "ticks": [-3, [119, 0, 0]]}
+    assert validate(far)["extent"] == 4096
+    reach = {**APPENDIX_A, "refs": [["e", "cd" * 32]]}
+    for at in (7681, TICK_REACH, -TICK_REACH):
+        assert validate({**reach, "parts": [[0, at, -at, 0, 0, 0, 0, 0]]})["parts"][0][1] == at
+    print("the 4,096-unit bound: extent 4096 is kept and 4097 becomes 8; a placement at 491520 ticks validates")
 
     # An object with no ticks at all is whole-unit everywhere.
     whole = {k: v for k, v in APPENDIX_A.items() if k != "ticks"}
@@ -1403,9 +1416,10 @@ def _self_test() -> None:
         ([["swing", "x", 0, 1, 1, 0]], 0, "a swing of no reach"),
         ([["swing", "x", 181, 1, 1, 0]], 0, "a swing past 180 degrees"),
         ([["slide", "y", -12, 1, 1, 0]], 0, "a slide's reach is positive"),
-        ([["orbit", "y", 7681, 1, 1, 0]], 0, "an orbit past the position bound"),
+        ([["orbit", "y", 491521, 1, 1, 0]], 0, "an orbit past the position bound"),
+        ([["orbit", "y", 7681, 1, 1, 0]], 1, "an orbit past the former 64-unit bound"),
         ([["lift", "y", 0, 25, 1, 1, 0]], 0, "a lift that goes nowhere"),
-        ([["lift", "y", -7680, 49, 1, 1, 0]], 1, "a lift down, the longest dwell"),
+        ([["lift", "y", -491520, 49, 1, 1, 0]], 1, "a lift down the whole bound, the longest dwell"),
         ([["lift", "y", 120, 50, 1, 1, 0]], 0, "a dwell of half the cycle at each stop leaves no travel"),
         ([["path", 1, 1, 0, [0, 0, 0, 1]]], 0, "a path of one waypoint"),
         ([["path", 1, 1, 0] + [[0, 0, 0, 1]] * 32], 1, "32 waypoints"),
@@ -1430,7 +1444,8 @@ def _self_test() -> None:
         (absent, None, "absent is the reader's own size"),
         (48, 48, "a size in range"),
         (1, 1, "the smallest point"),
-        (TICK_REACH, TICK_REACH, "the 64-unit bound"),
+        (TICK_REACH, TICK_REACH, "the 4,096-unit bound"),
+        (7681, 7681, "past the former 64-unit bound"),
         (0, 0, "zero is valid: no points"),
         (-1, None, "negative: the reader's own size"),
         (TICK_REACH + 1, None, "past the bound: the reader's own size"),
@@ -1508,7 +1523,7 @@ def _self_test() -> None:
         ([0, 0, 0], (0, 0, 0), "the origin is a choice, not absent"),
         ([0, 600, 0], (0, 600, 0), "above the shape: not held to it"),
         ([-12, 30, -480], (-12, 30, -480), "behind and to one side: not held to it"),
-        ([TICK_REACH, -TICK_REACH, 0], (TICK_REACH, -TICK_REACH, 0), "the 64-unit bound"),
+        ([TICK_REACH, -TICK_REACH, 0], (TICK_REACH, -TICK_REACH, 0), "the 4,096-unit bound"),
         ([0, TICK_REACH + 1, 0], (0, 210, 0), "past the bound"),
         ([0, -TICK_REACH - 1, 0], (0, 210, 0), "past the bound below"),
         ([[0], 159, 0], (0, 210, 0), "a nested element"),
