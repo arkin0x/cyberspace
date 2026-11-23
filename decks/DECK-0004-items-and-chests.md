@@ -5,7 +5,7 @@ Title: Items, Chests and Doors
 Status: Draft
 Mandatory: no
 Created: 2026-10-15
-Last updated: 2026-11-18
+Last updated: 2026-11-22
 Requires: `CYBERSPACE_V2.md` §7.2 (keys), §7.6 (the bag) and §8.6 (its event); DECK-0003 (SNO objects, for looks, and its objects table, §1.10, for carried parts); NIP-01, NIP-09, NIP-44 v2, NIP-70, NIP-92; BIP-340
 
 ## Abstract
@@ -191,13 +191,25 @@ A reader MUST drop a chest whose `lock` tag is missing or malformed, or whose `c
 The seal follows the gift-wrap pattern of NIP-59, applied to a list of entries:
 
 1. The sealer serializes the chest's contents as JSON: a **list of entries** in exactly the shape of a bag's plaintext (`CYBERSPACE_V2.md` §7.6).
-2. The UTF-8 bytes of that JSON MUST NOT exceed 65,535, the most NIP-44 v2 encrypts. A writer MUST refuse a larger chest and say so; it MUST NOT split one silently.
+2. The UTF-8 bytes of that JSON MUST NOT exceed 131,072 (Size, below). A writer MUST refuse a larger chest and say so; it MUST NOT split one silently. The chest as a whole, with its tags and its looks, MUST also fit the one event that carries it, a bag or a sealed entry, and a writer that cannot fit it MUST refuse it in the same way.
 3. The sealer generates a fresh secp256k1 keypair, the **sender**.
 4. `conversation_key = nip44_get_conversation_key(sender_secret, lock_pubkey)`.
 5. `content = nip44_encrypt(plaintext, conversation_key)`.
 6. The sender's public key goes into the `lock` tag beside the lock, and the sender's secret is discarded. It is used once and MUST NOT be kept.
 
 A chest can therefore be sealed to a key whose secret the sealer does not hold, and once it is sealed nobody, the sealer included, can open it without the lock's secret.
+
+**Size:** NIP-44 v2 writes the length of the plaintext in front of it before padding. For a plaintext of 65,535 bytes or less, the length is two bytes, big-endian. For a larger plaintext, it is the **extended length prefix**: six bytes, two zero bytes followed by the length as a 4-byte unsigned big-endian integer. A sealer MUST use the extended length prefix for contents over 65,535 bytes, and a reader MUST read it. nostr-tools 2.24 writes and reads it, and so does the NIP-44 of Amber (Quartz 2.3.0). Contents of 65,535 bytes or less are sealed with the two-byte prefix, exactly as before, so every chest sealed under the earlier cap reads as it always did.
+
+The cap of 131,072 bytes comes from the event that carries the chest, not from NIP-44. A chest is carried inline in a bag or in a sealed entry (`CYBERSPACE_V2.md` §7.6), and each of those is one event. The most room any chest can have is a sealed entry that holds it and nothing else, because a bag shares its room with every other entry. A door is the one chest that cannot have that room, since a door MUST stay inline (§3.7.1), but a door's plaintext is a single room entry and is always small. On the way into a sealed entry, a chest's contents are encrypted twice, and they grow at each step. At 131,072 bytes of contents:
+
+- NIP-44 pads the plaintext to 131,072 bytes. A plaintext of 114,689 to 131,072 bytes pads to exactly 131,072 (NIP-44's padding rounds up to a multiple of 16,384 in that range). NIP-44 then adds a version byte, a 32-byte nonce, the 6-byte prefix and a 32-byte MAC: 131,143 bytes, which base64 makes 174,860 characters of `content`.
+- The chest event around that `content`, with a `title` and a `requires` of 64 characters each and no look, is 175,583 bytes of JSON.
+- The cipher of a sealed entry adds a 12-byte nonce and a 16-byte tag, and base64 makes that 234,148 characters. The sealed entry, with the fixed preview sentence in its `content` and in its `alt` tag, is 234,770 bytes.
+
+That is under 240,000 bytes, the size ONOSENDAI holds every bag and every sealed entry to (`CYBERSPACE_V2.md` §7.6, Sealed entries, Size), and under the canonical relay's limit of 262,200 bytes. The sealed entry has 5,230 bytes to spare, but the chest event is itself encrypted and base64 encoded inside it, so each byte added to the chest costs four thirds of a byte there: about 3,900 bytes of the chest event are left for looks and any other tags. A look carried in its tag is often larger than that (§3.6, Size). A writer that gives a chest near the cap a look SHOULD therefore seal the look as its own event (§3.6), whatever the look's size, because the tag that names a sealed look is under 300 bytes. One byte more of contents, 131,073 bytes, pads to 163,840, and its sealed entry would be about 293,000 bytes, over both limits. Every plaintext from 131,073 to 163,840 bytes pads to that same 163,840, so no cap between 131,072 and 163,840 would let a chest hold more and still fit. 131,072 bytes is therefore the largest chest whose sealed entry fits. A chest inside another chest is part of the outer chest's contents, and its own sealed `content` counts toward the outer chest's 131,072 bytes.
+
+**Older readers (non-normative):** Until 2026-11-22 step 2 capped a chest's contents at 65,535 bytes, on the reading that NIP-44 v2 encrypts no more than that. Libraries written to that reading decrypt strictly: they read only the two-byte prefix, and fail on a payload that carries the extended one. A reader that fails to open a chest over 65,535 bytes for this reason sees exactly what it sees when it holds the wrong key. It SHOULD treat the chest as one it cannot read, and say so, as it does for a plaintext that is not a JSON array (§3.4). It MUST NOT drop the chest as invalid, and a writer that rewrites the bag MUST carry the chest forward unchanged (`CYBERSPACE_V2.md` §7.6, Carrying forward). The same holds when a person opens a chest with their own identity (§3.3): the signer does the decrypting, so a browser extension or a remote signer (NIP-46) whose NIP-44 is strict cannot open a chest over 65,535 bytes, and the chest is then unreadable through that signer, not invalid. A remote signer also receives the whole payload in its request: about 175 KB at the cap, which NIP-46 seals again into a `kind 24133` event of about 263 KB. A signer relay that caps events below that refuses the request.
 
 **What goes in:** The entries of a chest follow the rules for the items of a bag (`CYBERSPACE_V2.md` §7.6), with the chest in the place of the bag and the chest's signer in the place of the bag's:
 
@@ -518,7 +530,7 @@ A writer that knows the door secret MUST NOT leave behind a room bag that no doo
 
 #### 3.7.9 Why a door has a bag of its own (non-normative)
 
-- **Size:** A chest is one NIP-44 payload, and holds at most 65,535 bytes. A room built from the Maze Kit holds pieces of 7 to 93 KB each. A room bag is a bag, so its large entries go by reference, as any bag's do.
+- **Size:** A chest is one NIP-44 payload, and holds at most 131,072 bytes (§3.2, Size). A room built from the Maze Kit holds pieces of 7 to 93 KB each, so a few of them fill a chest. A room bag is a bag, so its large entries go by reference, as any bag's do, and it holds as many as its author hides.
 - **Hiding in a room is a bag write:** Hiding one more thing in a room rewrites the room bag, exactly as hiding something anywhere rewrites a bag. The door itself is untouched. A writer that knows the door secret needs nothing else to add to the room.
 - **The region key alone opens nothing behind a door:** Suppose a room's contents were events sealed with the region key, and named only from inside the door. Anyone at the place could then try the region key on every recent sealed event, and open the room's contents without the lock. With the room key, they need the door.
 - **Nothing public points at the room:** A room bag's `d` is a hash of a key that only openers hold. The room bag states no height and no contents. What a relay sees is that one author published two bags close together in time, which it sees of anyone who hides things twice.
@@ -674,7 +686,7 @@ A client that shows listings (ONOSENDAI's ITEM FEED):
 
 ## 5. Test vectors
 
-`kinds-vectors.json`, beside this DECK, holds one of each event this DECK defines, built from fixed keys and fixed nonces by `kinds-vectors.mjs`: a key item; a chest sealed to that item, with its plaintext, NIP-44 nonce and conversation key; and a listing of the item with its proof message. The key item and the chest both carry `-`. The chest holds one message, written as a rumor by the chest's signer: it carries `-`, its `id` is its canonical id, and it has no `sig`.
+`kinds-vectors.json`, beside this DECK, holds one of each event this DECK defines, built from fixed keys and fixed nonces by `kinds-vectors.mjs`: a key item; a chest sealed to that item, with its plaintext, NIP-44 nonce and conversation key; a chest at the cap of §3.2, with 131,072 bytes of contents sealed with the extended length prefix (`large_chest`, given by its lengths and SHA-256 because it is too large to print, with the same sizes one byte past the cap); and a listing of the item with its proof message. The key item and the chest both carry `-`. The chest holds one message, written as a rumor by the chest's signer: it carries `-`, its `id` is its canonical id, and it has no `sig`.
 
 ONOSENDAI's readers (`keyItemOf`, `chestItemOf`, `openWithSecret`, `listingOf`, `unbag` of a bag holding the item and the chest, and `readContents` with the sealer `sealerOf` gives for the chest found in that bag) and cyberspace-mcp's (`keyItemOf`, `chestItemOf`, `openWithSecret`, `unbag`, and `readContents` with the sealer `sealerOfSeen` gives) accept every vector, as of ONOSENDAI `834df05` and cyberspace-mcp `d784289`. Both mark the message as verified when given the chest's signer as the sealer, and as a claim when given no sealer or any other key.
 
@@ -692,12 +704,14 @@ The `sealed_entries` section of `kinds-vectors.json` (`CYBERSPACE_V2.md` §7.6) 
 
 `kinds-vectors.mjs` checks each of these as it writes them, and every value was also checked by a separate implementation written from this section. No client has been checked against them yet.
 
+`large_chest` (§3.2, Size) is checked by `kinds-vectors.mjs` as it writes it: the chest opens again with the item's secret, and the payload has the length that only the extended length prefix gives. No client has been checked against it yet. ONOSENDAI and cyberspace-mcp each seal and open a chest at the cap with their own code, in their own tests.
+
 ## 6. Security considerations
 
 - **An item is knowledge:** Anyone who has read an item holds it forever, and can give it to anyone by copying the secret. There is no scarcity in this DECK and no revocation. Games that need either build it on the chain later.
 - **A listing reveals an item's existence and public key:** It does not reveal where the item is hidden or let anyone open a chest sealed to it.
 - **Listings by holders:** Because the proof shows holding rather than forging, any holder can publish a listing of an item under any name and picture, and the newest listing currently wins the feed. A client that wants the forger's word to stand needs a second proof binding the listing to the original item event's signer (§7).
-- **Chest size:** A chest is one NIP-44 payload, so it holds at most 65,535 bytes, much less than a bag. Large contents belong in a bag, in a room (§3.7), or behind references once chests support them.
+- **Chest size:** A chest is one NIP-44 payload carried inside one event, so it holds at most 131,072 bytes (§3.2, Size). Contents over 65,535 bytes use NIP-44's extended length prefix, which a reader or a signer with an older NIP-44 library cannot open; to that reader the chest is unreadable, not invalid. Larger contents belong in a bag, in a room (§3.7), or behind references once chests support them.
 - **A door stops walkers by courtesy, and the seal is the lock:** Stopping a walker at a closed door (§3.6) is something a reader chooses to do. Another reader may let its walker pass through the door. That walker finds nothing behind it, because what the room holds is sealed with the room key.
 - **A door secret is knowledge:** Whoever has opened a door can give its secret to anyone. Whoever receives the secret can open the room from anywhere, as long as they can compute the place's location key. Rotation (§3.7.7) protects only what the room holds after the rotation.
 - **Two bags in time:** Nothing in a room bag's content or tags links it to its place. A relay does see when the room bag was published. A room bag published moments after the bag that holds its door ties the two bags to one author and one moment. A writer that wants to hide even that link may publish the two bags at different times.
@@ -717,4 +731,4 @@ The `sealed_entries` section of `kinds-vectors.json` (`CYBERSPACE_V2.md` §7.6) 
 
 1. **Holder versus forger:** Should a listing bind to the forger, for example with a proof over the original item event's id signed by the event's author, so that only the forger's listing is shown? Today ONOSENDAI offers listing only to the forger, but the protocol accepts any holder.
 2. **`name` or `title` on a listing:** Items and chests moved to `title` on 2026-10-09, the tag other kinds use for a human name. The listing uses `name`. One of them should change before a third client ships.
-3. **References in chests:** A chest's plaintext has the shape of a bag's plaintext, and a bag's plaintext allows references. No reader follows a reference inside a chest. A room bag (§3.7.2) is a bag, so a reader follows its references as it follows any bag's. Large contents can therefore be locked behind a door today. A chest that must itself hold more than 65,535 bytes still needs a rule. Two candidates are references sealed with a key carried inside the chest, and a room bag of the chest's own.
+3. **References in chests:** A chest's plaintext has the shape of a bag's plaintext, and a bag's plaintext allows references. No reader follows a reference inside a chest. A room bag (§3.7.2) is a bag, so a reader follows its references as it follows any bag's. Large contents can therefore be locked behind a door today. A chest that must itself hold more than 131,072 bytes (§3.2, Size) still needs a rule. Two candidates are references sealed with a key carried inside the chest, and a room bag of the chest's own.
