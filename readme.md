@@ -167,6 +167,20 @@ The v2 spec is intended to be implementable. Implementations are in progress.
 
 Contributions are welcome: protocol critique, alternative implementations, test vectors, DECKs, and clarity improvements.
 
+## Disclaimer
+
+This software is experimental. It is provided "as is", without warranty of any kind. Use it at your own risk.
+
+- **Your keys, funds and agents are your responsibility.** Anyone who has your private key, your signer or your wallet connection string can act as you or spend from your wallet. Keep them safe and keep backups. Nobody can recover them for you.
+- **Lightning payments are final.** A payment that has been sent cannot be reversed, and nobody has to refund it.
+- **Not financial advice.** Nothing in this software or its documentation is financial, investment, legal or tax advice.
+- **Other people's services can fail.** This software relies on things the author does not run: nostr relays, Lightning wallets and nodes, ecash mints, hosting and other services. They can go down, lose data, refuse service or change without notice.
+- **Nostr is public.** What you publish can be copied by anyone and may never be fully deleted.
+- **AI agents make mistakes.** If you connect an AI agent to this software, you are responsible for everything it does, including what it publishes, signs and pays for.
+- **No liability.** To the fullest extent the law allows, the author (arkinox) and the contributors are not liable for any loss or damage of any kind that comes from using this software, including lost funds, keys, data or work, whether it is caused by a bug, a relay, a mint, a wallet, another service, an AI agent or anything else.
+
+This is a plain-language summary. The license in this repository governs, and its disclaimer of warranties and limitation of liability apply in full.
+
 ## License
 
 See `LICENSE` (CC BY-SA 4.0).
