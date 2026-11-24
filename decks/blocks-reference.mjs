@@ -32,36 +32,40 @@ export const W128 = (f) => 384 * f * f - 2 * f * f * f
 
 // §3.8 Thresholds, revision 1 (CYBERSPACE_BLOCKS_SURVEY_V1). Tunable only with a domain bump.
 export const EMPTY_THR = [1337, 1323, 1308, 1294, 1280, 1266, 1253, 1239, 1225, 1211, 1196, 1182, 1168, 1153, 1138, 1123, 1108]
-export const ORE_THR = [3884, 3854, 3827, 3802, 3779, 3757, 3736, 3717, 3698, 3681, 3664, 3648, 3633, 3618, 3603, 3590, 3576]
+export const VEIN_THR = [3884, 3854, 3827, 3802, 3779, 3757, 3736, 3717, 3698, 3681, 3664, 3648, 3633, 3618, 3603, 3590, 3576]
 export const RELIC_THR = 4508
 
-// §3.9 Families: strata (bottom of the list is not "deeper"; bands are chosen by a hash), top, speckle.
+// §3.9 Families: strata (bands are chosen by a hash), top (the surface layer over open air), speckle (the 2.3% fleck).
+// rind is not part of the ground: it is the material a client draws on a chunk face that borders an unsurveyed chunk (§12).
 export const FAMILIES = [
-  { name: 'temperate', strata: [1, 1, 17, 14, 1, 16, 2, 22], top: 20, speckle: 4 },
-  { name: 'desert', strata: [6, 7, 6, 8, 5, 16, 1], top: 5, speckle: 8 },
-  { name: 'frozen', strata: [11, 12, 1, 11, 17, 14], top: 13, speckle: 12 },
-  { name: 'volcanic', strata: [9, 10, 22, 9, 21, 9, 23], top: 22, speckle: 23 },
-  { name: 'crystal', strata: [18, 15, 19, 18, 14], top: 18, speckle: 19 },
-  { name: 'karst', strata: [16, 15, 16, 8, 1], top: 20, speckle: 8 },
+  { name: 'temperate', strata: [1, 1, 2, 1, 5, 1, 2, 3], top: 4, speckle: 2, rind: 2 },
+  { name: 'dune', strata: [3, 5, 1, 3, 2, 5], top: 3, speckle: 5, rind: 1 },
+  { name: 'frozen', strata: [6, 6, 1, 6, 2, 1], top: 6, speckle: 2, rind: 2 },
+  { name: 'volcanic', strata: [7, 2, 7, 5, 1, 2, 7], top: 7, speckle: 5, rind: 2 },
+  { name: 'crystal', strata: [6, 1, 6, 2, 8, 1, 6, 2], top: 6, speckle: 8, rind: 2 },
+  { name: 'karst', strata: [1, 3, 1, 2, 1, 3], top: 4, speckle: 3, rind: 2 },
 ]
-// §3.9 Ores: [global id, weight, lowest cube K], in this order.
-export const ORES = [[40, 60, 0], [41, 50, 0], [42, 40, 3], [43, 20, 5], [44, 12, 8], [46, 6, 9], [45, 8, 10], [47, 3, 12], [48, 2, 13], [49, 1, 15]]
+// §3.9 Veins: [global id, weight, lowest cube K], in this order.
+export const VEINS = [[40, 55, 0], [41, 25, 6], [8, 12, 9], [42, 3, 10], [43, 2, 13]]
 export const RELIC = 192
 export const RELIC_MIN_K = 13
 
-// §1.3 The initial registry: global id -> [name, suggested colour (non-normative)].
+// §2.3 The initial registry: global id -> [name, role, suggested base colour, suggested accent colour] (colours non-normative).
 export const REGISTRY = {
-  0: ['empty', null],
-  1: ['stone', '#8a8a8a'], 2: ['deepstone', '#555a60'], 3: ['dirt', '#7a5636'], 4: ['gravel', '#9c948a'],
-  5: ['sand', '#e0cf92'], 6: ['sandstone', '#d2b56f'], 7: ['red sandstone', '#c0663a'], 8: ['clay', '#a3a8b8'],
-  9: ['basalt', '#4a4a50'], 10: ['blackstone', '#2c2830'], 11: ['ice', '#9fd0f0'], 12: ['packed snow', '#dfe8ee'],
-  13: ['snow', '#ffffff'], 14: ['granite', '#a87565'], 15: ['marble', '#efeae0'], 16: ['limestone', '#cfc6a8'],
-  17: ['slate', '#5b6470'], 18: ['quartzite', '#e6dce8'], 19: ['amethyst rock', '#8e6cc0'], 20: ['moss', '#5f8f3a'],
-  21: ['obsidian', '#1a1028'], 22: ['tuff', '#6f6c5c'], 23: ['magma rock', '#d4521c'],
-  40: ['coal ore', '#202020'], 41: ['copper ore', '#d07a3a'], 42: ['iron ore', '#d8b090'], 43: ['tin ore', '#b8c4c8'],
-  44: ['silver ore', '#e8f0f8'], 45: ['gold ore', '#ffd200'], 46: ['lapis ore', '#2650d0'], 47: ['emerald ore', '#10d060'],
-  48: ['diamond ore', '#40f0f0'], 49: ['gibsonite', '#ff2bd6'],
-  192: ['relic crystal', '#ff0050'],
+  0: ['empty', 'no block', null, null],
+  1: ['Gridstone', 'common bulk rock', '#555e60', '#80898c'],
+  2: ['Umberslate', 'darker rock', '#1d3547', '#6f8ea0'],
+  3: ['Driftsilt', 'soft fill', '#946100', '#cc8f00'],
+  4: ['Mossveil', 'surface skin', '#00ba67', '#00f39e'],
+  5: ['Rustband', 'banded rock', '#943300', '#f47000'],
+  6: ['Frostshale', 'pale rock', '#c8f5ff', '#5d6769'],
+  7: ['Cinderrock', 'volcanic rock', '#1a0f24', '#ff3300'],
+  8: ['Prismite', 'crystalline, uncommon', '#a24bff', '#e1bcff'],
+  40: ['Ferrovein', 'metallic vein', '#555e60', '#e7a800'],
+  41: ['Cobaltine', 'uncommon vein', '#1d3547', '#5a9bff'],
+  42: ['Glowcore', 'glowing, rare', '#15191a', '#00e5ff'],
+  43: ['Gibsonite', 'dense, very rare', '#4b0058', '#ff00ff'],
+  192: ['Relic shard', 'special', '#5c0010', '#ff3b6b'],
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -196,27 +200,27 @@ export function fineStream(X, Y, Z, P) { return chacha20Keystream(surveySeed(X, 
 
 /** §3.4 and §3.5 The lattices. */
 export function lattices(X, Y, Z, P) {
-  const A = { K16: new Array(125), cave: new Array(125), tun: new Array(125), ore: new Array(125), oreT: new Array(125), d3: new Array(125), K: new Array(125) }
+  const A = { K16: new Array(125), cave: new Array(125), tun: new Array(125), vein: new Array(125), veinT: new Array(125), d3: new Array(125), K: new Array(125) }
   for (let j = 0; j < 5; j++) for (let k = 0; k < 5; k++) for (let i = 0; i < 5; i++) {
     const cx = wrap(X + BigInt(8 * i)), cy = wrap(Y + BigInt(8 * j)), cz = wrap(Z + BigInt(8 * k))
     const d3 = terrainDigest(3, cx, cy, cz, P)
     const K = terrainK(cx, cy, cz, P)
     const a = i + 5 * (k + 5 * j)
     A.d3[a] = d3; A.K[a] = K; A.K16[a] = 16 * K
-    A.cave[a] = d3[1]; A.tun[a] = d3[2]; A.ore[a] = d3[3]; A.oreT[a] = d3[4]
+    A.cave[a] = d3[1]; A.tun[a] = d3[2]; A.vein[a] = d3[3]; A.veinT[a] = d3[4]
   }
-  const B = { oreD: new Array(729), caveD: new Array(729) }
+  const B = { veinD: new Array(729), caveD: new Array(729) }
   for (let j = 0; j < 9; j++) for (let k = 0; k < 9; k++) for (let i = 0; i < 9; i++) {
     const d3 = A.d3[(i >> 1) + 5 * ((k >> 1) + 5 * (j >> 1))]
     const sub = (i & 1) | ((j & 1) << 1) | ((k & 1) << 2)
     const b = i + 9 * (k + 9 * j)
-    B.oreD[b] = d3[5 + sub]; B.caveD[b] = d3[13 + sub]
+    B.veinD[b] = d3[5 + sub]; B.caveD[b] = d3[13 + sub]
   }
   const Ox = (X >> 7n) << 7n, Oy = (Y >> 7n) << 7n, Oz = (Z >> 7n) << 7n
-  const G = { big: new Array(8), warp: new Array(8), ox: Number(X - Ox), oy: Number(Y - Oy), oz: Number(Z - Oz) }
+  const G = { big: new Array(8), warp: new Array(8), gx: new Array(8), gy: new Array(8), gz: new Array(8), ox: Number(X - Ox), oy: Number(Y - Oy), oz: Number(Z - Oz) }
   for (let c = 0; c < 8; c++) {
     const d7 = terrainDigest(7, wrap(Ox + BigInt(128 * (c & 1))), wrap(Oy + BigInt(128 * ((c >> 1) & 1))), wrap(Oz + BigInt(128 * ((c >> 2) & 1))), P)
-    G.big[c] = d7[1]; G.warp[c] = d7[2]
+    G.big[c] = d7[1]; G.warp[c] = d7[2]; G.gx[c] = d7[3]; G.gy[c] = d7[4]; G.gz[c] = d7[5]
   }
   return { A, B, G, d9: terrainDigest(9, X, Y, Z, P), d11: terrainDigest(11, X, Y, Z, P) }
 }
@@ -261,6 +265,30 @@ export function cellFields(L, x, y, z, fine) {
   return { cave8, cave4, tun8, big, kS, D, thr, tunnel, solid: D >= thr && !tunnel }
 }
 
+/** §3.9 The vein field, the vein type field and its stretched value u (0..255). */
+export function veinValues(L, x, y, z) {
+  const vein = 11 * tri(L.A.vein, 8, x, y, z) + 9 * tri(L.B.veinD, 4, x, y, z)
+  const veinT = tri(L.A.veinT, 8, x, y, z)
+  const s = 9 * veinT - 512
+  const u = s <= 0 ? 0 : Math.min(255, Math.floor(s / 5))
+  return { vein, veinT, u }
+}
+/** §3.9 Soft strata borders: the warped cells whose 2^9 and 2^11 digests decide a cell's band and family. */
+export function strataWarp(L, x, y, z, fineByte) {
+  const gx = tri128(L.G.gx, L.G, x, y, z) - 128, gy = tri128(L.G.gy, L.G, x, y, z) - 128, gz = tri128(L.G.gz, L.G, x, y, z) - 128
+  const c = tri(L.B.caveD, 4, x, y, z) - 128, f = fineByte - 128
+  return {
+    w9: [(gx * 44 + c * 8 + f * 5) >> 8, (gy * 44 - c * 8 + f * 5) >> 8, (gz * 44 + c * 8 - f * 5) >> 8],
+    w11: [(gz * 120 + c * 16 + f * 5) >> 8, (gx * 120 + c * 8 + f * 5) >> 8, (gy * 120 - c * 16 - f * 5) >> 8],
+  }
+}
+export function strataAt(L, X, Y, Z, P, x, y, z, fineByte) {
+  const { w9, w11 } = strataWarp(L, x, y, z, fineByte)
+  const at = (w) => [wrap(X + BigInt(x + w[0])), wrap(Y + BigInt(y + w[1])), wrap(Z + BigInt(z + w[2]))]
+  const [a, b, c] = at(w9), [d, e, f] = at(w11)
+  return { d9: terrainDigest(9, a, b, c, P), d11: terrainDigest(11, d, e, f, P), w9, w11 }
+}
+
 /** §3 The generated ground of one chunk: a Uint8Array of 32,768 global ids (every generated id is below 256). */
 export function generateChunk(X, Y, Z, P, detail = false) {
   const L = lattices(X, Y, Z, P)
@@ -272,38 +300,40 @@ export function generateChunk(X, Y, Z, P, detail = false) {
     const f = y < 32 ? fine[cellIndex(x, y, z)] : fineAbove[cellIndex(x, 0, z)]
     solid[sIdx(x, y, z)] = cellFields(L, x, y, z, f).solid ? 1 : 0
   }
-  const fam = FAMILIES[L.d11[1] % FAMILIES.length]
-  const T = 3 + (L.d9[2] % 8)
-  const bandOff = L.d9[3]
   const yBase = Number(Y & 0xffffffn)
   const out = new Uint8Array(CELLS)
+  const famOut = new Uint8Array(CELLS)
   for (let y = 0; y < 32; y++) for (let z = 0; z < 32; z++) for (let x = 0; x < 32; x++) {
     const o = cellIndex(x, y, z)
     if (!solid[sIdx(x, y, z)]) continue
     const kc = L.A.K[(x >> 3) + 5 * ((z >> 3) + 5 * (y >> 3))]
-    const ore = 11 * tri(L.A.ore, 8, x, y, z) + 9 * tri(L.B.oreD, 4, x, y, z)
-    const oreT = tri(L.A.oreT, 8, x, y, z)
+    const v = veinValues(L, x, y, z)
     let id
-    if (kc >= RELIC_MIN_K && ore >= RELIC_THR) id = RELIC
-    else if (ore >= ORE_THR[kc]) {
+    if (kc >= RELIC_MIN_K && v.vein >= RELIC_THR) id = RELIC
+    else if (v.vein >= VEIN_THR[kc]) {
       let total = 0
-      for (const [, w, mk] of ORES) if (kc >= mk) total += w
-      let r = Math.floor((oreT * total) / 256)
-      for (const [oid, w, mk] of ORES) { if (kc < mk) continue; if (r < w) { id = oid; break } r -= w }
+      for (const [, w, mk] of VEINS) if (kc >= mk) total += w
+      let r = Math.floor((v.u * total) / 256)
+      for (const [vid, w, mk] of VEINS) { if (kc < mk) continue; if (r < w) { id = vid; break } r -= w }
     } else {
+      const st = strataAt(L, X, Y, Z, P, x, y, z, fine[o])
+      const fam = FAMILIES[st.d11[1] % FAMILIES.length]
+      famOut[o] = st.d11[1] % FAMILIES.length
+      const T = 3 + (st.d9[2] % 8)
       const warp = tri128(L.G.warp, L.G, x, y, z)
       const cave4 = tri(L.B.caveD, 4, x, y, z)
-      const warpOff = Math.floor((warp * 18) / 256) + Math.floor((oreT * 8) / 256) + Math.floor((cave4 * 4) / 256)
+      const warpOff = Math.floor((warp * 18) / 256) + Math.floor((v.veinT * 8) / 256) + Math.floor((cave4 * 4) / 256)
       const band = Math.floor((yBase + y + warpOff) / T)
-      const h = Math.imul(band ^ (bandOff << 8), 0x9e3779b1) >>> 0
+      const h = Math.imul(band ^ (st.d9[3] << 8), 0x9e3779b1) >>> 0
       id = fam.strata[(h >>> 16) % fam.strata.length]
       if (fine[o] < 6) id = fam.speckle
       if (!solid[sIdx(x, y + 1, z)]) id = fam.top
     }
     out[o] = id
   }
+  const fam0 = FAMILIES[L.d11[1] % FAMILIES.length]
   if (!detail) return out
-  return { blocks: out, L, fine, family: fam.name, T, bandOff, solid }
+  return { blocks: out, L, fine, family: fam0.name, T: 3 + (L.d9[2] % 8), bandOff: L.d9[3], solid, famOut }
 }
 
 // ---------------------------------------------------------------------------------------------------------------

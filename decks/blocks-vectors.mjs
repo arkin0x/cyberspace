@@ -28,8 +28,10 @@ function chunkVector(name, note, X, Y, Z, P, extraCells = []) {
       cube_K: g.L.A.K[(x >> 3) + 5 * ((z >> 3) + 5 * (y >> 3))],
       fine: g.fine[o], cave8: f.cave8, cave4: f.cave4, tun8: f.tun8, big: f.big, kS: f.kS, D: f.D, thr: f.thr,
       tunnel: f.tunnel, solid: f.solid,
-      ore: 11 * R.tri(g.L.A.ore, 8, x, y, z) + 9 * R.tri(g.L.B.oreD, 4, x, y, z),
-      oreT: R.tri(g.L.A.oreT, 8, x, y, z), warp: R.tri128(g.L.G.warp, g.L.G, x, y, z),
+      vein: R.veinValues(g.L, x, y, z).vein, veinT: R.veinValues(g.L, x, y, z).veinT, u: R.veinValues(g.L, x, y, z).u,
+      warp: R.tri128(g.L.G.warp, g.L.G, x, y, z),
+      w9: R.strataWarp(g.L, x, y, z, g.fine[o]).w9, w11: R.strataWarp(g.L, x, y, z, g.fine[o]).w11,
+      family_here: R.FAMILIES[R.strataAt(g.L, X, Y, Z, P, x, y, z, g.fine[o]).d11[1] % 6].name,
       solid_above: !!g.solid[x + 32 * z + 1024 * (y + 1)],
     }
   })
@@ -61,15 +63,15 @@ const chunks = [
   chunkVector('origin', 'The chunk at (0, 0, 0) in dataspace.', 0n, 0n, 0n, 0),
   chunkVector('origin-twin', 'The same chunk in ideaspace: the same region integer and lookup id, a different seed (the plane byte) and different terrain digests.', 0n, 0n, 0n, 1),
   chunkVector('home', `The chunk containing the coordinate ${homeCoord}, the spawn of a pubkey with that hex.`, home.X, home.Y, home.Z, home.P),
-  chunkVector('rich', 'A chunk with cubes of K 14, holding emerald and diamond ore.', 21142550437263633644624128n, 18008474041514091364130176n, 31278913397089107452766848n, 0),
-  chunkVector('relic', 'A chunk with a cube of K 15, holding emerald ore and relic crystal.', 14591091882848999946563104n, 20133477431573457222824352n, 32881118804322767692111104n, 0),
+  chunkVector('rich', 'A chunk with cubes of K 14, holding Glowcore and Gibsonite.', 15453524316923662618071296n, 10464798389691687205038208n, 36976378080119877154989536n, 0),
+  chunkVector('relic', 'A chunk with cubes of K 14, holding Glowcore, Gibsonite and Relic shard.', 36430266008631153131322464n, 34667457459222566158038592n, 26358497905024653652117376n, 0),
   chunkVector('top-edge', 'The last chunk on every axis: lattice corners and the chunk above wrap to 0 (modulo 2^85).', top, top, top, 0),
 ]
 for (const c of chunks) {
-  // Show a cell of every rare id the chunk holds, so that a port can check ore selection directly.
+  // Show a cell of every rare id the chunk holds, so that a port can check vein selection directly.
   const g = R.generateChunk(BigInt(c.X), BigInt(c.Y), BigInt(c.Z), c.plane)
   const extra = []
-  for (const want of [45, 46, 47, 48, 49, 192]) {
+  for (const want of [41, 42, 43, 192]) {
     const o = g.indexOf(want)
     if (o >= 0) extra.push([o & 31, o >> 10, (o >> 5) & 31])
   }
@@ -118,7 +120,7 @@ for (const r of runs.rejected) {
   if (!threw) throw new Error('runs vector should be rejected: ' + JSON.stringify(r))
 }
 
-// A layer: author A in the origin chunk. Settle 0: dig out a column and place marble; settle 1: place gibsonite and an extension id.
+// A layer: author A in the origin chunk. Settle 0: dig out a column and place a Rustband beam; settle 1: place Gibsonite and an extension id.
 const values = Int32Array.from(ground0)
 const t0 = new Map(), t1 = new Map()
 const edit = (x, y, z, v, s) => {
@@ -128,8 +130,8 @@ const edit = (x, y, z, v, s) => {
   t1.set(o, s)
 }
 for (let y = 0; y < 32; y++) edit(5, y, 5, 0, 0) // a shaft: every cell of column (5, *, 5) empty
-for (let x = 10; x < 16; x++) edit(x, 20, 10, 15, 0) // a marble beam
-edit(12, 20, 10, 49, 1) // one beam cell becomes gibsonite in settle 1 (first placed at settle 0)
+for (let x = 10; x < 16; x++) edit(x, 20, 10, 5, 0) // a Rustband beam
+edit(12, 20, 10, 43, 1) // one beam cell becomes Gibsonite in settle 1 (first placed at settle 0)
 edit(0, 0, 0, 300, 1) // an extension id, which a reader draws as an unknown block
 const plane0 = R.encodePlane(0, true, values, ground0, t0, t1)
 const decoded = R.decodePlane(plane0, ground0, 2)
@@ -151,7 +153,7 @@ const layerPayload = {
   planes: [plane0],
 }
 const layer = {
-  note: 'Author A in the origin chunk, surveyed. A shaft down column (5, *, 5), a marble beam at y 20, one beam cell turned to gibsonite in a later settle, and the cell (0, 0, 0) set to the extension id 300. Cells equal to the ground are not placements, so the shaft counts only where the ground was solid.',
+  note: 'Author A in the origin chunk, surveyed. A shaft down column (5, *, 5), a Rustband beam at y 20, one beam cell turned to Gibsonite in a later settle, and the cell (0, 0, 0) set to the extension id 300. Cells equal to the ground are not placements, so the shaft counts only where the ground was solid.',
   author: AUTHOR_A, builder: BUILDER_A1,
   plaintext: JSON.stringify(layerPayload),
   plaintext_bytes: Buffer.byteLength(JSON.stringify(layerPayload)),
@@ -192,14 +194,14 @@ const reach = [
 const P = (author, builder, value, fh, fw, fk, lh, lw, lk) => ({ author, builder, value, first: { height: fh, witness: fw, work: fk }, last: { height: lh, witness: lw, work: lk } })
 const A = AUTHOR_A, B = AUTHOR_B, C = 'd'.repeat(64)
 const cases = [
-  { name: 'first placer owns', placements: [P(A, 'a1', 15, 925010, 925010, 0, 925010, 925010, 0), P(C, 'c1', 1, 925011, 925011, 0, 925011, 925011, 0)], builders: {}, home: null },
-  { name: 'late publisher loses: committed early, witnessed late', placements: [P(A, 'a1', 15, 925010, 925012, 0, 925010, 925012, 0), P(C, 'c1', 1, 925000, 925050, 0, 925000, 925050, 0)], builders: {}, home: null },
-  { name: 'listed builder changes the owner\'s cell later', placements: [P(A, 'a1', 15, 925010, 925010, 0, 925010, 925010, 0), P(B, 'b1', 1, 925011, 925011, 0, 925020, 925020, 0)], builders: { [A]: [B] }, home: null },
-  { name: 'unlisted later change is not drawn', placements: [P(A, 'a1', 15, 925010, 925010, 0, 925010, 925010, 0), P(B, 'b1', 1, 925011, 925011, 0, 925020, 925020, 0)], builders: {}, home: null },
-  { name: 'same block: more work wins', placements: [P(A, 'a1', 15, 925010, 925010, 3, 925010, 925010, 3), P(C, 'c1', 1, 925010, 925010, 9, 925010, 925010, 9)], builders: {}, home: null },
-  { name: 'same block, same work: lower author pubkey wins', placements: [P(C, 'c1', 1, 925010, 925010, 0, 925010, 925010, 0), P(A, 'a1', 15, 925010, 925010, 0, 925010, 925010, 0)], builders: {}, home: null },
-  { name: 'unwitnessed placement comes after every witnessed one', placements: [P(C, 'c1', 1, 925000, null, 0, 925000, null, 0), P(A, 'a1', 15, 925010, 925010, 0, 925010, 925010, 0)], builders: {}, home: null },
-  { name: 'home chunk: the home owner counts even when later', placements: [P(C, 'c1', 1, 925000, 925000, 0, 925000, 925000, 0), P(A, 'a1', 15, 925030, 925030, 0, 925030, 925030, 0)], builders: {}, home: A },
+  { name: 'first placer owns', placements: [P(A, 'a1', 5, 925010, 925010, 0, 925010, 925010, 0), P(C, 'c1', 1, 925011, 925011, 0, 925011, 925011, 0)], builders: {}, home: null },
+  { name: 'late publisher loses: committed early, witnessed late', placements: [P(A, 'a1', 5, 925010, 925012, 0, 925010, 925012, 0), P(C, 'c1', 1, 925000, 925050, 0, 925000, 925050, 0)], builders: {}, home: null },
+  { name: 'listed builder changes the owner\'s cell later', placements: [P(A, 'a1', 5, 925010, 925010, 0, 925010, 925010, 0), P(B, 'b1', 1, 925011, 925011, 0, 925020, 925020, 0)], builders: { [A]: [B] }, home: null },
+  { name: 'unlisted later change is not drawn', placements: [P(A, 'a1', 5, 925010, 925010, 0, 925010, 925010, 0), P(B, 'b1', 1, 925011, 925011, 0, 925020, 925020, 0)], builders: {}, home: null },
+  { name: 'same block: more work wins', placements: [P(A, 'a1', 5, 925010, 925010, 3, 925010, 925010, 3), P(C, 'c1', 1, 925010, 925010, 9, 925010, 925010, 9)], builders: {}, home: null },
+  { name: 'same block, same work: lower author pubkey wins', placements: [P(C, 'c1', 1, 925010, 925010, 0, 925010, 925010, 0), P(A, 'a1', 5, 925010, 925010, 0, 925010, 925010, 0)], builders: {}, home: null },
+  { name: 'unwitnessed placement comes after every witnessed one', placements: [P(C, 'c1', 1, 925000, null, 0, 925000, null, 0), P(A, 'a1', 5, 925010, 925010, 0, 925010, 925010, 0)], builders: {}, home: null },
+  { name: 'home chunk: the home owner counts even when later', placements: [P(C, 'c1', 1, 925000, 925000, 0, 925000, 925000, 0), P(A, 'a1', 5, 925030, 925030, 0, 925030, 925030, 0)], builders: {}, home: A },
   { name: 'home chunk: nobody but the owner and listed builders', placements: [P(C, 'c1', 1, 925000, 925000, 0, 925000, 925000, 0)], builders: {}, home: A },
 ].map((c) => {
   const bm = new Map(Object.entries(c.builders).map(([k, v]) => [k, new Set(v)]))
@@ -212,8 +214,8 @@ const out = {
   constants: {
     survey_domain: 'CYBERSPACE_BLOCKS_SURVEY_V1', settle_domain: 'CYBERSPACE_BLOCKS_SETTLE_V1', terrain_domain: 'CYBERSPACE_TERRAIN_K_V2',
     W8: R.W8, W128_samples: Object.fromEntries([0, 1, 32, 64, 96, 127, 128].map((f) => [f, R.W128(f)])),
-    EMPTY_THR: R.EMPTY_THR, ORE_THR: R.ORE_THR, RELIC_THR: R.RELIC_THR, RELIC_MIN_K: R.RELIC_MIN_K,
-    FAMILIES: R.FAMILIES, ORES: R.ORES, REACH: R.REACH,
+    EMPTY_THR: R.EMPTY_THR, VEIN_THR: R.VEIN_THR, RELIC_THR: R.RELIC_THR, RELIC_MIN_K: R.RELIC_MIN_K,
+    FAMILIES: R.FAMILIES, VEINS: R.VEINS, REACH: R.REACH,
   },
   chacha20_check: { key: chunks[0].survey_seed, nonce: '000000000000000000000000', counter: 0, keystream_head: chunks[0].stream_head },
   chunks, settles, runs, layer, reach, cell_rule: cases,

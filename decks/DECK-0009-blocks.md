@@ -10,7 +10,7 @@ Requires: `CYBERSPACE_V2.md` §2 (coordinates), §3.1 (the spawn coordinate), §
 
 ## Abstract
 
-**Blocks** are cubes of material that people mine and place in cyberspace, one block per gibson. The world under them is the **generated ground**: rock, ore and caves that every client computes from the place itself, the same for everyone, and that costs nothing to store. A place has no ground until someone **surveys** it, and what people change is written down as the difference from that ground.
+**Blocks** are cubes of material that people mine and place in cyberspace, one block per gibson. The world under them is the **generated ground**: rock, veins and caves that every client computes from the place itself, the same for everyone, and that costs nothing to store. A place has no ground until someone **surveys** it, and what people change is written down as the difference from that ground.
 
 Space is cut into **chunks**, the aligned regions of height 5, 32 gibsons on a side. Each device that builds holds a **builder key** of its own. The player names it once, with a tag on a movement action they sign anyway, so building never asks for a signature from the player's identity. A builder key writes one **block layer** per chunk: an addressable event whose content is sealed with the chunk's region key, exactly as a bag is, and which says what that builder changed there. Every reader merges the layers of a chunk by one rule, the **Cell Rule**: the first person to place in a cell owns it, and only they, and the builders they list, can change it.
 
@@ -87,30 +87,26 @@ A **global id** is an integer from 0 to 65535. Its ranges:
 | 255 | reserved, the extension marker. A writer MUST NOT place it |
 | 256 to 65535 | the extension space, allocated by later revisions of this DECK |
 
-**The initial registry (normative for ids; names are ours, colours are suggestions):**
+**The initial registry (normative for ids; the names are invented for Cyberspace, the colours are suggestions):**
 
-| Id | Name | Suggested colour | | Id | Name | Suggested colour |
-|---|---|---|---|---|---|---|
-| 0 | empty | none | | 17 | slate | `#5b6470` |
-| 1 | stone | `#8a8a8a` | | 18 | quartzite | `#e6dce8` |
-| 2 | deepstone | `#555a60` | | 19 | amethyst rock | `#8e6cc0` |
-| 3 | dirt | `#7a5636` | | 20 | moss | `#5f8f3a` |
-| 4 | gravel | `#9c948a` | | 21 | obsidian | `#1a1028` |
-| 5 | sand | `#e0cf92` | | 22 | tuff | `#6f6c5c` |
-| 6 | sandstone | `#d2b56f` | | 23 | magma rock | `#d4521c` |
-| 7 | red sandstone | `#c0663a` | | 40 | coal ore | `#202020` |
-| 8 | clay | `#a3a8b8` | | 41 | copper ore | `#d07a3a` |
-| 9 | basalt | `#4a4a50` | | 42 | iron ore | `#d8b090` |
-| 10 | blackstone | `#2c2830` | | 43 | tin ore | `#b8c4c8` |
-| 11 | ice | `#9fd0f0` | | 44 | silver ore | `#e8f0f8` |
-| 12 | packed snow | `#dfe8ee` | | 45 | gold ore | `#ffd200` |
-| 13 | snow | `#ffffff` | | 46 | lapis ore | `#2650d0` |
-| 14 | granite | `#a87565` | | 47 | emerald ore | `#10d060` |
-| 15 | marble | `#efeae0` | | 48 | diamond ore | `#40f0f0` |
-| 16 | limestone | `#cfc6a8` | | 49 | gibsonite | `#ff2bd6` |
-| | | | | 192 | relic crystal | `#ff0050` |
+| Id | Name | Role | Suggested base | Suggested accent |
+|---|---|---|---|---|
+| 0 | empty | no block | none | none |
+| 1 | Gridstone | common bulk rock | `#555e60` | `#80898c` |
+| 2 | Umberslate | darker rock | `#1d3547` | `#6f8ea0` |
+| 3 | Driftsilt | soft fill | `#946100` | `#cc8f00` |
+| 4 | Mossveil | surface skin | `#00ba67` | `#00f39e` |
+| 5 | Rustband | banded rock | `#943300` | `#f47000` |
+| 6 | Frostshale | pale rock | `#c8f5ff` | `#5d6769` |
+| 7 | Cinderrock | volcanic rock | `#1a0f24` | `#ff3300` |
+| 8 | Prismite | crystalline, uncommon (a strata rock and a vein) | `#a24bff` | `#e1bcff` |
+| 40 | Ferrovein | metallic vein | `#555e60` | `#e7a800` |
+| 41 | Cobaltine | uncommon vein | `#1d3547` | `#5a9bff` |
+| 42 | Glowcore | glowing, rare | `#15191a` | `#00e5ff` |
+| 43 | Gibsonite | dense, very rare | `#4b0058` | `#ff00ff` |
+| 192 | Relic shard | special | `#5c0010` | `#ff3b6b` |
 
-Ids 24 to 39 and 50 to 63 are unallocated natural ids. Revision 1 of the ground never generates dirt (3); it is in the registry for later revisions.
+Ids 9 to 39 and 44 to 63 are unallocated natural ids, for later revisions of the ground. The names and the look are Cyberspace's own: a later revision adds blocks with invented names, never names borrowed from another game. The two colours are a base and an accent, as the TERRAIN previews draw them; how a client textures a block is its own.
 
 **Unknown ids (normative):** a reader MUST accept any global id from 0 to 65535 in a layer. It draws an id it does not know as a solid block of a neutral look that says the block is unknown, and it treats 255 the same way. It MUST NOT drop a layer for holding an id it does not know, because a later revision may allocate it.
 
@@ -122,7 +118,7 @@ A layer stores a chunk as one palette index per cell, and a **palette** per plan
 
 ## 3. The generated ground (normative)
 
-The ground of a chunk is a pure function of its base and its plane: 32,768 global ids, every one of them natural (1 to 63), special (192) or empty (0). Every value that decides a cell is an integer and every division is a floor division of non-negative integers. Every per-cell value is below `2^53`; the region integer of §3.2 is an arbitrary precision integer, and the strata hash of §3.9 is a multiplication modulo `2^32`, which an implementation computes exactly (in JavaScript with `Math.imul`, never as a float product, which loses bits above `2^53`). Two implementations that follow this section produce identical grounds; the vectors of §9 check it.
+The ground of a chunk is a pure function of its base and its plane: 32,768 global ids, every one of them natural (1 to 63), special (192) or empty (0). Every value that decides a cell is an integer. Every division is a floor division of non-negative integers, and the only shifts of signed values are the soft border warps of §3.9, which round toward negative infinity. Every per-cell value is below `2^53`; the region integer of §3.2 is an arbitrary precision integer, and the strata hash of §3.9 is a multiplication modulo `2^32`, which an implementation computes exactly (in JavaScript with `Math.imul`, never as a float product, which loses bits above `2^53`). Two implementations that follow this section produce identical grounds; the vectors of §9 check it.
 
 ### 3.1 Empty until surveyed
 
@@ -166,7 +162,7 @@ digest(bits, x, y, z, P) = sha256(TERRAIN_DOMAIN_V2 || byte(bits) || bytes32(xyz
 
 with `bx = (x >> bits) << bits` and likewise `by`, `bz`, and `bytes32` the coordinate as exactly 32 bytes, big-endian. §5.2 uses only the low nibble of byte 0 of each digest. This DECK reads other bytes of the same digests, so a client that already computes terrain `K` has computed most of them.
 
-**Wrapping (normative):** wherever this section adds an offset to an axis value, the sum is taken modulo `2^85`. The last chunk on an axis therefore reads its far corners from the first.
+**Wrapping (normative):** wherever this section adds an offset to an axis value, the sum is taken modulo `2^85` as the non-negative remainder, 0 to `2^85 − 1`, so a sum below 0 wraps to the top of the axis (in JavaScript, `& (2^85 − 1)` on a BigInt, never `%`, which keeps the sign). The last chunk on an axis therefore reads its far corners from the first.
 
 **The 8 lattice** `A` has 5 by 5 by 5 corners, numbered `a = i + 5 (k + 5 j)` for `i, j, k` from 0 to 4. Corner `a` stands at `(X + 8i, Y + 8j, Z + 8k)`, which is the base of an aligned cube of 8 (the corners with an index of 4 are the bases of cubes in the neighbouring chunks). For each corner, with `d3 = digest(3, corner)`:
 
@@ -176,8 +172,8 @@ with `bx = (x >> bits) << bits` and likewise `by`, `bz`, and `bytes32` the coord
 | `K16[a]` | `16 × K[a]` |
 | `cave[a]` | `d3[1]` |
 | `tun[a]` | `d3[2]` |
-| `ore8[a]` | `d3[3]` |
-| `oreT[a]` | `d3[4]` |
+| `vein8[a]` | `d3[3]` |
+| `veinT[a]` | `d3[4]` |
 
 The cube K of a cell is `K[(x >> 3) + 5 ((z >> 3) + 5 (y >> 3))]`, the K of the 8 cube that holds it: exactly the `K` a hop into that cell pays.
 
@@ -187,14 +183,14 @@ The cube K of a cell is `K[(x >> 3) + 5 ((z >> 3) + 5 (y >> 3))]`, the K of the 
 
 | Value | Definition |
 |---|---|
-| `oreD[b]` | `d3[5 + sub]` |
+| `veinD[b]` | `d3[5 + sub]` |
 | `caveD[b]` | `d3[13 + sub]` |
 
-**The 128 lattice** `G` has the 8 corners of the aligned cube of 128 that holds the chunk. With `Ox = (X >> 7) << 7`, and likewise `Oy`, `Oz`, corner `c` from 0 to 7 stands at `(Ox + 128 (c & 1), Oy + 128 ((c >> 1) & 1), Oz + 128 ((c >> 2) & 1))`. With `d7 = digest(7, corner)`: `big[c] = d7[1]` and `warp[c] = d7[2]`. The chunk's offsets in that cube are `ox = X - Ox`, `oy = Y - Oy`, `oz = Z - Oz`, each 0, 32, 64 or 96.
+**The 128 lattice** `G` has the 8 corners of the aligned cube of 128 that holds the chunk. With `Ox = (X >> 7) << 7`, and likewise `Oy`, `Oz`, corner `c` from 0 to 7 stands at `(Ox + 128 (c & 1), Oy + 128 ((c >> 1) & 1), Oz + 128 ((c >> 2) & 1))`. With `d7 = digest(7, corner)`: `big[c] = d7[1]`, `warp[c] = d7[2]`, and the border warp fields `gx[c] = d7[3]`, `gy[c] = d7[4]`, `gz[c] = d7[5]`. The chunk's offsets in that cube are `ox = X - Ox`, `oy = Y - Oy`, `oz = Z - Oz`, each 0, 32, 64 or 96.
 
-**The strata digests** are `d9 = digest(9, X, Y, Z, P)` and `d11 = digest(11, X, Y, Z, P)`. A chunk lies inside one aligned cube of 512 and one of 2048, so each chunk has exactly one of each.
+**The strata digests** of a cell are the 2^9 and 2^11 digests at a **warped** position near it (§3.9, Soft borders), so that the borders between strata and between families are ragged contacts rather than flat cuts. Away from those borders the warped position stays inside the chunk's own cell of 512 and of 2048, and the digests are the chunk's own, `digest(9, X, Y, Z, P)` and `digest(11, X, Y, Z, P)`.
 
-**Byte budget (non-normative).** Of each 2^3 digest, byte 0 (low nibble `K`, high nibble spare), bytes 1 to 20 are read here, and bytes 21 to 31 are spare. Of each 2^7 digest, bytes 1 and 2; of the 2^9 digest, bytes 2 and 3; of the 2^11 digest, byte 1. A later revision that needs more fields takes them from the spare bytes, under a new domain string.
+**Byte budget (non-normative).** Of each 2^3 digest, byte 0 (low nibble `K`, high nibble spare), bytes 1 to 20 are read here, and bytes 21 to 31 are spare. Of each 2^7 digest, bytes 1 to 5; of each 2^9 digest, bytes 2 and 3; of each 2^11 digest, byte 1. A later revision that needs more fields takes them from the spare bytes, under a new domain string.
 
 ### 3.6 Interpolation
 
@@ -242,77 +238,103 @@ A cell that is not solid is empty, global id 0. Row `y = 32` is computed only to
 | `k` | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | `EMPTY_THR[k]` | 1337 | 1323 | 1308 | 1294 | 1280 | 1266 | 1253 | 1239 | 1225 | 1211 | 1196 | 1182 | 1168 | 1153 | 1138 | 1123 | 1108 |
-| `ORE_THR[k]` | 3884 | 3854 | 3827 | 3802 | 3779 | 3757 | 3736 | 3717 | 3698 | 3681 | 3664 | 3648 | 3633 | 3618 | 3603 | 3590 | 3576 |
+| `VEIN_THR[k]` | 3884 | 3854 | 3827 | 3802 | 3779 | 3757 | 3736 | 3717 | 3698 | 3681 | 3664 | 3648 | 3633 | 3618 | 3603 | 3590 | 3576 |
 
 - `RELIC_THR = 4508`, `RELIC_MIN_K = 13`.
 
-`EMPTY_THR[k]` was set so that, over 600 chunks drawn at random, a share of `0.60 − 0.30 k/16` of cells falls under it: 60% empty where the smoothed K is 0, 30% where it is 16. `ORE_THR[k]` was set so that a share of `0.02 + 0.04 k/16` of cells reaches it, and `RELIC_THR` so that 0.07% do. The calibration is in `blocks-reference.mjs`'s history and is not part of the rule: the integers above are.
+`EMPTY_THR[k]` was set so that, over 600 chunks drawn at random, a share of `0.60 − 0.30 k/16` of cells falls under it: 60% empty where the smoothed K is 0, 30% where it is 16. `VEIN_THR[k]` was set so that a share of `0.02 + 0.04 k/16` of cells reaches it, and `RELIC_THR` so that 0.07% do. The calibration is in `blocks-reference.mjs`'s history and is not part of the rule: the integers above are.
 
 ### 3.9 Materials (revision 1, tunable)
 
-**Families.** The chunk's family is `FAMILIES[d11[1] mod 6]`:
+**Families.** Each solid cell outside a vein takes its family from its warped 2^11 digest `d11` (Soft borders, below): `FAMILIES[d11[1] mod 6]`.
 
 | Index | Family | Strata (global ids, in order) | Top | Speckle |
 |---|---|---|---|---|
-| 0 | temperate | 1, 1, 17, 14, 1, 16, 2, 22 | 20 | 4 |
-| 1 | desert | 6, 7, 6, 8, 5, 16, 1 | 5 | 8 |
-| 2 | frozen | 11, 12, 1, 11, 17, 14 | 13 | 12 |
-| 3 | volcanic | 9, 10, 22, 9, 21, 9, 23 | 22 | 23 |
-| 4 | crystal | 18, 15, 19, 18, 14 | 18 | 19 |
-| 5 | karst | 16, 15, 16, 8, 1 | 20 | 8 |
+| 0 | temperate | 1, 1, 2, 1, 5, 1, 2, 3 | 4 | 2 |
+| 1 | dune | 3, 5, 1, 3, 2, 5 | 3 | 5 |
+| 2 | frozen | 6, 6, 1, 6, 2, 1 | 6 | 2 |
+| 3 | volcanic | 7, 2, 7, 5, 1, 2, 7 | 7 | 5 |
+| 4 | crystal | 6, 1, 6, 2, 8, 1, 6, 2 | 6 | 8 |
+| 5 | karst | 1, 3, 1, 2, 1, 3 | 4 | 3 |
 
-**Ores,** in this order, each `[global id, weight, lowest cube K]`: `[40, 60, 0]`, `[41, 50, 0]`, `[42, 40, 3]`, `[43, 20, 5]`, `[44, 12, 8]`, `[46, 6, 9]`, `[45, 8, 10]`, `[47, 3, 12]`, `[48, 2, 13]`, `[49, 1, 15]`.
+**Veins,** in this order, each `[global id, weight, lowest cube K]`: `[40, 55, 0]`, `[41, 25, 6]`, `[8, 12, 9]`, `[42, 3, 10]`, `[43, 2, 13]`.
+
+**Soft borders.** For a cell `(x, y, z)` with fine byte `f` (§3.3), let `sx = tri128(gx, x, y, z) − 128`, `sy = tri128(gy, x, y, z) − 128` and `sz = tri128(gz, x, y, z) − 128` (the corner values of §3.5), `sc = cave4 − 128` with `cave4` of §3.7, and `sf = f − 128`. Its warps, each `>> 8` an arithmetic shift that rounds toward negative infinity (Python's `>>`, JavaScript's `>>` on these small values):
+
+```
+w9  = ((sx × 44 + sc × 8 + sf × 5) >> 8,   (sy × 44 − sc × 8 + sf × 5) >> 8,    (sz × 44 + sc × 8 − sf × 5) >> 8)
+w11 = ((sz × 120 + sc × 16 + sf × 5) >> 8,  (sx × 120 + sc × 8 + sf × 5) >> 8,   (sy × 120 − sc × 16 − sf × 5) >> 8)
+d9  = digest(9,  X + x + w9[0],  Y + y + w9[1],  Z + z + w9[2],  P)      # each axis modulo 2^85 (§3.4)
+d11 = digest(11, X + x + w11[0], Y + y + w11[1], Z + z + w11[2], P)
+```
+
+The 2^9 warp reaches about 30 cells and the 2^11 warp about 70, so a cell within that distance of a border can read the neighbouring cell's digest, and a family or a band thickness changes along a ragged, dithered contact instead of a plane.
 
 **The rule.** For each solid cell, with `kc` its cube K (§3.4):
 
 ```
-ore  = 11 tri(ore8, 8, x, y, z) + 9 tri(oreD, 4, x, y, z)        # 0 to 5100
-oreT = tri(oreT, 8, x, y, z)                                      # 0 to 255
-if kc ≥ RELIC_MIN_K and ore ≥ RELIC_THR:   id = 192
-elif ore ≥ ORE_THR[kc]:
-    eligible = the ores, in order, whose lowest cube K ≤ kc
-    r = (oreT × (sum of their weights)) >> 8
-    id = the first eligible ore whose weight w satisfies r < w, subtracting w from r for each one passed
+vein  = 11 tri(vein8, 8, x, y, z) + 9 tri(veinD, 4, x, y, z)       # 0 to 5100
+vt    = tri(veinT, 8, x, y, z)                                     # 0 to 255
+if kc ≥ RELIC_MIN_K and vein ≥ RELIC_THR:   id = 192
+elif vein ≥ VEIN_THR[kc]:
+    u = 0 if 9 vt − 512 ≤ 0 else min(255, floor((9 vt − 512) / 5))   # the type field, stretched
+    eligible = the veins, in order, whose lowest cube K ≤ kc
+    r = (u × (sum of their weights)) >> 8
+    id = the first eligible vein whose weight w satisfies r < w, subtracting w from r for each one passed
 else:
-    T       = 3 + (d9[2] mod 8)                                   # band thickness, 3 to 10
-    warpOff = ((tri128(warp, x, y, z) × 18) >> 8) + ((oreT × 8) >> 8) + ((cave4 × 4) >> 8)
+    d9, d11 = the strata digests of this cell (Soft borders)
+    strata, top, speckle = FAMILIES[d11[1] mod 6]
+    T       = 3 + (d9[2] mod 8)                                    # band thickness, 3 to 10
+    warpOff = ((tri128(warp, x, y, z) × 18) >> 8) + ((vt × 8) >> 8) + ((cave4 × 4) >> 8)
     band    = floor(((Y mod 2^24) + y + warpOff) / T)
     h       = ((band XOR (d9[3] << 8)) × 0x9E3779B1) mod 2^32           # exact: a wrapping 32-bit multiply
     id      = strata[(h >> 16) mod len(strata)]
-    if fine byte < 6:                            id = speckle     # about 2.3%
-    if the cell (x, y + 1, z) is not solid:      id = top         # y + 1 may be 32 (§3.7)
+    if f < 6:                                    id = speckle      # about 2.3%
+    if the cell (x, y + 1, z) is not solid:      id = top          # y + 1 may be 32 (§3.7)
 ```
 
-`cave4` in the strata branch is the value of §3.7 for the same cell. The ore branch always picks an ore, because `r` is below the sum of the weights. The strata bands run along Y, and the `mod 2^24` makes a seam in them on every 2^24 wall of Y, which is where the walls of cyberspace grow tall anyway.
+The vein branch always picks a vein, because `u` is at most 255 and so `r` is below the sum of the weights. The type field is smooth noise, so its ends are rare; the stretch `u` makes the last weights reachable. The strata bands run along Y, and the `mod 2^24` makes a seam in them on every 2^24 wall of Y, which is where the walls of cyberspace grow tall anyway.
 
-**What it makes (non-normative).** Over 200 random chunks: 46.8% empty (one chunk anywhere from 17% to 79%), then stone 6.4%, limestone 5.2%, quartzite 4.1%, tuff 3.8% and the other rocks; ore 2.2% in all (copper 0.97%, iron 0.56%, coal 0.53%, tin 0.11%, silver 0.017%), gold and lapis around one cell in 50,000 to 100,000, emerald, diamond, gibsonite and relic crystal rarer still, and only in cubes of K 12 and above. The rarest blocks sit where every hop costs the most temporal work: the good rock is where the going is hard.
+**What it makes (non-normative).** Over 200 random chunks: 46.8% empty (one chunk anywhere from 17% to 79%), then Gridstone 13.3%, Umberslate 9.7%, Frostshale 7.6%, Driftsilt 7.4%, Rustband 5.0%, Cinderrock 4.9% and Mossveil 2.7%; veins about 2.1% in all (Ferrovein 1.5%, Prismite 0.6% with its strata share, Cobaltine 0.5%), Glowcore one cell in about 1,900 and only in cubes of K 10 and above, Gibsonite about one in 30,000 and only at K 13 and above, Relic shard rarer still. The rarest blocks sit where every hop costs the most temporal work: the good rock is where the going is hard.
+
+**The chunk skin is not ground.** Where a surveyed chunk borders a chunk that nobody has surveyed, a client MAY draw a weathered skin on that face, in each family's rind material (Umberslate, or Gridstone in dune), so that a lone chunk reads as an island rather than a slice. The skin is drawn only. It is not part of the ground, it is never stored, and it never decides a placement (§12, question 15).
 
 ### 3.10 Revisions (normative)
 
-This section is revision 1 of the ground, named by `CYBERSPACE_BLOCKS_SURVEY_V1`. If anything in §3.2 to §3.9 changes, the domain string MUST change with it, for example to `CYBERSPACE_BLOCKS_SURVEY_V2`, and a layer says which revision its survey used (§5.5, `ground`). The tables of §3.8 and §3.9 are expected to change once people have walked the ground: they are tunable, and tuning them is a revision.
+This section is revision 1 of the ground, named by `CYBERSPACE_BLOCKS_SURVEY_V1`. While this DECK is a Draft, revision 1 may still change without a new domain string, because no client publishes layers yet; it is fixed when the DECK leaves Draft, and every change after that is a new revision. If anything in §3.2 to §3.9 changes, the domain string MUST change with it, for example to `CYBERSPACE_BLOCKS_SURVEY_V2`, and a layer says which revision its survey used (§5.5, `ground`). The tables of §3.8 and §3.9 are expected to change once people have walked the ground: they are tunable, and tuning them is a revision.
 
 A reader decodes each plane by the revision of the ground that the plane names. A reader that does not implement that revision MUST drop that plane, not the layer, and SHOULD say that something is built here that a newer client can show: the plane's placements are defined against a ground it cannot compute, so it cannot even count them (§5.5). A writer SHOULD write the newest revision it implements when it first surveys a plane, and MUST carry forward the revision a plane already names.
 
 ### 3.11 Reference code (normative where it agrees with the text)
 
-The Python below is the rule of §3.2 to §3.9 in one place. It was run against `blocks-vectors.json` and reproduces every chunk in it. Where it and the prose disagree, the prose is right.
+The Python below is the rule of §3.2 to §3.9 in one place. It was run against `blocks-vectors.json` and reproduces every chunk in it. Its digest cache is an optimisation only. Where it and the prose disagree, the prose is right.
 
 ```python
+import functools
 import hashlib
 
 AXIS_MASK = (1 << 85) - 1
 TERRAIN_DOMAIN_V2 = b"CYBERSPACE_TERRAIN_K_V2"
 SURVEY_DOMAIN = b"CYBERSPACE_BLOCKS_SURVEY_V1"
+
 EMPTY_THR = [1337, 1323, 1308, 1294, 1280, 1266, 1253, 1239, 1225, 1211, 1196, 1182, 1168, 1153, 1138, 1123, 1108]
-ORE_THR = [3884, 3854, 3827, 3802, 3779, 3757, 3736, 3717, 3698, 3681, 3664, 3648, 3633, 3618, 3603, 3590, 3576]
+VEIN_THR = [3884, 3854, 3827, 3802, 3779, 3757, 3736, 3717, 3698, 3681, 3664, 3648, 3633, 3618, 3603, 3590, 3576]
 RELIC_THR, RELIC_MIN_K, RELIC = 4508, 13, 192
 W8 = [0, 22, 80, 162, 256, 350, 432, 490, 512]
-FAMILIES = [([1, 1, 17, 14, 1, 16, 2, 22], 20, 4), ([6, 7, 6, 8, 5, 16, 1], 5, 8), ([11, 12, 1, 11, 17, 14], 13, 12),
-            ([9, 10, 22, 9, 21, 9, 23], 22, 23), ([18, 15, 19, 18, 14], 18, 19), ([16, 15, 16, 8, 1], 20, 8)]
-ORES = [(40, 60, 0), (41, 50, 0), (42, 40, 3), (43, 20, 5), (44, 12, 8),
-        (46, 6, 9), (45, 8, 10), (47, 3, 12), (48, 2, 13), (49, 1, 15)]
+FAMILIES = [  # (strata, top, speckle)
+    ([1, 1, 2, 1, 5, 1, 2, 3], 4, 2),        # temperate
+    ([3, 5, 1, 3, 2, 5], 3, 5),              # dune
+    ([6, 6, 1, 6, 2, 1], 6, 2),              # frozen
+    ([7, 2, 7, 5, 1, 2, 7], 7, 5),           # volcanic
+    ([6, 1, 6, 2, 8, 1, 6, 2], 6, 8),        # crystal
+    ([1, 3, 1, 2, 1, 3], 4, 3),              # karst
+]
+VEINS = [(40, 55, 0), (41, 25, 6), (8, 12, 9), (42, 3, 10), (43, 2, 13)]
 
-def sha256(b): return hashlib.sha256(b).digest()
+
+def sha256(b):
+    return hashlib.sha256(b).digest()
+
 
 def xyz_to_coord(x, y, z, plane):                       # CYBERSPACE_V2.md §2.3
     c = plane & 1
@@ -322,12 +344,15 @@ def xyz_to_coord(x, y, z, plane):                       # CYBERSPACE_V2.md §2.3
         c |= ((x >> i) & 1) << (3 + 3 * i)
     return c
 
+
 def int_to_bytes_be_min(n):                             # CYBERSPACE_V2.md §5.5
     return b"\x00" if n == 0 else n.to_bytes((n.bit_length() + 7) // 8, "big")
+
 
 def cantor_pair(a, b):
     s = a + b
     return s * (s + 1) // 2 + b
+
 
 def subtree_cantor(base, h):                            # CYBERSPACE_V2.md §4.6
     v = list(range(base, base + (1 << h)))
@@ -335,21 +360,31 @@ def subtree_cantor(base, h):                            # CYBERSPACE_V2.md §4.6
         v = [cantor_pair(v[i], v[i + 1]) for i in range(0, len(v), 2)]
     return v[0]
 
-def terrain_digest(bits, x, y, z, plane):               # §3.4
-    bx, by, bz = (x >> bits) << bits, (y >> bits) << bits, (z >> bits) << bits
+
+@functools.lru_cache(maxsize=65536)
+def cell_digest(bits, bx, by, bz, plane):
     return sha256(TERRAIN_DOMAIN_V2 + bytes([bits]) + xyz_to_coord(bx, by, bz, plane).to_bytes(32, "big"))
+
+
+def terrain_digest(bits, x, y, z, plane):               # CYBERSPACE_V2.md §5.2, step 1 (cached by cell)
+    return cell_digest(bits, (x >> bits) << bits, (y >> bits) << bits, (z >> bits) << bits, plane)
+
 
 def terrain_k(x, y, z, plane):                          # CYBERSPACE_V2.md §5.2
     return sum(bin(terrain_digest(b, x, y, z, plane)[0] & 15).count("1") for b in (3, 7, 9, 11))
+
 
 def survey_seed(X, Y, Z, P):                            # §3.2
     n = cantor_pair(cantor_pair(subtree_cantor(X, 5), subtree_cantor(Y, 5)), subtree_cantor(Z, 5))
     return sha256(SURVEY_DOMAIN + bytes([P & 1]) + int_to_bytes_be_min(n))
 
-def chacha20_keystream(key, length):                    # §3.3: RFC 8439, zero nonce, counter from 0
-    def rotl(v, c): return ((v << c) | (v >> (32 - c))) & 0xFFFFFFFF
+
+def chacha20_keystream(key, length):                    # §3.3: RFC 8439, nonce 0, counter from 0
+    def rotl(v, c):
+        return ((v << c) | (v >> (32 - c))) & 0xFFFFFFFF
     k = [int.from_bytes(key[4 * i:4 * i + 4], "little") for i in range(8)]
-    out, block = bytearray(), 0
+    out = bytearray()
+    block = 0
     while len(out) < length:
         st = [0x61707865, 0x3320646E, 0x79622D32, 0x6B206574] + k + [block, 0, 0, 0]
         x = st[:]
@@ -365,18 +400,26 @@ def chacha20_keystream(key, length):                    # §3.3: RFC 8439, zero 
         block += 1
     return bytes(out[:length])
 
-def cell_index(x, y, z): return x + 32 * z + 1024 * y  # §2.2
 
-def lerp(a, b, w, sh): return (a * ((1 << sh) - w) + b * w) >> sh
+def cell_index(x, y, z):                                # §2.2
+    return x + 32 * z + 1024 * y
 
-def w128(f): return 384 * f * f - 2 * f * f * f
 
-def lat(u, s):                                          # §3.6, u in 0..32
+def lerp(a, b, w, sh):                                  # §3.6
+    return (a * ((1 << sh) - w) + b * w) >> sh
+
+
+def w128(f):                                            # §3.6
+    return 384 * f * f - 2 * f * f * f
+
+
+def lat(u, s):                                          # §3.6: lattice index and weight, u in 0..32
     j = min(u // s, 32 // s - 1)
     f = u - s * j
     return j, (W8[f] if s == 8 else W8[2 * f])
 
-def tri(arr, s, x, y, z):                               # §3.6: along x, then z, then y
+
+def tri(arr, s, x, y, z):                               # §3.6: x, then z, then y
     m = 32 // s + 1
     (i, wx), (j, wy), (k, wz) = lat(x, s), lat(y, s), lat(z, s)
     c = lambda di, dj, dk: arr[(i + di) + m * ((k + dk) + m * (j + dj))]
@@ -384,14 +427,17 @@ def tri(arr, s, x, y, z):                               # §3.6: along x, then z
     a2, a3 = lerp(c(0, 1, 0), c(1, 1, 0), wx, 9), lerp(c(0, 1, 1), c(1, 1, 1), wx, 9)
     return lerp(lerp(a0, a1, wz, 9), lerp(a2, a3, wz, 9), wy, 9)
 
-def tri128(v, off, x, y, z):                            # §3.6: corner c = dx | dy << 1 | dz << 2
+
+def tri128(v, off, x, y, z):                            # §3.6: corners c = dx | dy << 1 | dz << 2
     wx, wy, wz = w128(off[0] + x), w128(off[1] + y), w128(off[2] + z)
     a0, a1 = lerp(v[0], v[1], wx, 21), lerp(v[4], v[5], wx, 21)
     a2, a3 = lerp(v[2], v[3], wx, 21), lerp(v[6], v[7], wx, 21)
     return lerp(lerp(a0, a1, wz, 21), lerp(a2, a3, wz, 21), wy, 21)
 
+
 def generate_chunk(X, Y, Z, P):
-    d3, K = [None] * 125, [0] * 125                     # §3.4, corner i + 5 (k + 5 j)
+    # §3.4 The 8 lattice: 5 x 5 x 5 corners, index i + 5 (k + 5 j).
+    d3, K = [None] * 125, [0] * 125
     for j in range(5):
         for k in range(5):
             for i in range(5):
@@ -399,27 +445,29 @@ def generate_chunk(X, Y, Z, P):
                 d3[i + 5 * (k + 5 * j)] = terrain_digest(3, cx, cy, cz, P)
                 K[i + 5 * (k + 5 * j)] = terrain_k(cx, cy, cz, P)
     K16 = [16 * v for v in K]
-    cave, tun, ore8, oreT = ([d[n] for d in d3] for n in (1, 2, 3, 4))
-    oreD, caveD = [0] * 729, [0] * 729                  # §3.5, corner i + 9 (k + 9 j)
+    cave, tun, vein8, veinT = ([d[n] for d in d3] for n in (1, 2, 3, 4))
+    # §3.5 The 4 lattice: 9 x 9 x 9 corners, index i + 9 (k + 9 j).
+    veinD, caveD = [0] * 729, [0] * 729
     for j in range(9):
         for k in range(9):
             for i in range(9):
                 d = d3[(i >> 1) + 5 * ((k >> 1) + 5 * (j >> 1))]
                 sub = (i & 1) | ((j & 1) << 1) | ((k & 1) << 2)
-                oreD[i + 9 * (k + 9 * j)], caveD[i + 9 * (k + 9 * j)] = d[5 + sub], d[13 + sub]
-    O = ((X >> 7) << 7, (Y >> 7) << 7, (Z >> 7) << 7)   # §3.5, the 128 lattice
+                veinD[i + 9 * (k + 9 * j)], caveD[i + 9 * (k + 9 * j)] = d[5 + sub], d[13 + sub]
+    # §3.5 The 128 lattice.
+    O = ((X >> 7) << 7, (Y >> 7) << 7, (Z >> 7) << 7)
     off = (X - O[0], Y - O[1], Z - O[2])
-    big, warp = [0] * 8, [0] * 8
+    big, warp, gx8, gy8, gz8 = [0] * 8, [0] * 8, [0] * 8, [0] * 8, [0] * 8
     for c in range(8):
         d = terrain_digest(7, (O[0] + 128 * (c & 1)) & AXIS_MASK, (O[1] + 128 * ((c >> 1) & 1)) & AXIS_MASK,
                            (O[2] + 128 * ((c >> 2) & 1)) & AXIS_MASK, P)
-        big[c], warp[c] = d[1], d[2]
-    d9, d11 = terrain_digest(9, X, Y, Z, P), terrain_digest(11, X, Y, Z, P)
-    fine = chacha20_keystream(survey_seed(X, Y, Z, P), 32768)                       # §3.3
-    above = chacha20_keystream(survey_seed(X, (Y + 32) & AXIS_MASK, Z, P), 32768)
+        big[c], warp[c], gx8[c], gy8[c], gz8[c] = d[1], d[2], d[3], d[4], d[5]
+    # §3.3 The fine streams of this chunk and of the chunk above it.
+    fine = chacha20_keystream(survey_seed(X, Y, Z, P), 32768)
+    fine_above = chacha20_keystream(survey_seed(X, (Y + 32) & AXIS_MASK, Z, P), 32768)
 
     def solid_at(x, y, z):                              # §3.7, y in 0..32
-        f = fine[cell_index(x, y, z)] if y < 32 else above[cell_index(x, 0, z)]
+        f = fine[cell_index(x, y, z)] if y < 32 else fine_above[cell_index(x, 0, z)]
         cave4 = tri(caveD, 4, x, y, z)
         D = 5 * tri(cave, 8, x, y, z) + 2 * cave4 + 2 * tri128(big, off, x, y, z) + f
         kS = tri(K16, 8, x, y, z)
@@ -430,33 +478,43 @@ def generate_chunk(X, Y, Z, P):
         return D >= thr and not tunnel
 
     solid = {(x, y, z): solid_at(x, y, z) for y in range(33) for z in range(32) for x in range(32)}
-    strata, top, speckle = FAMILIES[d11[1] % 6]         # §3.9
-    T, band_off, y_base = 3 + d9[2] % 8, d9[3], Y & 0xFFFFFF
+    y_base = Y & 0xFFFFFF
     out = bytearray(32768)
     for y in range(32):
         for z in range(32):
             for x in range(32):
                 if not solid[(x, y, z)]:
-                    continue
+                    continue                            # 0, empty
                 kc = K[(x >> 3) + 5 * ((z >> 3) + 5 * (y >> 3))]
-                ore = 11 * tri(ore8, 8, x, y, z) + 9 * tri(oreD, 4, x, y, z)
-                ot = tri(oreT, 8, x, y, z)
-                if kc >= RELIC_MIN_K and ore >= RELIC_THR:
+                vein = 11 * tri(vein8, 8, x, y, z) + 9 * tri(veinD, 4, x, y, z)
+                vt = tri(veinT, 8, x, y, z)
+                if kc >= RELIC_MIN_K and vein >= RELIC_THR:
                     g = RELIC
-                elif ore >= ORE_THR[kc]:
-                    eligible = [(oid, w) for oid, w, mk in ORES if kc >= mk]
-                    r = (ot * sum(w for _, w in eligible)) >> 8
-                    for oid, w in eligible:
+                elif vein >= VEIN_THR[kc]:
+                    u = 0 if 9 * vt - 512 <= 0 else min(255, (9 * vt - 512) // 5)
+                    eligible = [(vid, w) for vid, w, mk in VEINS if kc >= mk]
+                    r = (u * sum(w for _, w in eligible)) >> 8
+                    for vid, w in eligible:
                         if r < w:
-                            g = oid
+                            g = vid
                             break
                         r -= w
                 else:
-                    warp_off = ((tri128(warp, off, x, y, z) * 18) >> 8) + ((ot * 8) >> 8) + ((tri(caveD, 4, x, y, z) * 4) >> 8)
+                    f = fine[cell_index(x, y, z)]
+                    c4 = tri(caveD, 4, x, y, z)
+                    gx, gy, gz = (tri128(v, off, x, y, z) - 128 for v in (gx8, gy8, gz8))
+                    c, fd = c4 - 128, f - 128
+                    w9 = ((gx * 44 + c * 8 + fd * 5) >> 8, (gy * 44 - c * 8 + fd * 5) >> 8, (gz * 44 + c * 8 - fd * 5) >> 8)
+                    w11 = ((gz * 120 + c * 16 + fd * 5) >> 8, (gx * 120 + c * 8 + fd * 5) >> 8, (gy * 120 - c * 16 - fd * 5) >> 8)
+                    d9 = terrain_digest(9, (X + x + w9[0]) & AXIS_MASK, (Y + y + w9[1]) & AXIS_MASK, (Z + z + w9[2]) & AXIS_MASK, P)
+                    d11 = terrain_digest(11, (X + x + w11[0]) & AXIS_MASK, (Y + y + w11[1]) & AXIS_MASK, (Z + z + w11[2]) & AXIS_MASK, P)
+                    strata, top, speckle = FAMILIES[d11[1] % 6]
+                    T = 3 + d9[2] % 8
+                    warp_off = ((tri128(warp, off, x, y, z) * 18) >> 8) + ((vt * 8) >> 8) + ((c4 * 4) >> 8)
                     band = (y_base + y + warp_off) // T
-                    h = ((band ^ (band_off << 8)) * 0x9E3779B1) & 0xFFFFFFFF
+                    h = ((band ^ (d9[3] << 8)) * 0x9E3779B1) & 0xFFFFFFFF
                     g = strata[(h >> 16) % len(strata)]
-                    if fine[cell_index(x, y, z)] < 6:
+                    if f < 6:
                         g = speckle
                     if not solid[(x, y + 1, z)]:
                         g = top
@@ -466,7 +524,7 @@ def generate_chunk(X, Y, Z, P):
 
 ### 3.12 Cost (non-normative)
 
-The ground of one chunk needs 125 terrain digests at the 8 lattice (each with its `K`, whose 2^7, 2^9 and 2^11 digests are shared by nearly every corner), 8 at the 128 lattice, two Cantor roots of height 5 and two ChaCha20 streams of 32 KB. The benchmark's prototype of the same construction ran in 3.7 ms a chunk in Node and 3.9 ms in a browser worker, about 16 ms on a phone, once `xyz_to_coord` was table driven instead of a loop of 255 bigint steps. `blocks-reference.mjs`, written for clarity with the bigint loop, takes about 25 ms. A reader caches grounds by chunk and computes them in a worker.
+The ground of one chunk needs 125 terrain digests at the 8 lattice (each with its `K`, whose 2^7, 2^9 and 2^11 digests are shared by nearly every corner), 8 at the 128 lattice, at most 8 strata digests of each of 2^9 and 2^11 for the soft borders (a warp of under 32 and 70 cells crosses at most one border per axis), two Cantor roots of height 5 and two ChaCha20 streams of 32 KB. The benchmark's prototype of the same construction ran in 3.7 ms a chunk in Node and 3.9 ms in a browser worker, about 16 ms on a phone, once `xyz_to_coord` was table driven instead of a loop of 255 bigint steps. `blocks-reference.mjs`, written for clarity with the bigint loop and a digest lookup per cell, takes about 85 ms; the work it repeats is caching, not arithmetic. A reader caches grounds by chunk and computes them in a worker.
 
 ## 4. Builder keys (normative)
 
@@ -788,20 +846,20 @@ The canonical relay records first-seen heights as §7.4 says.
 
 | Section | What it holds |
 |---|---|
-| `constants` | the domain strings, `W8` and samples of `W128`, the threshold, family and ore tables, `REACH` |
+| `constants` | the domain strings, `W8` and samples of `W128`, the threshold, family and vein tables, `REACH` |
 | `chacha20_check` | the keystream head for the first chunk's seed (zero nonce, counter 0) |
-| `chunks` | six chunks: `origin` (0, 0, 0) in dataspace; `origin-twin`, the same in ideaspace (one lookup id, two seeds, two grounds); `home`, the chunk of a spawn coordinate; `rich`, with cubes of K 14 and emerald and diamond ore; `relic`, with a cube of K 15 and relic crystal; `top-edge`, the last chunk on every axis, whose lattice and chunk above wrap. For each: region integer, lookup id, survey seed, the heads of its stream and of the stream above, its family, band thickness and offset, its 64 cube K values (in the order `i + 4 (k + 4 j)`), the SHA-256 of its 32,768 ground bytes, the count of every id, and 16 sample cells (plus one of every rare id present) with every intermediate value of §3.7 and §3.9. The `origin` chunk also carries its whole ground as a runs array of global ids |
+| `chunks` | six chunks: `origin` (0, 0, 0) in dataspace; `origin-twin`, the same in ideaspace (one lookup id, two seeds, two grounds); `home`, the chunk of a spawn coordinate; `rich`, with cubes of K 14 holding Glowcore and Gibsonite; `relic`, with cubes of K 14 holding Glowcore, Gibsonite and Relic shard; `top-edge`, the last chunk on every axis, whose lattice and chunk above wrap. For each: region integer, lookup id, survey seed, the heads of its stream and of the stream above, for information only, the family, band thickness and band offset (`d9[3]`) of the chunk's own unwarped 2^9 and 2^11 cells (each cell's own come from its warped digests, §3.9), its 64 cube K values (in the order `i + 4 (k + 4 j)`), the SHA-256 of its ground as 32,768 bytes, one global id per byte (every id revision 1 generates is below 256), the count of every id, and 16 sample cells (plus one of every rare id present) with every intermediate value of §3.7 and §3.9, including the soft border warps `w9` and `w11` and the family the cell's strata digests name. The `origin` chunk also carries its whole ground as a runs array of global ids |
 | `settles` | three settles with their claims, claims digests, ids and work: the two of the worked layer (one mined to 13 bits) and one that claims nothing |
 | `runs` | runs arrays a reader MUST accept, with their expansions, and five it MUST reject |
-| `layer` | a worked layer in the origin chunk: a shaft dug down one column, a marble beam, one beam cell changed to gibsonite at a later settle (its `t0` 0 and its `t1` 1), and a cell set to extension id 300; its plaintext, its 35 placements with their values, ground values and settles, and its tags. Also the plaintext of a layer that only surveys |
+| `layer` | a worked layer in the origin chunk: a shaft dug down one column, a Rustband beam, one beam cell changed to Gibsonite at a later settle (its `t0` 0 and its `t1` 1), and a cell set to extension id 300; its plaintext, its 35 placements with their values, ground values and settles, and its tags. Also the plaintext of a layer that only surveys |
 | `reach` | six coordinates against a chunk, at distances 0, 16 and 17, and one in the other plane |
 | `cell_rule` | nine cells resolved by §7.3: the first placer owns, a late publisher loses, a listed builder changes a cell later, an unlisted one does not, work and then pubkey break ties, an unwitnessed placement comes last, and two home chunk cases |
 
 Some single values, for a quick check:
 
-- `origin`, (0, 0, 0) in plane 0: survey seed `d7b3e3627fdb33b93e75cece7f38da5b2bbee55fd8607fbc202307fd36ef8489`, lookup id `3c5d8c498f57d6d61527c53b824efe9edd768c2efd4d05acad6ea2775727c649`, family volcanic, band thickness 5, 9,592 empty cells, ground SHA-256 `3e425d3c7d909192812f1460706191c2f64ccb2f3b7bbefe0f3f0760ccd1e1be`. Cell (31, 0, 0) is blackstone (10): `D` 1659 against `thr` 1196, `kS` 160.
-- `origin-twin`, (0, 0, 0) in plane 1: the same lookup id, survey seed `ec182af4594517efa3bd2ad5ae315db14f9e53da557a65c91a8c61d5667248ab`, family crystal, ground SHA-256 `da1c0621ddd62a55e353c8194888078187aa266adfa4de77149cadd99273a010`.
-- `relic`: cell (8, 0, 8) is relic crystal (192); ground SHA-256 `c3d7f0b5d12d04e2013926ef5d8bac4de04e3339fc37f13a06af206b70723cfb`.
+- `origin`, (0, 0, 0) in plane 0: survey seed `d7b3e3627fdb33b93e75cece7f38da5b2bbee55fd8607fbc202307fd36ef8489`, lookup id `3c5d8c498f57d6d61527c53b824efe9edd768c2efd4d05acad6ea2775727c649`, 9,592 empty cells, ground SHA-256 `9a9b44e8224e10b8fd3f8e91c870dd46bc5d760698a8c1be530321b86643bb13`. The chunk sits at a corner of a 2^11 cell, so its soft borders read digests across the wrap at 0: cell (31, 0, 0) is Frostshale (6), with `D` 1659 against `thr` 1196, `kS` 160, warps `w9` (13, 9, −16) and `w11` (−49, 42, 32), and the crystal family.
+- `origin-twin`, (0, 0, 0) in plane 1: the same lookup id, survey seed `ec182af4594517efa3bd2ad5ae315db14f9e53da557a65c91a8c61d5667248ab`, ground SHA-256 `94c028d6eb6c92ca154e201719fcfa74676119f35ead235d991609d517a793cf`.
+- `relic`: cell (0, 0, 0) is Relic shard (192), in a cube of K 13 with `vein` 4549; ground SHA-256 `31d11f5251ca7cc3b70ad29f58ebea9f618f9185de6eac8bded14c0a7f8304d2`.
 
 ## 10. Security considerations
 
@@ -825,7 +883,7 @@ Some single values, for a quick check:
 
 - **The live room.** Builders near one another see each other's changes within a fraction of a second, before they settle: an ephemeral event sealed to the h12 room key, as chat is (DECK-0005), signed by a session key that the builder key authorizes. It needs its own kind in the ephemeral range and its own rules for rate and authorization, and it changes nothing a layer says. Settled layers are the truth, and the live room is a preview of them. A later revision of this DECK, or a DECK of its own.
 - **The survival game.** What a block is worth, what mining yields, tools, recipes, an inventory that strangers can check ("placed is at most mined plus received"), and scarcity across players are rules of play. They belong to a game under DECK-0002, which names this DECK as its world and adds its rules in its fold (arkinox's ruling D15, 2026-11-24: a Blocks DECK for building, plus an optional survival game on top).
-- **The voxel field for imports.** The importer (ONOSENDAI's `/import`, "Import a build") writes builds exported from Minecraft as SNO meshes in sealed pieces, which needs no spec change. A voxel field, an optional DECK-0003 field that carries blocks as cells inside an object, is a later DECK-0003 revision, and with it a build could become blocks in this DECK's sense.
+- **The voxel field for imports.** The importer (ONOSENDAI's `/import`, "Import a build") writes builds exported from other block-building tools as SNO meshes in sealed pieces, which needs no spec change. A voxel field, an optional DECK-0003 field that carries blocks as cells inside an object, is a later DECK-0003 revision, and with it a build could become blocks in this DECK's sense.
 - **Wall seams and Bitcoin veins.** The protocol's walls as seams of special material, and veins that ripen with each Bitcoin block, are the next layers of the ground after terrain K (decision D9). Each is a revision of §3.
 
 ## 12. Open questions (non-normative)
@@ -839,11 +897,13 @@ Decisions marked delegated were made by Claude on arkinox's delegation of 2026-1
 5. **Settles carried across builder keys** (§5.3): the settle id binds the author, not the key, so another of the author's keys can rewrite a retired key's work without losing its place. Delegated.
 6. **Two times per cell** (`t0` and `t1`): ownership by the first placement, changes among the owner and builders by the latest. Delegated, to make "the first placer owns the cell; only they and builders they list can change it" work when the owner changes their own cell later.
 7. **The reach reference in public** (§5.1, §10). It lets relays check reach without the key, and hiding it inside the seal would not make layers private (§10). Delegated.
-8. **The ground's tables** (§3.8, §3.9) are placeholders tuned to the benchmark's look. Recommendation: tune them after people walk the ground in TERRAIN mode, as revision 2.
-9. **Names of blocks** (§2.3) are ours and provisional.
+8. **The ground's tables** (§3.8, §3.9) follow the TERRAIN previews (`craft-design/previews/terrain-viewer.html`), with its soft strata borders made integer. Recommendation: tune them after people walk the ground in TERRAIN mode, as revision 2.
+9. **Names of blocks** (§2.3) are invented for Cyberspace and provisional (question 16).
 10. **The kind number** `33336`. Recommendation: keep it, beside the other addressable cyberspace kinds.
 11. **Claims in every settle, checked by the witness** (§5.3, §7.4), added after review to stop a writer from pointing new placements at an old witnessed settle or claiming cells in advance. They cost a runs array per plane per settle, a few dozen bytes for clustered building, and they make the witness decrypt and check each layer it records. Delegated.
 14. **Merging without losing time** (§5.3). A merged settle could name the settles it replaces and keep the latest of their witness heights, which the witness can check. Recommendation: add it if long builds hit the cap of 32 settles in practice.
+15. **The chunk skin** (§3.9): the chunk skin on faces bordering uninitialized chunks is drawn-only, not stored. The coordinator's lean, and this draft's text: drawn-only, as the TERRAIN previews draw it, so that surveying a neighbour changes no stored cell and no placement. The other choice, storing it as ground, would make a chunk's ground depend on whether its neighbours are surveyed, which no two readers could agree on.
+16. **The block set** (§2.3) is the TERRAIN previews' set of invented names: eight rocks, four veins and one special. Revision 1 needs no more variety than that; a later revision adds blocks with new invented names, never names borrowed from another game.
 12. **Surveys over someone else's build** (§10). Options: as written (any survey counts outside home chunks), or a survey counts only for cells no placement encloses. Recommendation: as written for the first release, with mutes, and revisit when people build in the same places.
 13. **Which actions can be reach events** (§6.2): spawn, hop, sidestep, hyperspace actions and exit-virtual, never virtual or skipped actions. Delegated, after review.
 
@@ -852,5 +912,6 @@ Decisions marked delegated were made by Claude on arkinox's delegation of 2026-1
 - `blocks-reference.mjs` (this directory): the ground, runs, layer planes, settles, reach and the Cell Rule, in JavaScript with no dependencies beyond `node:crypto`.
 - The Python listing of §3.11, which reproduces `blocks-vectors.json` independently of the JavaScript.
 - An implementation written by an independent reviewer from the prose and tables of §3.1 to §3.10 alone, without the listing or the JavaScript, which reproduced every ground and every intermediate value in the vectors on its first run (2026-11-24).
+- The TERRAIN previews (2026-11-24, not published): a viewer of the same construction in floating point, the source of the block set, the families, the vein table, the soft borders and the drawn-only skin.
 - ONOSENDAI's TERRAIN mode (in progress on 2026-11-24): single player, survey, mine and place, inventory and changes kept on the device; it does not publish layers yet.
 - The benchmark of 2026-11-24 (not published): generation methods, storage encodings and event growth per chunk, which chose ChaCha20, the 8 and 4 lattices from terrain digests, palette runs without compression, and the smaller of a diff and a whole chunk.
