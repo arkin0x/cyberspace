@@ -734,6 +734,7 @@ Every named builder key stays valid until it is retired (arkinox's ruling, 2026-
 - **Which to use (non-normative):** retirement from here on is for a key nobody else holds, a device given away or wiped. It does not stop a thief: a thief can name a reach event from before the retirement, and only the witness check of §4.4 rule 4 catches that. A key that may have been copied is retired with `all`.
 - A third element other than `all`, or any further elements, is ignored: the tag is read as the two element form. A malformed key value names nothing.
 - A retirement in the two element form counts only on the chain that carries it, as naming does (§4.4). A retirement with `all` counts from any authentic movement action of the author, on any chain, including a chain that a respawn has ended and including a spawn, because a chain that has ended cannot be extended to retire the keys it named.
+- **Finding retirements (normative for writers):** relays index only single-letter tags (NIP-01), so beside every `builder-retire` tag a writer MUST add `["R", "<the same builder pubkey>"]`. A reader then finds every retirement of a key `k` by an author `A`, on any chain, with one filter, `{"kinds": [3333], "authors": [A], "#R": [k]}`, and reads the `builder-retire` tags of what comes back. The `R` tag by itself retires nothing, and an `R` tag without a matching `builder-retire` tag means nothing. Like the two builder tags, the chain rules never read it (§4.5). The canonical relay SHOULD also index `builder-retire`, for retirements written before this rule.
 
 ### 4.4 When a key is valid for a layer
 
@@ -752,7 +753,7 @@ A reader that cannot walk the whole ancestry (an action it cannot fetch) cannot 
 
 ### 4.5 The chain rules never read these tags (normative)
 
-`builder` and `builder-retire` are not tags the chain rules read (`CYBERSPACE_V2.md` §8.8). They never affect whether an event or a chain is valid, where an identity stands, how a chain is resolved (§8.7.3), how a fork is found, or what any proof commits to. A verifier MUST treat an action that carries them exactly as the same action without them, and MUST NOT reject an action for a malformed one. This is the rule of §8.13 for the no-broadcast tag, applied to these two.
+`builder`, `builder-retire` and `R` are not tags the chain rules read (`CYBERSPACE_V2.md` §8.8). They never affect whether an event or a chain is valid, where an identity stands, how a chain is resolved (§8.7.3), how a fork is found, or what any proof commits to. A verifier MUST treat an action that carries them exactly as the same action without them, and MUST NOT reject an action for a malformed one. This is the rule of §8.13 for the no-broadcast tag, applied to these three.
 
 **The hop math is unchanged (non-normative):** a hop proof commits to the two coordinates, the terrain and the previous event's id (`CYBERSPACE_V2.md` §5.3 to §5.10), never to the event's own tags. Adding a builder tag changes only the event's own id, as any tag would, and the next action reads that id as its previous id exactly as it always does.
 
@@ -865,7 +866,15 @@ A **plane object**:
 
 A writer publishes a new version of its layer to change it, carrying everything it does not change, including the plane it is not writing in, exactly as a bag carries the other plane (`CYBERSPACE_V2.md` §7.6, Planes). A writer removes its blocks from a chunk by publishing a version whose placements are gone, which is a layer that only surveys, or a `diff` plane with `survey` false and every cell `null`. It MUST NOT request the deletion of a layer (NIP-09, `kind 5`), and relays refuse one (§8.1).
 
-**When to publish (non-normative):** ONOSENDAI keeps changes in a log on the device and settles a chunk when its user leaves it by more than 4 blocks, after 15 seconds without a change alone or 3 seconds with someone near, at 200 waiting changes alone or 50 with someone near, and when its user closes TERRAIN mode, switches identity or goes LOCAL. A building session of an hour in two chunks is a few dozen layer versions, each signed by the builder key with no prompt.
+**A new builder key at a chunk (normative for writers).** When a device writes with a builder key at a chunk where another builder key of the same author already has a layer (the device replaced a lost key, or the author moved to a new device), the writer:
+
+1. MUST hold publishing for that chunk until it has read the newest layer of each of the author's other valid keys there (§4.4), so that it does not publish without knowing what they hold;
+2. MUST carry into its own layer every plane of those layers that it is not changing, its twin plane included, with their values, `t0`, `t1` and the settles they name, unchanged, claims included (§5.3, Carrying settles), so that a cell keeps its place in the order of §7.2;
+3. SHOULD then publish, with each old key it still holds, an emptied version of that key's layer (a layer that only surveys), so that a cell the new layer released does not stand on in the old one. A writer that no longer holds an old key leaves its layer to the author, who retires that key (§4.3); until then its cells stand, under the same author.
+
+A writer that cannot read an old key's layer, for example because no relay it uses has it, keeps holding and SHOULD tell its user why, rather than publish a layer that would compete with the old one.
+
+**When to publish (non-normative):** ONOSENDAI keeps changes in a log on the device and settles a chunk when its user leaves it by more than 4 blocks, after 15 seconds without a change alone or 3 seconds with someone near, at 200 waiting changes alone or 50 with someone near, and when its user closes TERRAIN mode or switches identity. LOCAL never publishes: while its user is LOCAL, settles stay on the device, and they are published on the next switch to LIVE. A building session of an hour in two chunks is a few dozen layer versions, each signed by the builder key with no prompt.
 
 ## 6. Validity for readers (normative)
 
@@ -890,6 +899,7 @@ then, for each remaining plane object:
 A settle's block hash is checked against the reader's own Bitcoin headers, after check 6:
 
 - if the reader holds the header at the settle's height and that header is at least 6 below the reader's tip, the hash MUST equal that block's hash, or the layer is dropped (writers commit 6 deep, §5.3, so an honest layer fails this only after a reorganization deeper than that);
+- if the settle's height is 6 or more below the reader's tip but the reader cannot get the header at that height, the layer is **pending** too, until it can;
 - if the settle's height is within 6 of the reader's tip, or above it, the layer is **pending**: the reader does not count it (§7.1) until the height is 6 deep in its chain, and then applies the first case. A settle at a height that never arrives, such as `2^32 − 1`, therefore never counts.
 
 A layer that fails any of checks 1 to 9, other than the part of check 5 that drops one plane, is dropped alone: one malformed or forged layer says nothing about the others in the chunk, as a bag drops one corrupt item (`CYBERSPACE_V2.md` §7.6). A reader SHOULD say that a layer was found and could not be read, rather than draw a guess.
@@ -901,7 +911,7 @@ A layer's **reach event** is the event named by one of its `e` tags marked `reac
 - **A real position.** It is a spawn, a hop, a sidestep, an action of a mandatory DECK that changes position (today the hyperspace actions of DECK-0001), or an `exit-virtual`. It is not an `enter-virtual`, not an action inside a virtual bracket, and not a skipped action (`CYBERSPACE_V2.md` §8.9, §8.11). The chain rules never check the `C` of a virtual or skipped action against any work (§8.11.2), so such a `C` can name any place in cyberspace.
 - **Valid.** The line of its ancestry (§4.4), read from its spawn forward as if the reach event were the head of the active chain, is valid under the chain rules (`CYBERSPACE_V2.md` §8.7.3, §8.12) up to and including the reach event. Its position is then the one the chain rules give the identity at that event, which for these actions is its `C`. Reading the line as if the reach event were the head ignores forks after it and respawns, on purpose: an action that was valid where it stood proved its position with work, and a later fork or respawn does not undo that.
 
-A reader that does not verify chains cannot establish validity and MUST NOT count a layer as valid on reach alone; it MAY show it as unverified to its own user.
+A reader that does not verify chains MAY establish validity through the canonical relay instead: it treats a reach event as valid when it fetched the reach event and its whole ancestry from `wss://relay.onosendai.tech`, which checks the proofs of the movement actions it accepts and refuses invalid ones. This is trust in that relay, of the same kind as the witness (§7.4), and the reader SHOULD verify for itself when it can. A reader that neither verifies chains nor relies on the canonical relay cannot establish validity and MUST NOT count a layer as valid on reach alone; it MAY show it as unverified to its own user.
 
 **Constant:** `REACH = 16` gibsons.
 
@@ -951,7 +961,7 @@ The **later** of two placements is the one that rule 1 or rule 2, read the other
 For each cell of a chunk's plane:
 
 1. **The placements.** Gather the cell's placements from every counted layer's plane.
-2. **The owner.** If the chunk is the **home chunk** of an author `H`, the chunk that contains `H`'s spawn coordinate (the pubkey read as a coordinate, `CYBERSPACE_V2.md` §3.1), in the plane its lowest bit names, the owner of every cell in it is `H`. Otherwise the owner of the cell is the author of its earliest placement, comparing first settles (§7.2). The first person to place in a cell owns it.
+2. **The owner.** If the chunk is the **home chunk** of an author `H`, the chunk that contains `H`'s spawn coordinate (the pubkey read as a coordinate, `CYBERSPACE_V2.md` §3.1), in the plane its lowest bit names, the owner of every cell in it is `H`. The home chunk rule applies only when `H` is the author of a counted layer in the chunk (a layer that only surveys is enough): a reader checks, for each author whose layer it counts there, whether the chunk holds that author's spawn coordinate. A pubkey cannot be computed from a chunk, so a reader cannot know whose home a chunk is until its owner builds there, and every reader holding the same layers then agrees. Otherwise the owner of the cell is the author of its earliest placement, comparing first settles (§7.2). The first person to place in a cell owns it.
 3. **Who may change it.** Only the owner's placements and those of authors that the owner lists in `builders` count. The owner's list in a chunk is the union of the `builders` of every counted layer of the owner's there, leaving out every layer signed by a builder key that any authentic movement action of the owner's retires, in either form and on any chain. This is deliberately stricter than §4.3, where a retirement from here on counts only on its own chain: a retired key, which may be a stolen one, cannot add builders anywhere.
 4. **The value.** The cell takes the value of the latest of the placements that count, comparing last settles (§7.2).
 5. **Otherwise** the cell shows its base (§7.5).
@@ -960,7 +970,7 @@ Placements that rule 3 excludes are not drawn for anyone but their author, and a
 
 Rule 2 makes a cell that someone mined first theirs too: a hole is a placement of 0. A cell whose last placement returns it to its base value stops being a placement in that layer, and the author's claim on it ends with it.
 
-**The home chunk (non-normative):** every identity's spawn coordinate is its pubkey (§3.1), and two identities share an h5 chunk with a chance of about one in 2^240 per pair, so nobody can grind a key into someone else's home chunk. The home chunk is single occupancy that needs no witness and no race. It is also public: anyone who knows a pubkey can compute its home chunk and visit. It is the front porch.
+**The home chunk (non-normative):** every identity's spawn coordinate is its pubkey (§3.1), and two identities share an h5 chunk with a chance of about one in 2^240 per pair, so nobody can grind a key into someone else's home chunk. The home chunk is single occupancy that needs no witness and no race. It is also public: anyone who knows a pubkey can compute its home chunk and visit. It is the front porch. Its protection starts when its owner first publishes a layer there; before that it is an ordinary chunk, and placements made in it before then are excluded once the owner's layer appears.
 
 ### 7.4 The witness
 
@@ -974,7 +984,24 @@ For a layer that passes, it records the event id, and for each settle id not yet
 
 A reader counts a settle as witnessed only when the witness has recorded **the layer's current version** (its event id) and the settle's `W`. A version that the witness refused, or never saw, has only unwitnessed settles, whatever earlier versions carried. So a writer that breaks the rule of Claiming, or publishes only elsewhere, loses its place.
 
-How a reader asks the witness for `W` is not fixed by this draft (§12). A reader that cannot learn `W` treats every settle as unwitnessed: placements are then ordered by committed block alone, which is honest for cells nobody contests and open to backdating for cells somebody does.
+**Asking the witness (normative for the witness, proposed).** The witness answers an HTTP request, with no authentication:
+
+```
+GET https://relay.onosendai.tech/witness/v1?ids=<event id>,<event id>,...
+```
+
+with 1 to 100 event ids, 64 lowercase hex each, of `kind 33339` layers or of movement actions. It answers `200` with a JSON object `{"body": "<string>", "sig": "<hex>"}`. `body` is a JSON text, and `sig` is a BIP-340 Schnorr signature over `sha256(UTF-8 bytes of body)` by the **witness key**, the `pubkey` of the canonical relay's NIP-11 document. A reader checks the signature over the string exactly as received, before it parses it, so no canonical form of JSON is needed. Parsed, `body` is:
+
+| Field | Value |
+|---|---|
+| `v` | `1` |
+| `witness` | the witness key, 64 lowercase hex |
+| `tip` | the height of the best chain's tip as the witness knows it now |
+| `results` | one object per requested id, in the order requested: `{"id": "<hex>", "height": <h>, "settles": [["<settle id>", <W>], ...]}` |
+
+`height` is the tip height when the witness recorded the event (§7.4 above), or `null` when it has not recorded it: never seen, refused, or not yet checked. For a recorded layer, `settles` lists each of its settle ids with its `W` for that author and chunk; for anything else it is empty. A recorded height or `W` never changes, so a reader MAY cache any non-null answer forever, and SHOULD ask again later about a `null`. A reader that pins the witness key SHOULD refuse an answer signed by any other key.
+
+A reader that cannot reach the witness, or gets an answer it cannot verify, treats every settle as unwitnessed: placements are then ordered by committed block alone, which is honest for cells nobody contests and open to backdating for cells somebody does, and rule 4 of §4.4 cannot run. Signed answers are a step toward receipts (below): a reader that keeps them can show what the witness said, but they do not yet form a chain that shows a later lie.
 
 **Why a witness (non-normative):** a Bitcoin block hash proves that a settle came after the block, never that it did not come much later. Every past block hash is public, so a stranger can commit today to a block of last week, and an author can build in secret and publish after others have built, taking their cells. The witness's first-seen height closes both: a settle counts from the later of its block and the moment the witness saw it, so committing to an old block buys nothing, and holding a layer back costs the holder their place.
 
@@ -1063,7 +1090,7 @@ Some single values, for a quick check:
 Decisions marked delegated were made by Claude on arkinox's delegation of 2026-11-24 and are his to change.
 
 1. **Reach.** 16 gibsons, Chebyshev, from the chunk's box (§6.2). TERRAIN mode's cursor reaches about 5 blocks. Is 16 right, or should it be 8? Recommendation: 16, so that walking around a build without signing never strands it.
-2. **How readers ask the witness** for a settle's `W` (§7.4). Recommendation: a NIP-11 extension or a small HTTP endpoint on relay.onosendai.tech that answers settle ids with heights, signed by the relay's key, as the first step toward receipts.
+2. **How readers ask the witness** (§7.4). Proposed: `GET /witness/v1?ids=...` on relay.onosendai.tech, answers signed by the relay's NIP-11 key, with every settle unwitnessed when the witness cannot be reached. The relay does not serve it yet; building it is owed, and receipts chained into an auditable log remain future work.
 3. **Retirement with `all` across chains** (§4.3): the ruling says a retirement is in a later event of the same chain. Allowing `all` from any chain of the author, including after a respawn, is delegated; without it, a key named on a chain that a respawn has ended could never be retired.
 4. **Rule 4 of §4.4,** which uses the witness to stop a retired key's layers that name old reach events. Delegated.
 5. **Settles carried across builder keys** (§5.3): the settle id binds the author, not the key, so another of the author's keys can rewrite a retired key's work without losing its place. Delegated.
@@ -1077,6 +1104,7 @@ Decisions marked delegated were made by Claude on arkinox's delegation of 2026-1
 15. **The chunk skin.** Revision 2 draws no skin on faces bordering unsurveyed chunks. The drawn-only skin of the previews was removed in TERRAIN #916, so this DECK says nothing about one: a client draws a chunk's cells as they are.
 16. **The block set** (§2.3) is TERRAIN's: 24 blocks with invented names. A later revision adds blocks with new invented names, never names borrowed from another game.
 17. **The Assay** (pending the owner's decision, which must come before this DECK leaves Draft). The materials ideation (`craft-design/materials/`) suggests drawing the rare band at survey time from a Bitcoin block mined after the survey is committed, instead of from the chunk alone. Today anyone can compute every chunk's rare blocks offline, map them, and walk straight to them; an Assay would make a rare find unknowable until someone surveys the chunk and a later block is mined. It would make the ground depend on a block hash, so the survey would have to name its block in the layer, and two surveys of one chunk at different blocks would disagree about the rare band, which the Cell Rule would then have to settle. It changes the ground, so it is a revision, and it should be decided before revision 2 is fixed.
+18. **The `R` tag** (§4.3), a single-letter companion of `builder-retire` so that relays index retirements and readers find `all` retirements on any chain with one filter. Delegated, after the publishing implementation found it could not otherwise find them.
 12. **Surveys over someone else's build** (§10). Options: as written (any survey counts outside home chunks), or a survey counts only for cells no placement encloses. Recommendation: as written for the first release, with mutes, and revisit when people build in the same places.
 13. **Which actions can be reach events** (§6.2): spawn, hop, sidestep, hyperspace actions and exit-virtual, never virtual or skipped actions. Delegated, after review.
 
