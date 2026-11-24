@@ -540,7 +540,7 @@ A reader that cannot walk the whole ancestry (an action it cannot fetch) cannot 
 | `["d", "<lookup id>"]` | exactly one. The chunk's lookup id (`CYBERSPACE_V2.md` §7.2), 64 lowercase hex |
 | `["p", "<author pubkey>"]` | exactly one. The author, 64 lowercase hex |
 | `["e", "<event id>", "<relay hint>", "reach"]` | one or two, at most one per plane. The reach event of §6.2: a movement action of the author's near this chunk. The relay hint MAY be empty |
-| `["settle", "<settle id>"]` | one per entry of the plaintext's `settles`, in the same order, at most 8 (§5.3) |
+| `["settle", "<settle id>"]` | one per entry of the plaintext's `settles`, in the same order, at most 32 (§5.3) |
 | `["encrypted", "aes-256-gcm", "<payload base64>"]` | exactly one. The plaintext of §5.5, sealed with the chunk's region key under the cipher of `CYBERSPACE_V2.md` §7.6: AES-256-GCM, a fresh 12-byte nonce for every encryption, a 16-byte tag, `nonce || ciphertext || tag`, standard base64 with padding |
 | `["version", "1"]` | exactly one. The rules of this section. A reader MUST ignore a layer whose version it does not know |
 | `["alt", "<text>"]` | OPTIONAL. A NIP-31 description, following the rule for `content` |
@@ -572,11 +572,11 @@ with `SETTLE_DOMAIN = b"CYBERSPACE_BLOCKS_SETTLE_V1"` (27 ASCII bytes), `author`
 
 **Committing (normative for writers):** a writer that settles takes a block at least 6 below the tip of the best chain it knows, and writes its height and hash, so that a reorganization of the usual depth does not change it. A block hash proves only that the settle was made after that block was mined.
 
-**Claiming (normative for writers):** when a settle first appears in a layer, its claims MUST be exactly the cells, in each plane, that are placements of that version whose `t0` names it. The claims are bound into the settle id, and the witness records the settle id when it first sees it (§7.4), so a settle can never claim later a cell it did not claim when the witness saw it. A reader cannot check the equality for a version it never saw; it checks that every placement's `t0` settle claims its cell (§6.1, check 8).
+**Claiming (normative for writers):** when a settle first appears in a layer, its claims MUST be exactly the cells, in each plane, that are placements of that version whose `t0` names it. In every later version, a placement's `t0` MAY name a settle only if that cell was a placement with that same `t0` in the previous version: a cell the author released (returned to its base) and placed in again takes a new settle. The claims are bound into the settle id, so a settle can never claim later a cell it did not claim when it first appeared. A reader checks only that every placement's `t0` settle claims its cell (§6.1, check 8); the witness checks the rest before it records anything (§7.4).
 
-**Carrying settles (normative for writers):** a writer that publishes a new version of a layer MUST carry every settle that a cell of the new version still names, unchanged, claims included, so that the cell keeps its place in the order of §7.2. A carried settle may claim cells that are no longer placements (the author mined them back to their base); that is harmless, because a claim counts only for a placement whose `t0` names the settle. The settle id binds the author and the chunk, not the builder key, so another builder key of the same author MAY carry a settle too, for example to write again what a retired key had written (§4.3).
+**Carrying settles (normative for writers):** a writer that publishes a new version of a layer MUST carry every settle that a cell of the new version still names, unchanged, claims included, so that the cell keeps its place in the order of §7.2. A carried settle keeps claiming cells that are no longer placements; those claims are dead, and the rule of Claiming above keeps them from being revived. The settle id binds the author and the chunk, not the builder key, so another builder key of the same author MAY carry a settle too, for example to write again what a retired key had written (§4.3).
 
-**Merging settles:** a layer holds at most 8 settles. A writer that would need more MUST merge settles. Because a settle's claims are bound into its id, a merge cannot add cells to a settle that exists: it makes a **new** settle, committed to a current block, claiming every cell it takes over, and moves those cells' `t0` and `t1` to it. Moving a cell to a newer settle only weakens its claim. A writer MUST NOT move a cell's `t0` to any settle other than a new one made this way, and never to an earlier one.
+**Merging settles:** a layer holds at most 32 settles. A writer that would need more MUST merge settles. Because a settle's claims are bound into its id, a merge cannot add cells to a settle that exists: it makes a **new** settle, committed to a current block, claiming every cell it takes over, and moves those cells' `t0` and `t1` to it. Moving a cell to a newer settle only weakens its claim, and any placement someone else made in the meantime then comes first, so a writer SHOULD merge its newest settles, whose cells lose the least, and keep its oldest. A writer MUST NOT move a cell's `t0` to any settle other than a new one made this way, and never to an earlier one. (A merged settle that keeps the latest witness height of the settles it replaces is open, §12.)
 
 ### 5.4 Runs
 
@@ -598,7 +598,7 @@ The plaintext is a JSON object, UTF-8, with exactly these fields; a reader ignor
 
 | Field | Value |
 |---|---|
-| `settles` | an array of 1 to 8 settles (§5.3) |
+| `settles` | an array of 1 to 32 settles (§5.3) |
 | `builders` | an array of 0 to 64 author pubkeys (64 lowercase hex) that this author lets change the cells it owns in this chunk (§7.3). The author's own pubkey in it is ignored |
 | `planes` | an array of 1 or 2 plane objects, at most one per plane |
 
@@ -628,8 +628,8 @@ A **plane object**:
 ### 5.6 Limits (normative)
 
 - A writer MUST NOT sign a layer whose serialized event is longer than 240,000 bytes. The serialized event is the event object as compact JSON in UTF-8, with exactly the keys `id`, `pubkey`, `created_at`, `kind`, `tags`, `content` and `sig`, in that order, no whitespace, and strings escaped as NIP-01 escapes them for the id. This is the bag guard of `CYBERSPACE_V2.md` §7.6 (Size). A reader MUST drop a longer one, so that every reader decides on the same layers.
-- One plane always fits: its worst case, every cell a distinct index into a palette of 256, is about 131,000 bytes of plaintext, about 176,000 sealed. Two planes at their worst do not. A writer that cannot fit a change MUST refuse it and tell its user, rather than drop anything already written.
-- `settles` at most 8, `builders` at most 64, `pal` at most 256, `planes` at most 2.
+- **What fits.** A plane of ordinary building fits with room to spare: the benchmark's house is 2.7 KB, a castle that replaces the ground 17.7 KB, a chunk with half its cells changed at random about 62 KB. The worst plane a writer can make does not fit: every cell a different index into a palette of 256 is about 131,000 bytes of `cells` alone, and `t0` and `t1` that change settle at every cell add as much again each. A writer keeps a plane small by settling in batches, so that neighbouring cells share settles, and by merging settles when it must (§5.3). A writer that cannot fit a change MUST refuse it and tell its user, rather than drop anything already written.
+- `settles` at most 32, `builders` at most 64, `pal` at most 256, `planes` at most 2.
 
 ### 5.7 Writing, replacing and removing
 
@@ -644,7 +644,7 @@ A writer publishes a new version of its layer to change it, carrying everything 
 A reader that holds a `kind 33336` event checks it in this order, and drops it if any of checks 1 to 9 fails:
 
 1. it is authentic: its `id` and `sig` are valid (`CYBERSPACE_V2.md` §8.2);
-2. its tags are as §5.1 requires: exactly one `d`, one `p`, one `encrypted` and one `version` of `1`, one or two `e` tags marked `reach`, and 1 to 8 `settle` tags;
+2. its tags are as §5.1 requires: exactly one `d`, one `p`, one `encrypted` and one `version` of `1`, one or two `e` tags marked `reach`, and 1 to 32 `settle` tags;
 3. it is no longer than 240,000 bytes (§5.6);
 4. it decrypts with the chunk's key (otherwise the reader simply cannot read it);
 5. its plaintext is the object of §5.5 with every field well formed and every runs array well formed (§5.4), except that a plane object that names a revision of the ground the reader does not implement (§3.10) is set aside here, unread, and dropped, while the layer's other plane goes on;
@@ -657,16 +657,19 @@ then, for each remaining plane object:
 
 10. some one of its reach events is all three of: in this plane, within reach of this chunk (§6.2), and one for which the builder key is valid (§4.4). A plane without such a reach event is dropped, and the layer's other plane stands.
 
-A settle's block hash is checked against the reader's own Bitcoin headers: a settle whose hash is not the hash of the block at its height on the reader's best chain, or whose height the reader holds no header for yet, is **unwitnessed** (§7.2) until the reader can confirm it. It does not make the layer invalid, so that a reorganization changes the order of a few cells rather than dropping whole layers.
+A settle's block hash is checked against the reader's own Bitcoin headers, after check 6:
 
-A layer that fails any of checks 1 to 9 is dropped alone: one malformed or forged layer says nothing about the others in the chunk, as a bag drops one corrupt item (`CYBERSPACE_V2.md` §7.6). A reader SHOULD say that a layer was found and could not be read, rather than draw a guess.
+- if the reader holds the header at the settle's height and that header is at least 6 below the reader's tip, the hash MUST equal that block's hash, or the layer is dropped (writers commit 6 deep, §5.3, so an honest layer fails this only after a reorganization deeper than that);
+- if the settle's height is within 6 of the reader's tip, or above it, the layer is **pending**: the reader does not count it (§7.1) until the height is 6 deep in its chain, and then applies the first case. A settle at a height that never arrives, such as `2^32 − 1`, therefore never counts.
+
+A layer that fails any of checks 1 to 9, other than the part of check 5 that drops one plane, is dropped alone: one malformed or forged layer says nothing about the others in the chunk, as a bag drops one corrupt item (`CYBERSPACE_V2.md` §7.6). A reader SHOULD say that a layer was found and could not be read, rather than draw a guess.
 
 ### 6.2 Reach
 
 A layer's **reach event** is the event named by one of its `e` tags marked `reach`. It MUST be an authentic `kind 3333` event whose `pubkey` is the layer's author (the `p` tag), and all of these MUST hold:
 
 - **A real position.** It is a spawn, a hop, a sidestep, an action of a mandatory DECK that changes position (today the hyperspace actions of DECK-0001), or an `exit-virtual`. It is not an `enter-virtual`, not an action inside a virtual bracket, and not a skipped action (`CYBERSPACE_V2.md` §8.9, §8.11). The chain rules never check the `C` of a virtual or skipped action against any work (§8.11.2), so such a `C` can name any place in cyberspace.
-- **Valid.** The line of its ancestry (§4.4), read from its spawn forward as if the reach event were the head of the active chain, is valid under the chain rules (`CYBERSPACE_V2.md` §8.7.3, §8.12) up to and including the reach event. Its position is then the one the chain rules give the identity at that event, which for these actions is its `C`.
+- **Valid.** The line of its ancestry (§4.4), read from its spawn forward as if the reach event were the head of the active chain, is valid under the chain rules (`CYBERSPACE_V2.md` §8.7.3, §8.12) up to and including the reach event. Its position is then the one the chain rules give the identity at that event, which for these actions is its `C`. Reading the line as if the reach event were the head ignores forks after it and respawns, on purpose: an action that was valid where it stood proved its position with work, and a later fork or respawn does not undo that.
 
 A reader that does not verify chains cannot establish validity and MUST NOT count a layer as valid on reach alone; it MAY show it as unverified to its own user.
 
@@ -689,14 +692,14 @@ A reader **counts** the valid layers of a chunk (§6), minus:
 - **Mutes:** every layer whose author is in the reader's mute list (`kind 10000`, a `p` entry) is removed before anything else is computed. The chunk then resolves as if that author had never built in it: cells the muted author owned are owned, for this reader, by whoever placed next.
 - **A cap:** a reader SHOULD count at most 64 authors in one chunk. When more are present, it SHOULD count, in this order, its own identity, the identities it follows (`kind 3`), the home chunk's owner (§7.3), and then the rest by their earliest settle in the order of §7.2.
 
-Mutes and the cap make what one reader draws differ from what another draws, and that is their purpose. Two conforming readers holding the same layers can also differ, until they converge, by what they know: which witness heights they could learn (§7.4), which Bitcoin headers they hold (§6.1), and which revisions of the ground they implement (§3.10). Each of these only moves toward agreement as a reader learns more.
+Mutes and the cap make what one reader draws differ from what another draws, and that is their purpose. Two conforming readers holding the same layers can also differ, until they converge, by what they know: which witness heights they could learn (§7.4), which Bitcoin headers they hold (§6.1), and which revisions of the ground they implement (§3.10). Readers that can reach the same witness, hold the same headers and implement the same revisions converge as they learn; a reader that distrusts the witness, or an old client that never learns a new revision, keeps its own view.
 
 ### 7.2 The order of placements
 
 Each placement of a counted layer has a **first** settle (from `t0`) and a **last** settle (from `t1`). A settle's place in time is decided by:
 
 - `h`, its committed block height (§5.3);
-- `W`, the **witness height**: the height of the best chain's tip, as the witness knew it, when the witness first saw a layer of this author at this chunk carrying this settle id (§7.4). A settle the witness has not seen, or whose block hash the reader cannot check yet, is **unwitnessed**;
+- `W`, the **witness height**: the height of the best chain's tip, as the witness knew it, when the witness first saw a layer of this author at this chunk carrying this settle id (§7.4). A settle the witness has not recorded for the layer's current version (§7.4) is **unwitnessed**;
 - its time `T = max(h, W)` when witnessed.
 
 An unwitnessed settle comes after every witnessed one, in both directions of the order. Among the owner and their builders (rule 4 of §7.3) that means a change published only to relays other than the witness wins over witnessed changes until the witness sees it. This is bounded: only people the owner trusts are affected.
@@ -719,7 +722,7 @@ For each cell of a chunk's plane:
 
 1. **The placements.** Gather the cell's placements from every counted layer's plane.
 2. **The owner.** If the chunk is the **home chunk** of an author `H`, the chunk that contains `H`'s spawn coordinate (the pubkey read as a coordinate, `CYBERSPACE_V2.md` §3.1), in the plane its lowest bit names, the owner of every cell in it is `H`. Otherwise the owner of the cell is the author of its earliest placement, comparing first settles (§7.2). The first person to place in a cell owns it.
-3. **Who may change it.** Only the owner's placements and those of authors that the owner lists in `builders` count. The owner's list in a chunk is the union of the `builders` of every counted layer of the owner's there, leaving out every layer signed by a builder key that any movement action of the owner's retires, in either form: a retired key, which may be a stolen one, cannot add builders.
+3. **Who may change it.** Only the owner's placements and those of authors that the owner lists in `builders` count. The owner's list in a chunk is the union of the `builders` of every counted layer of the owner's there, leaving out every layer signed by a builder key that any authentic movement action of the owner's retires, in either form and on any chain. This is deliberately stricter than §4.3, where a retirement from here on counts only on its own chain: a retired key, which may be a stolen one, cannot add builders anywhere.
 4. **The value.** The cell takes the value of the latest of the placements that count, comparing last settles (§7.2).
 5. **Otherwise** the cell shows its base (§7.5).
 
@@ -731,7 +734,15 @@ Rule 2 makes a cell that someone mined first theirs too: a hole is a placement o
 
 ### 7.4 The witness
 
-The **witness** is the canonical relay, `wss://relay.onosendai.tech` (`CYBERSPACE_V2.md` §7.6, Size). For every `kind 33336` event it accepts, it records, for each of the event's `settle` ids not yet recorded for that author and chunk, the height of the best chain's tip as it knows it at that moment. That height is the settle's `W`. It records `W` for the first acceptance and never changes it, even when a later version of the layer replaces the event that carried the settle, and even when that event is later found invalid. It records the same height for the event id of every `kind 33336` event it accepts, and for every movement action it accepts that carries `builder-retire`, for rule 4 of §4.4. It SHOULD keep the versions of layers that newer versions replace, so that what it recorded can be audited.
+The **witness** is the canonical relay, `wss://relay.onosendai.tech` (`CYBERSPACE_V2.md` §7.6, Size). It derives the chunk's key from the layer's reach event, as any reader can (§10), and checks each `kind 33336` event it accepts before it records anything for it:
+
+- the layer is valid (§6.1);
+- each settle that it has not recorded before for this author and chunk claims exactly the placements whose `t0` names it (§5.3, Claiming);
+- each settle it has recorded before is named by a placement's `t0` only for cells that were placements with that `t0` in the last version it recorded of a layer of this author's at this chunk that carries that settle, whichever builder key signed it.
+
+For a layer that passes, it records the event id, and for each settle id not yet recorded for that author and chunk, the height of the best chain's tip as it knows it at that moment. That height is the settle's `W`. It records `W` once and never changes it, even when a later version replaces the event that first carried the settle. It records the same height for every movement action it accepts that carries `builder-retire`, for rule 4 of §4.4. It SHOULD keep the versions of layers that newer versions replace, so that what it recorded can be audited.
+
+A reader counts a settle as witnessed only when the witness has recorded **the layer's current version** (its event id) and the settle's `W`. A version that the witness refused, or never saw, has only unwitnessed settles, whatever earlier versions carried. So a writer that breaks the rule of Claiming, or publishes only elsewhere, loses its place.
 
 How a reader asks the witness for `W` is not fixed by this draft (§12). A reader that cannot learn `W` treats every settle as unwitnessed: placements are then ordered by committed block alone, which is honest for cells nobody contests and open to backdating for cells somebody does.
 
@@ -798,9 +809,9 @@ Some single values, for a quick check:
 - **Stolen builder keys.** A device's key can be lost with the device, and a thief who holds it writes as the author. Retirement "from here on" stops new layers that name later reach events, and rule 4 of §4.4 stops, where the witness is used, forged layers that name old ones; without the witness it does not, so a key that may have been copied is retired with `all` (§4.3). A retired key cannot add builders (§7.3). Retirement with `all` voids everything the key wrote; the author's other keys can write it again and carry its settles, so cells keep their places (§5.3). A thief can also replace the honest layer at the key's address with an empty version, and the cells it held lose their owner until the author writes them again from another key.
 - **Reach bypass.** A layer must name a movement action of its author's within 16 gibsons of the chunk, in the same plane, whose position the chain rules prove: a spawn, a hop, a sidestep, a hyperspace action or an exit, valid on its line (§6.2). A virtual or skipped action, whose `C` nobody checks, is never a reach event. Faking presence therefore means making the hops that reach the place. Naming an old reach event is allowed; presence once is the proof, by design.
 - **Overwriting someone's cells.** A stranger's placement in a cell someone else placed first is not drawn for anyone else (§7.3, rule 3). Mining someone's build is a placement of 0 in their cells, and is excluded the same way. In a home chunk nothing but the owner's and their builders' placements count.
-- **Backdating and withholding.** A committed block proves only "not before". The witness's first-seen height makes a settle count from when the witness saw it (§7.2, §7.4), so committing to an old block and publishing late both lose. A settle's claims are bound into its id (§5.3), so an author cannot point a new placement at an old witnessed settle: the old settle claims only the cells it claimed when the witness saw it. A dishonest writer can claim, at a settle, cells it has not yet placed in, and place in them later. That is squatting decided at the moment the witness saw it, no stronger than placing junk blocks in the same cells then. Without the witness, backdating wins, and a reader that cannot reach the witness orders contested cells by committed block alone (§7.4).
+- **Backdating and withholding.** A committed block proves only "not before". The witness's first-seen height makes a settle count from when the witness saw it (§7.2, §7.4), so committing to an old block and publishing late both lose. A settle's claims are bound into its id, and the witness checks, before recording, that a new settle claims exactly its placements and that an old settle is named only by cells it has held since (§5.3, §7.4). A reader honours witness heights only for a version the witness recorded, so an author cannot point a new placement at an old witnessed settle, and cannot claim cells in advance without placing in them. Placing junk in many cells early is still allowed; that is squatting (below). Without the witness, backdating wins, and a reader that cannot reach the witness orders contested cells by committed block alone (§7.4).
 - **Surveying someone's build.** Anyone within reach can survey a chunk outside a home chunk. A build made in empty space without a survey then shows the ground in the cells it left empty, for every reader. Its builder can survey too and mine those cells, and owns the holes as their first placer; a reader can mute the surveyor. Whether a survey should count only for cells nobody has built around is open (§12).
-- **Reorganizations.** A settle commits to a block at least 6 deep (§5.3). A deeper reorganization makes its settles unwitnessed for readers on the new chain until the writer settles again; it never drops a layer (§6.1).
+- **Reorganizations and fake blocks.** A settle commits to a block at least 6 deep (§5.3). A reader drops a layer whose settle names the wrong hash at a height 6 or more below its tip, and does not count a layer whose settle names a height it cannot yet confirm, so a made-up height or hash never wins (§6.1). A reorganization deeper than 6 blocks drops layers that committed inside it until their writers settle again.
 - **The witness itself.** It is one relay, and trusting it is weaker than trusting mathematics. It could refuse, delay or lie. Receipts and a second witness are future work (§7.4, §12).
 - **Squatting.** Anyone can place one block in many chunks to own a cell in each. Owning a cell is owning that cell, not the chunk around it, so a squatter takes cells, not places. Each settle can carry work, which breaks ties and could later price claims. Mutes remove a squatter for whoever mutes them.
 - **Grinding work.** Work only breaks ties between settles witnessed at the same height (§7.2, rule 3). It cannot buy an earlier time.
@@ -831,7 +842,8 @@ Decisions marked delegated were made by Claude on arkinox's delegation of 2026-1
 8. **The ground's tables** (§3.8, §3.9) are placeholders tuned to the benchmark's look. Recommendation: tune them after people walk the ground in TERRAIN mode, as revision 2.
 9. **Names of blocks** (§2.3) are ours and provisional.
 10. **The kind number** `33336`. Recommendation: keep it, beside the other addressable cyberspace kinds.
-11. **Claims in every settle** (§5.3), added after review to stop a writer from pointing new placements at an old witnessed settle. They cost a runs array per plane per settle, a few dozen bytes for clustered building. Delegated.
+11. **Claims in every settle, checked by the witness** (§5.3, §7.4), added after review to stop a writer from pointing new placements at an old witnessed settle or claiming cells in advance. They cost a runs array per plane per settle, a few dozen bytes for clustered building, and they make the witness decrypt and check each layer it records. Delegated.
+14. **Merging without losing time** (§5.3). A merged settle could name the settles it replaces and keep the latest of their witness heights, which the witness can check. Recommendation: add it if long builds hit the cap of 32 settles in practice.
 12. **Surveys over someone else's build** (§10). Options: as written (any survey counts outside home chunks), or a survey counts only for cells no placement encloses. Recommendation: as written for the first release, with mutes, and revisit when people build in the same places.
 13. **Which actions can be reach events** (§6.2): spawn, hop, sidestep, hyperspace actions and exit-virtual, never virtual or skipped actions. Delegated, after review.
 

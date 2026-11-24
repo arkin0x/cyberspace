@@ -21,7 +21,7 @@ export const SURVEY_DOMAIN = enc.encode('CYBERSPACE_BLOCKS_SURVEY_V1')
 export const SETTLE_DOMAIN = enc.encode('CYBERSPACE_BLOCKS_SETTLE_V1')
 export const REACH = 16
 export const LAYER_MAX_BYTES = 240000
-export const SETTLES_MAX = 8
+export const SETTLES_MAX = 32
 export const BUILDERS_MAX = 64
 export const PALETTE_MAX = 256
 
