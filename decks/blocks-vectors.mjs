@@ -28,7 +28,7 @@ function chunkVector(name, note, X, Y, Z, P, extraCells = []) {
       cube_K: g.L.A.K[(x >> 3) + 5 * ((z >> 3) + 5 * (y >> 3))],
       fine: g.fine[o], cave8: f.cave8, cave4: f.cave4, tun8: f.tun8, big: f.big, kS: f.kS, D: f.D, thr: f.thr,
       tunnel: f.tunnel, solid: f.solid,
-      vein: R.veinValues(g.L, x, y, z).vein, veinT: R.veinValues(g.L, x, y, z).veinT, u: R.veinValues(g.L, x, y, z).u,
+      veinT: R.tri(g.L.A.veinT, 8, x, y, z), rock: g.rock[o],
       warp: R.tri128(g.L.G.warp, g.L.G, x, y, z),
       w9: R.strataWarp(g.L, x, y, z, g.fine[o]).w9, w11: R.strataWarp(g.L, x, y, z, g.fine[o]).w11,
       family_here: R.FAMILIES[R.strataAt(g.L, X, Y, Z, P, x, y, z, g.fine[o]).d11[1] % 6].name,
@@ -44,6 +44,10 @@ function chunkVector(name, note, X, Y, Z, P, extraCells = []) {
     family: g.family, strata_thickness: g.T, band_offset: g.bandOff,
     d9_head: R.hex(g.L.d9.slice(0, 4)), d11_head: R.hex(g.L.d11.slice(0, 2)),
     cube_K: cubeK,
+    max_K: g.maxK, costliest_cube: g.maxCube, sum_K: g.sumK, tree_sites: g.sites,
+    features: g.fired, feature_branches: g.branches, feature_bytes_read: g.drawBytes,
+    feature_stream_head: R.hex(R.chacha20Keystream(R.surveySeed(X, Y, Z, P), R.CELLS + 32).slice(R.CELLS)),
+    rock_sha256: R.hex(R.sha256(g.rock)),
     ground_sha256: R.hex(R.sha256(g.blocks)),
     counts,
     samples,
@@ -63,15 +67,21 @@ const chunks = [
   chunkVector('origin', 'The chunk at (0, 0, 0) in dataspace.', 0n, 0n, 0n, 0),
   chunkVector('origin-twin', 'The same chunk in ideaspace: the same region integer and lookup id, a different seed (the plane byte) and different terrain digests.', 0n, 0n, 0n, 1),
   chunkVector('home', `The chunk containing the coordinate ${homeCoord}, the spawn of a pubkey with that hex.`, home.X, home.Y, home.Z, home.P),
-  chunkVector('rich', 'A chunk with cubes of K 14, holding Glowcore and Gibsonite.', 15453524316923662618071296n, 10464798389691687205038208n, 36976378080119877154989536n, 0),
-  chunkVector('relic', 'A chunk with cubes of K 14, holding Glowcore, Gibsonite and Relic shard.', 36430266008631153131322464n, 34667457459222566158038592n, 26358497905024653652117376n, 0),
+  chunkVector('rich', 'A chunk whose costliest cube is K 14: eligible for the whole rare band but Genesis shard is gated at 14 too.', 15453524316923662618071296n, 10464798389691687205038208n, 36976378080119877154989536n, 0),
+  chunkVector('high-k', 'Another chunk whose costliest cube is K 14.', 36430266008631153131322464n, 34667457459222566158038592n, 26358497905024653652117376n, 0),
+  chunkVector('trees', 'A temperate or karst chunk with Lumenwood trees.', 1565108530968902207826144n, 9208092355485173920476160n, 16928974102260582047626816n, 0),
+  chunkVector('magma', 'A volcanic chunk of K 11 and up with a Magmaflow pocket and Basaltine, and a Glowcore vein.', 22325383872792900814531744n, 22131386245388876978033024n, 35011241709963610162731104n, 0),
+  chunkVector('pools', 'A chunk with a Tidewater pool and every vein: Ferrovein, Cobaltine, Prismite and Glowcore.', 30332262474415856249900160n, 34207092734754452336590560n, 4153259675813629090509088n, 0),
+  chunkVector('pool-retry', 'Tidewater after a try with no floor and a try of fewer than 20 cells that is undone.', 13566687585405747633797088n, 35538527997925668899492832n, 28246629170138773046499232n, 0),
+  chunkVector('forest', 'Four trees drawn, one skipped because an earlier tree stands on its site; and Tidewater after a no-floor try and an undone try.', 6651442216856358714468256n, 2615290123112726810297856n, 30301635334439985999876960n, 0),
+  chunkVector('trunk-over-canopy', 'Four trees: crowns that overlap, and a later trunk that replaces an earlier tree\'s Canopy glass.', 13034938241636885258281088n, 36862814456594778079748096n, 7136560745072575983621824n, 0),
   chunkVector('top-edge', 'The last chunk on every axis: lattice corners and the chunk above wrap to 0 (modulo 2^85).', top, top, top, 0),
 ]
 for (const c of chunks) {
   // Show a cell of every rare id the chunk holds, so that a port can check vein selection directly.
   const g = R.generateChunk(BigInt(c.X), BigInt(c.Y), BigInt(c.Z), c.plane)
   const extra = []
-  for (const want of [41, 42, 43, 192]) {
+  for (const want of [9, 10, 11, 12, 13, 14, 40, 41, 42, 43, 192, 193, 194, 195, 196, 197]) {
     const o = g.indexOf(want)
     if (o >= 0) extra.push([o & 31, o >> 10, (o >> 5) & 31])
   }
@@ -214,8 +224,8 @@ const out = {
   constants: {
     survey_domain: 'CYBERSPACE_BLOCKS_SURVEY_V1', settle_domain: 'CYBERSPACE_BLOCKS_SETTLE_V1', terrain_domain: 'CYBERSPACE_TERRAIN_K_V2',
     W8: R.W8, W128_samples: Object.fromEntries([0, 1, 32, 64, 96, 127, 128].map((f) => [f, R.W128(f)])),
-    EMPTY_THR: R.EMPTY_THR, VEIN_THR: R.VEIN_THR, RELIC_THR: R.RELIC_THR, RELIC_MIN_K: R.RELIC_MIN_K,
-    FAMILIES: R.FAMILIES, VEINS: R.VEINS, REACH: R.REACH,
+    ground_revision: R.GROUND_REVISION, EMPTY_THR: R.EMPTY_THR, FEATURES: R.FEATURES, FEATURE_BYTES: R.FEATURE_BYTES, pool_threshold_examples: Object.fromEntries([0, 300, 512, 600, 768].map((k) => [k, R.poolThreshold(k)])), RARE: R.RARE,
+    FAMILIES: R.FAMILIES, REACH: R.REACH,
   },
   chacha20_check: { key: chunks[0].survey_seed, nonce: '000000000000000000000000', counter: 0, keystream_head: chunks[0].stream_head },
   chunks, settles, runs, layer, reach, cell_rule: cases,

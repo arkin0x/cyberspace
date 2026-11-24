@@ -1,4 +1,4 @@
-// DECK-0009 (Blocks) reference implementation. Node 18 or later, no dependencies beyond node:crypto.
+// DECK-0009 (Blocks) reference implementation, ground revision 2 (the generator of ONOSENDAI #916, src/lib/terrain/generate.ts at 2429f16c). Node 18 or later, no dependencies beyond node:crypto.
 //
 // Not normative: where this file disagrees with DECK-0009-blocks.md, the DECK is right and this file is a bug.
 // Every value that decides a block is an integer, and every intermediate value is below 2^53, so JavaScript
@@ -30,25 +30,48 @@ export const W8 = [0, 22, 80, 162, 256, 350, 432, 490, 512]
 // §3.6 Smoothstep weights in 2^21ths, for the 128 lattice at fractions 0..128.
 export const W128 = (f) => 384 * f * f - 2 * f * f * f
 
-// §3.8 Thresholds, revision 1 (CYBERSPACE_BLOCKS_SURVEY_V1). Tunable only with a domain bump.
+// §3.8 Open space thresholds (unchanged since revision 1).
 export const EMPTY_THR = [1337, 1323, 1308, 1294, 1280, 1266, 1253, 1239, 1225, 1211, 1196, 1182, 1168, 1153, 1138, 1123, 1108]
-export const VEIN_THR = [3884, 3854, 3827, 3802, 3779, 3757, 3736, 3717, 3698, 3681, 3664, 3648, 3633, 3618, 3603, 3590, 3576]
-export const RELIC_THR = 4508
 
-// §3.9 Families: strata (bands are chosen by a hash), top (the surface layer over open air), speckle (the 2.3% fleck).
-// rind is not part of the ground: it is the material a client draws on a chunk face that borders an unsurveyed chunk (§12).
+/** §3.10 The ground revision this file computes; layers name it as `ground: 2`. */
+export const GROUND_REVISION = 2
+
+// §2.3 Block ids.
+export const ID = {
+  GRIDSTONE: 1, UMBERSLATE: 2, DRIFTSILT: 3, MOSSVEIL: 4, RUSTBAND: 5, FROSTSHALE: 6, CINDERROCK: 7, PRISMITE: 8,
+  BASALTINE: 9, RIMEGLASS: 10, TIDEWATER: 11, MAGMAFLOW: 12, LUMENWOOD: 13, CANOPY: 14,
+  FERROVEIN: 40, COBALTINE: 41, GLOWCORE: 42, GIBSONITE: 43,
+  RELIC: 192, VOIDPEARL: 193, AURORIC: 194, CHRONITE: 195, SINGULARITY: 196, GENESIS: 197,
+}
+
+// §3.9 Families, revision 2: strata as [id, weight], top (over open air), speckle (the fleck).
 export const FAMILIES = [
-  { name: 'temperate', strata: [1, 1, 2, 1, 5, 1, 2, 3], top: 4, speckle: 2, rind: 2 },
-  { name: 'dune', strata: [3, 5, 1, 3, 2, 5], top: 3, speckle: 5, rind: 1 },
-  { name: 'frozen', strata: [6, 6, 1, 6, 2, 1], top: 6, speckle: 2, rind: 2 },
-  { name: 'volcanic', strata: [7, 2, 7, 5, 1, 2, 7], top: 7, speckle: 5, rind: 2 },
-  { name: 'crystal', strata: [6, 1, 6, 2, 8, 1, 6, 2], top: 6, speckle: 8, rind: 2 },
-  { name: 'karst', strata: [1, 3, 1, 2, 1, 3], top: 4, speckle: 3, rind: 2 },
+  { name: 'temperate', strata: [[1, 25], [2, 18], [5, 9]], top: 4, speckle: 2 },
+  { name: 'dune', strata: [[1, 47], [2, 34], [5, 17], [3, 3]], top: 3, speckle: 5 },
+  { name: 'frozen', strata: [[1, 40], [2, 29], [5, 15], [6, 8], [10, 8]], top: 6, speckle: 2 },
+  { name: 'volcanic', strata: [[1, 37], [2, 27], [5, 13], [7, 13], [9, 9]], top: 7, speckle: 5 },
+  { name: 'crystal', strata: [[1, 43], [2, 31], [5, 16], [6, 10]], top: 6, speckle: 8 },
+  { name: 'karst', strata: [[1, 25], [2, 18], [5, 9], [3, 11]], top: 4, speckle: 3 },
 ]
-// §3.9 Veins: [global id, weight, lowest cube K], in this order.
-export const VEINS = [[40, 55, 0], [41, 25, 6], [8, 12, 9], [42, 3, 10], [43, 2, 13]]
-export const RELIC = 192
-export const RELIC_MIN_K = 13
+
+// §3.9 Feature thresholds: a 32-bit draw below t places the feature; minK is the least K of the costliest cube.
+export const FEATURES = {
+  magma: { t: 536870912, minK: 11 },
+  trees: { t: 1460288880, minK: 0 },
+  ferrovein: { t: 3865470566, minK: 0 },
+  cobaltine: { t: 2233382993, minK: 6 },
+  prismite: { t: 1395864371, minK: 9 },
+  glowcore: { t: 429496729, minK: 10 },
+}
+/** §3.9 Tidewater's threshold from the sum of the 64 cube K. */
+export const poolThreshold = (sumK) => Math.min(2576980377, Math.max(214748364, (768 - sumK) * 4194304))
+/** §3.9 The rare band, in order: [id, least K of the costliest cube, threshold]. */
+export const RARE = [[193, 11, 22375156], [194, 11, 11187578], [195, 12, 11179861], [43, 12, 7453240], [196, 13, 11799360], [192, 13, 7866240], [197, 14, 22053747]]
+/** §3.9 How the rare thresholds were set (non-normative): the target per surveyed chunk, and the measured share of chunks whose costliest cube reaches each K. */
+export const RARE_TARGET = { 193: 1 / 500, 194: 1 / 1000, 195: 1 / 2000, 43: 1 / 3000, 196: 1 / 5000, 192: 1 / 7500, 197: 1 / 10000 }
+export const MAXK_AT_LEAST = [1, 1, 1, 1, 0.999995, 0.999705, 0.996205, 0.979775, 0.92474, 0.802875, 0.607995, 0.383905, 0.192085, 0.0728, 0.019475, 0.003215, 0.000215]
+/** §3.3 Bytes of the feature stream after the fine stream. */
+export const FEATURE_BYTES = 8192
 
 // §2.3 The initial registry: global id -> [name, role, suggested base colour, suggested accent colour] (colours non-normative).
 export const REGISTRY = {
@@ -60,12 +83,23 @@ export const REGISTRY = {
   5: ['Rustband', 'banded rock', '#943300', '#f47000'],
   6: ['Frostshale', 'pale rock', '#c8f5ff', '#5d6769'],
   7: ['Cinderrock', 'volcanic rock', '#1a0f24', '#ff3300'],
-  8: ['Prismite', 'crystalline, uncommon', '#a24bff', '#e1bcff'],
-  40: ['Ferrovein', 'metallic vein', '#555e60', '#e7a800'],
+  8: ['Prismite', 'crystalline vein, glows', '#a24bff', '#e1bcff'],
+  9: ['Basaltine', 'dark rock round Magmaflow', '#22232b', '#5b6070'],
+  10: ['Rimeglass', 'clear frozen rock', '#a9e8ff', '#e6fbff'],
+  11: ['Tidewater', 'liquid, clear, walked through', '#1d5fd6', '#6fb4ff'],
+  12: ['Magmaflow', 'liquid, glows, walked through', '#ff5a00', '#ffd040'],
+  13: ['Lumenwood', 'tree trunk, glows', '#4a3020', '#7dffcf'],
+  14: ['Canopy glass', 'tree crown, clear', '#1fa860', '#9dffc8'],
+  40: ['Ferrovein', 'common metallic vein', '#555e60', '#e7a800'],
   41: ['Cobaltine', 'uncommon vein', '#1d3547', '#5a9bff'],
-  42: ['Glowcore', 'glowing, rare', '#15191a', '#00e5ff'],
-  43: ['Gibsonite', 'dense, very rare', '#4b0058', '#ff00ff'],
-  192: ['Relic shard', 'special', '#5c0010', '#ff3b6b'],
+  42: ['Glowcore', 'rare vein, glows', '#15191a', '#00e5ff'],
+  43: ['Gibsonite', 'very rare single block, glows', '#4b0058', '#ff00ff'],
+  192: ['Relic shard', 'very rare single block, glows', '#5c0010', '#ff3b6b'],
+  193: ['Voidpearl', 'rare single block, glows', '#0a0614', '#b48cff'],
+  194: ['Auroric', 'rare single block, glows', '#103040', '#6dffd8'],
+  195: ['Chronite', 'rare single block, glows', '#202836', '#ffe08a'],
+  196: ['Singularity core', 'very rare single block, glows', '#000000', '#ffffff'],
+  197: ['Genesis shard', 'rarest single block, glows', '#fff4d6', '#ffc23a'],
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -265,14 +299,6 @@ export function cellFields(L, x, y, z, fine) {
   return { cave8, cave4, tun8, big, kS, D, thr, tunnel, solid: D >= thr && !tunnel }
 }
 
-/** §3.9 The vein field, the vein type field and its stretched value u (0..255). */
-export function veinValues(L, x, y, z) {
-  const vein = 11 * tri(L.A.vein, 8, x, y, z) + 9 * tri(L.B.veinD, 4, x, y, z)
-  const veinT = tri(L.A.veinT, 8, x, y, z)
-  const s = 9 * veinT - 512
-  const u = s <= 0 ? 0 : Math.min(255, Math.floor(s / 5))
-  return { vein, veinT, u }
-}
 /** §3.9 Soft strata borders: the warped cells whose 2^9 and 2^11 digests decide a cell's band and family. */
 export function strataWarp(L, x, y, z, fineByte) {
   const gx = tri128(L.G.gx, L.G, x, y, z) - 128, gy = tri128(L.G.gy, L.G, x, y, z) - 128, gz = tri128(L.G.gz, L.G, x, y, z) - 128
@@ -289,10 +315,31 @@ export function strataAt(L, X, Y, Z, P, x, y, z, fineByte) {
   return { d9: terrainDigest(9, a, b, c, P), d11: terrainDigest(11, d, e, f, P), w9, w11 }
 }
 
-/** §3 The generated ground of one chunk: a Uint8Array of 32,768 global ids (every generated id is below 256). */
+/** §3.9 A band's kind: the hash's high half over the family's total weight. */
+export function pickStratum(strata, h) {
+  let total = 0
+  for (const [, w] of strata) total += w
+  let r = (h >>> 16) % total
+  for (const [id, w] of strata) { if (r < w) return id; r -= w }
+  return strata[0][0]
+}
+
+/** §3.3 The feature stream: draws read in a fixed order; a byte past the end reads 0. */
+class Draws {
+  constructor(b) { this.b = b; this.i = 0; this.log = [] }
+  u8() { return this.i < this.b.length ? this.b[this.i++] : 0 }
+  u32() { return ((this.u8() << 24) | (this.u8() << 16) | (this.u8() << 8) | this.u8()) >>> 0 }
+  chance(t) { return this.u32() < t }
+}
+
+const RARE_IDS = new Set([192, 193, 194, 195, 43, 196, 197])
+
+/** §3 The generated ground of one chunk, revision 2: a Uint8Array of 32,768 global ids (every generated id is below 256). */
 export function generateChunk(X, Y, Z, P, detail = false) {
   const L = lattices(X, Y, Z, P)
-  const fine = fineStream(X, Y, Z, P)
+  const stream = chacha20Keystream(surveySeed(X, Y, Z, P), CELLS + FEATURE_BYTES)
+  const fine = stream.subarray(0, CELLS)
+  const draws = new Draws(stream.subarray(CELLS))
   const fineAbove = fineStream(X, wrap(Y + 32n), Z, P)
   const solid = new Uint8Array(32 * 33 * 32)
   const sIdx = (x, y, z) => x + 32 * z + 1024 * y
@@ -302,38 +349,152 @@ export function generateChunk(X, Y, Z, P, detail = false) {
   }
   const yBase = Number(Y & 0xffffffn)
   const out = new Uint8Array(CELLS)
-  const famOut = new Uint8Array(CELLS)
+  // §3.9 Rock.
   for (let y = 0; y < 32; y++) for (let z = 0; z < 32; z++) for (let x = 0; x < 32; x++) {
     const o = cellIndex(x, y, z)
     if (!solid[sIdx(x, y, z)]) continue
-    const kc = L.A.K[(x >> 3) + 5 * ((z >> 3) + 5 * (y >> 3))]
-    const v = veinValues(L, x, y, z)
-    let id
-    if (kc >= RELIC_MIN_K && v.vein >= RELIC_THR) id = RELIC
-    else if (v.vein >= VEIN_THR[kc]) {
-      let total = 0
-      for (const [, w, mk] of VEINS) if (kc >= mk) total += w
-      let r = Math.floor((v.u * total) / 256)
-      for (const [vid, w, mk] of VEINS) { if (kc < mk) continue; if (r < w) { id = vid; break } r -= w }
-    } else {
-      const st = strataAt(L, X, Y, Z, P, x, y, z, fine[o])
-      const fam = FAMILIES[st.d11[1] % FAMILIES.length]
-      famOut[o] = st.d11[1] % FAMILIES.length
-      const T = 3 + (st.d9[2] % 8)
-      const warp = tri128(L.G.warp, L.G, x, y, z)
-      const cave4 = tri(L.B.caveD, 4, x, y, z)
-      const warpOff = Math.floor((warp * 18) / 256) + Math.floor((v.veinT * 8) / 256) + Math.floor((cave4 * 4) / 256)
-      const band = Math.floor((yBase + y + warpOff) / T)
-      const h = Math.imul(band ^ (st.d9[3] << 8), 0x9e3779b1) >>> 0
-      id = fam.strata[(h >>> 16) % fam.strata.length]
-      if (fine[o] < 6) id = fam.speckle
-      if (!solid[sIdx(x, y + 1, z)]) id = fam.top
-    }
+    const st = strataAt(L, X, Y, Z, P, x, y, z, fine[o])
+    const fam = FAMILIES[st.d11[1] % FAMILIES.length]
+    const T = 3 + (st.d9[2] % 8)
+    const warp = tri128(L.G.warp, L.G, x, y, z)
+    const cave4 = tri(L.B.caveD, 4, x, y, z)
+    const veinT = tri(L.A.veinT, 8, x, y, z)
+    const warpOff = Math.floor((warp * 18) / 256) + Math.floor((veinT * 8) / 256) + Math.floor((cave4 * 4) / 256)
+    const band = Math.floor((yBase + y + warpOff) / T)
+    const h = Math.imul(band ^ (st.d9[3] << 8), 0x9e3779b1) >>> 0
+    let id = pickStratum(fam.strata, h)
+    if (fine[o] < 6) id = fam.speckle
+    if (!solid[sIdx(x, y + 1, z)]) id = fam.top
     out[o] = id
   }
+  const rock = out.slice() // the rock alone, before features (for the vectors)
   const fam0 = FAMILIES[L.d11[1] % FAMILIES.length]
+  // §3.9 Features: the costliest cube.
+  let maxK = -1, maxCube = 0, sumK = 0
+  for (let cy = 0; cy < 4; cy++) for (let cz = 0; cz < 4; cz++) for (let cx = 0; cx < 4; cx++) {
+    const k = L.A.K[cx + 5 * (cz + 5 * cy)]
+    sumK += k
+    if (k > maxK) { maxK = k; maxCube = cx + 4 * (cz + 4 * cy) }
+  }
+  const kOf = (x, y, z) => L.A.K[(x >> 3) + 5 * ((z >> 3) + 5 * (y >> 3))]
+  const isRock = (o) => { const id = out[o]; return id !== 0 && id !== ID.TIDEWATER && id !== ID.MAGMAFLOW && id !== ID.LUMENWOOD && id !== ID.CANOPY && !RARE_IDS.has(id) }
+  const rockInCostliest = () => {
+    const cx = 8 * (maxCube & 3), cz = 8 * ((maxCube >> 2) & 3), cy = 8 * (maxCube >> 4)
+    const start = ((draws.u8() << 8) | draws.u8()) & 511
+    for (let i = 0; i < 512; i++) {
+      const c = (start + i) & 511
+      const o = cellIndex(cx + (c & 7), cy + (c >> 6), cz + ((c >> 3) & 7))
+      if (isRock(o)) return o
+    }
+    return -1
+  }
+  const fired = []
+  const branches = []
+  const F = FEATURES
+  // 1. Magmaflow.
+  if (fam0.name === 'volcanic' && maxK >= F.magma.minK && draws.chance(F.magma.t)) {
+    const at = rockInCostliest()
+    if (at >= 0) {
+      fired.push('magma')
+      const cx = at & 31, cz = (at >> 5) & 31, cy = at >> 10
+      const rx = 1 + (draws.u8() % 3), ry = 1 + (draws.u8() % 2), rz = 1 + (draws.u8() % 3)
+      const inside = (dx, dy, dz, ax, ay, az) => dx * dx * ay * ay * az * az + dy * dy * ax * ax * az * az + dz * dz * ax * ax * ay * ay <= ax * ax * ay * ay * az * az
+      for (let dy = -ry - 2; dy <= ry + 2; dy++) for (let dz = -rz - 2; dz <= rz + 2; dz++) for (let dx = -rx - 2; dx <= rx + 2; dx++) {
+        const x = cx + dx, y = cy + dy, z = cz + dz
+        if (x < 0 || y < 0 || z < 0 || x > 31 || y > 31 || z > 31) continue
+        const o = cellIndex(x, y, z)
+        if (!isRock(o)) continue
+        if (inside(dx, dy, dz, rx, ry, rz)) out[o] = kOf(x, y, z) >= F.magma.minK ? ID.MAGMAFLOW : ID.BASALTINE
+        else if (inside(dx, dy, dz, rx + 2, ry + 2, rz + 2)) out[o] = ID.BASALTINE
+      }
+    }
+  }
+  // 2. Tidewater.
+  if (draws.chance(poolThreshold(sumK))) {
+    for (let t = 0; t < 8; t++) {
+      const px = draws.u8() & 31, pz = draws.u8() & 31, r = 2 + (draws.u8() % 5)
+      let floor = -1
+      for (let y = 31; y > 0; y--) if (out[cellIndex(px, y, pz)] === 0 && out[cellIndex(px, y - 1, pz)] !== 0) { floor = y; break }
+      if (floor < 0) { branches.push('tidewater:no-floor'); continue }
+      const placed = []
+      for (let y = floor; y >= Math.max(1, floor - 2) && placed.length < 200; y--) {
+        for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) {
+          if (dx * dx + dz * dz > r * r || placed.length >= 200) continue
+          const x = px + dx, z = pz + dz
+          if (x < 0 || z < 0 || x > 31 || z > 31) continue
+          const o = cellIndex(x, y, z)
+          if (out[o] === 0 && out[cellIndex(x, y - 1, z)] !== 0 && out[cellIndex(x, y - 1, z)] !== ID.LUMENWOOD) { out[o] = ID.TIDEWATER; placed.push(o) }
+        }
+      }
+      if (placed.length >= 200) branches.push('tidewater:cap')
+      if (placed.length >= 20) { fired.push('tidewater:' + placed.length); break }
+      branches.push('tidewater:undone')
+      for (const o of placed) out[o] = 0
+    }
+  }
+  // 3. Lumenwood trees.
+  const sites = []
+  if (fam0.name === 'temperate' || fam0.name === 'karst') {
+    for (let tz = 2; tz < 30; tz++) for (let tx = 2; tx < 30; tx++) {
+      for (let y = 23; y >= 0; y--) {
+        if (out[cellIndex(tx, y, tz)] !== ID.MOSSVEIL) continue
+        let air = true
+        for (let a = 1; a <= 8 && air; a++) if (out[cellIndex(tx, y + a, tz)] !== 0) air = false
+        if (air) { sites.push(cellIndex(tx, y, tz)); break }
+      }
+    }
+  }
+  if (sites.length > 0 && draws.chance(F.trees.t)) {
+    const n = 1 + (draws.u8() % 4)
+    fired.push('trees:' + n)
+    for (let t = 0; t < n; t++) {
+      const site = sites[draws.u32() % sites.length], h = 4 + (draws.u8() % 3)
+      const tx = site & 31, tz = (site >> 5) & 31, ground = site >> 10
+      if (out[cellIndex(tx, ground + 1, tz)] !== 0) { branches.push('tree:skipped'); continue }
+      for (let y = ground + 1; y <= ground + h; y++) { if (out[cellIndex(tx, y, tz)] === ID.CANOPY) branches.push('tree:trunk-over-canopy'); out[cellIndex(tx, y, tz)] = ID.LUMENWOOD }
+      for (let dy = h - 1; dy <= h + 2; dy++) {
+        const rr = dy <= h ? 2 : dy === h + 1 ? 1 : 0
+        for (let dz = -rr; dz <= rr; dz++) for (let dx = -rr; dx <= rr; dx++) {
+          if (rr === 2 && Math.abs(dx) === 2 && Math.abs(dz) === 2) continue
+          const o = cellIndex(tx + dx, ground + dy, tz + dz)
+          if (out[o] === 0) out[o] = ID.CANOPY
+          // Informational only: a crown cell already held by an earlier tree (its own trunk sits at dx = dz = 0).
+          else if (out[o] === ID.CANOPY || (out[o] === ID.LUMENWOOD && (dx !== 0 || dz !== 0))) branches.push('tree:overlap')
+        }
+      }
+    }
+  }
+  // 4. Veins.
+  const vein = (id, size, minK, inCube) => {
+    for (let t = 0; t < 8; t++) {
+      let x, y, z
+      if (inCube === null) { x = draws.u8() & 31; y = draws.u8() & 31; z = draws.u8() & 31 }
+      else { x = 8 * (inCube & 3) + (draws.u8() & 7); z = 8 * ((inCube >> 2) & 3) + (draws.u8() & 7); y = 8 * (inCube >> 4) + (draws.u8() & 7) }
+      if (!isRock(cellIndex(x, y, z)) || kOf(x, y, z) < minK) continue
+      for (let i = 0; i < size; i++) {
+        const o = cellIndex(x, y, z)
+        if (isRock(o) && kOf(x, y, z) >= minK) out[o] = id
+        const d = draws.u8() % 6
+        const a = d >> 1, sgn = d & 1 ? 1 : -1
+        if (a === 0) x = Math.min(31, Math.max(0, x + sgn))
+        else if (a === 1) y = Math.min(31, Math.max(0, y + sgn))
+        else z = Math.min(31, Math.max(0, z + sgn))
+      }
+      return
+    }
+  }
+  if (draws.chance(F.ferrovein.t)) { const n = 2 + (draws.u8() % 4); fired.push('ferrovein:' + n); for (let i = 0; i < n; i++) vein(ID.FERROVEIN, 4 + (draws.u8() % 9), 0, null) }
+  if (maxK >= F.cobaltine.minK && draws.chance(F.cobaltine.t)) { const n = 1 + (draws.u8() % 2); fired.push('cobaltine:' + n); for (let i = 0; i < n; i++) vein(ID.COBALTINE, 3 + (draws.u8() % 6), F.cobaltine.minK, null) }
+  if (maxK >= F.prismite.minK && draws.chance(F.prismite.t)) { fired.push('prismite'); vein(ID.PRISMITE, 4 + (draws.u8() % 7), F.prismite.minK, null) }
+  if (maxK >= F.glowcore.minK && draws.chance(F.glowcore.t)) { fired.push('glowcore'); vein(ID.GLOWCORE, 2 + (draws.u8() % 7), F.glowcore.minK, maxCube) }
+  // 5. The rare band.
+  for (const [id, minK, t] of RARE) {
+    if (maxK < minK || !draws.chance(t)) continue
+    const o = rockInCostliest()
+    if (o >= 0) { out[o] = id; fired.push('rare:' + id) }
+  }
   if (!detail) return out
-  return { blocks: out, L, fine, family: fam0.name, T: 3 + (L.d9[2] % 8), bandOff: L.d9[3], solid, famOut }
+  return { blocks: out, rock, L, fine, family: fam0.name, T: 3 + (L.d9[2] % 8), bandOff: L.d9[3], solid, maxK, maxCube, sumK, sites: sites.length, fired, branches: [...new Set(branches)], drawBytes: draws.i }
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -384,9 +545,14 @@ export function decodePlane(pl, ground, settleCount) {
     if (pl.form === 'diff' && i === 0) { if (g !== null) throw new Error('plane: a diff palette starts with null'); return }
     if (!Number.isInteger(g) || g < 0 || g > 65535) throw new Error('plane: bad global id')
   })
-  if (pl.ground !== undefined && !Number.isInteger(pl.ground)) throw new Error('plane: bad ground revision')
-  // §3.10 A revision this reader does not implement (only 1 here) reads as not surveyed.
-  const base = pl.survey && (pl.ground === undefined || pl.ground === 1) ? ground : new Uint8Array(CELLS)
+  // §3.10 A revision this reader does not implement (anything but 2): a diff plane is set aside; a whole plane is read
+  // for its values only, with no placements, and takes no part in the Cell Rule.
+  if (pl.ground !== GROUND_REVISION) {
+    if (pl.form === 'diff') throw new Error('plane: a diff against a ground revision this reader does not implement')
+    const idx = expandRuns(pl.cells, CELLS, pal.length)
+    return { plane: pl.plane, survey: pl.survey, values: Int32Array.from(idx, (i) => pal[i]), placements: null, t0: null, t1: null, valuesOnly: true }
+  }
+  const base = pl.survey ? ground : new Uint8Array(CELLS)
   const idx = expandRuns(pl.cells, CELLS, pal.length)
   const values = new Int32Array(CELLS)
   const placements = []
@@ -417,7 +583,7 @@ export function encodePlane(plane, survey, values, ground, t0ByCell, t1ByCell) {
       if (!pos.has(key)) { pos.set(key, keep ? 0 : pal.length); if (!keep) pal.push(values[o]) }
       idx[o] = pos.get(key)
     }
-    return { plane, survey, form, pal, cells: encodeRuns(idx), t0, t1 }
+    return { plane, survey, ground: GROUND_REVISION, form, pal, cells: encodeRuns(idx), t0, t1 }
   }
   const d = mk('diff'), w = mk('whole')
   return JSON.stringify(d).length <= JSON.stringify(w).length ? d : w
