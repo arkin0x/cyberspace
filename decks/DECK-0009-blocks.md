@@ -5,7 +5,7 @@ Title: Blocks
 Status: Draft
 Mandatory: no
 Created: 2026-11-24
-Last updated: 2026-11-24 (ground revision 2)
+Last updated: 2026-11-25
 Requires: `CYBERSPACE_V2.md` §2 (coordinates), §3.1 (the spawn coordinate), §4.6 and §4.7 (Cantor roots and region integers), §5.2 (terrain `K`), §5.5 (integer encoding), §7.2 (region keys and lookup ids), §7.6 (the bag cipher), §8.2 (event ids), §8.7.3 (resolving a chain), §8.8 (the tags the chain rules read) and §8.13 (a tag the chain rules never read, as precedent); NIP-01, NIP-09, NIP-13 (as the unit of work), NIP-51 (`kind 10000` mutes), RFC 8439 (ChaCha20); Bitcoin block headers
 
 ## Abstract
@@ -1071,7 +1071,7 @@ Decisions marked delegated were made by Claude on arkinox's delegation of 2026-1
 7. **The reach reference in public** (§5.1, §10). It lets relays check reach without the key, and hiding it inside the seal would not make layers private (§10). Delegated.
 8. **The ground's tables** (§3.8, §3.9) are revision 2, as ONOSENDAI's TERRAIN mode draws it (#916): the owner's rarity table, calibrated by its `scripts/terrain-calibrate.mjs`. Recommendation: tune after people walk it, as revision 3.
 9. **Names of blocks** (§2.3) are invented for Cyberspace and provisional (question 16).
-10. **The kind number.** `33336`, the number first chosen, is taken: a census of 2026-11-24 across relay.damus.io, nos.lol, relay.primal.net, relay.nostr.band, relay.snort.social, offchain.pub, nostr.mom, relay.nostr.net, relay.onosendai.tech and cyberspace.nostr1.com found 53 `kind 33336` events from three pubkeys (an app's `defan-proj-v1` parts, 2026-11-02 to 2026-11-24). `33337` is taken too (a peer list and creature events). `33339`, `33341` to `33346` and `33350` returned nothing on any of those relays, and none is in the NIPs. This draft uses **`33339`**, beside the other addressable cyberspace kinds (33330, 33331, 33335, 33338, 33340). The owner's to confirm; nothing has published either number for blocks.
+10. **The kind number. RESOLVED (OWNER, 2026-11-25): `33339`.** `33336`, the number first chosen, is taken: a census of 2026-11-24 across relay.damus.io, nos.lol, relay.primal.net, relay.nostr.band, relay.snort.social, offchain.pub, nostr.mom, relay.nostr.net, relay.onosendai.tech and cyberspace.nostr1.com found 53 `kind 33336` events from three pubkeys (an app's `defan-proj-v1` parts, 2026-11-02 to 2026-11-24). `33337` is taken too (a peer list and creature events). `33339`, `33341` to `33346` and `33350` returned nothing on any of those relays, and none is in the NIPs. This draft uses **`33339`**, beside the other addressable cyberspace kinds (33330, 33331, 33335, 33338, 33340). The owner confirmed `33339` on 2026-11-25.
 11. **Claims in every settle, checked by the witness** (§5.3, §7.4), added after review to stop a writer from pointing new placements at an old witnessed settle or claiming cells in advance. They cost a runs array per plane per settle, a few dozen bytes for clustered building, and they make the witness decrypt and check each layer it records. Delegated.
 14. **Merging without losing time** (§5.3). A merged settle could name the settles it replaces and keep the latest of their witness heights, which the witness can check. Recommendation: add it if long builds hit the cap of 32 settles in practice.
 15. **The chunk skin.** Revision 2 draws no skin on faces bordering unsurveyed chunks. The drawn-only skin of the previews was removed in TERRAIN #916, so this DECK says nothing about one: a client draws a chunk's cells as they are.
