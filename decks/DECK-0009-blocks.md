@@ -734,7 +734,7 @@ Every named builder key stays valid until it is retired (arkinox's ruling, 2026-
 - **Which to use (non-normative):** retirement from here on is for a key nobody else holds, a device given away or wiped. It does not stop a thief: a thief can name a reach event from before the retirement, and only the witness check of §4.4 rule 4 catches that. A key that may have been copied is retired with `all`.
 - A third element other than `all`, or any further elements, is ignored: the tag is read as the two element form. A malformed key value names nothing.
 - A retirement in the two element form counts only on the chain that carries it, as naming does (§4.4). A retirement with `all` counts from any authentic movement action of the author, on any chain, including a chain that a respawn has ended and including a spawn, because a chain that has ended cannot be extended to retire the keys it named.
-- **Finding retirements (normative for writers):** relays index only single-letter tags (NIP-01), so beside every `builder-retire` tag a writer MUST add `["R", "<the same builder pubkey>"]`. A reader then finds every retirement of a key `k` by an author `A`, on any chain, with one filter, `{"kinds": [3333], "authors": [A], "#R": [k]}`, and reads the `builder-retire` tags of what comes back. The `R` tag by itself retires nothing, and an `R` tag without a matching `builder-retire` tag means nothing. Like the two builder tags, the chain rules never read it (§4.5). The canonical relay SHOULD also index `builder-retire`, for retirements written before this rule.
+- **Finding retirements (normative for writers):** relays index only single-letter tags (NIP-01), so beside every `builder-retire` tag a writer MUST add `["R", "<the same builder pubkey>"]`. A reader then finds every retirement of a key `k` by an author `A`, on any chain, with one filter, `{"kinds": [3333], "authors": [A], "#R": [k]}`, and reads the `builder-retire` tags of what comes back. The `R` tag by itself retires nothing, and an `R` tag without a matching `builder-retire` tag means nothing. Like the two builder tags, the chain rules never read it (§4.5). NIP-01 filters match single-letter tags only, so a retirement written without `R` can be found only by reading the author's movement actions; none exists, because no client published builder tags before this rule.
 
 ### 4.4 When a key is valid for a layer
 
@@ -745,9 +745,9 @@ A builder key `k` is **valid** for a layer whose author is `A` and whose reach e
 1. some action in the ancestry of `E` carries `["builder", k]`;
 2. no action in the ancestry of `E` carries `["builder-retire", k]`, in either form;
 3. no authentic movement action of `A`, on any chain, carries `["builder-retire", k, "all"]`;
-4. when the reader can learn witness times (§7.4): the witness did not first see the layer's current version (its event id) at a block height later than the height at which it first saw a movement action of `A` that carries `["builder-retire", k]` in either form.
+4. when the reader can get answers from the witness (§7.4): if the witness has recorded a movement action of `A` that carries `["builder-retire", k]` in either form, at height `r`, then the witness has recorded the layer's current version (its event id) at a height of at most `r`. A current version the witness has not recorded, or recorded later than `r`, fails this rule. When the witness has recorded no retirement of `k`, the rule holds. When the reader cannot get an answer, the rule cannot run, and the reader SHOULD say so for layers signed by a key that the author's chain retires.
 
-Rule 4 closes most of the gap that rule 2 leaves: a thief with a retired key can name an old reach event, from before the retirement, but the witness saw the retirement before it saw the forged layer.
+Rule 4 closes most of the gap that rule 2 leaves: a thief with a retired key can name an old reach event, from before the retirement, but the witness saw the retirement before it saw the forged layer, or never recorded the forged layer at all, and either way the layer fails.
 
 A reader that cannot walk the whole ancestry (an action it cannot fetch) cannot establish rule 1 and treats the key as not valid for that layer, for now.
 
@@ -868,9 +868,9 @@ A writer publishes a new version of its layer to change it, carrying everything 
 
 **A new builder key at a chunk (normative for writers).** When a device writes with a builder key at a chunk where another builder key of the same author already has a layer (the device replaced a lost key, or the author moved to a new device), the writer:
 
-1. MUST hold publishing for that chunk until it has read the newest layer of each of the author's other valid keys there (§4.4), so that it does not publish without knowing what they hold;
-2. MUST carry into its own layer every plane of those layers that it is not changing, its twin plane included, with their values, `t0`, `t1` and the settles they name, unchanged, claims included (§5.3, Carrying settles), so that a cell keeps its place in the order of §7.2;
-3. SHOULD then publish, with each old key it still holds, an emptied version of that key's layer (a layer that only surveys), so that a cell the new layer released does not stand on in the old one. A writer that no longer holds an old key leaves its layer to the author, who retires that key (§4.3); until then its cells stand, under the same author.
+1. MUST hold publishing for that chunk until it has read the newest layer of each of the author's other valid keys there (§4.4), found with `{"kinds": [33339], "#d": [<lookup id>], "#p": [<author>]}`, so that it does not publish without knowing what they hold;
+2. MUST start its own layer from theirs: every plane, its twin included, and in each plane every placement with its value, `t0`, `t1` and the settles it names, unchanged, claims included (§5.3, Carrying settles), so that each cell keeps its place in the order of §7.2; and only then apply its own changes. Where two old layers place the same cell, it takes the one that §7.2 makes later. If the settles carried come to more than 32, it merges as §5.3 says;
+3. SHOULD then publish, with each old key it still holds, an emptied version of that key's layer, so that a cell the new layer released does not stand on in the old one. The emptied version keeps each plane's `survey` and `ground`, has no placements, and carries one fresh settle that claims nothing (an empty `settles` is not allowed, §5.5). A writer that no longer holds an old key leaves its layer to the author, who retires that key (§4.3); until then its cells stand, under the same author.
 
 A writer that cannot read an old key's layer, for example because no relay it uses has it, keeps holding and SHOULD tell its user why, rather than publish a layer that would compete with the old one.
 
@@ -899,7 +899,7 @@ then, for each remaining plane object:
 A settle's block hash is checked against the reader's own Bitcoin headers, after check 6:
 
 - if the reader holds the header at the settle's height and that header is at least 6 below the reader's tip, the hash MUST equal that block's hash, or the layer is dropped (writers commit 6 deep, §5.3, so an honest layer fails this only after a reorganization deeper than that);
-- if the settle's height is 6 or more below the reader's tip but the reader cannot get the header at that height, the layer is **pending** too, until it can;
+- if the settle's height is 6 or more below the reader's tip but the reader cannot get the header at that height, the layer is **pending** (as in the next case) until it can get it;
 - if the settle's height is within 6 of the reader's tip, or above it, the layer is **pending**: the reader does not count it (§7.1) until the height is 6 deep in its chain, and then applies the first case. A settle at a height that never arrives, such as `2^32 − 1`, therefore never counts.
 
 A layer that fails any of checks 1 to 9, other than the part of check 5 that drops one plane, is dropped alone: one malformed or forged layer says nothing about the others in the chunk, as a bag drops one corrupt item (`CYBERSPACE_V2.md` §7.6). A reader SHOULD say that a layer was found and could not be read, rather than draw a guess.
@@ -911,7 +911,7 @@ A layer's **reach event** is the event named by one of its `e` tags marked `reac
 - **A real position.** It is a spawn, a hop, a sidestep, an action of a mandatory DECK that changes position (today the hyperspace actions of DECK-0001), or an `exit-virtual`. It is not an `enter-virtual`, not an action inside a virtual bracket, and not a skipped action (`CYBERSPACE_V2.md` §8.9, §8.11). The chain rules never check the `C` of a virtual or skipped action against any work (§8.11.2), so such a `C` can name any place in cyberspace.
 - **Valid.** The line of its ancestry (§4.4), read from its spawn forward as if the reach event were the head of the active chain, is valid under the chain rules (`CYBERSPACE_V2.md` §8.7.3, §8.12) up to and including the reach event. Its position is then the one the chain rules give the identity at that event, which for these actions is its `C`. Reading the line as if the reach event were the head ignores forks after it and respawns, on purpose: an action that was valid where it stood proved its position with work, and a later fork or respawn does not undo that.
 
-A reader that does not verify chains MAY establish validity through the canonical relay instead: it treats a reach event as valid when it fetched the reach event and its whole ancestry from `wss://relay.onosendai.tech`, which checks the proofs of the movement actions it accepts and refuses invalid ones. This is trust in that relay, of the same kind as the witness (§7.4), and the reader SHOULD verify for itself when it can. A reader that neither verifies chains nor relies on the canonical relay cannot establish validity and MUST NOT count a layer as valid on reach alone; it MAY show it as unverified to its own user.
+A reader that does not verify chains MAY establish validity through the canonical relay instead: it treats a reach event as valid when it fetched the reach event and its whole ancestry from `wss://relay.onosendai.tech`, which checks every movement action it accepts against the chain rules and refuses invalid ones (§8.3). This is trust in that relay, of the same kind as the witness (§7.4), and the reader SHOULD verify for itself when it can. A reader that neither verifies chains nor relies on the canonical relay cannot establish validity and MUST NOT count a layer as valid on reach alone; it MAY show it as unverified to its own user.
 
 **Constant:** `REACH = 16` gibsons.
 
@@ -961,7 +961,7 @@ The **later** of two placements is the one that rule 1 or rule 2, read the other
 For each cell of a chunk's plane:
 
 1. **The placements.** Gather the cell's placements from every counted layer's plane.
-2. **The owner.** If the chunk is the **home chunk** of an author `H`, the chunk that contains `H`'s spawn coordinate (the pubkey read as a coordinate, `CYBERSPACE_V2.md` §3.1), in the plane its lowest bit names, the owner of every cell in it is `H`. The home chunk rule applies only when `H` is the author of a counted layer in the chunk (a layer that only surveys is enough): a reader checks, for each author whose layer it counts there, whether the chunk holds that author's spawn coordinate. A pubkey cannot be computed from a chunk, so a reader cannot know whose home a chunk is until its owner builds there, and every reader holding the same layers then agrees. Otherwise the owner of the cell is the author of its earliest placement, comparing first settles (§7.2). The first person to place in a cell owns it.
+2. **The owner.** If the chunk is the **home chunk** of an author `H`, the chunk that contains `H`'s spawn coordinate (the pubkey read as a coordinate, `CYBERSPACE_V2.md` §3.1), in the plane its lowest bit names, the owner of every cell in it is `H`. The home chunk rule applies only when `H` has a counted plane object for the home plane in the chunk (a plane that only surveys is enough; a plane object for the twin plane does not count, because the twin is another chunk): a reader checks, for each author with such a plane, whether the chunk, in that plane, holds the author's spawn coordinate. A pubkey cannot be computed from a chunk, so a reader cannot know whose home a chunk is until its owner builds there, and every reader holding the same layers then agrees. Otherwise the owner of the cell is the author of its earliest placement, comparing first settles (§7.2). The first person to place in a cell owns it.
 3. **Who may change it.** Only the owner's placements and those of authors that the owner lists in `builders` count. The owner's list in a chunk is the union of the `builders` of every counted layer of the owner's there, leaving out every layer signed by a builder key that any authentic movement action of the owner's retires, in either form and on any chain. This is deliberately stricter than §4.3, where a retirement from here on counts only on its own chain: a retired key, which may be a stolen one, cannot add builders anywhere.
 4. **The value.** The cell takes the value of the latest of the placements that count, comparing last settles (§7.2).
 5. **Otherwise** the cell shows its base (§7.5).
@@ -980,7 +980,7 @@ The **witness** is the canonical relay, `wss://relay.onosendai.tech` (`CYBERSPAC
 - each settle that it has not recorded before for this author and chunk claims exactly the placements whose `t0` names it (§5.3, Claiming);
 - each settle it has recorded before is named by a placement's `t0` only for cells that were placements with that `t0` in the last version it recorded of a layer of this author's at this chunk that carries that settle, whichever builder key signed it.
 
-For a layer that passes, it records the event id, and for each settle id not yet recorded for that author and chunk, the height of the best chain's tip as it knows it at that moment. That height is the settle's `W`. It records `W` once and never changes it, even when a later version replaces the event that first carried the settle. It records the same height for every movement action it accepts that carries `builder-retire`, for rule 4 of §4.4. It SHOULD keep the versions of layers that newer versions replace, so that what it recorded can be audited.
+The witness notes the **receipt height** of every event it receives: the height of the tip of the best chain it knows at the moment the event arrives, before any check. For a layer that passes, it records the event id with its receipt height, and for each settle id not yet recorded for that author and chunk, that same receipt height, which is the settle's `W`. A check that waits, for headers or for an ancestry, does not change the height recorded. When the witness itself applies rule 4 of §4.4 to a layer, it compares the layer's receipt height with the recorded retirement height. It records `W` once and never changes it, even when a later version replaces the event that first carried the settle. It records every `kind 3333` event it accepts with its receipt height, so that a retirement's height can be asked for (rule 4 of §4.4). It SHOULD keep the versions of layers that newer versions replace, so that what it recorded can be audited.
 
 A reader counts a settle as witnessed only when the witness has recorded **the layer's current version** (its event id) and the settle's `W`. A version that the witness refused, or never saw, has only unwitnessed settles, whatever earlier versions carried. So a writer that breaks the rule of Claiming, or publishes only elsewhere, loses its place.
 
@@ -990,18 +990,28 @@ A reader counts a settle as witnessed only when the witness has recorded **the l
 GET https://relay.onosendai.tech/witness/v1?ids=<event id>,<event id>,...
 ```
 
-with 1 to 100 event ids, 64 lowercase hex each, of `kind 33339` layers or of movement actions. It answers `200` with a JSON object `{"body": "<string>", "sig": "<hex>"}`. `body` is a JSON text, and `sig` is a BIP-340 Schnorr signature over `sha256(UTF-8 bytes of body)` by the **witness key**, the `pubkey` of the canonical relay's NIP-11 document. A reader checks the signature over the string exactly as received, before it parses it, so no canonical form of JSON is needed. Parsed, `body` is:
+- **The request.** `ids` is 1 to 100 event ids, each 64 lowercase hex characters, separated by single commas, with no spaces and no id twice. They are ids of `kind 33339` layers or of movement actions.
+- **Errors.** A malformed request (a bad id, more than 100, a repeat) gets `400`, which a reader fixes rather than retries. `429`, any `5xx`, a timeout or a network failure means the witness is unreachable for now. Any status but `200` carries no answer.
+- **The answer.** `200`, `Content-Type: application/json`, `Access-Control-Allow-Origin: *`, and a JSON object `{"body": "<string>", "sig": "<hex>"}`. `sig` is 128 lowercase hex characters: a BIP-340 Schnorr signature by the witness key over `sha256` of the **decoded value** of `body` (the JSON string after its escapes are undone), encoded as UTF-8. The witness MUST make that value pure ASCII, so that every language encodes it to the same bytes. A reader verifies the signature over the decoded value before it parses it as JSON, so no canonical form of JSON is needed.
+- **The body.** The decoded value is a JSON object:
 
 | Field | Value |
 |---|---|
-| `v` | `1` |
-| `witness` | the witness key, 64 lowercase hex |
-| `tip` | the height of the best chain's tip as the witness knows it now |
-| `results` | one object per requested id, in the order requested: `{"id": "<hex>", "height": <h>, "settles": [["<settle id>", <W>], ...]}` |
+| `v` | the integer `1` |
+| `witness` | the witness key, 64 lowercase hex. A reader MUST reject an answer whose `witness` is not the key it pins |
+| `tip` | an integer: the tip height the witness knows as it answers, so that a reader can see how current the witness is. Informational |
+| `results` | an array with exactly one object per requested id, in the order requested |
 
-`height` is the tip height when the witness recorded the event (§7.4 above), or `null` when it has not recorded it: never seen, refused, or not yet checked. For a recorded layer, `settles` lists each of its settle ids with its `W` for that author and chunk; for anything else it is empty. A recorded height or `W` never changes, so a reader MAY cache any non-null answer forever, and SHOULD ask again later about a `null`. A reader that pins the witness key SHOULD refuse an answer signed by any other key.
+Each result is `{"id": "<hex>", "height": <integer or null>, "settles": [["<settle id>", <integer>], ...]}`:
 
-A reader that cannot reach the witness, or gets an answer it cannot verify, treats every settle as unwitnessed: placements are then ordered by committed block alone, which is honest for cells nobody contests and open to backdating for cells somebody does, and rule 4 of §4.4 cannot run. Signed answers are a step toward receipts (below): a reader that keeps them can show what the witness said, but they do not yet form a chain that shows a later lie.
+- `height` is the receipt height the witness recorded for that event, or `null` when it has recorded none: never received, refused, or not yet checked.
+- For a recorded layer, `settles` has one pair per `settle` tag of that event, in tag order, each with its `W` for that author and chunk. For anything else `settles` is `[]`. A settle the answer leaves out is unwitnessed.
+
+**The witness key.** It is a secp256k1 key held by the canonical relay for this purpose only. Until this DECK names it (§12), a reader takes it from the `self` field of the relay's NIP-11 document, the relay's own key, and MUST pin it from then on. A pinned key changes only through a revision of this DECK that names the new one.
+
+**Caching and lies.** A recorded height or `W` never changes, so a reader MAY cache any non-null answer forever, and SHOULD ask again later about a `null`. A reader that holds two validly signed answers that give one event, or one settle, two different non-null heights holds proof that the witness lied. It SHOULD keep both, stop asking the witness, and say so to its user.
+
+**Without the witness.** A reader that cannot reach the witness, or gets an answer it cannot verify, treats every settle as unwitnessed: placements are then ordered by committed block alone, which is honest for cells nobody contests and open to backdating for cells somebody does, and rule 4 of §4.4 cannot run. Signed answers are a step toward receipts (below): a reader that keeps them can prove what the witness said, but they do not yet form a chain that shows a lie about the past to someone who never asked.
 
 **Why a witness (non-normative):** a Bitcoin block hash proves that a settle came after the block, never that it did not come much later. Every past block hash is public, so a stranger can commit today to a block of last week, and an author can build in secret and publish after others have built, taking their cells. The witness's first-seen height closes both: a settle counts from the later of its block and the moment the witness saw it, so committing to an old block buys nothing, and holding a layer back costs the holder their place.
 
@@ -1037,7 +1047,7 @@ A relay that makes these checks MUST NOT refuse a layer only because it cannot f
 
 ### 8.3 The witness
 
-The canonical relay records first-seen heights as §7.4 says.
+The canonical relay records receipt heights and answers queries as §7.4 says. Because §6.2 lets readers rely on it for reach, it MUST also check every `kind 3333` event it accepts against the chain rules (`CYBERSPACE_V2.md` §8.7, §8.12), on the line of its ancestry, and refuse one that is invalid there, and it MUST say in its NIP-11 document that it does (§12).
 
 ## 9. Test vectors
 
@@ -1090,7 +1100,7 @@ Some single values, for a quick check:
 Decisions marked delegated were made by Claude on arkinox's delegation of 2026-11-24 and are his to change.
 
 1. **Reach.** 16 gibsons, Chebyshev, from the chunk's box (§6.2). TERRAIN mode's cursor reaches about 5 blocks. Is 16 right, or should it be 8? Recommendation: 16, so that walking around a build without signing never strands it.
-2. **How readers ask the witness** (§7.4). Proposed: `GET /witness/v1?ids=...` on relay.onosendai.tech, answers signed by the relay's NIP-11 key, with every settle unwitnessed when the witness cannot be reached. The relay does not serve it yet; building it is owed, and receipts chained into an auditable log remain future work.
+2. **How readers ask the witness** (§7.4). Proposed: `GET /witness/v1?ids=...` on relay.onosendai.tech, answers signed over the decoded `body` by a witness key that this DECK will name (taken from NIP-11 `self` and pinned until then), with every settle unwitnessed when the witness cannot be reached. The relay does not serve it yet, and §8.3 also asks it to check every movement action against the chain rules and say so in NIP-11; whether it already does needs confirming. Building both is owed. Receipts chained into an auditable log remain future work.
 3. **Retirement with `all` across chains** (§4.3): the ruling says a retirement is in a later event of the same chain. Allowing `all` from any chain of the author, including after a respawn, is delegated; without it, a key named on a chain that a respawn has ended could never be retired.
 4. **Rule 4 of §4.4,** which uses the witness to stop a retired key's layers that name old reach events. Delegated.
 5. **Settles carried across builder keys** (§5.3): the settle id binds the author, not the key, so another of the author's keys can rewrite a retired key's work without losing its place. Delegated.
