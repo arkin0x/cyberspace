@@ -767,14 +767,14 @@ A reader that cannot walk the whole ancestry (an action it cannot fetch) cannot 
 |---|---|
 | `kind` | `33339`. NIP-01 addressable: a relay keeps the newest event per `(pubkey, kind, d)`, so one builder key has one layer per chunk, and each version replaces the one before |
 | `pubkey` | the builder key |
-| `content` | empty, or the same fixed sentence on every layer a writer publishes, for clients that cannot read it. It MUST NOT say anything about the place or what is built there |
+| `content` | empty, or the same fixed sentence on every layer a writer publishes, for clients that cannot read it, at most 280 bytes of UTF-8 (§5.6). It MUST NOT say anything about the place or what is built there |
 | `["d", "<lookup id>"]` | exactly one. The chunk's lookup id (`CYBERSPACE_V2.md` §7.2), 64 lowercase hex |
 | `["p", "<author pubkey>"]` | exactly one. The author, 64 lowercase hex |
-| `["e", "<event id>", "<relay hint>", "reach"]` | one or two, at most one per plane. The reach event of §6.2: a movement action of the author's near this chunk. The relay hint MAY be empty |
+| `["e", "<event id>", "<relay hint>", "reach"]` | one or two, at most one per plane. The reach event of §6.2: a movement action of the author's near this chunk. The relay hint MAY be empty, and is at most 256 bytes of UTF-8 (§5.6) |
 | `["settle", "<settle id>"]` | one per entry of the plaintext's `settles`, in the same order, at most 32 (§5.3) |
 | `["encrypted", "aes-256-gcm", "<payload base64>"]` | exactly one. The plaintext of §5.5, sealed with the chunk's region key under the cipher of `CYBERSPACE_V2.md` §7.6: AES-256-GCM, a fresh 12-byte nonce for every encryption, a 16-byte tag, `nonce || ciphertext || tag`, standard base64 with padding |
 | `["version", "1"]` | exactly one. The rules of this section. A reader MUST ignore a layer whose version it does not know |
-| `["alt", "<text>"]` | OPTIONAL. A NIP-31 description, following the rule for `content` |
+| `["alt", "<text>"]` | OPTIONAL, at most one. A NIP-31 description, following the rule for `content`, at most 280 bytes of UTF-8 (§5.6) |
 
 A writer MUST NOT add a `C`, a height tag (`H` or `h`), a `hint`, sector tags, `contents`, NIP-70's `-`, or a `client` tag. A layer is a bag in its cipher and its key, and like a bag it carries nothing public that says where it is beyond what this table requires. A reader ignores any other tag.
 
@@ -861,6 +861,8 @@ A **plane object**:
 - A writer MUST NOT sign a layer whose serialized event is longer than 240,000 bytes. The serialized event is the event object as compact JSON in UTF-8, with exactly the keys `id`, `pubkey`, `created_at`, `kind`, `tags`, `content` and `sig`, in that order, no whitespace, and strings escaped as NIP-01 escapes them for the id. This is the bag guard of `CYBERSPACE_V2.md` §7.6 (Size). A reader MUST drop a longer one, so that every reader decides on the same layers.
 - **What fits.** A plane of ordinary building fits with room to spare: the benchmark's house is 2.7 KB, a castle that replaces the ground 17.7 KB, a chunk with half its cells changed at random about 62 KB. The worst plane a writer can make does not fit: every cell a different index into a palette of 256 is about 131,000 bytes of `cells` alone, and `t0` and `t1` that change settle at every cell add as much again each. A writer keeps a plane small by settling in batches, so that neighbouring cells share settles, and by merging settles when it must (§5.3). A writer that cannot fit a change MUST refuse it and tell its user, rather than drop anything already written.
 - `settles` at most 32, `builders` at most 64, `pal` at most 256, `planes` at most 2.
+- **Free text.** `content` and the `alt` value are each at most 280 bytes of UTF-8, and each relay hint at most 256 bytes. Every other tag value is fixed in form: hex, digits, a fixed word (`reach`, `aes-256-gcm`) or the standard base64 of the payload.
+- **Why the free text is bounded (non-normative).** Relays measure an event in their own serialization, and some escape characters that NIP-01's does not. The canonical relay's software, for example, writes each `<`, `>` and `&` as a six-byte `\u` escape, and others escape non-ASCII the same way, so a character can cost up to six bytes there. Only the free text can hold such characters: hex, digits and base64 never do. With these bounds the free text can grow by at most 5 × (280 + 280 + 2 × 256) = 5,360 bytes under any such escaping, so a layer within 240,000 bytes is always within 245,360 bytes as any relay counts it, well inside the 262,144-byte cap the canonical relay applies to block layers.
 
 ### 5.7 Writing, replacing and removing
 
@@ -884,7 +886,7 @@ A reader that holds a `kind 33339` event checks it in this order, and drops it i
 
 1. it is authentic: its `id` and `sig` are valid (`CYBERSPACE_V2.md` §8.2);
 2. its tags are as §5.1 requires: exactly one `d`, one `p`, one `encrypted` and one `version` of `1`, one or two `e` tags marked `reach`, and 1 to 32 `settle` tags;
-3. it is no longer than 240,000 bytes (§5.6);
+3. it is no longer than 240,000 bytes, its `content` and `alt` are each at most 280 bytes, it carries at most one `alt`, and each relay hint is at most 256 bytes (§5.6);
 4. it decrypts with the chunk's key (otherwise the reader simply cannot read it);
 5. its plaintext is the object of §5.5 with every field well formed and every runs array well formed (§5.4), except that a plane object in `diff` form that names a revision of the ground the reader does not implement (§3.10) is set aside here, unread, and dropped, while the layer's other plane goes on; a plane in `whole` form under such a revision is read for its values only, and skips checks 7 and 8 and the Cell Rule (§3.10);
 6. its settles hash, in order, to its `settle` tags (§5.3), with the author of `p` and the lookup id of `d`, and the claims of each settle are two well formed runs arrays of 0 and 1;
