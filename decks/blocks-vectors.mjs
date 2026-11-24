@@ -93,18 +93,7 @@ for (const c of chunks) {
 const ground0 = R.generateChunk(0n, 0n, 0n, 0)
 chunks[0].ground_runs = R.encodeRuns(Array.from(ground0))
 
-// Settles
 const LOOKUP0 = chunks[0].lookup_id
-const BLOCK_A = '00000000000000000001a7d1f3a2d3c4b5a69788796a5b4c3d2e1f0a1b2c3d4e' // a stand-in hash (not a real block)
-const BLOCK_B = '0000000000000000000233f1c0de5eed5eed5eed5eed5eed5eed5eed5eed5eed'
-function mine(author, lookup, height, hash, bits, claims) {
-  for (let n = 0n; ; n++) {
-    const nonce = n.toString(16).padStart(16, '0')
-    const id = R.settleId(author, lookup, height, hash, nonce, claims)
-    if (R.leadingZeroBits(id) >= bits) return { author, lookup_id: lookup, height, block_hash: hash, nonce, claims, claims_digest: R.hex(R.claimsDigest(claims)), id: R.hex(id), work: R.leadingZeroBits(id) }
-  }
-}
-const NO_CLAIMS = R.claimsOf({})
 
 // Runs
 const runs = {
@@ -130,104 +119,108 @@ for (const r of runs.rejected) {
   if (!threw) throw new Error('runs vector should be rejected: ' + JSON.stringify(r))
 }
 
-// A layer: author A in the origin chunk. Settle 0: dig out a column and place a Rustband beam; settle 1: place Gibsonite and an extension id.
+// A layer: author A in the origin chunk: a shaft dug down one column, a Rustband beam, one beam cell turned to Gibsonite, and an extension id.
 const values = Int32Array.from(ground0)
-const t0 = new Map(), t1 = new Map()
-const edit = (x, y, z, v, s) => {
-  const o = R.cellIndex(x, y, z)
-  values[o] = v
-  if (!t0.has(o)) t0.set(o, s)
-  t1.set(o, s)
-}
-for (let y = 0; y < 32; y++) edit(5, y, 5, 0, 0) // a shaft: every cell of column (5, *, 5) empty
-for (let x = 10; x < 16; x++) edit(x, 20, 10, 5, 0) // a Rustband beam
-edit(12, 20, 10, 43, 1) // one beam cell becomes Gibsonite in settle 1 (first placed at settle 0)
-edit(0, 0, 0, 300, 1) // an extension id, which a reader draws as an unknown block
-const plane0 = R.encodePlane(0, true, values, ground0, t0, t1)
-const decoded = R.decodePlane(plane0, ground0, 2)
-// Each settle claims exactly the cells first placed at it (t0), in this version.
-const claimSets = [0, 1].map((si) => R.claimsOf({ 0: new Set(decoded.placements.filter((o, i) => decoded.t0[i] === si)) }))
-const settles = [
-  mine(AUTHOR_A, LOOKUP0, 925010, BLOCK_A, 0, claimSets[0]),
-  mine(AUTHOR_A, LOOKUP0, 925040, BLOCK_B, 12, claimSets[1]),
-  mine(AUTHOR_B, LOOKUP0, 925010, BLOCK_A, 0, NO_CLAIMS),
-]
-// Check the claims rule of §6.1: every placement's t0 settle claims its cell.
-{
-  const bm = settles.slice(0, 2).map((st) => R.claimsBitmaps(st.claims)[0])
-  decoded.placements.forEach((o, i) => { if (!(bm[decoded.t0[i]][o >> 3] & (1 << (o & 7)))) throw new Error('claims vector') })
-}
-const layerPayload = {
-  settles: [settles[0], settles[1]].map((s) => [s.height, s.block_hash, s.nonce, s.claims]),
-  builders: [AUTHOR_B],
-  planes: [plane0],
-}
+const edit = (x, y, z, v) => { values[R.cellIndex(x, y, z)] = v }
+for (let y = 0; y < 32; y++) edit(5, y, 5, 0) // a shaft: every cell of column (5, *, 5) empty
+for (let x = 10; x < 16; x++) edit(x, 20, 10, 5) // a Rustband beam
+edit(12, 20, 10, 43) // one beam cell is Gibsonite
+edit(0, 0, 0, 300) // an extension id, which a reader draws as an unknown block
+const explicit = new Set([R.cellIndex(0, 31, 0)]) // empty in the ground, written explicitly as 0: a change at the base value
+const plane0 = R.encodePlane(0, true, values, ground0, explicit)
+const decoded = R.decodePlane(plane0, ground0)
+const layerPayload = { cobuilders: [AUTHOR_B], planes: [plane0] }
 const layer = {
-  note: 'Author A in the origin chunk, surveyed. A shaft down column (5, *, 5), a Rustband beam at y 20, one beam cell turned to Gibsonite in a later settle, and the cell (0, 0, 0) set to the extension id 300. Cells equal to the ground are not placements, so the shaft counts only where the ground was solid.',
+  note: 'Author A in the origin chunk, surveyed, with B listed as a co-builder. A shaft down column (5, *, 5), a Rustband beam at y 20 with one cell of Gibsonite, the cell (0, 0, 0) set to the extension id 300, and the cell (0, 31, 0), empty in the ground, written explicitly as 0: a change at the base value, which removes, for readers who rank A first, any block another layer placed there. The shaft\'s cells are written only where the ground was solid; elsewhere they are null, no change.',
   author: AUTHOR_A, builder: BUILDER_A1,
   plaintext: JSON.stringify(layerPayload),
   plaintext_bytes: Buffer.byteLength(JSON.stringify(layerPayload)),
   form: plane0.form,
-  placements: decoded.placements.length,
-  placement_cells: decoded.placements.map((o, i) => ({ x: o & 31, y: o >> 10, z: (o >> 5) & 31, value: decoded.values[o], ground: ground0[o], t0: decoded.t0[i], t1: decoded.t1[i] })),
+  changed: decoded.changed.length,
+  changed_cells: decoded.changed.map((o) => ({ x: o & 31, y: o >> 10, z: (o >> 5) & 31, value: decoded.values[o], ground: ground0[o] })),
   tags: [
     ['d', LOOKUP0],
     ['p', AUTHOR_A],
-    ['e', '<id of a kind 3333 event of author A whose C lies within reach of the chunk, in plane 0>', '', 'reach'],
-    ['settle', settles[0].id],
-    ['settle', settles[1].id],
     ['encrypted', 'aes-256-gcm', '<base64 of nonce || AES-256-GCM(region key, plaintext) || tag>'],
     ['version', '1'],
   ],
 }
-const surveyOnlySettle = mine(AUTHOR_A, LOOKUP0, 925010, BLOCK_A, 0, NO_CLAIMS)
-const untouched = { settles: [[surveyOnlySettle.height, surveyOnlySettle.block_hash, surveyOnlySettle.nonce, NO_CLAIMS]], builders: [], planes: [R.encodePlane(0, true, Int32Array.from(ground0), ground0, new Map(), new Map())] }
+const untouched = { planes: [R.encodePlane(0, true, Int32Array.from(ground0), ground0)] }
 layer.survey_only_plaintext = JSON.stringify(untouched)
 layer.survey_only_bytes = layer.survey_only_plaintext.length
-layer.survey_only_settle_id = surveyOnlySettle.id
 
-// Reach
-const reach = [
-  ['inside', [0n, 0n, 0n], [0n, 0n, 0n, 0]],
-  ['16 past the far corner on every axis', [0n, 0n, 0n], [47n, 47n, 47n, 0]],
-  ['17 past the far face on X', [0n, 0n, 0n], [48n, 0n, 0n, 0]],
-  ['16 below the near face on Y', [0n, 32n, 0n], [0n, 16n, 0n, 0]],
-  ['17 below the near face on Y', [0n, 32n, 0n], [0n, 15n, 0n, 0]],
-  ['the other plane', [0n, 0n, 0n], [0n, 0n, 0n, 1]],
-].map(([name, [X, Y, Z], [x, y, z, p]]) => {
-  const coord = R.hex(R.be(R.xyzToCoord(x, y, z, p), 32))
-  const d = R.reachDistance(coord, X, Y, Z, 0)
-  return { name, chunk: [S(X), S(Y), S(Z), 0], coord, distance: d === Infinity ? null : d, within_reach: d <= R.REACH }
+// Builder keys (§4.4)
+const K1 = '1'.repeat(64), K2 = '2'.repeat(64)
+const keyCases = [
+  { name: 'named once', key: K1, events: [{ created_at: 100, tags: [['builder', K1]] }] },
+  { name: 'never named', key: K2, events: [{ created_at: 100, tags: [['builder', K1]] }] },
+  { name: 'retired: every layer of the key is void, whenever written', key: K1, events: [{ created_at: 100, tags: [['builder', K1]] }, { created_at: 200, tags: [['builder-retire', K1], ['R', K1]] }] },
+  { name: 'retired, then named again: still void (a retirement is permanent)', key: K1, events: [{ created_at: 100, tags: [['builder', K1]] }, { created_at: 200, tags: [['builder-retire', K1], ['R', K1]] }, { created_at: 300, tags: [['builder', K1]] }] },
+  { name: 'all retires every key named before it', key: K1, events: [{ created_at: 100, tags: [['builder', K1]] }, { created_at: 200, tags: [['builder-retire', 'all'], ['R', 'all']] }] },
+  { name: 'a key named after all is valid', key: K2, events: [{ created_at: 100, tags: [['builder', K1]] }, { created_at: 200, tags: [['builder-retire', 'all'], ['R', 'all']] }, { created_at: 300, tags: [['builder', K2]] }] },
+  { name: 'named in the same second as all: void (the naming must be later)', key: K2, events: [{ created_at: 200, tags: [['builder-retire', 'all'], ['R', 'all'], ['builder', K2]] }] },
+  { name: 'a malformed builder tag names nothing', key: K1, events: [{ created_at: 100, tags: [['builder', K1.replace(/1/g, 'A')]] }] },
+].map((c) => ({ ...c, valid: R.builderKeyValid(c.key, c.events) }))
+
+// Home (§7.2)
+const H = homeCoord // an identity whose pubkey hex is the home vector's coordinate
+const hb = R.spawnChunk(H)
+const at = (dx, dy, dz, P = hb.P) => ({ X: R.wrap(hb.X + BigInt(32 * dx)), Y: R.wrap(hb.Y + BigInt(32 * dy)), Z: R.wrap(hb.Z + BigInt(32 * dz)), P })
+const homeCases = [
+  ['the spawn chunk', at(0, 0, 0)], ['a corner of the cube', at(1, -1, 1)], ['a face neighbour', at(-1, 0, 0)],
+  ['two chunks out on X', at(2, 0, 0)], ['the twin of the spawn chunk', at(0, 0, 0, 1 - hb.P)],
+  ['wrapping below 0 on an axis (an identity whose spawn chunk is the origin)', null],
+].map(([name, c]) => {
+  if (c === null) { const z = '0'.repeat(64); return { name, identity: z, chunk: [S(R.AXIS_MASK - 31n), '0', '0', 0], in_home: R.inHome(z, R.AXIS_MASK - 31n, 0n, 0n, 0) } }
+  return { name, identity: H, chunk: [S(c.X), S(c.Y), S(c.Z), c.P], in_home: R.inHome(H, c.X, c.Y, c.Z, c.P) }
 })
 
-// The Cell Rule
-const P = (author, builder, value, fh, fw, fk, lh, lw, lk) => ({ author, builder, value, first: { height: fh, witness: fw, work: fk }, last: { height: lh, witness: lw, work: lk } })
-const A = AUTHOR_A, B = AUTHOR_B, C = 'd'.repeat(64)
-const cases = [
-  { name: 'first placer owns', placements: [P(A, 'a1', 5, 925010, 925010, 0, 925010, 925010, 0), P(C, 'c1', 1, 925011, 925011, 0, 925011, 925011, 0)], builders: {}, home: null },
-  { name: 'late publisher loses: committed early, witnessed late', placements: [P(A, 'a1', 5, 925010, 925012, 0, 925010, 925012, 0), P(C, 'c1', 1, 925000, 925050, 0, 925000, 925050, 0)], builders: {}, home: null },
-  { name: 'listed builder changes the owner\'s cell later', placements: [P(A, 'a1', 5, 925010, 925010, 0, 925010, 925010, 0), P(B, 'b1', 1, 925011, 925011, 0, 925020, 925020, 0)], builders: { [A]: [B] }, home: null },
-  { name: 'unlisted later change is not drawn', placements: [P(A, 'a1', 5, 925010, 925010, 0, 925010, 925010, 0), P(B, 'b1', 1, 925011, 925011, 0, 925020, 925020, 0)], builders: {}, home: null },
-  { name: 'same block: more work wins', placements: [P(A, 'a1', 5, 925010, 925010, 3, 925010, 925010, 3), P(C, 'c1', 1, 925010, 925010, 9, 925010, 925010, 9)], builders: {}, home: null },
-  { name: 'same block, same work: lower author pubkey wins', placements: [P(C, 'c1', 1, 925010, 925010, 0, 925010, 925010, 0), P(A, 'a1', 5, 925010, 925010, 0, 925010, 925010, 0)], builders: {}, home: null },
-  { name: 'unwitnessed placement comes after every witnessed one', placements: [P(C, 'c1', 1, 925000, null, 0, 925000, null, 0), P(A, 'a1', 5, 925010, 925010, 0, 925010, 925010, 0)], builders: {}, home: null },
-  { name: 'home chunk: the home owner counts even when later', placements: [P(C, 'c1', 1, 925000, 925000, 0, 925000, 925000, 0), P(A, 'a1', 5, 925030, 925030, 0, 925030, 925030, 0)], builders: {}, home: A },
-  { name: 'home chunk: nobody but the owner and listed builders', placements: [P(C, 'c1', 1, 925000, 925000, 0, 925000, 925000, 0)], builders: {}, home: A },
-].map((c) => {
-  const bm = new Map(Object.entries(c.builders).map(([k, v]) => [k, new Set(v)]))
-  const r = R.resolveCell(c.placements, bm, c.home)
-  return { ...c, expected: r ? { value: r.value, owner: r.owner, from: r.from } : null }
-})
+// The Stack (§7) and co-builders (§8)
+const ID = (n) => n.toString(16).padStart(2, '0').repeat(32)
+const READER = ID(0x52), F1 = ID(0xf1), F2 = ID(0xf2), S1 = ID(0x51), S2 = ID(0x50), M = ID(0x4d), A = ID(0xa0), B = ID(0xb0), C = ID(0xc0)
+const L = (id, author, created_at, cells, opts = {}) => ({ id: ID(id), author, builder: opts.builder || ID(0xbb), created_at, cobuilders: opts.cobuilders || [], changed: cells })
+const NOW = 1800000000
+function stackCase(name, chunk, layers, cells, extra = {}) {
+  const ctx = { reader: READER, follows: new Set([F1, F2, A]), mutes: new Set(extra.mutes || []), now: NOW, chunk }
+  const counted = R.countedLayers(layers, ctx, extra.cap ?? 64).map((l) => ({ ...l, changed: new Map(Object.entries(l.changed).map(([k, v]) => [Number(k), v])) }))
+  const results = cells.map((cell) => { const r = R.resolveCell(cell, counted, ctx); return { cell, value: r ? r.value : null, from: r ? r.from : null, rank: r ? r.rank : null } })
+  return { name, chunk: [S(chunk.X), S(chunk.Y), S(chunk.Z), chunk.P], mutes: extra.mutes || [], cap: extra.cap ?? 64, layers, cells: results }
+}
+const away = at(5, 0, 0) // a chunk in nobody's home
+const stack = {
+  note: 'Each case gives the chunk, the mutes and the layers, as {id, author, builder, created_at, cobuilders, changed: {cell index: value}}, the changed cells being already decoded (§5.4); the reader, its follows and its clock are the same for every case. For each cell: the value, the id of the winning layer and its rank, or null when no counted layer changed the cell, which then shows its base.',
+  reader: READER, follows: [F1, F2, A], now: NOW, home_owner: H, home_owner_spawn_chunk: [S(hb.X), S(hb.Y), S(hb.Z), hb.P],
+  cases: [
+    stackCase('strangers: the newest layer wins; a layer speaks only for the cells it changed', away, [L(1, S1, 1000, { 0: 1, 1: 2 }), L(2, S2, 2000, { 0: 3 })], [0, 1, 2]),
+    stackCase('strangers with the same created_at: the lower author pubkey wins', away, [L(1, S1, 1000, { 0: 1 }), L(2, S2, 1000, { 0: 3 })], [0]),
+    stackCase('a followed identity beats a newer stranger; among follows the newest wins', away, [L(1, S1, 9000, { 0: 1, 1: 1 }), L(2, F1, 1000, { 0: 2, 1: 2 }), L(3, F2, 1500, { 1: 3 })], [0, 1]),
+    stackCase('the reader beats everyone outside a home', away, [L(1, F1, 9000, { 0: 2 }), L(2, READER, 10, { 0: 7 })], [0]),
+    stackCase('inside the home cube the home owner beats the reader (spawn chunk)', at(0, 0, 0), [L(1, READER, 9000, { 0: 7, 1: 7 }), L(2, H, 10, { 0: 9 })], [0, 1]),
+    stackCase('inside the home cube the home owner beats the reader (corner chunk)', at(1, -1, 1), [L(1, READER, 9000, { 0: 7 }), L(2, H, 10, { 0: 9 })], [0]),
+    stackCase('outside the home cube the home owner is an ordinary identity', at(2, 0, 0), [L(1, READER, 9000, { 0: 7 }), L(2, H, 10, { 0: 9 })], [0]),
+    stackCase('the home does not reach the twin plane', at(0, 0, 0, 1 - hb.P), [L(1, READER, 9000, { 0: 7 }), L(2, H, 10, { 0: 9 })], [0]),
+    stackCase('mutes come first: a muted stranger and a muted home owner are gone', at(0, 0, 0), [L(1, M, 9000, { 0: 4 }), L(2, S1, 100, { 0: 1, 1: 1 }), L(3, H, 50, { 1: 9 })], [0, 1], { mutes: [M, H] }),
+    stackCase('a layer dated more than 600 s past the reader\'s clock is not counted yet', away, [L(1, S1, NOW + 601, { 0: 1 }), L(2, S2, NOW + 600, { 1: 2 }), L(3, ID(0x40), 100, { 0: 3, 1: 3 })], [0, 1]),
+    stackCase('one author, two builder keys: newest first, then the lower builder key', away, [L(1, S1, 500, { 0: 1, 1: 1 }, { builder: ID(0x22) }), L(2, S1, 600, { 0: 2 }, { builder: ID(0x33) }), L(3, S1, 500, { 1: 3 }, { builder: ID(0x11) })], [0, 1]),
+    stackCase('co-builders: where A placed, the layers A lists count at A\'s rank, and the newest among them wins', away, [L(1, A, 100, { 5: 1, 9: 1 }, { cobuilders: [B] }), L(2, B, 200, { 5: 2, 6: 2 }), L(3, F2, 150, { 5: 3 }), L(4, S1, 900, { 5: 4, 6: 4 })], [5, 6, 9]),
+    stackCase('co-builders are not transitive', away, [L(1, A, 100, { 7: 1 }, { cobuilders: [B] }), L(2, B, 100, { 8: 2 }, { cobuilders: [C] }), L(3, C, 300, { 7: 3, 8: 3 }), L(4, S1, 200, { 7: 4, 8: 4 })], [7, 8]),
+    stackCase('the home owner\'s co-builders share rank 1 in the owner\'s cells inside the home', at(0, 0, 0), [L(1, H, 10, { 9: 1, 10: 1 }, { cobuilders: [B] }), L(2, B, 20, { 9: 2, 11: 2 }), L(3, READER, 9000, { 9: 7, 11: 7 })], [9, 10, 11]),
+    stackCase('a listed co-builder whose own rank is better keeps it', away, [L(1, S1, 500, { 10: 1 }, { cobuilders: [READER] }), L(2, READER, 10, { 10: 7 })], [10]),
+    stackCase('a co-builder undoes the builder: an explicit change at the base value (0 over empty ground) wins in the builder\'s cell', away, [L(1, A, 100, { 12: 5 }, { cobuilders: [B] }), L(2, B, 200, { 12: 0 })], [12]),
+    stackCase('the list comes from the author\'s newest layer only: an older device\'s layer still listing B no longer lifts B', away, [L(1, A, 100, { 13: 1 }, { builder: ID(0x0a), cobuilders: [B] }), L(2, A, 300, { 14: 1 }, { builder: ID(0x0b), cobuilders: [] }), L(3, B, 200, { 13: 2 }), L(4, S1, 250, { 13: 4 })], [13]),
+    stackCase('the cap (here 2 authors): authors by own rank, then newest layer, with no lifts; a lister left out lifts nobody', away, [L(1, S1, 100, { 15: 1, 16: 1 }, { cobuilders: [S2] }), L(2, S2, 900, { 15: 2 }), L(3, F1, 50, { 16: 3, 17: 3 })], [15, 16, 17], { cap: 2 }),
+  ],
+}
 
 const out = {
   description: 'Test vectors for DECK-0009 (Blocks). Generated by blocks-vectors.mjs from blocks-reference.mjs. Not normative: where this file disagrees with the DECK, the DECK is right.',
   constants: {
-    survey_domain: 'CYBERSPACE_BLOCKS_SURVEY_V1', settle_domain: 'CYBERSPACE_BLOCKS_SETTLE_V1', terrain_domain: 'CYBERSPACE_TERRAIN_K_V2',
+    survey_domain: 'CYBERSPACE_BLOCKS_SURVEY_V1', terrain_domain: 'CYBERSPACE_TERRAIN_K_V2',
     W8: R.W8, W128_samples: Object.fromEntries([0, 1, 32, 64, 96, 127, 128].map((f) => [f, R.W128(f)])),
     ground_revision: R.GROUND_REVISION, EMPTY_THR: R.EMPTY_THR, FEATURES: R.FEATURES, FEATURE_BYTES: R.FEATURE_BYTES, pool_threshold_examples: Object.fromEntries([0, 300, 512, 600, 768].map((k) => [k, R.poolThreshold(k)])), RARE: R.RARE,
-    FAMILIES: R.FAMILIES, REACH: R.REACH,
+    FAMILIES: R.FAMILIES, FUTURE_SLACK_SECONDS: R.FUTURE_SLACK_SECONDS,
   },
   chacha20_check: { key: chunks[0].survey_seed, nonce: '000000000000000000000000', counter: 0, keystream_head: chunks[0].stream_head },
-  chunks, settles, runs, layer, reach, cell_rule: cases,
+  chunks, runs, layer, builder_keys: keyCases, home: homeCases, stack,
 }
 process.stdout.write(JSON.stringify(out, null, 1) + '\n')

@@ -18,11 +18,10 @@ export const N = 32
 export const CELLS = 32768
 export const TERRAIN_DOMAIN_V2 = enc.encode('CYBERSPACE_TERRAIN_K_V2')
 export const SURVEY_DOMAIN = enc.encode('CYBERSPACE_BLOCKS_SURVEY_V1')
-export const SETTLE_DOMAIN = enc.encode('CYBERSPACE_BLOCKS_SETTLE_V1')
-export const REACH = 16
 export const LAYER_MAX_BYTES = 240000
-export const SETTLES_MAX = 32
-export const BUILDERS_MAX = 64
+export const COBUILDERS_MAX = 64
+export const ALT_MAX_BYTES = 280
+export const FUTURE_SLACK_SECONDS = 600
 export const PALETTE_MAX = 256
 
 // §3.6 Smoothstep weights in 512ths, for a lattice spacing of 8 at fractions 0..8.
@@ -500,7 +499,7 @@ export function generateChunk(X, Y, Z, P, detail = false) {
 // ---------------------------------------------------------------------------------------------------------------
 // Layers (§5)
 
-/** §5.4 Expand runs: a non-negative entry is a palette index, -N repeats the entry before it N more times. */
+/** §5.3 Expand runs: a non-negative entry is a palette index, -N repeats the entry before it N more times. */
 export function expandRuns(runs, length, limit) {
   if (!Array.isArray(runs)) throw new Error('runs: not an array')
   const out = new Int32Array(length)
@@ -533,8 +532,12 @@ export function encodeRuns(values) {
   return out
 }
 
-/** §5.5 Decode one plane of a layer to { values, placements (cell indices), t0, t1 } against the generated ground. */
-export function decodePlane(pl, ground, settleCount) {
+/**
+ * §5.4 Decode one plane against the ground. Returns { plane, values, changed (cell indices), survey }, or, for a whole plane
+ * under a revision this reader does not implement, { valuesOnly: true, values } (§3.10). Throws for a malformed plane and for
+ * a diff plane under an unknown revision (the plane is set aside).
+ */
+export function decodePlane(pl, ground) {
   if (!pl || typeof pl !== 'object') throw new Error('plane: not an object')
   if (pl.plane !== 0 && pl.plane !== 1) throw new Error('plane: bad plane')
   if (typeof pl.survey !== 'boolean') throw new Error('plane: bad survey')
@@ -545,132 +548,135 @@ export function decodePlane(pl, ground, settleCount) {
     if (pl.form === 'diff' && i === 0) { if (g !== null) throw new Error('plane: a diff palette starts with null'); return }
     if (!Number.isInteger(g) || g < 0 || g > 65535) throw new Error('plane: bad global id')
   })
-  // §3.10 A revision this reader does not implement (anything but 2): a diff plane is set aside; a whole plane is read
-  // for its values only, with no placements, and takes no part in the Cell Rule.
-  if (pl.ground !== GROUND_REVISION) {
+  if (pl.survey && pl.ground !== GROUND_REVISION) {
     if (pl.form === 'diff') throw new Error('plane: a diff against a ground revision this reader does not implement')
     const idx = expandRuns(pl.cells, CELLS, pal.length)
-    return { plane: pl.plane, survey: pl.survey, values: Int32Array.from(idx, (i) => pal[i]), placements: null, t0: null, t1: null, valuesOnly: true }
+    return { plane: pl.plane, survey: pl.survey, values: Int32Array.from(idx, (i) => pal[i]), changed: null, valuesOnly: true }
   }
   const base = pl.survey ? ground : new Uint8Array(CELLS)
   const idx = expandRuns(pl.cells, CELLS, pal.length)
   const values = new Int32Array(CELLS)
-  const placements = []
+  const changed = []
   for (let o = 0; o < CELLS; o++) {
     const g = pal[idx[o]]
     values[o] = g === null ? base[o] : g
-    if (values[o] !== base[o]) placements.push(o)
+    // §5.4 In a diff a non-null entry is a change even at the base value; in a whole plane only a different value is.
+    if (pl.form === 'diff' ? g !== null : values[o] !== base[o]) changed.push(o)
   }
-  const t0 = expandRuns(pl.t0, placements.length, settleCount)
-  const t1 = expandRuns(pl.t1, placements.length, settleCount)
-  return { plane: pl.plane, survey: pl.survey, values, placements, t0, t1 }
+  return { plane: pl.plane, survey: pl.survey, values, changed }
 }
 
-/** Encode one plane, choosing whichever form is shorter as compact JSON (§5.5, the writer's rule). */
-export function encodePlane(plane, survey, values, ground, t0ByCell, t1ByCell) {
+/** Encode one plane, choosing whichever form is shorter as compact JSON (§5.4, the writer's rule). explicit: cells marked as changed even at their base value (diff only). */
+export function encodePlane(plane, survey, values, ground, explicit = new Set()) {
   const base = survey ? ground : new Uint8Array(CELLS)
-  const placements = []
-  for (let o = 0; o < CELLS; o++) if (values[o] !== base[o]) placements.push(o)
-  const t0 = encodeRuns(placements.map((o) => t0ByCell.get(o)))
-  const t1 = encodeRuns(placements.map((o) => t1ByCell.get(o)))
   const mk = (form) => {
     const pal = form === 'diff' ? [null] : []
     const pos = new Map()
     const idx = new Array(CELLS)
     for (let o = 0; o < CELLS; o++) {
-      const keep = form === 'diff' && values[o] === base[o]
+      const keep = form === 'diff' && values[o] === base[o] && !explicit.has(o)
       const key = keep ? 'keep' : values[o]
       if (!pos.has(key)) { pos.set(key, keep ? 0 : pal.length); if (!keep) pal.push(values[o]) }
       idx[o] = pos.get(key)
     }
-    return { plane, survey, ground: GROUND_REVISION, form, pal, cells: encodeRuns(idx), t0, t1 }
+    return { plane, survey, ground: GROUND_REVISION, form, pal, cells: encodeRuns(idx) }
   }
-  const d = mk('diff'), w = mk('whole')
+  const d = mk('diff')
+  if (explicit.size) return d // whole cannot mark a cell explicitly at its base value
+  const w = mk('whole')
   return JSON.stringify(d).length <= JSON.stringify(w).length ? d : w
 }
 
-/** §5.3 A settle's claims: two runs arrays of 0 and 1 (planes 0 and 1), as two bitmaps of 4,096 bytes, hashed. */
-export function claimsBitmaps(claims) {
-  if (!Array.isArray(claims) || claims.length !== 2) throw new Error('claims: not two runs arrays')
-  return claims.map((runs) => {
-    const bits = expandRuns(runs, CELLS, 2)
-    const b = new Uint8Array(CELLS / 8)
-    for (let i = 0; i < CELLS; i++) if (bits[i]) b[i >> 3] |= 1 << (i & 7)
-    return b
-  })
-}
-export function claimsDigest(claims) { const [b0, b1] = claimsBitmaps(claims); return sha256(b0, b1) }
-/** Claims runs for a set of cell indices per plane: { 0: Set, 1: Set }. */
-export function claimsOf(sets) {
-  return [0, 1].map((p) => encodeRuns(Array.from({ length: CELLS }, (_, i) => (sets[p] && sets[p].has(i) ? 1 : 0))))
-}
-/** §5.3 A settle's id and its work (leading zero bits). */
-export function settleId(authorHex, lookupIdHex, height, blockHashHex, nonceHex, claims) {
-  return sha256(SETTLE_DOMAIN, unhex(authorHex), unhex(lookupIdHex), be(height, 4), unhex(blockHashHex), unhex(nonceHex), claimsDigest(claims))
-}
-export function leadingZeroBits(b) {
-  let n = 0
-  for (const v of b) { if (v === 0) { n += 8; continue } return n + Math.clz32(v) - 24 }
-  return n
-}
+// ---------------------------------------------------------------------------------------------------------------
+// The home (§7.2)
 
-/** §6.2 Chebyshev distance in gibsons from a coordinate to the box of a chunk; Infinity across planes. */
-export function reachDistance(coordHex, X, Y, Z, P) {
-  const c = coordToXyz(BigInt('0x' + coordHex))
-  if (c.plane !== P) return Infinity
-  const d = (v, b) => (v < b ? b - v : v > b + 31n ? v - (b + 31n) : 0n)
-  const m = [d(c.x, X), d(c.y, Y), d(c.z, Z)].reduce((a, b) => (a > b ? a : b))
-  return m > BigInt(Number.MAX_SAFE_INTEGER) ? Infinity : Number(m)
+/** The base of the h5 chunk holding an identity's spawn coordinate (its pubkey read as a coordinate), and its plane. */
+export function spawnChunk(pubkeyHex) {
+  const c = coordToXyz(BigInt('0x' + pubkeyHex))
+  return { X: (c.x >> 5n) << 5n, Y: (c.y >> 5n) << 5n, Z: (c.z >> 5n) << 5n, P: c.plane }
+}
+/** §7.2 Whether the chunk (X, Y, Z, P) is in the home of an identity: the 3 x 3 x 3 chunks centred on its spawn chunk, modulo 2^85, in its plane. */
+export function inHome(pubkeyHex, X, Y, Z, P) {
+  const h = spawnChunk(pubkeyHex)
+  if (h.P !== P) return false
+  const near = (a, b) => { const d = (a - b) & AXIS_MASK; return d === 0n || d === 32n || d === AXIS_MASK + 1n - 32n }
+  return near(X, h.X) && near(Y, h.Y) && near(Z, h.Z)
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// The Cell Rule (§7)
+// The Stack (§7) and co-builders (§8)
 
 /**
- * A placement's order key (§7.2). witness is the witness height W of its settle, or null when unwitnessed.
- * Returns an array compared lexicographically: smaller is earlier.
+ * §7.3 A layer's own rank for a chunk: 1 home owner (inside their home), 2 the reader, 3 followed, 4 everyone else.
+ * ctx: { reader, follows: Set, chunk: {X, Y, Z, P} }
  */
-export function orderKey(p) {
-  const witnessed = p.witness !== null && p.witness !== undefined
-  const T = witnessed ? Math.max(p.height, p.witness) : p.height
-  return [witnessed ? 0 : 1, T]
+export function ownRank(author, ctx) {
+  const { X, Y, Z, P } = ctx.chunk
+  if (inHome(author, X, Y, Z, P)) return 1
+  if (author === ctx.reader) return 2
+  if (ctx.follows.has(author)) return 3
+  return 4
 }
-function tieBreak(a, b) {
-  if (a.work !== b.work) return b.work - a.work // more work first
-  if (a.author !== b.author) return a.author < b.author ? -1 : 1
-  if (a.builder !== b.builder) return a.builder < b.builder ? -1 : 1
+/** §7.3 Order within a rank: newer created_at first, then lower author, then lower builder key, then lower event id. -1 when a comes first. */
+export function withinRank(a, b) {
+  if (a.created_at !== b.created_at) return b.created_at - a.created_at
+  for (const k of ['author', 'builder', 'id']) if (a[k] !== b[k]) return a[k] < b[k] ? -1 : 1
   return 0
 }
-/** -1 when a is earlier than b. */
-export function earlier(a, b) {
-  const ka = orderKey(a), kb = orderKey(b)
-  if (ka[0] !== kb[0]) return ka[0] - kb[0]
-  if (ka[1] !== kb[1]) return ka[1] - kb[1]
-  return tieBreak(a, b)
-}
-/** -1 when a is the later change (wins among the owner and listed builders). */
-export function later(a, b) {
-  const ka = orderKey(a), kb = orderKey(b)
-  if (ka[0] !== kb[0]) return kb[0] - ka[0]
-  if (ka[1] !== kb[1]) return kb[1] - ka[1]
-  return tieBreak(a, b)
-}
 
 /**
- * §7.3 One cell. placements: [{ author, builder, value, first: {height, witness, work}, last: {...} }].
- * builders: Map author -> Set of authors that author lists in this chunk. homeOwner: author or null.
- * Returns { value, owner, from } or null when no placement counts (the cell shows its base).
+ * §7.4 and §8 Resolve one cell of one chunk plane.
+ * layers: counted layers (mutes, the future rule and validity already applied), each
+ *   { id, author, builder, created_at, cobuilders: [hex], changed: Map(cellIndex -> value) } for this plane.
+ * Returns { value, from: layer id } or null (the cell shows its base).
  */
-export function resolveCell(placements, builders, homeOwner = null) {
-  if (placements.length === 0) return null
-  const firstOf = (p) => ({ ...p.first, author: p.author, builder: p.builder })
-  const lastOf = (p) => ({ ...p.last, author: p.author, builder: p.builder })
-  let owner
-  if (homeOwner) owner = homeOwner
-  else owner = placements.slice().sort((a, b) => earlier(firstOf(a), firstOf(b)))[0].author
-  const listed = builders.get(owner) || new Set()
-  const allowed = placements.filter((p) => p.author === owner || listed.has(p.author))
-  if (allowed.length === 0) return null
-  const win = allowed.slice().sort((a, b) => later(lastOf(a), lastOf(b)))[0]
-  return { value: win.value, owner, from: win.author }
+export function resolveCell(cell, layers, ctx) {
+  const touching = layers.filter((l) => l.changed.has(cell))
+  if (touching.length === 0) return null
+  // §8: in a cell where author A has a placement, the layers of authors A lists (in any of A's counted layers in the chunk)
+  // count at A's own rank for that cell, when that is better than their own. No transitivity: only a lister's own rank is used.
+  const listers = new Map() // author -> own rank, for authors with a placement in this cell
+  for (const l of touching) listers.set(l.author, ownRank(l.author, ctx))
+  // §8 A's list: the cobuilders of A's newest counted layer in the chunk (created_at, then lower builder, then lower id).
+  const listsOf = (a) => {
+    const own = layers.filter((l) => l.author === a).sort(withinRank)
+    return new Set((own.length ? own[0].cobuilders || [] : []).filter((c) => c !== a))
+  }
+  const rankOf = (l) => {
+    let r = ownRank(l.author, ctx)
+    for (const [a, ar] of listers) if (a !== l.author && ar < r && listsOf(a).has(l.author)) r = ar
+    return r
+  }
+  const ranked = touching.map((l) => ({ l, r: rankOf(l) }))
+  ranked.sort((a, b) => (a.r !== b.r ? a.r - b.r : withinRank(a.l, b.l)))
+  return { value: ranked[0].l.changed.get(cell), from: ranked[0].l.id, rank: ranked[0].r }
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Builder keys (§4)
+
+/**
+ * §4.4 Whether a builder key is valid for an author, from the author's authentic kind 3333 events (tags only needed).
+ * events: [{ created_at, tags }]
+ */
+export function builderKeyValid(k, events) {
+  let named = null, retired = false, lastAll = null
+  for (const e of events) for (const t of e.tags) {
+    if (t[0] === 'builder' && t[1] === k) named = named === null ? e.created_at : Math.max(named, e.created_at)
+    if (t[0] === 'builder-retire' && t[1] === k) retired = true
+    if (t[0] === 'builder-retire' && t[1] === 'all') lastAll = lastAll === null ? e.created_at : Math.max(lastAll, e.created_at)
+  }
+  if (named === null || retired) return false
+  return lastAll === null || named > lastAll
+}
+
+/** §7.1 The counted layers of a chunk plane: mutes removed first, then layers dated more than FUTURE_SLACK_SECONDS past the reader's clock. */
+export function countedLayers(layers, ctx, cap = 64) {
+  const kept = layers.filter((l) => !ctx.mutes.has(l.author) && l.created_at <= ctx.now + FUTURE_SLACK_SECONDS)
+  // The cap: authors by own rank, then the created_at of their newest layer, newest first, then lower pubkey; no lifts.
+  const newest = new Map()
+  for (const l of kept) newest.set(l.author, Math.max(newest.get(l.author) ?? -Infinity, l.created_at))
+  const authors = [...newest.keys()].sort((a, b) => ownRank(a, ctx) - ownRank(b, ctx) || newest.get(b) - newest.get(a) || (a < b ? -1 : a > b ? 1 : 0))
+  const allowed = new Set(authors.slice(0, cap))
+  return kept.filter((l) => allowed.has(l.author))
 }
