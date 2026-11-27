@@ -281,19 +281,41 @@ const DATA_URI = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/
 export function serializedLength(ev) {
   return Buffer.byteLength(JSON.stringify({ id: ev.id, pubkey: ev.pubkey, created_at: ev.created_at, kind: ev.kind, tags: ev.tags, content: ev.content, sig: ev.sig }), 'utf8')
 }
+export const RECORD_TAGS = { d: 2, version: 2, encrypted: 4, title: 2, alt: 2, 'no-broadcast': 1 }
+const SHEET_FIELDS = ['size', 'pal', 'cells', 'lock', 'height', 'prize']
+const SIZE_FIELDS = ['x', 'y', 'z']
+const PRIZE_FIELDS = ['reveal', 'text', 'name', 'views']
+// Free text holds no control character (U+0000..U+001F, U+007F) and no lone surrogate (§5.3).
+const BAD_TEXT = /[\u0000-\u001f\u007f]|[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/
+export const freeTextOk = (s) => typeof s === 'string' && !BAD_TEXT.test(s)
+// The canonical serialization (§5.2): what a card's content must be, byte for byte.
+export const canonicalRecord = (ev) => JSON.stringify({ id: ev.id, pubkey: ev.pubkey, created_at: ev.created_at, kind: ev.kind, tags: ev.tags, content: ev.content, sig: ev.sig })
 export function checkRecord(ev) {
   if (ev.kind !== RECORD_KIND) return 'kind'
   if (serializedLength(ev) > RECORD_MAX_BYTES) return 'too large'
-  const tags = (n) => ev.tags.filter((t) => t[0] === n)
-  const d = tags('d'), v = tags('version'), e = tags('encrypted'), ti = tags('title')
-  if (d.length !== 1 || !HEX64.test(d[0][1] ?? '')) return 'd'
-  if (v.length !== 1 || v[0][1] !== '1') return 'version'
-  if (e.length !== 1 || e[0][1] !== 'aes-256-gcm' || typeof e[0][2] !== 'string' || e[0][3] !== PRIZE_MARK) return 'encrypted'
-  if (ti.length > 1 || (ti.length && [...(ti[0][1] ?? '')].length > TITLE_MAX)) return 'title'
-  for (const bad of ['C', 'H', 'h', 'hint', '-']) if (tags(bad).length) return `forbidden tag ${bad}`
+  const seen = new Set()
+  for (const t of ev.tags) {
+    if (!Array.isArray(t) || !(t[0] in RECORD_TAGS)) return `unknown tag ${Array.isArray(t) ? t[0] : ''}`
+    if (seen.has(t[0])) return `tag ${t[0]} twice`
+    if (t.length !== RECORD_TAGS[t[0]] || t.some((x) => typeof x !== 'string')) return `tag ${t[0]} elements`
+    seen.add(t[0])
+  }
+  const tag = (n) => ev.tags.find((t) => t[0] === n)
+  const d = tag('d'), v = tag('version'), e = tag('encrypted'), ti = tag('title'), alt = tag('alt')
+  if (!d || !HEX64.test(d[1])) return 'd'
+  if (!v || v[1] !== '1') return 'version'
+  if (!e || e[1] !== 'aes-256-gcm' || e[3] !== PRIZE_MARK) return 'encrypted'
+  if (ti && [...ti[1]].length > TITLE_MAX) return 'title'
+  if (alt && Buffer.byteLength(alt[1], 'utf8') > TEXT_MAX) return 'alt'
   let sheet
   try { sheet = JSON.parse(ev.content) } catch { return 'content' }
   if (!sheet || typeof sheet !== 'object' || Array.isArray(sheet)) return 'content'
+  if (Object.keys(sheet).some((k) => !SHEET_FIELDS.includes(k))) return 'unknown sheet field'
+  if (sheet.size && typeof sheet.size === 'object' && Object.keys(sheet.size).some((k) => !SIZE_FIELDS.includes(k))) return 'unknown size field'
+  if (sheet.prize && typeof sheet.prize === 'object' && Object.keys(sheet.prize).some((k) => !PRIZE_FIELDS.includes(k))) return 'unknown prize field'
+  // Written plainly: compact, fields in their order, no escape but \" and \\.
+  if (JSON.stringify(sheet) !== ev.content) return 'content not written plainly'
+  for (const s of [ti?.[1], alt?.[1], sheet.prize?.text, sheet.prize?.name]) if (s !== undefined && !freeTextOk(s)) return 'free text'
   try { readSheetShape(sheet) } catch (err) { return `shape: ${err.message}` }
   if (sheet.lock === 'location') {
     if (!Number.isInteger(sheet.height) || sheet.height < 1 || sheet.height > 85) return 'height'
@@ -301,17 +323,26 @@ export function checkRecord(ev) {
   const p = sheet.prize
   if (!p || !REVEALS.includes(p.reveal)) return 'prize reveal'
   if ('text' in p && (typeof p.text !== 'string' || [...p.text].length > TEXT_MAX)) return 'prize text'
-  if ('name' in p && (typeof p.name !== 'string' || [...p.name].length > TITLE_MAX)) return 'prize name'
+  if ('name' in p && (typeof p.name !== 'string' || [...p.name].length > TITLE_MAX || !p.name.trim())) return 'prize name'
   if (p.reveal === 'hidden' && ('text' in p || 'views' in p)) return 'hidden prize shows something'
   if (p.reveal === 'description' && (typeof p.text !== 'string' || !p.text.trim() || 'views' in p)) return 'description'
   if (p.reveal === 'silhouette' || p.reveal === 'render') {
     if (!p.views || typeof p.views !== 'object' || Array.isArray(p.views)) return 'views'
     const keys = Object.keys(p.views)
     if (!keys.length || keys.some((k) => !VIEWS.includes(k))) return 'views'
-  }
+  } else if ('views' in p) return 'views'
   return null
 }
-// A view that breaks the picture rules is drawn as absent; it does not fail the record (§5.4 check 10).
+// A card's own check (§7.2 step 2), apart from its signature and its record's: its content is a valid
+// record's canonical serialization, byte for byte. Returns the record or a reason.
+export function readCard(card) {
+  let rec
+  try { rec = JSON.parse(card.content) } catch { return { error: 'content' } }
+  if (!rec || typeof rec !== 'object' || canonicalRecord(rec) !== card.content) return { error: 'content not canonical' }
+  const why = checkRecord(rec)
+  return why ? { error: why } : { record: rec }
+}
+// A view that breaks the picture rules is drawn as absent; it does not fail the record (§5.4 check 11).
 export const viewOk = (v) => typeof v === 'string' && v.length <= VIEW_MAX_CHARS && DATA_URI.test(v)
 
 // Reading a prize once opened (§5.5). Returns a short description, or null for one this reader

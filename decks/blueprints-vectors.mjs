@@ -218,9 +218,17 @@ rejectRecord('hidden-with-text', 'prize reveal hidden, but text is present', (e)
 rejectRecord('prize-name-too-long', 'a prize name of 65 characters', (e) => { const s = JSON.parse(e.content); s.prize.name = 'x'.repeat(65); e.content = JSON.stringify(s); return e })
 rejectRecord('location-without-height', 'lock location with no height', (e) => { const s = JSON.parse(e.content); s.lock = 'location'; e.content = JSON.stringify(s); return e })
 rejectRecord('unused-palette-id', 'the palette names an id no cell uses', (e) => { const s = JSON.parse(e.content); s.pal = [...s.pal, 1]; e.content = JSON.stringify(s); return e })
+rejectRecord('client-tag', 'a client tag: a record carries no tag but those of §5.1', (e) => { e.tags.push(['client', 'somewhere']); return e })
+rejectRecord('title-extra-element', 'a title tag with a third element', (e) => setTag(e, 'title', ['title', 'First prism', 'en']))
+rejectRecord('unknown-sheet-field', 'a sheet field §5.3 does not list', (e) => { const s = JSON.parse(e.content); s.note = 'hello'; e.content = JSON.stringify(s); return e })
+rejectRecord('unknown-prize-field', 'a prize field §5.3 does not list', (e) => { const s = JSON.parse(e.content); s.prize.colour = 'red'; e.content = JSON.stringify(s); return e })
+rejectRecord('needless-escape', 'content writes "standard" as "\\u0073tandard": it parses the same but is not written plainly (§5.3)', (e) => { e.content = e.content.replace('"standard"', '"\\u0073tandard"'); return e })
+rejectRecord('whitespace', 'content has a space after a colon: not written plainly', (e) => { e.content = e.content.replace('"lock":', '"lock": '); return e })
+rejectRecord('control-character', 'a tab in the title (free text holds no control characters)', (e) => setTag(e, 'title', ['title', 'First\tprism']))
+rejectRecord('empty-prize-name', 'a prize name that is empty after trimming: fails, it is not ignored', (e) => { const s = JSON.parse(e.content); s.prize.name = '   '; e.content = JSON.stringify(s); return e })
 rejectRecord('too-large', 'over 98,304 bytes serialized (§5.2)', (e) => { const s = JSON.parse(e.content); s.prize.pad = 'x'.repeat(99000); e.content = JSON.stringify(s); return e })
 
-const cardOf = (sk, record, coord) => sign({ kind: B.CARD_KIND, created_at: T0 + 3600, content: JSON.stringify(record), tags: [['C', coord], ['-']] }, sk)
+const cardOf = (sk, record, coord) => sign({ kind: B.CARD_KIND, created_at: T0 + 3600, content: B.canonicalRecord(record), tags: [['C', coord], ['-']] }, sk)
 const coordA = '0'.repeat(63) + '0', coordB = '0'.repeat(62) + '10'
 const card = cardOf(creatorSk, rec.event, coordA)
 const copy = cardOf(finderSk, rec.event, coordB)
@@ -228,6 +236,44 @@ check(JSON.parse(copy.content).sig === rec.event.sig, 'copy keeps the record unc
 const altered = JSON.parse(JSON.stringify(rec.event)); altered.tags = altered.tags.map((t) => t[0] === 'title' ? ['title', 'Mine now'] : t)
 const badCard = cardOf(finderSk, altered, coordB)
 check(!verifyEvent(JSON.parse(badCard.content)), 'altered record does not verify')
+check(B.readCard(card).record && B.readCard(copy).record, 'cards read')
+const loose = JSON.stringify(rec.event)   // the fields in the order the signer built them, not the canonical order
+check(loose !== B.canonicalRecord(rec.event), 'loose order differs')
+const looseCard = sign({ kind: B.CARD_KIND, created_at: T0 + 3600, content: loose, tags: [['C', coordB], ['-']] }, finderSk)
+check(B.readCard(looseCard).error === 'content not canonical', 'non-canonical card dropped')
+
+// ---------- size bounds (§5.2, §10) ----------
+function sizeBounds() {
+  const ser = B.canonicalRecord
+  const Q = (n) => '"'.repeat(n), F = (n) => 'f'.repeat(n)
+  const view = 'data:image/png;base64,' + 'A'.repeat(B.VIEW_MAX_CHARS - 22)
+  const pal = [0, null]; for (let i = 1; pal.length < 256; i++) pal.push(i)
+  const sheet = { size: { x: 16, y: 16, z: 16 }, pal, cells: [0, -4095], lock: 'location', height: 85,
+    prize: { reveal: 'render', text: Q(280), name: Q(64), views: { x: view, y: view, z: view, iso: view } } }
+  const recAt = (n, quotes) => ({ id: F(64), pubkey: F(64), created_at: 9999999999, kind: B.RECORD_KIND,
+    tags: [['d', F(64)], ['version', '1'], ['encrypted', 'aes-256-gcm', 'A'.repeat(n), B.PRIZE_MARK], ['title', quotes ? Q(64) : 'a'.repeat(64)], ['alt', quotes ? Q(280) : 'a'.repeat(280)], ['no-broadcast']],
+    content: JSON.stringify(quotes ? sheet : { ...sheet, prize: { ...sheet.prize, text: 'a'.repeat(280), name: 'a'.repeat(64) } }), sig: F(128) })
+  let lo = 0, hi = 200000
+  while (lo < hi) { const m = (lo + hi + 1) >> 1; if (Buffer.byteLength(ser(recAt(m, true))) <= B.RECORD_MAX_BYTES) lo = m; else hi = m - 1 }
+  const R = ser(recAt(lo, true))
+  const esc = (str) => [...str].filter((c) => c === '"' || c === '\\').length
+  const structural = esc(ser(recAt(lo, false)))
+  const cardEv = { id: F(64), pubkey: F(64), created_at: 9999999999, kind: B.CARD_KIND, tags: [['C', F(64)], ['-'], ['d', F(64)]], content: R, sig: F(128) }
+  const C = Buffer.byteLength(JSON.stringify(cardEv))
+  const sealedB64 = 4 * Math.ceil((12 + C + 16) / 3)
+  const preview = 'This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech'
+  const se = { id: F(64), pubkey: F(64), created_at: 9999999999, kind: 33335, tags: [['d', F(32)], ['encrypted', 'aes-256-gcm', 'A'.repeat(sealedB64), 'cyberspace:region'], ['alt', preview]], content: preview, sig: F(128) }
+  const out = {
+    note: 'The worst case of §5.2 and §10: every tag and field present, a full palette, four views of 16,384 characters, all free text made of quotation marks, and the prize payload padded until the record is exactly at the cap. Placeholder values stand in for ids, keys and signatures, which have fixed lengths.',
+    record_bytes: Buffer.byteLength(R), structural_escapes: structural, escapes: esc(R), card_bytes: C, card_own_fields: C - Buffer.byteLength(R) - esc(R),
+    chest_room_left: 131072 - Buffer.byteLength(JSON.stringify([cardEv])), sealed_entry_bytes: Buffer.byteLength(JSON.stringify(se)),
+    relay_worst_bytes: Buffer.byteLength(R) + 8 * (64 + 280 + 280 + 64),
+  }
+  check(out.record_bytes === 98304 && out.structural_escapes === 148 && out.escapes === 2212 && out.card_own_fields === 496 && out.card_bytes === 101012 && out.chest_room_left === 30058, 'size bounds as §5.2 says')
+  check(out.sealed_entry_bytes === 135342 && out.sealed_entry_bytes <= 240000 && out.relay_worst_bytes === 103808, 'sealed entry and relay bounds as §5.2 and §10 say')
+  return out
+}
+const sizeBoundsOut = sizeBounds()
 
 // ---------- rank ----------
 const reader = { pubkey: getPublicKey(followSk) }
@@ -266,7 +312,9 @@ const out = {
     by_creator: { note: 'A card left by the creator: shown "by" the creator, with no "left here by".', event: card },
     copy_by_finder: { note: 'A copy left by the finder (§7.5): a new card signed by the finder, carrying the same record (same id and sig). Shown "by" the creator, "left here by" the finder when the container carries the finder\'s signature.', event: copy },
     reject_altered: { note: 'A card whose record had its title changed: the record no longer verifies, and a reader drops the card.', event: badCard },
+    reject_not_canonical: { note: 'A card whose content is the right record, signature and all, but serialized with its fields in another order: not the canonical serialization (§5.2), so a reader drops the card (§7.2 step 2).', event: looseCard },
   },
+  size_bounds: sizeBoundsOut,
   rank: {
     reader: viewer.pubkey, follows: [...viewer.follows], mutes: [...viewer.mutes],
     records: pool.map((r) => ({ id: r.id, pubkey: r.pubkey, created_at: r.created_at, title: r.tags.find((t) => t[0] === 'title')[1] })),

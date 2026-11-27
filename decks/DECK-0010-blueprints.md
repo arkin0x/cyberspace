@@ -251,17 +251,31 @@ The key takes a fraction of a second to make. ONOSENDAI makes it during the shat
 | `["alt", "<text>"]` | OPTIONAL, at most one. A NIP-31 description for clients that do not know the kind, at most 280 bytes, such as `A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech` |
 | `["no-broadcast"]` | OPTIONAL. The creator asks feeds not to list the record (`CYBERSPACE_V2.md` §8.13, and §5.7 below) |
 
-A writer MUST NOT add a `C`, a height tag (`H` or `h`), a `hint`, sector tags, `contents` or NIP-70's `-`. A record is public and says nothing about where it may be built or where its cards are. A reader ignores any other tag.
+A writer MUST NOT add a `C`, a height tag (`H` or `h`), a `hint`, sector tags, `contents` or NIP-70's `-`. A record is public and says nothing about where it may be built or where its cards are.
+
+**No other tags (normative).** A record carries the tags of the table above and no others, each at most once, each with exactly the elements the table shows: two for `d`, `version`, `title` and `alt`, four for `encrypted`, and one for `no-broadcast`. A writer MUST NOT add any other tag, a `client` tag included, and a reader MUST drop a record that carries one, or that carries a listed tag with more or fewer elements. Every tag a reader would ignore is room that nothing bounds, and a record padded there could grow past every limit below once it is copied into a card (§5.2). A `no-broadcast` tag with further elements still means what `CYBERSPACE_V2.md` §8.13 says it means wherever else it appears; on a record, this DECK's stricter rule makes it invalid.
 
 The record is signed by the creator's identity. Records are made rarely, and the signature is the creator's credit wherever the record travels, so a builder key (DECK-0009 §4) does not sign one.
 
 ### 5.2 Size
 
-A writer MUST NOT sign a record whose serialized event is longer than 98,304 bytes, in the serialization of DECK-0009 §5.5 (the event object as compact JSON, UTF-8, with exactly the keys `id`, `pubkey`, `created_at`, `kind`, `tags`, `content` and `sig` in that order). A reader MUST drop a longer one. The cap leaves a card that carries the record (§7) room in a chest, whose contents may be 131,072 bytes (DECK-0004 §3.2), and keeps a card's sealed entry under the 240,000-byte guard (`CYBERSPACE_V2.md` §7.6). A writer that cannot fit a record MUST refuse it and say why, for example that the prize or its pictures are too large.
+**The canonical serialization.** A record's **canonical serialization** is the serialization of DECK-0009 §5.5: the event object as compact JSON in UTF-8, with exactly the keys `id`, `pubkey`, `created_at`, `kind`, `tags`, `content` and `sig` in that order, no whitespace, and strings escaped as NIP-01 escapes them for the id. Because the free text of a record holds no control characters (§5.3), that escaping writes only `\"` for a quotation mark and `\\` for a backslash, and every other character as itself, non-ASCII characters as their UTF-8 bytes. That is what JavaScript's `JSON.stringify` writes. A library that escapes non-ASCII characters by default, such as Python's `json` with `ensure_ascii`, must be told not to.
+
+**The cap.** A writer MUST NOT sign a record whose canonical serialization is longer than 98,304 bytes. A reader MUST drop a longer one. A writer that cannot fit a record MUST refuse it and say why, for example that the prize or its pictures are too large.
+
+**Why every card fits (non-normative arithmetic).** A card carries its record's canonical serialization, byte for byte, as its `content` (§7.1). When the card is itself serialized, NIP-01 escapes each quotation mark and backslash of that `content` once more, adding one byte for each. The rules above bound how many there can be:
+
+- The structure of a record with every tag and every field present, a full palette and four views, holds 148 quotation marks and backslashes once serialized.
+- Free text adds the most when it is made entirely of quotation marks. A `title` (64 characters) or `alt` (280 bytes) quotation mark is written `\"` in the record, 2 escapable bytes. A prize `text` (280 characters) or `name` (64 characters) quotation mark sits inside the sheet inside `content`, and is written `\\\"` in the record, 4 escapable bytes. That is at most 2 × (64 + 280) + 4 × (280 + 64) = 2,064 bytes.
+- So a card adds at most 148 + 2,064 = 2,212 bytes of escapes to its record, plus at most 496 bytes of its own fields (`id`, `pubkey`, `created_at`, `kind`, `sig`, `C`, `-` and a lineage `d`).
+- A card of a record at the cap is therefore at most 98,304 + 2,212 + 496 = 101,012 bytes. That fits a chest, whose contents may be 131,072 bytes (DECK-0004 §3.2), with 30,058 to spare.
+- Sealed alone in a sealed entry, those 101,012 bytes become 101,040 with the AES-GCM nonce and tag, 134,720 in base64, and a `kind 33335` event of 135,342 bytes with the fixed preview sentence: under the 240,000-byte guard (`CYBERSPACE_V2.md` §7.6) by 104,658.
+
+The arithmetic holds because nothing in a record is unbounded free text: unknown tags and fields are forbidden (§5.1, §5.3), the four free-text values are bounded, every other value is hex, digits, a fixed word, base64 or a base64 data URI, and the sheet and the card's `content` are written without needless escapes (§5.3, §7.1). The `size_bounds` section of `blueprints-vectors.json` builds this worst case and gives each of these numbers.
 
 ### 5.3 The sheet
 
-The sheet is a JSON object, UTF-8. A reader ignores any field not listed here.
+The sheet is a JSON object, UTF-8, with the fields below and no others. A reader MUST drop a record whose sheet, `size` or `prize` has a field not listed here (§5.1 gives the reason).
 
 | Field | Value |
 |---|---|
@@ -272,7 +286,11 @@ The sheet is a JSON object, UTF-8. A reader ignores any field not listed here.
 | `height` | present exactly when `lock` is `"location"`: the region height of §3.5, an integer from 1 to 85 |
 | `prize` | the prize reveal: an object with the fields below |
 
-**Integers.** Every integer in the sheet (in `size`, `pal`, `cells` and `height`) MUST be a JSON number written as an optional `-` and decimal digits, with no leading zero, no fraction, no exponent and not `-0`. A reader whose parser reads `1.0` and `1` alike MUST check the text, or reject what its parser cannot tell apart. Inside `size` and `prize`, as at the sheet's top level, a reader ignores any field not listed here.
+**Integers.** Every integer in the sheet (in `size`, `pal`, `cells` and `height`) MUST be a JSON number written as an optional `-` and decimal digits, with no leading zero, no fraction, no exponent and not `-0`. A reader whose parser reads `1.0` and `1` alike MUST check the text, or reject what its parser cannot tell apart.
+
+**Free text.** The record's free text is the `title` and `alt` tags and the prize's `text` and `name`. It MUST NOT contain a control character (U+0000 to U+001F, or U+007F) or a lone surrogate, and a reader MUST drop a record whose free text does.
+
+**Written plainly (normative).** `content` MUST be the sheet written as compact JSON: no whitespace outside strings, each field at most once, and in strings no escape other than `\"` and `\\`. A reader checks this by parsing the sheet and writing it back compactly, with its fields in the order they appeared and strings escaped that way: the result MUST equal `content` byte for byte, and a reader MUST drop the record otherwise. JavaScript's `JSON.stringify` writes exactly this form for any sheet that obeys the free-text rule.
 
 **Runs.** `cells` is a runs array in the encoding DECK-0003 §1.4a uses for `facecolors`: a non-negative entry is a value, and a negative entry `−N` stands for N more copies of the value expanded just before it, so two negative entries in a row repeat the same value. The first entry MUST be non-negative; every non-negative entry MUST be below the length of `pal`; and the array MUST expand to exactly `sx × sy × sz` values. A reader MUST check the length while it expands and MUST reject the sheet at the first entry that would pass it, so that an array such as `[0, -1000000000]` costs nothing. A writer MUST write the shortest form, as DECK-0003 §1.4a requires: every run of two or more equal values as the value followed by one negative entry, never a value written twice in a row and never two negative entries in a row, so that a sheet has one spelling. A reader MUST accept any well-formed array.
 
@@ -290,10 +308,10 @@ A fully revealed sheet has no `null`, and its cells are the whole arrangement (�
 |---|---|
 | `reveal` | `"hidden"`, `"description"`, `"silhouette"` or `"render"` |
 | `text` | the creator's words about the prize, at most 280 characters. Required for `description`, OPTIONAL for `silhouette` and `render`, absent for `hidden` |
-| `name` | OPTIONAL, with any `reveal`: the prize's name as the creator chooses to show it, 1 to 64 characters after trimming |
+| `name` | OPTIONAL, with any `reveal`: the prize's name as the creator chooses to show it: at most 64 characters, and not empty after trimming |
 | `views` | required for `silhouette` and `render`, absent otherwise: an object with one to four of the keys `"x"`, `"y"`, `"z"` and `"iso"`, each a picture of the prize as a data URI |
 
-**The prize's name.** A writer writes `name` only when its creator chooses to show the prize's name (ONOSENDAI's BLUEPRINT tool: "Show the prize's name", off by default), and leaves it out otherwise. A reader that finds it trims it, collapses runs of whitespace to one space, and shows it as the prize's name; a reader ignores a `name` that is not a string or is empty after trimming. When `name` is absent, a reader shows no name for the prize, and MUST NOT fill one in from anything else: the name is never derived from the sealed prize, which a reader cannot open before building, and a client that can open it (its creator's, or a smasher's after the smash) still shows the sheet's choice on the card. A `name` longer than 64 characters fails the record (§5.4).
+**The prize's name.** A writer writes `name` only when its creator chooses to show the prize's name (ONOSENDAI's BLUEPRINT tool: "Show the prize's name", off by default), and leaves it out otherwise. A reader that finds it trims it, collapses runs of whitespace to one space, and shows it as the prize's name. A `name` that is not a string, or is empty after trimming, fails the record (§5.4), as does one longer than 64 characters. When `name` is absent, a reader shows no name for the prize, and MUST NOT fill one in from anything else: the name is never derived from the sealed prize, which a reader cannot open before building, and a client that can open it (its creator's, or a smasher's after the smash) still shows the sheet's choice on the card. 
 
 The views are drawn by the creator's client at publish time, and each is a picture of the prize in its own axes, at the orientation it will have when collected. Cyberspace is left-handed: a viewer facing the black sun, looking along +Z with +Y up, has +X on screen-right (`CYBERSPACE_V2.md` §9.4, §11.1, §11.3). Each view is fixed in both where it looks from and how it lies on the picture (normative):
 
@@ -316,18 +334,19 @@ A reader that holds a `kind 33343` event checks it in this order, and drops it i
 
 1. it is authentic: its `id` and `sig` are valid (`CYBERSPACE_V2.md` §8.2);
 2. it is within 98,304 bytes serialized (§5.2);
-3. its tags are as §5.1 requires: exactly one `d` of 64 lowercase hex, exactly one `version` of `1`, exactly one `encrypted` whose second element is `aes-256-gcm` and whose fourth is `cyberspace:blueprint`, at most one `title` of at most 64 characters, and none of the tags §5.1 forbids;
-4. its `content` parses as a JSON object;
-5. `size`, `pal` and `cells` are well formed (§5.3), and the runs expand to the box;
-6. no entry of `pal` goes unused;
-7. at least one cell is occupied, and the occupied cells touch every face of the box (the box is the smallest);
-8. the occupied cells are connected through faces, edges and corners;
-9. `lock` and `height` are as §5.3 says;
-10. `prize` is as §5.3 says: `reveal` is one of the four; `text` is present, OPTIONAL or absent as `reveal` requires, and at most 280 characters; `name`, when present, is a string of at most 64 characters; `views` is present exactly for `silhouette` and `render`, as an object with one to four keys, each one of `x`, `y`, `z` and `iso`. A view whose value breaks the picture rules of §5.3 is drawn as absent and does not fail the record.
+3. its tags are as §5.1 requires: exactly one `d` of 64 lowercase hex, exactly one `version` of `1`, exactly one `encrypted` whose second element is `aes-256-gcm` and whose fourth is `cyberspace:blueprint`, at most one `title` of at most 64 characters, at most one `alt` of at most 280 bytes, at most one `no-broadcast`, each with exactly the elements §5.1 gives, and no other tag;
+4. its `content` parses as a JSON object with no field but those of §5.3, and writing it back as §5.3 says (Written plainly) gives `content` byte for byte;
+5. its free text holds no control character and no lone surrogate (§5.3);
+6. `size`, `pal` and `cells` are well formed (§5.3), and the runs expand to the box;
+7. no entry of `pal` goes unused;
+8. at least one cell is occupied, and the occupied cells touch every face of the box (the box is the smallest);
+9. the occupied cells are connected through faces, edges and corners;
+10. `lock` and `height` are as §5.3 says;
+11. `prize` is as §5.3 says: `reveal` is one of the four; `text` is present, OPTIONAL or absent as `reveal` requires, and at most 280 characters; `name`, when present, is a string of at most 64 characters that is not empty after trimming; `size` and `prize` have no field but those §5.3 lists; `views` is present exactly for `silhouette` and `render`, as an object with one to four keys, each one of `x`, `y`, `z` and `iso`. A view whose value breaks the picture rules of §5.3 is drawn as absent and does not fail the record.
 
 A record that fails is dropped alone. A reader SHOULD say that a blueprint was found and could not be read, rather than show a guess.
 
-Checks 7 and 8 hold for every arrangement a smash can produce (§4.1, §4.2), so a record that fails them could never be built. Nothing else about a record can be checked without the key: whether its shape and its revealed blocks are true, and what its prize is, are known only to someone who has built it (§12).
+Checks 8 and 9 hold for every arrangement a smash can produce (§4.1, §4.2), so a record that fails them could never be built. Nothing else about a record can be checked without the key: whether its shape and its revealed blocks are true, and what its prize is, are known only to someone who has built it (§12).
 
 ### 5.5 The prize
 
@@ -347,6 +366,12 @@ A writer MUST seal a fresh nonce every time it publishes a record, a revision in
 A creator revises a record by publishing a newer one at the same address: the same `d`, so the same arrangement and lock. A revision may change the title, the recipe reveal, the prize reveal and the prize. A different arrangement, or a different lock, is a different blueprint with a different lookup. Cards that carry an older version keep it, and a reader MAY show the newer version it can fetch from relays at the same address, signed by the same creator (§7.2).
 
 A creator removes a record from relays by publishing a NIP-09 deletion request with `["a", "33343:<creator>:<lookup>"]` and `["k", "33343"]`. Cards carry the record with them, so a deletion does not remove the copies people hold, and anyone who builds the arrangement and holds a card still unseals it (§6.1). Every copy of a public event outlives a deletion request.
+
+**A deletion is not permanent (non-normative).** Everyone who holds a card holds the creator's signed record, and can publish it again to any relay that will take it; the signature still verifies, because the creator did sign it. Nothing can stop that. What a deletion request does is say what the creator wants, and clients honour it as follows:
+
+- A client that sees a valid NIP-09 deletion request from a record's creator naming that record (by its address, or by its id) SHOULD stop listing the record in feeds (§5.7), and SHOULD NOT unseal from a copy of it that it fetched from a relay, when the copy's `created_at` is not later than the deletion request's.
+- Cards a user already holds keep working. Their records still unseal, and the client MAY say that the creator has withdrawn the blueprint.
+- A creator who wants a blueprint gone for good cannot have that. A creator who wants its prize to stop being given out publishes a revision (§5.6) whose prize is different, and a newer revision beats a republished older one at the same address on every relay.
 
 ### 5.7 Listing (non-normative for writers, normative for feeds)
 
@@ -396,7 +421,7 @@ A card is a nostr event carried inline in a bag's list of entries (`CYBERSPACE_V
 |---|---|
 | `kind` | `3343` |
 | `pubkey` | the key whose signature the card carries: its placer, the signer of the bag, room bag or chest the writer puts it in |
-| `content` | the record (§5), the whole signed event with its `id` and `sig`, serialized as JSON |
+| `content` | the record (§5), the whole signed event with its `id` and `sig`, as its canonical serialization (§5.2), byte for byte |
 | `["C", "<coord_hex>"]` | the card's exact coordinate, under the rules of `CYBERSPACE_V2.md` §7.6 |
 | `["-"]` | the NIP-70 protected marker. A writer MUST add it (`CYBERSPACE_V2.md` §7.6, Protected items) |
 | `["d", "<64 lowercase hex>"]` | present only on a card that has been moved: the event id of its first version, its lineage (DECK-0006 §2.2) |
@@ -408,7 +433,7 @@ The card is signed by its placer, as `CYBERSPACE_V2.md` §7.6 says every item th
 A reader that finds a `kind 3343` item:
 
 1. verifies it as an item of the bag or chest it is in (`CYBERSPACE_V2.md` §7.6; DECK-0004 §3.4);
-2. parses its `content` as one JSON object, and MUST drop the card when that object is not a record that passes every check of §5.4, its signature included;
+2. parses its `content` as one JSON object, and MUST drop the card when that object is not a record that passes every check of §5.4, its signature included, or when `content` is not that record's canonical serialization (§5.2) byte for byte;
 3. reads the **creator** from the record's `pubkey`, and the **placer** from the bag, room bag or chest that holds the card: placement is attributed to the container's signer (`CYBERSPACE_V2.md` §7.6, Items; DECK-0004 §3.4);
 4. shows the card with its title, the creator ("by"), the placer ("left here by") when the placer is not the creator, the shape as smoke with the revealed blocks, the prize as far as the record reveals it, and the lock;
 5. MAY fetch the newest record at the address `33343:<creator>:<lookup>` from the relays it reads, and show it in place of the card's when it is newer and passes §5.4. The card itself is never changed by this.
@@ -436,7 +461,7 @@ What a held card gives its holder is the record: its shape and revealed blocks f
 Anyone who holds a card MAY leave a copy of it: at a place, in a chest, or behind a door, under §7.3 (arkinox, 2026-11-27). The copy:
 
 1. is a new `kind 3343` item written and signed by the person leaving it, with its own `C` and `-`, under the rules for the items a writer puts its own signature on (`CYBERSPACE_V2.md` §7.6);
-2. carries in its `content` the creator's record unchanged: the same event, with the same `id` and `sig`, as the writer holds it or as the newest version at its address the writer has fetched. A writer MUST NOT alter the record, and cannot re-sign it, so the creator keeps the credit;
+2. carries in its `content` the creator's record unchanged, as its canonical serialization (§5.2): the same event, with the same `id` and `sig`, as the writer holds it or as the newest version at its address the writer has fetched. A writer MUST NOT alter the record, and cannot re-sign it, so the creator keeps the credit;
 3. shows its writer as "left here by", because the container it is placed in carries its writer's signature (§7.2).
 
 A copy is the same blueprint as the card it came from: the same address, the same lookup, the same prize. Leaving a copy publishes nothing new about the blueprint, only the container it is placed in.
@@ -513,7 +538,9 @@ Nothing checks any of it. A modified client can give itself every block, every c
 - A relay SHOULD NOT require NIP-42 authentication to read the kind, because a smasher asks for a lookup at the moment of the smash.
 - `kind 3343` is never published on its own (§7.1). A relay MAY refuse it.
 
-The canonical relay, `wss://relay.onosendai.tech`, accepts a kind only once it is on its whitelist. Adding `33343` there is a deployment change for its operator (§14).
+The canonical relay, `wss://relay.onosendai.tech`, accepts a kind only once it is on its whitelist. Since cyberspace-relay #52 (merged `d6eaf1e`, 2026-11-27) it accepts `kind 33343` with a cap of 106,496 bytes, and refuses `kind 3343` published on its own, as §7.1 and the rule above say.
+
+**The relay cap (non-normative arithmetic).** A record's canonical serialization is at most 98,304 bytes (§5.2). A relay that escapes characters NIP-01 does not can count it as longer, but only in free text, since every other value is ASCII hex, digits, a fixed word or base64. Free text is at most 64 + 280 + 280 + 64 = 688 characters (§5.3; the `alt` is at most 280 bytes, so at most 280 characters). The worst character costs 4 bytes in UTF-8 and 12 when a relay writes it as a pair of `\u` escapes, 8 bytes more; `<`, `>` and `&` written as six-byte escapes cost 5 more. So a valid record is at most 98,304 + 8 × 688 = 103,808 bytes as any such relay counts it, under 106,496.
 
 ## 11. Test vectors
 
@@ -526,8 +553,9 @@ The canonical relay, `wss://relay.onosendai.tech`, accepts a kind only once it i
 | `location` | the Compiler's recipe built inside the chunk at (0, 0, 0), the region of height 5 at the origin (DECK-0009's origin chunk, whose lookup id is `3c5d8c49...c649`): the region's base, `region_n`, key and lookup id, the location encoding's length and SHA-256, its key and its lookup. Also the same recipe at height 6, which differs, and a box that straddles a border of height 5 regions and so has no location encoding there |
 | `gather` | worlds of occupied cells, each with a hit cell and what a smash does there: the cells it takes, whether the group is isolated, the occupied cells that spoil isolation (`intruders`: the occupied cells of the grown box outside the group, including any just outside the window), and, when isolated, the box and the lookup. The cases: the Compiler's recipe alone, struck on its Ferrovein and on its Glowcore (the same group); the recipe with a stray block touching it only at a corner (taken with it, isolated, a different lookup); the recipe with a block two cells above it, outside the grown box (left alone, still isolated); the recipe with a block inside its grown box that touches nothing (left alone, not isolated); an L with a block in its notch, touching nothing (left alone, not isolated); a row of 20 Gridstone struck in the middle (16 taken, not isolated: the window cut it); a 16-cell row struck in its ninth cell (all taken, isolated) and in its eighth cell (15 taken, not isolated); two columns joined only by a bridge above the window (one column's 16 cells in the window taken, not isolated) |
 | `sheets` | the Compiler's recipe with every block revealed, with only the Glowcore revealed, and with nothing revealed: each sheet's `pal` and `cells`, and its expansion. Also sheets a reader MUST reject, each with the check it fails |
-| `record` | a record of the Compiler-shaped arrangement with a `sno` prize, signed with a test key, with only the Glowcore revealed and the prize as a description; its sheet, its prize plaintext, the AES-GCM nonce, the prize payload, its serialized length, and that the prize opens with the key and not with the key of the recipe with its Glowcore below. Also a location-locked record of the same arrangement at height 5, with silhouette views and the prize's name shown, whose prize does not open with the standard key; and records a reader MUST drop, each with the check it fails (the one over the size cap given by its length and hash) |
-| `card` | a card carrying that record, signed by the creator; a copy left by another key (§7.5), carrying the same record unchanged; and a card whose record was altered, which a reader drops |
+| `record` | a record of the Compiler-shaped arrangement with a `sno` prize, signed with a test key, with only the Glowcore revealed and the prize as a description; its sheet, its prize plaintext, the AES-GCM nonce, the prize payload, its serialized length, and that the prize opens with the key and not with the key of the recipe with its Glowcore below. Also a location-locked record of the same arrangement at height 5, with silhouette views and the prize's name shown, whose prize does not open with the standard key; and records a reader MUST drop, each with the check it fails: a missing or unknown version, a `C` tag, a `client` tag, a `title` with an extra element, an unknown sheet field and an unknown prize field, a needless escape and a space in `content`, a tab in the title, a prize name too long and one empty after trimming, a wrong key mark, a hidden prize with text, a location lock with no height, an unused palette id, and one over the size cap (given by its length and hash) |
+| `card` | a card carrying that record, signed by the creator; a copy left by another key (§7.5), carrying the same record unchanged; a card whose record was altered, which a reader drops; and a card whose record is right but serialized with its fields in another order, which a reader drops because its `content` is not the canonical serialization |
+| `size_bounds` | the worst case of §5.2 and §10, built and measured: a record at the cap with every tag and field, a full palette, four views and all free text made of quotation marks; its 148 structural and 2,212 total escapable bytes, the card of 101,012 bytes, the 30,058 bytes left in a chest, the sealed entry of 135,342 bytes, and the 103,808 bytes a relay that escapes free text could count |
 | `rank` | records from the reader, a follow, two strangers and a muted stranger under one lookup, with two versions from one creator, and the order of §6.2 |
 
 Some single values, for a quick check:
@@ -578,7 +606,8 @@ Each of these was decided by Claude on delegation while writing this draft, and 
 9. **Unlisted records use `no-broadcast`** (§5.7) rather than a new tag.
 10. **Records are signed by the creator's identity**, not a builder key (§5.1).
 11. **Makers may check their own build** (§4.4): the rule that the Compiler says nothing before a smash applies to solvers smashing. A maker's authoring tool may say whether a captured build stands alone, but never tests a build against a record and makes no key before publishing.
-12. **The relay whitelist.** Adding `33343` to `relay.onosendai.tech` needs the owner's go (§10).
+12. **The relay whitelist** is done: `relay.onosendai.tech` accepts `33343` (cap 106,496) and refuses `3343` alone since cyberspace-relay #52 (§10).
+13. **Strict records** (§5.1 to §5.4): unknown tags and fields fail the record, the sheet and a card's record are written without needless escapes, and free text holds no control characters, so that the size of every card is bounded (§5.2). A malformed prize `name` fails the record rather than being ignored.
 
 ## 15. Implementations (non-normative)
 

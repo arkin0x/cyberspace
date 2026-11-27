@@ -3091,7 +3091,7 @@
       {
         "name": "C-tag",
         "reason": "a C tag: a record says nothing about where it may be built",
-        "check_failed": "forbidden tag C",
+        "check_failed": "unknown tag C",
         "event": {
           "kind": 33343,
           "created_at": 1795000000,
@@ -3315,6 +3315,307 @@
         }
       },
       {
+        "name": "client-tag",
+        "reason": "a client tag: a record carries no tag but those of §5.1",
+        "check_failed": "unknown tag client",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "tags": [
+            [
+              "d",
+              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ],
+            [
+              "client",
+              "somewhere"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "f7309c8e6775b0d326802b70952f7e7511372f845afd313cbe3b393bc879f6d1",
+          "sig": "5f55381dbdf040e6ba8220c9e49faf2ce8f871fe158d352433dff49b6f3642cec3be4e9cfbac07bf79bddace25f0942c8d4503c425275247c131ce94af4895fe"
+        }
+      },
+      {
+        "name": "title-extra-element",
+        "reason": "a title tag with a third element",
+        "check_failed": "tag title elements",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "tags": [
+            [
+              "d",
+              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ],
+            [
+              "title",
+              "First prism",
+              "en"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "b0ccfcda3433b93a199f60317b6993008c2358238aae0ec257cb3482c0d8e802",
+          "sig": "9a53adee93be9ebf7fce354ae70a097bcc2ad2df9cd0aad13cf806a4cb36818fa4739c84e9d408836906d8e9fb64cbca2209664fb70f4d0d16d0cb0bad8c7cd5"
+        }
+      },
+      {
+        "name": "unknown-sheet-field",
+        "reason": "a sheet field §5.3 does not list",
+        "check_failed": "unknown sheet field",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"},\"note\":\"hello\"}",
+          "tags": [
+            [
+              "d",
+              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "481acdc1c2a2fe7b88cc5aa91470f030f91221152599e82bd0ee00bad020f8c4",
+          "sig": "cf8bc65774a9a65ef94effda42e7a460b822fb8560245fcd49b256dc9f97d90e659a3da16d579a70f9eb5e634a67d07221d6bd9cc9d339d07311693c7b0ef7ce"
+        }
+      },
+      {
+        "name": "unknown-prize-field",
+        "reason": "a prize field §5.3 does not list",
+        "check_failed": "unknown prize field",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\",\"colour\":\"red\"}}",
+          "tags": [
+            [
+              "d",
+              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "fbbdf5fa77f79f1a9c95b787233546ed0ee10cae00812ba55c777b41ff0edfb1",
+          "sig": "8c748e6a6587e113c1f1b4567edb99397f365a2e9642d01c33f88d71b02c74e98ef9ae36606dd1a3fe067af68bb453da59f658618a2a2058bfa8b6c88e2b3874"
+        }
+      },
+      {
+        "name": "needless-escape",
+        "reason": "content writes \"standard\" as \"\\u0073tandard\": it parses the same but is not written plainly (§5.3)",
+        "check_failed": "content not written plainly",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"\\u0073tandard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "tags": [
+            [
+              "d",
+              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "f5fad2a7fa5ef271b7b350c1604ea90e3901c78e6b170971c35b8e081fd7f804",
+          "sig": "f058547e9ed94cc0fa4aa68d19023f704375ebff0f8b1323d24a1dc466491367d3af98313c4128f9e5644d7a97ac54156b794c359e453f304c88c6a7e70c6216"
+        }
+      },
+      {
+        "name": "whitespace",
+        "reason": "content has a space after a colon: not written plainly",
+        "check_failed": "content not written plainly",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\": \"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "tags": [
+            [
+              "d",
+              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "98df43441d5c5af891b89ee9116854f989df243067a2d2c3d4f59a43a664c6a8",
+          "sig": "80db5b9be8ef6494be1b4f030e6c21de7e431150429dfa0eed37883fa30a0e54080468e71e95df929661d490f551768fc9a44a4c724fd50469c0c8ed9250d625"
+        }
+      },
+      {
+        "name": "control-character",
+        "reason": "a tab in the title (free text holds no control characters)",
+        "check_failed": "free text",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "tags": [
+            [
+              "d",
+              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ],
+            [
+              "title",
+              "First\tprism"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "79da6341f5f88df291ad8a0a2c4ef57493c11a593453892ef97b49d7aa9a822b",
+          "sig": "5ab25fbd112d40d8217fb04ee2b23f9a4f6e4aac97cb10308202cf1ba358624c212aaf16d1f0b992094715cd1501a24485df2117c9d0fd6fb588374a0bdfe32b"
+        }
+      },
+      {
+        "name": "empty-prize-name",
+        "reason": "a prize name that is empty after trimming: fails, it is not ignored",
+        "check_failed": "prize name",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\",\"name\":\"   \"}}",
+          "tags": [
+            [
+              "d",
+              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "afac9487ecc415ae10a48debe72cf776e77a4f071cb50bb3a425e4f3a14926d4",
+          "sig": "66c0dc16648cbeb673f260a7b4e7b485c47616f51ba6467bb2081617ccc1a72c5db88195e4ad6bcc2bccabf6ef8f55afb291f08ed881ab453558d481d288f1c1"
+        }
+      },
+      {
         "name": "too-large",
         "reason": "over 98,304 bytes serialized (§5.2)",
         "check_failed": "too large",
@@ -3330,7 +3631,7 @@
       "event": {
         "kind": 3343,
         "created_at": 1795003600,
-        "content": "{\"kind\":33343,\"created_at\":1795000000,\"content\":\"{\\\"size\\\":{\\\"x\\\":3,\\\"y\\\":2,\\\"z\\\":3},\\\"pal\\\":[0,null,42],\\\"cells\\\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\\\"lock\\\":\\\"standard\\\",\\\"prize\\\":{\\\"reveal\\\":\\\"description\\\",\\\"text\\\":\\\"A small prism that catches the light.\\\"}}\",\"tags\":[[\"d\",\"f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d\"],[\"version\",\"1\"],[\"encrypted\",\"aes-256-gcm\",\"izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=\",\"cyberspace:blueprint\"],[\"title\",\"First prism\"],[\"alt\",\"A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech\"]],\"pubkey\":\"f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6\",\"id\":\"4ab2c81e6aa7165c9d132273eb7fc4ca880b44504117df3f209be2942a4309e2\",\"sig\":\"4f5145b91f5431c2479f01119f71ae5974952b66087863ad0c83eced700a07ebd6ac79c4ed5061e2ed6683427ee0811d04403320e4d1c89f79ef011eda04aa6b\"}",
+        "content": "{\"id\":\"4ab2c81e6aa7165c9d132273eb7fc4ca880b44504117df3f209be2942a4309e2\",\"pubkey\":\"f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6\",\"created_at\":1795000000,\"kind\":33343,\"tags\":[[\"d\",\"f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d\"],[\"version\",\"1\"],[\"encrypted\",\"aes-256-gcm\",\"izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=\",\"cyberspace:blueprint\"],[\"title\",\"First prism\"],[\"alt\",\"A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech\"]],\"content\":\"{\\\"size\\\":{\\\"x\\\":3,\\\"y\\\":2,\\\"z\\\":3},\\\"pal\\\":[0,null,42],\\\"cells\\\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\\\"lock\\\":\\\"standard\\\",\\\"prize\\\":{\\\"reveal\\\":\\\"description\\\",\\\"text\\\":\\\"A small prism that catches the light.\\\"}}\",\"sig\":\"4f5145b91f5431c2479f01119f71ae5974952b66087863ad0c83eced700a07ebd6ac79c4ed5061e2ed6683427ee0811d04403320e4d1c89f79ef011eda04aa6b\"}",
         "tags": [
           [
             "C",
@@ -3341,12 +3642,52 @@
           ]
         ],
         "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-        "id": "d6238e0f3c1c22d63d323fda12044b3510f9089aa97f5315e233dc13d3165acb",
-        "sig": "81e2107e7c985089d80e3ec76dba2e880c203a6f45c5b192ff6d55569089d183cf6030cfe758170109900ad7bde88b94b3c9ed5faeea8625b2a6ad4a5e01aa59"
+        "id": "5a650724239b60a3a32d3fa89b7c780caf8047d6e17889fb54f9eb5772bd7f88",
+        "sig": "d9001c7b6bed7b777f12004d752845e5cad735be565c0f8841dadea263d7a57431decd1e03a1d81c8e8b8efbd863be592bd5feba89186b1f1d1bb60d4a06d37a"
       }
     },
     "copy_by_finder": {
       "note": "A copy left by the finder (§7.5): a new card signed by the finder, carrying the same record (same id and sig). Shown \"by\" the creator, \"left here by\" the finder when the container carries the finder's signature.",
+      "event": {
+        "kind": 3343,
+        "created_at": 1795003600,
+        "content": "{\"id\":\"4ab2c81e6aa7165c9d132273eb7fc4ca880b44504117df3f209be2942a4309e2\",\"pubkey\":\"f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6\",\"created_at\":1795000000,\"kind\":33343,\"tags\":[[\"d\",\"f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d\"],[\"version\",\"1\"],[\"encrypted\",\"aes-256-gcm\",\"izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=\",\"cyberspace:blueprint\"],[\"title\",\"First prism\"],[\"alt\",\"A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech\"]],\"content\":\"{\\\"size\\\":{\\\"x\\\":3,\\\"y\\\":2,\\\"z\\\":3},\\\"pal\\\":[0,null,42],\\\"cells\\\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\\\"lock\\\":\\\"standard\\\",\\\"prize\\\":{\\\"reveal\\\":\\\"description\\\",\\\"text\\\":\\\"A small prism that catches the light.\\\"}}\",\"sig\":\"4f5145b91f5431c2479f01119f71ae5974952b66087863ad0c83eced700a07ebd6ac79c4ed5061e2ed6683427ee0811d04403320e4d1c89f79ef011eda04aa6b\"}",
+        "tags": [
+          [
+            "C",
+            "0000000000000000000000000000000000000000000000000000000000000010"
+          ],
+          [
+            "-"
+          ]
+        ],
+        "pubkey": "240eea3780b8ebda0a4f27c417d5927578a491fa14e7c89a20f8ee52772c1c70",
+        "id": "854b079e74b9e1860d7e10a97413dc80f043a57a5c6badb95ba55e9961ab9bf9",
+        "sig": "c1d541d1e09664ad817a5b0ea76ac67a7bae6315d209077834d4206d7e1c787f71e893147cabcbc6767bed0b9230d2a1d97bcd07773886662c2e1e1b61e8d8b7"
+      }
+    },
+    "reject_altered": {
+      "note": "A card whose record had its title changed: the record no longer verifies, and a reader drops the card.",
+      "event": {
+        "kind": 3343,
+        "created_at": 1795003600,
+        "content": "{\"id\":\"4ab2c81e6aa7165c9d132273eb7fc4ca880b44504117df3f209be2942a4309e2\",\"pubkey\":\"f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6\",\"created_at\":1795000000,\"kind\":33343,\"tags\":[[\"d\",\"f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d\"],[\"version\",\"1\"],[\"encrypted\",\"aes-256-gcm\",\"izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=\",\"cyberspace:blueprint\"],[\"title\",\"Mine now\"],[\"alt\",\"A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech\"]],\"content\":\"{\\\"size\\\":{\\\"x\\\":3,\\\"y\\\":2,\\\"z\\\":3},\\\"pal\\\":[0,null,42],\\\"cells\\\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\\\"lock\\\":\\\"standard\\\",\\\"prize\\\":{\\\"reveal\\\":\\\"description\\\",\\\"text\\\":\\\"A small prism that catches the light.\\\"}}\",\"sig\":\"4f5145b91f5431c2479f01119f71ae5974952b66087863ad0c83eced700a07ebd6ac79c4ed5061e2ed6683427ee0811d04403320e4d1c89f79ef011eda04aa6b\"}",
+        "tags": [
+          [
+            "C",
+            "0000000000000000000000000000000000000000000000000000000000000010"
+          ],
+          [
+            "-"
+          ]
+        ],
+        "pubkey": "240eea3780b8ebda0a4f27c417d5927578a491fa14e7c89a20f8ee52772c1c70",
+        "id": "28a973a93f026336ccc3993faadc68faec3d74f60555bb4a410a8bbc9862d39f",
+        "sig": "8214ad3732d63822aa6245eeba9c40134b7c50c228a800b71d8d718e042f53f8accb13bb24e132a4b3a22d29d0608cfc059d9638d77e8e27fff8f1a479b6f196"
+      }
+    },
+    "reject_not_canonical": {
+      "note": "A card whose content is the right record, signature and all, but serialized with its fields in another order: not the canonical serialization (§5.2), so a reader drops the card (§7.2 step 2).",
       "event": {
         "kind": 3343,
         "created_at": 1795003600,
@@ -3364,27 +3705,18 @@
         "id": "39aab2b1f7b86888f7094ac902c29b15a36e2c1e2dbaa3b4f545286b81965312",
         "sig": "3b4d9ffa2536fb8dcbb7d5c60c9046a3c7e3b52ed1b1fe9ab7879ec0a62f29692e214bde08dee8147ec0918361a9d5c97a5946c61073d0fffe41e839327471a6"
       }
-    },
-    "reject_altered": {
-      "note": "A card whose record had its title changed: the record no longer verifies, and a reader drops the card.",
-      "event": {
-        "kind": 3343,
-        "created_at": 1795003600,
-        "content": "{\"kind\":33343,\"created_at\":1795000000,\"content\":\"{\\\"size\\\":{\\\"x\\\":3,\\\"y\\\":2,\\\"z\\\":3},\\\"pal\\\":[0,null,42],\\\"cells\\\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\\\"lock\\\":\\\"standard\\\",\\\"prize\\\":{\\\"reveal\\\":\\\"description\\\",\\\"text\\\":\\\"A small prism that catches the light.\\\"}}\",\"tags\":[[\"d\",\"f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d\"],[\"version\",\"1\"],[\"encrypted\",\"aes-256-gcm\",\"izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=\",\"cyberspace:blueprint\"],[\"title\",\"Mine now\"],[\"alt\",\"A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech\"]],\"pubkey\":\"f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6\",\"id\":\"4ab2c81e6aa7165c9d132273eb7fc4ca880b44504117df3f209be2942a4309e2\",\"sig\":\"4f5145b91f5431c2479f01119f71ae5974952b66087863ad0c83eced700a07ebd6ac79c4ed5061e2ed6683427ee0811d04403320e4d1c89f79ef011eda04aa6b\"}",
-        "tags": [
-          [
-            "C",
-            "0000000000000000000000000000000000000000000000000000000000000010"
-          ],
-          [
-            "-"
-          ]
-        ],
-        "pubkey": "240eea3780b8ebda0a4f27c417d5927578a491fa14e7c89a20f8ee52772c1c70",
-        "id": "9d0aaa383e00cb2aa57c0431d8862def8366ba6cd59d842a15162841476b7c1a",
-        "sig": "54518a82ef6600e9a081abd954daf5755d5873e8ff0fc27aee95a5a55372f2d91d419565536f78ecf464ebc8dfc712cfff74c0a517e6c21a30411c9c44de1387"
-      }
     }
+  },
+  "size_bounds": {
+    "note": "The worst case of §5.2 and §10: every tag and field present, a full palette, four views of 16,384 characters, all free text made of quotation marks, and the prize payload padded until the record is exactly at the cap. Placeholder values stand in for ids, keys and signatures, which have fixed lengths.",
+    "record_bytes": 98304,
+    "structural_escapes": 148,
+    "escapes": 2212,
+    "card_bytes": 101012,
+    "card_own_fields": 496,
+    "chest_room_left": 30058,
+    "sealed_entry_bytes": 135342,
+    "relay_worst_bytes": 103808
   },
   "rank": {
     "reader": "a8fe1159e9b5504d95af63463a3e7bcb8fef395d3a301348fa5a0d111071cbdd",
