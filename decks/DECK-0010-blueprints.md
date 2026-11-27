@@ -220,6 +220,8 @@ A client MUST NOT tell its user, before a smash strikes, anything about what the
 
 A client MAY show, at any time, the build cage and stencil of a card its user holds (§7.4), which draw only what the card already reveals.
 
+**Makers are not solvers.** This rule governs a smash, which is how a solver tests a build. It does not govern a maker's authoring tool. A client's BLUEPRINT tool (§1) MAY tell a maker whether a build they are capturing from the world stands alone, and what its group, box and arrangement are, because capturing leaves the blocks in place, smashes nothing and unseals nothing, and the maker is making the arrangement, not guessing it. A client MUST NOT offer that check as a way to test a build against a record or a card, and MUST NOT make the key or the lookup of a captured build before its maker chooses to publish it, so that the authoring tool cannot serve as the pre-check this section forbids.
+
 ### 4.5 Finding the record
 
 After the strike, for an isolated group, the smasher's client:
@@ -568,7 +570,8 @@ Each of these was decided by Claude on delegation while writing this draft, and 
 8. **The order of prizes** is the Stack's without the home (§6.2), and records under the Compiler's lookup are ignored (§6.1). Every prize that opens is shown (arkinox, 2026-11-27).
 9. **Unlisted records use `no-broadcast`** (§5.7) rather than a new tag.
 10. **Records are signed by the creator's identity**, not a builder key (§5.1).
-11. **The relay whitelist.** Adding `33343` to `relay.onosendai.tech` needs the owner's go (§10).
+11. **Makers may check their own build** (§4.4): the rule that the Compiler says nothing before a smash applies to solvers smashing. A maker's authoring tool may say whether a captured build stands alone, but never tests a build against a record and makes no key before publishing.
+12. **The relay whitelist.** Adding `33343` to `relay.onosendai.tech` needs the owner's go (§10).
 
 ## 15. Implementations (non-normative)
 
