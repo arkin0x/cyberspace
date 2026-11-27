@@ -78,7 +78,7 @@ check(B.regionHoldingBox(locBox.lo, locBox.hi, 5)?.lookupId === reg5.lookupId, '
 const straddle = { lo: { x: 30n, y: 4n, z: 20n }, hi: { x: 32n, y: 5n, z: 22n } }
 check(B.regionHoldingBox(straddle.lo, straddle.hi, 5) === null, 'straddling box has no h5 region')
 check(B.regionHoldingBox(straddle.lo, straddle.hi, 6) !== null, 'straddling box fits h6')
-const regInfo = (r) => ({ base: { X: r.base.X.toString(), Y: r.base.Y.toString(), Z: r.base.Z.toString() }, height: r.h, region_n: r.regionN.toString(), region_key: hex(r.key), lookup_id: r.lookupId })
+const regInfo = (r) => ({ base: { x: r.base.X.toString(), y: r.base.Y.toString(), z: r.base.Z.toString() }, height: r.h, region_n: r.regionN.toString(), region_key: hex(r.key), lookup_id: r.lookupId })
 const locVector = (r, note) => {
   const a = arrVector(`compiler-location-h${r.h}`, note, atOrigin, r.key)
   check(a.lookup !== byName.compiler.lookup, 'location lookup differs from standard')
