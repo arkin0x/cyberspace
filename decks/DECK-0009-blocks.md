@@ -5,7 +5,7 @@ Title: Blocks
 Status: Draft
 Mandatory: no
 Created: 2026-11-24
-Last updated: 2026-11-25
+Last updated: 2026-11-27
 Requires: `CYBERSPACE_V2.md` §2 (coordinates), §3.1 (the spawn coordinate), §4.6 and §4.7 (Cantor roots and region integers), §5.2 (terrain `K`), §5.5 (integer encoding), §7.2 (region keys and lookup ids), §7.6 (the bag cipher), §8.2 (event ids), §8.8 (the tags the chain rules read) and §8.13 (a tag the chain rules never read, as precedent); NIP-01, NIP-02 (`kind 3` follows), NIP-31, NIP-51 (`kind 10000` mutes); RFC 8439 (ChaCha20)
 
 ## Abstract
@@ -16,7 +16,7 @@ Space is cut into **chunks**, the aligned regions of height 5, 32 gibsons on a s
 
 Blocks are built the way shards are placed: anyone may build anywhere, and nothing in the protocol regulates contested space. Where layers disagree about a cell, every reader decides what it shows by one rule, the **Stack**: the owner of a **home** (the 27 chunks around their spawn) first inside it, then the reader's own blocks, then the people the reader follows, then everyone else, the newest first; mutes hide an author entirely. A builder can list **co-builders**, whose changes count at the builder's rank in the cells the builder placed. Blocks are worth what a build is worth to the people who see it; nothing here makes a block scarce or provable, and an inventory is the client's (§9).
 
-This DECK defines the block ids and their first registry (§2), the generated ground completely enough for two implementations to agree on every cell (§3), builder keys (§4), `kind 33339`, the block layer (§5), what makes a layer valid (§6), the Stack (§7), co-builders (§8) and what relays do (§10). It writes down arkinox's rulings of 2026-11-21 (no compression), 2026-11-24 (block size, chunk size, builder keys) and 2026-11-25 (kind 33339; a right-sized design: the Stack, the home cube, retirement without heights, co-builders, no presence requirement and no witness). The ground is revision 2, the one ONOSENDAI's TERRAIN mode draws (ONOSENDAI #916). Its tables are tunable: a change to any of them is a new revision, which layers name (§3.10).
+This DECK defines the block ids and their first registry (§2), the generated ground completely enough for two implementations to agree on every cell (§3), builder keys (§4), `kind 33339`, the block layer (§5), what makes a layer valid (§6), the Stack (§7), co-builders (§8) and what relays do (§10). It writes down arkinox's rulings of 2026-11-21 (no compression), 2026-11-24 (block size, chunk size, builder keys) and 2026-11-25 (kind 33339; a right-sized design: the Stack, the home cube, retirement without heights, co-builders, no presence requirement and no witness). The ground has two revisions: revision 2, frozen, which ONOSENDAI's TERRAIN mode drew first (ONOSENDAI #916), and revision 3 (arkinox's ruling of 2026-11-27), which changes only how often Glowcore and Cinderrock appear, so that the two meet without seams. A chunk keeps the revision it was first surveyed at (§7.5). Its tables are tunable: a change to any of them is a new revision, which layers name (§3.10).
 
 **Defined here:**
 
@@ -25,7 +25,7 @@ This DECK defines the block ids and their first registry (§2), the generated gr
 | A block | one gibson: one cell of the grid that the coordinates already are (§2.1) |
 | A chunk | an aligned region of height 5, 32 by 32 by 32 cells, in one plane (§2.2) |
 | A block id | a 16-bit global id. 0 empty; 1 to 63 natural; 64 to 191 made; 192 to 254 special; 255 reserved for extension; 256 to 65535 the extension space (§2.3) |
-| The generated ground | a pure function of the chunk: terrain digests of `CYBERSPACE_V2.md` §5.2, smooth integer noise, and a ChaCha20 stream seeded by `CYBERSPACE_BLOCKS_SURVEY_V1` and the chunk's Cantor root; rock from weighted strata, then features drawn from the same stream in a fixed order. Revision 2 (§3) |
+| The generated ground | a pure function of the chunk: terrain digests of `CYBERSPACE_V2.md` §5.2, smooth integer noise, and a ChaCha20 stream seeded by `CYBERSPACE_BLOCKS_SURVEY_V1` and the chunk's Cantor root; rock from weighted strata, then features drawn from the same stream in a fixed order. Revisions 2 and 3 (§3) |
 | A builder key | a device-local keypair, named by `["builder", "<hex>"]` on a `kind 3333` event and retired, with every layer it signed, by `["builder-retire", "<hex>"]` (§4) |
 | A block layer | `kind 33339`, addressable, signed by a builder key, `d` = the chunk's lookup id, `p` = the author, content sealed with the chunk's region key; plain JSON runs, as a diff from the ground or as the whole chunk, the shorter of the forms that can express its changes (§5) |
 | The home | the 3 by 3 by 3 chunks centred on the chunk that holds an identity's spawn coordinate, in its plane (§7.2) |
@@ -257,7 +257,7 @@ A cell that is not solid is empty, global id 0. Row `y = 32` is computed only to
 
 `EMPTY_THR[k]` was set so that, over 600 chunks drawn at random, a share of `0.60 − 0.30 k/16` of cells falls under it: 60% empty where the smoothed K is 0, 30% where it is 16. The calibration is not part of the rule: the integers are. Revision 2 keeps them, so the open space, the caves and the tunnels of revision 1 are unchanged.
 
-### 3.9 Materials (revision 2, tunable)
+### 3.9 Materials (revisions 2 and 3, tunable)
 
 The materials are made in two passes. **Rock** fills every solid cell from its family's strata. **Features** then change some cells, each placed by draws from the feature stream (§3.3) in a fixed order: Magmaflow, Tidewater, trees, veins, and last the rare band.
 
@@ -320,6 +320,13 @@ A cell that is not solid stays 0. The strata bands run along Y, and the `mod 2^2
    - Glowcore: if `maxK ≥ 10` and `chance(429496729)`, `vein(42, 2 + u8 mod 7, 10, costliest cube)`.
 
    The size is read before the vein's first start.
+
+   **Revision 3** changes the veins, and nothing else in this section:
+   - **the cinder vent**, first, before Ferrovein: if the chunk's family is not volcanic and `chance(1803886264)`, `vein(7, 3 + u8 mod 6, 0, none)`. In a volcanic chunk nothing is drawn for it;
+   - Ferrovein, Cobaltine and Prismite as above;
+   - **Glowcore**: if `maxK ≥ 8` and `chance(515396076)`, `vein(42, 2 + u8 mod 3, 8, costliest cube)`.
+
+   The rock, the caves, Magmaflow, Tidewater, trees and the rare band are revision 2's. The cinder vent's draw comes before Ferrovein's, so in a chunk that is not volcanic every draw after it reads bytes four or more later than in revision 2, and the veins and rare blocks there land differently; the rock under them is the same.
 5. **The rare band.** For each row of the table below, in order: if `maxK` is at least its least K and `chance(threshold)`, then `o = rockInCostliest()`, and if `o ≥ 0` that cell becomes the row's block. One block, never a vein.
 
 | Block | Id | Least K of the costliest cube | Threshold | Target per surveyed chunk |
@@ -334,23 +341,25 @@ A cell that is not solid stays 0. The strata bands run along Y, and the `mod 2^2
 
 Each threshold is `floor(2^32 × target ÷ share)`, where the share is the measured share of chunks whose costliest cube reaches that K (over 200,000 random chunks: 0.383905 for K 11, 0.192085 for 12, 0.0728 for 13, 0.019475 for 14), so that the chance per surveyed chunk is the target. The integers are the rule; the derivation is how they were chosen.
 
-**What it makes (non-normative)**, measured by ONOSENDAI's calibration over 12,000 random chunks (and 200,000 for the rare band): open space 46.8%, as in revision 1. Rock in each family keeps the owner's ratios (Gridstone about 25, Umberslate 18, Rustband 9, Driftsilt 11, Frostshale 15, Cinderrock 20, Basaltine 6, Rimeglass 5): temperate is Gridstone 47%, Umberslate 36%, Rustband 17%. Mossveil tops 99.9% of temperate and karst chunks. Lumenwood trees stand in 35% of the chunks that have a tree site, Tidewater pools in 24% of all chunks (36% at a mean K under 7, 13% at 9 and up), Magmaflow in 12% of volcanic chunks of K 11 and up. Ferrovein is in 90% of chunks, Cobaltine in half of those of K 6 and up, Prismite veins in a quarter of those of K 9 and up, Glowcore in a tenth of those of K 10 and up. The rare band hits its targets, from Voidpearl in 1 chunk of 500 to Genesis shard in 1 of 10,000. The rarest blocks sit where every hop costs the most temporal work: the good rock is where the going is hard.
+**What it makes (non-normative)**, measured by ONOSENDAI's calibration over 12,000 random chunks (and 200,000 for the rare band): open space 46.8%, as in revision 1. Rock in each family keeps the owner's ratios (Gridstone about 25, Umberslate 18, Rustband 9, Driftsilt 11, Frostshale 15, Cinderrock 20, Basaltine 6, Rimeglass 5): temperate is Gridstone 47%, Umberslate 36%, Rustband 17%. Mossveil tops 99.9% of temperate and karst chunks. Lumenwood trees stand in 35% of the chunks that have a tree site, Tidewater pools in 24% of all chunks (36% at a mean K under 7, 13% at 9 and up), Magmaflow in 12% of volcanic chunks of K 11 and up. Ferrovein is in 90% of chunks, Cobaltine in half of those of K 6 and up, Prismite veins in a quarter of those of K 9 and up, Glowcore in a tenth of those of K 10 and up (revision 2: 5.8% of all chunks). In revision 2 Cinderrock is only a strata rock and the top of volcanic ground, so a whole 2^11 cube either has it everywhere or never (17% of chunks), and a fifth of spawns have no chunk of K 10 among their 27, which leaves Glowcore effectively unfindable for them. Revision 3, measured over 3,000 random chunks and 150 spawns' 27 chunks each: Glowcore in 9.9% of chunks, found within a spawn's 27 chunks by 92% of spawns (revision 2: 59%), with 1.3% of spawns left with no eligible chunk nearby (revision 2: 19%); Cinderrock in 50.6% of chunks and within every spawn's 27 (revision 2: 22% of spawns); every other block unchanged within sampling noise. The rare band hits its targets, from Voidpearl in 1 chunk of 500 to Genesis shard in 1 of 10,000. The rarest blocks sit where every hop costs the most temporal work: the good rock is where the going is hard.
 
 ### 3.10 Revisions (normative)
 
-A **revision** of the ground is a whole definition of §3.2 to §3.9, named by an integer. A layer names the revision it was written against in each plane's `ground` (§5.4). This section is **revision 2**.
+A **revision** of the ground is a whole definition of §3.2 to §3.9, named by an integer. A layer names the revision it was written against in each plane's `ground` (§5.4). This DECK defines **revision 2** and **revision 3**, and a reader implements both.
 
 - Revision 2 keeps revision 1's seed, its stream, its lattices and its open space, so its domain string is still `CYBERSPACE_BLOCKS_SURVEY_V1`: the domain names the seed's construction, and a revision that changes the seed changes it too. Revision 2 changes what fills the rock and adds the features.
+- **Revision 3** is revision 2 with the veins of §3.9's revision 3 paragraph: the cinder vent and the wider Glowcore roll. Its seed, stream, lattices, open space, rock and every other feature are revision 2's, so its domain string is the same, and the two grounds of one chunk differ only in the cells those draws touch. Revision 2 is **frozen**: layers written against it are on relays, and it never changes.
 - Revision 1 was a draft of 2026-11-24 that no published layer used. It is withdrawn, and a reader treats `ground: 1` as a revision it does not implement.
 - A reader MUST compute a plane's base by the revision it names. A plane whose `survey` is false has an empty base whatever revision it names, so a reader decodes it under any revision. A surveyed plane in `diff` form that names a revision the reader does not implement is set aside, unread, and the layer's other plane goes on (§6, check 6), because its `null` cells and its changed cells are defined against a ground the reader cannot compute. The reader SHOULD say that something is built here that a newer client can show.
 - A surveyed plane in `whole` form names every cell's value, so a reader can **load it under any revision**: it MAY show those values to the layer's author, in the author's own client. Until the reader implements the plane's revision, the plane takes no part in the Stack: it is never a candidate (§7.4) and its survey does not count (§7.5). The layer's other plane, and its `cobuilders`, still count.
-- A writer writes the newest revision it implements when it first surveys a plane, and MUST carry forward the revision a plane already names, until its user surveys the plane again.
+- **Which revision a writer writes (normative for writers).** A writer that surveys a plane writes the plane's base revision (§7.5) when the plane is already surveyed by a counted layer, and the newest revision it implements, revision 3, when it is not. It MUST carry forward the revision a plane already names. So a chunk keeps the revision it was first surveyed at, whoever builds there later, and a newer client never swaps the ground under an older build.
+- **Shipping a revision (non-normative).** A client SHOULD read a new revision before it writes it, one release apart, so that clients not yet updated do not set aside the first chunks surveyed at it.
 
-While this DECK is a Draft, revision 2 may still change. It is fixed when the DECK leaves Draft, and every change after that is a new revision. The tables of §3.8 and §3.9 are tunable, and tuning them is a revision.
+Revision 2 is fixed; revision 3 may still change while this DECK is a Draft, and is fixed when the DECK leaves Draft. Every change after that is a new revision. The tables of §3.8 and §3.9 are tunable, and tuning them is a revision.
 
 ### 3.11 Reference code (normative where it agrees with the text)
 
-The Python below is revision 2, the rule of §3.2 to §3.9, in one place. It was run against `blocks-vectors.json` and reproduces every chunk in it, features included. Its digest cache is an optimisation only. Where it and the prose disagree, the prose is right.
+The Python below is revisions 2 and 3, the rule of §3.2 to §3.9, in one place: `generate_chunk(X, Y, Z, P, revision)`. It was run against `blocks-vectors.json` and reproduces every chunk in it under both revisions, features included. Its digest cache is an optimisation only. Where it and the prose disagree, the prose is right.
 
 ```python
 import functools
@@ -373,7 +382,10 @@ FAMILIES = [  # (name, strata as (id, weight), top, speckle)
     ("crystal", [(1, 43), (2, 31), (5, 16), (6, 10)], 6, 8),
     ("karst", [(1, 25), (2, 18), (5, 9), (3, 11)], 4, 3),
 ]
-T_MAGMA, T_TREES, T_FERROVEIN, T_COBALTINE, T_PRISMITE, T_GLOWCORE = 536870912, 1460288880, 3865470566, 2233382993, 1395864371, 429496729
+T_MAGMA, T_TREES, T_FERROVEIN, T_COBALTINE, T_PRISMITE = 536870912, 1460288880, 3865470566, 2233382993, 1395864371
+# Glowcore (threshold, least K, size modulus) by revision, and the cinder vent (revision 3 only).
+T_GLOWCORE = {2: (429496729, 10, 7), 3: (515396076, 8, 3)}
+T_CINDER, CINDERROCK = 1803886264, 7
 RARE = [(193, 11, 22375156), (194, 11, 11187578), (195, 12, 11179861), (43, 12, 7453240),
         (196, 13, 11799360), (192, 13, 7866240), (197, 14, 22053747)]
 RARE_IDS = {r[0] for r in RARE}
@@ -490,7 +502,8 @@ def pick_stratum(strata, h):                            # §3.10
         r -= w
 
 
-def generate_chunk(X, Y, Z, P):
+def generate_chunk(X, Y, Z, P, revision=2):           # revision 2 (frozen) or 3
+    assert revision in (2, 3)
     d3, K = [None] * 125, [0] * 125                     # §3.4, corner i + 5 (k + 5 j)
     for j in range(5):
         for k in range(5):
@@ -677,6 +690,8 @@ def generate_chunk(X, Y, Z, P):
                 else:
                     z = min(31, max(0, z + step))
             return
+    if revision == 3 and family != "volcanic" and chance(T_CINDER):   # revision 3: the cinder vent
+        vein(CINDERROCK, 3 + u8() % 6, 0, None)
     if chance(T_FERROVEIN):
         for _ in range(2 + u8() % 4):
             vein(FERROVEIN, 4 + u8() % 9, 0, None)
@@ -685,8 +700,9 @@ def generate_chunk(X, Y, Z, P):
             vein(COBALTINE, 3 + u8() % 6, 6, None)
     if max_k >= 9 and chance(T_PRISMITE):
         vein(PRISMITE, 4 + u8() % 7, 9, None)
-    if max_k >= 10 and chance(T_GLOWCORE):
-        vein(GLOWCORE, 2 + u8() % 7, 10, max_cube)
+    t_glow, k_glow, m_glow = T_GLOWCORE[revision]
+    if max_k >= k_glow and chance(t_glow):
+        vein(GLOWCORE, 2 + u8() % m_glow, k_glow, max_cube)
     # 5. The rare band: one block each, in the costliest cube.
     for gid, min_k, t in RARE:
         if max_k < min_k or not chance(t):
@@ -804,7 +820,7 @@ A **plane object**:
 |---|---|
 | `plane` | 0 or 1 |
 | `survey` | `true` if this author has surveyed this plane of the chunk, `false` if not |
-| `ground` | the revision of the ground the plane was written against, an integer: 2 for this DECK (§3.10) |
+| `ground` | the revision of the ground the plane was written against, an integer: 2 or 3 for this DECK (§3.10) |
 | `form` | `"diff"` or `"whole"` |
 | `pal` | the palette: an array of 1 to 256 entries. In `diff`, entry 0 MUST be `null`, which means "the base value of this cell", and every other entry is a global id. In `whole`, every entry is a global id. A global id is an integer from 0 to 65535 |
 | `cells` | a runs array (§5.3) of 32,768 palette indices, one per cell in index order (§2.2) |
@@ -903,7 +919,7 @@ A layer speaks only for the cells it changed. A layer that changed one cell of a
 
 ### 7.5 Survey and base
 
-A chunk's plane is **surveyed** for a reader when at least one counted layer's plane object for it has `survey` true. Inside a home, only a home owner's surveys count, so that nobody can fill an owner's open build with rock by surveying around it. The reader's base for the plane is the ground of §3, at the newest revision it implements among the counted surveys, when the plane is surveyed, and all empty otherwise. A plane that takes no part in the Stack (§3.10) does not survey. Each layer's own changed cells are still decoded against that layer's own base (§5.4).
+A chunk's plane is **surveyed** for a reader when at least one counted layer's plane object for it has `survey` true. Inside a home, only a home owner's surveys count, so that nobody can fill an owner's open build with rock by surveying around it. The reader's base for the plane is the ground of §3 when the plane is surveyed, and all empty otherwise. Its revision is the **base revision**: the revision of the **earliest** counted survey, the surveyed plane object whose layer has the smallest `created_at`, then the lower author pubkey, then the lower builder pubkey, then the lower event id. A chunk therefore keeps the revision it was first surveyed at: when a newer client surveys there, its layer counts, but the base does not change, so a revision 2 build never has its ground swapped for revision 3's. A layer written against another revision than the base still speaks only for the cells it changed, decoded against its own revision's ground; every other cell shows the base. A plane that takes no part in the Stack (§3.10) does not survey. Each layer's own changed cells are still decoded against that layer's own base (§5.4).
 
 ### 7.6 What is drawn where
 
@@ -951,6 +967,8 @@ If materials ever need to be provable, so that a block placed is a block someone
 | `layer` | a worked layer in the origin chunk: a shaft dug down one column, a Rustband beam with one cell of Gibsonite, a cell set to extension id 300, a cell written explicitly at its base value (0 over empty ground, a change), and one co-builder; its plaintext, its 36 changed cells with their values and ground values, and its tags. Also the plaintext of a layer that only surveys |
 | `builder_keys` | eight sets of an author's movement-event tags with the verdict of §4.4 for one key: named, never named, retired, retired and named again, retired by `all`, named after `all`, named in the same second as `all`, and a malformed naming |
 | `home` | six chunks tested against a home (§7.2): the spawn chunk, a corner and a face of the cube, two chunks out, the twin plane, and a home that wraps below 0 |
+| `revision_3` | revision 3's feature table, and four chunks under revision 3, each with every field of `chunks` plus its revision 2 ground's SHA-256 and whether its rock is the same: `origin` (volcanic, so no cinder vent, and a Glowcore draw that fails under both: its ground is revision 2's, byte for byte), `home`, `pools` (a cinder vent draw that fails but shifts every draw after it), and `vent-glowcore-k9`, a karst chunk whose costliest cube is K 9, with a cinder vent and a Glowcore vein that revision 2 could not place |
+| `base_revision` | five sets of counted surveys with the base revision of §7.5 (earliest first, ties by author), and a mixed chunk: a revision 3 layer that mines one cell over a revision 2 base, with the cells where the two revisions differ and what is shown |
 | `stack` | eighteen cases of the Stack and co-builders, with one reader, its follows and its clock: strangers newest first, an exact tie, follows over strangers, the reader over follows, the home owner over the reader in the spawn chunk and a corner chunk, the home owner as a stranger outside the cube and in the twin plane, mutes of a stranger and of a home owner, the future slack at 600 and 601 seconds, one author with two builder keys, co-builders lifted to their lister's rank, co-builders not transitive, the home owner's co-builders at rank 1, a co-builder whose own rank is better, a co-builder undoing the builder with an explicit change at the base value, a list taken from the author's newest layer only, and the cap (set to 2 authors for the vector). Each cell gives its value, the winning layer and its rank, or null for the base |
 
 Some single values, for a quick check:
@@ -991,7 +1009,7 @@ Open, each made by Claude on delegation and the owner's to change:
 3. **The 600-second future slack** (§7.1).
 4. **Surveys inside a home** count only for a home owner (§7.5), so that surveying around an owner's open build cannot fill it with rock.
 5. **The order within a rank** (§7.3): newest first everywhere, with author, builder key and event id breaking exact ties. The ruling named newest-first for follows and everyone else; this draft uses it within ranks 1 and 2 too, which only matters when one author has several builder keys or two home owners share a chunk.
-6. **The ground's tables** (§3.8, §3.9) are revision 2, as ONOSENDAI's TERRAIN mode draws it (#916), calibrated by its `scripts/terrain-calibrate.mjs`. Recommendation: tune after people walk it, as revision 3.
+6. **The ground's tables** (§3.8, §3.9): revision 2 is ONOSENDAI's first ground (#916), calibrated by its `scripts/terrain-calibrate.mjs`; revision 3 (option B, arkinox's ruling of 2026-11-27) changes only Glowcore and adds the cinder vent, after a rarity study found both effectively unfindable for many spawns. Further tuning is revision 4.
 7. **The block set** (§2.3) is TERRAIN's 24 invented names. A later revision adds blocks with new invented names, never names borrowed from another game.
 8. **Explicit changes at the base value** (§5.4): in a `diff`, a non-`null` entry is a change even when it equals the base, so a layer can remove another's block or refill another's hole, for the readers who rank it first. Added after review, because without it a co-builder could not undo the builder's work.
 9. **A co-builder list from the newest layer only** (§8), so that removing someone takes effect at once.
@@ -1002,5 +1020,6 @@ Open, each made by Claude on delegation and the owner's to change:
 - The Python listing of §3.11, which reproduces the ground vectors independently of the JavaScript.
 - An implementation written by an independent reviewer from the prose of §3 alone, without the listing or the JavaScript, which reproduced every ground and every intermediate value in the vectors, revision 2 included, on its first run (2026-11-24).
 - The TERRAIN previews (2026-11-24, not published): a viewer of revision 1 in floating point, the source of the first block set, the families and the soft borders.
+- The rarity study of 2026-11-27 (not published): revision 2 and three candidate revision 3 generators measured over random chunks and spawns; option B, implemented as a patch of ONOSENDAI's `generate.ts` (`generate-r3b.ts`), reproduces every revision 3 vector.
 - ONOSENDAI's TERRAIN mode, #916 at 2429f16c (`src/lib/terrain/generate.ts`): WALK with block tools, survey, mine and place, its op log folded into §5.4 plane layers with `ground: 2`. Its generator is revision 2 and the source of §3's text; its tests pin the origin chunk's ground. Its calibration, `scripts/terrain-calibrate.mjs`, measured the tables of §3.9. ONOSENDAI #927 publishes layers; it was built against an earlier draft and follows this one in its next revision.
 - The benchmark of 2026-11-24 (not published): generation methods, storage encodings and event growth per chunk, which chose ChaCha20, the 8 and 4 lattices from terrain digests, palette runs without compression, and the smaller of a diff and a whole chunk.

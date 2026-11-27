@@ -12,8 +12,8 @@ const SAMPLE_CELLS = [
   [3, 30, 17], [29, 2, 11], [12, 31, 5], [20, 13, 27], [1, 17, 30], [25, 25, 4], [10, 5, 22], [31, 16, 0],
 ]
 
-function chunkVector(name, note, X, Y, Z, P, extraCells = []) {
-  const g = R.generateChunk(X, Y, Z, P, true)
+function chunkVector(name, note, X, Y, Z, P, extraCells = [], revision = 2) {
+  const g = R.generateChunk(X, Y, Z, P, true, revision)
   const reg = R.chunkRegion(X, Y, Z)
   const cubeK = []
   for (let j = 0; j < 4; j++) for (let k = 0; k < 4; k++) for (let i = 0; i < 4; i++) cubeK.push(g.L.A.K[i + 5 * (k + 5 * j)])
@@ -36,7 +36,7 @@ function chunkVector(name, note, X, Y, Z, P, extraCells = []) {
     }
   })
   return {
-    name, note, X: S(X), Y: S(Y), Z: S(Z), plane: P,
+    name, note, ...(revision === 2 ? {} : { revision }), X: S(X), Y: S(Y), Z: S(Z), plane: P,
     region_n: S(reg.regionN), lookup_id: R.hex(reg.lookupId),
     survey_seed: R.hex(R.surveySeed(X, Y, Z, P)),
     stream_head: R.hex(g.fine.slice(0, 32)),
@@ -212,6 +212,59 @@ const stack = {
   ],
 }
 
+// Revision 3 (§3.9, §3.10): the same chunks where it matters, and one that shows a cinder vent and Glowcore at K 9.
+function r3Vector(name, note, X, Y, Z, P) {
+  const v = chunkVector(name, note, X, Y, Z, P, [], 3)
+  const g = R.generateChunk(X, Y, Z, P, false, 3)
+  const extra = []
+  for (const want of [7, 42]) { const o = g.indexOf(want); if (o >= 0) extra.push([o & 31, o >> 10, (o >> 5) & 31]) }
+  if (extra.length) return chunkVector(name, note, X, Y, Z, P, extra, 3)
+  return v
+}
+const chunksR3 = [
+  r3Vector('origin', 'The pinned chunk under revision 3. It is volcanic, so no cinder vent is drawn, and its Glowcore draw fails under both revisions: its ground is the revision 2 ground, byte for byte.', 0n, 0n, 0n, 0),
+  r3Vector('home', 'The home vector chunk (frozen) under revision 3.', home.X, home.Y, home.Z, home.P),
+  r3Vector('pools', 'The pools chunk (dune, K 12) under revision 3: its cinder vent draw, just before Ferrovein, fails, but it reads four bytes, which shifts every draw after it.', 30332262474415856249900160n, 34207092734754452336590560n, 4153259675813629090509088n, 0),
+  r3Vector('vent-glowcore-k9', 'A karst chunk whose costliest cube is K 9: a cinder vent, and a Glowcore vein that revision 2 could not place (it needed K 10).', 37727701688262624033138944n, 35731174093016409277930144n, 15860157954469236067618080n, 0),
+]
+for (const c of chunksR3) {
+  const r2 = R.generateChunk(BigInt(c.X), BigInt(c.Y), BigInt(c.Z), c.plane, true, 2)
+  c.revision_2_ground_sha256 = R.hex(R.sha256(r2.blocks))
+  c.rock_same_as_revision_2 = R.hex(R.sha256(r2.rock)) === c.rock_sha256
+}
+
+// §7.5: the base revision of a chunk plane is the revision of its earliest counted survey.
+const baseRevisionCases = [
+  { name: 'one survey at revision 2', surveys: [{ revision: 2, created_at: 100, author: ID(0xa0), builder: ID(0xbb), id: ID(1) }] },
+  { name: 'a revision 2 survey, then a newer client surveys at revision 3: the chunk keeps revision 2', surveys: [{ revision: 2, created_at: 100, author: ID(0xa0), builder: ID(0xbb), id: ID(1) }, { revision: 3, created_at: 200, author: ID(0xb0), builder: ID(0xbb), id: ID(2) }] },
+  { name: 'a fresh chunk first surveyed at revision 3, then at revision 2 by an older client: the chunk keeps revision 3', surveys: [{ revision: 2, created_at: 300, author: ID(0xa0), builder: ID(0xbb), id: ID(1) }, { revision: 3, created_at: 200, author: ID(0xb0), builder: ID(0xbb), id: ID(2) }] },
+  { name: 'two surveys in the same second: the lower author pubkey is earlier', surveys: [{ revision: 3, created_at: 100, author: ID(0xb0), builder: ID(0xbb), id: ID(2) }, { revision: 2, created_at: 100, author: ID(0xa0), builder: ID(0xbb), id: ID(1) }] },
+  { name: 'no counted survey: the base is empty', surveys: [] },
+].map((c) => ({ ...c, base_revision: R.baseRevision(c.surveys) }))
+// A layer written against revision 3 over a chunk whose base is revision 2: its changed cells are decoded against the
+// revision 3 ground, and every cell it did not change shows the revision 2 ground.
+const ventChunk = chunksR3[3]
+const vX = BigInt(ventChunk.X), vY = BigInt(ventChunk.Y), vZ = BigInt(ventChunk.Z)
+const g2 = R.generateChunk(vX, vY, vZ, 0, false, 2), g3 = R.generateChunk(vX, vY, vZ, 0, false, 3)
+const differ = []
+for (let o = 0; o < R.CELLS; o++) if (g2[o] !== g3[o]) differ.push(o)
+const vals3 = Int32Array.from(g3)
+const target = differ[0]
+vals3[target] = 0 // the revision 3 writer mines one cell that revision 3 changed
+const plane3 = R.encodePlane(0, true, vals3, g3, new Set(), 3)
+const dec3 = R.decodePlane(plane3, (rev) => (rev === 2 ? g2 : rev === 3 ? g3 : null))
+const mixed = {
+  note: 'In the vent-glowcore-k9 chunk, revision 2 and revision 3 grounds differ in the cells the cinder vent and the Glowcore vein (and the draws after them) touch. A revision 2 layer surveyed first, so the base is revision 2; a revision 3 layer mines one cell. That cell shows 0; every other cell shows the revision 2 ground, including cells where revision 3 would differ.',
+  chunk: [ventChunk.X, ventChunk.Y, ventChunk.Z, 0],
+  cells_where_revisions_differ: differ.length,
+  first_differing_cell: { x: target & 31, y: target >> 10, z: (target >> 5) & 31, revision_2: g2[target], revision_3: g3[target] },
+  revision_3_plane: plane3,
+  revision_3_changed: dec3.changed.map((o) => ({ x: o & 31, y: o >> 10, z: (o >> 5) & 31, value: dec3.values[o] })),
+  base_revision: 2,
+  shown_at_first_differing_cell: 0,
+  shown_at_second_differing_cell: differ.length > 1 ? { x: differ[1] & 31, y: differ[1] >> 10, z: (differ[1] >> 5) & 31, value: g2[differ[1]] } : null,
+}
+
 const out = {
   description: 'Test vectors for DECK-0009 (Blocks). Generated by blocks-vectors.mjs from blocks-reference.mjs. Not normative: where this file disagrees with the DECK, the DECK is right.',
   constants: {
@@ -222,5 +275,7 @@ const out = {
   },
   chacha20_check: { key: chunks[0].survey_seed, nonce: '000000000000000000000000', counter: 0, keystream_head: chunks[0].stream_head },
   chunks, runs, layer, builder_keys: keyCases, home: homeCases, stack,
+  revision_3: { features: R.FEATURES_R3, chunks: chunksR3 },
+  base_revision: { cases: baseRevisionCases, mixed },
 }
 process.stdout.write(JSON.stringify(out, null, 1) + '\n')
