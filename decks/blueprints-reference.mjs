@@ -27,7 +27,7 @@ export const VIEW_MAX_CHARS = 16384
 export const VIEWS = ['x', 'y', 'z', 'iso']
 export const REVEALS = ['hidden', 'description', 'silhouette', 'render']
 export const PRIZE_MARK = 'cyberspace:blueprint'
-export const TOOLS = ['compiler']
+export const TOOLS = ['compiler', 'quarry-charge']
 export const AXIS_BITS = 85n
 export const AXIS_MASK = (1n << AXIS_BITS) - 1n
 
@@ -37,6 +37,19 @@ export const AXIS_MASK = (1n << AXIS_BITS) - 1n
 export const COMPILER_RECIPE = [
   [1, 0, 0, 40], [1, 1, 0, 40],
   [0, 2, 0, 5], [1, 2, 0, 42], [2, 2, 0, 5],
+]
+
+// The Quarry Charge's recipe (DECK-0010 §8.5, owner 2026-11-27): a cross of seven in a 3 by 3 by 3 box.
+// Umberslate (2) below and above a Ferrovein (40); Rustband (5) on -X, -Z and +Z; Cinderrock (7) on +X.
+export const QUARRY_CHARGE_RECIPE = [
+  [1, 0, 1, 2],
+  [1, 1, 0, 5], [0, 1, 1, 5], [1, 1, 1, 40], [2, 1, 1, 7], [1, 1, 2, 5],
+  [1, 2, 1, 2],
+]
+// The game recipes (§8.4): the only blueprints whose prize may be a tool.
+export const GAME_RECIPES = [
+  { name: 'compiler', cells: COMPILER_RECIPE, prize: { type: 'tool', tool: 'compiler' } },
+  { name: 'quarry-charge', cells: QUARRY_CHARGE_RECIPE, prize: { type: 'tool', tool: 'quarry-charge', count: 7 } },
 ]
 
 // ---------- primitives ----------
@@ -352,12 +365,18 @@ export function readCard(card) {
 // A view that breaks the picture rules is drawn as absent; it does not fail the record (§5.4 check 11).
 export const viewOk = (v) => typeof v === 'string' && v.length <= VIEW_MAX_CHARS && DATA_URI.test(v)
 
-// Reading a prize once opened (§5.5). Returns a short description, or null for one this reader
-// cannot read (it still keeps it).
-export function readPrize(prize) {
+// Reading a prize once opened (§5.5). fromGameRecipe: whether it came from the client's own copy of a
+// game recipe (§8.4); a tool prize from any record a relay or a card gave is not honoured. Returns a
+// short description, or null for one this reader cannot read (it still keeps it).
+export function readPrize(prize, fromGameRecipe = false) {
   if (!prize || typeof prize !== 'object') return null
+  if (prize.type === 'tool' && !fromGameRecipe) return null
   if (prize.type === 'sno' && prize.payload && typeof prize.payload === 'object') return { type: 'sno', name: prize.payload.name ?? null }
-  if (prize.type === 'tool' && TOOLS.includes(prize.tool)) return { type: 'tool', tool: prize.tool }
+  if (prize.type === 'tool' && TOOLS.includes(prize.tool)) {
+    const count = prize.count === undefined ? 1 : prize.count
+    if (!Number.isInteger(count) || count < 1) return null
+    return { type: 'tool', tool: prize.tool, count }
+  }
   return null
 }
 

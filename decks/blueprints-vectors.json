@@ -151,6 +151,177 @@
       "lookup": "08bb985fc2957eef47d6c42a5f0d54561eca8e2a1e5025cd727a85df134b2b26"
     },
     {
+      "name": "quarry-charge",
+      "note": "The Quarry Charge's recipe (§8.5): a cross of seven, Umberslate below and above a Ferrovein, Rustband on -X, -Z and +Z, Cinderrock on +X. Box 3 by 3 by 3.",
+      "size": {
+        "x": 3,
+        "y": 3,
+        "z": 3
+      },
+      "cells": [
+        [
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          1,
+          1,
+          0,
+          5
+        ],
+        [
+          0,
+          1,
+          1,
+          5
+        ],
+        [
+          1,
+          1,
+          1,
+          40
+        ],
+        [
+          2,
+          1,
+          1,
+          7
+        ],
+        [
+          1,
+          1,
+          2,
+          5
+        ],
+        [
+          1,
+          2,
+          1,
+          2
+        ]
+      ],
+      "encoding_length": 80,
+      "encoding": "435942455253504143455f424c55455052494e545f5631030303000000000000000000020000000000000000000000050000000500280007000000050000000000000000000000020000000000000000",
+      "key": "4a98648039e97902a1e300ec678a4a2d37dfdebf177b8ef5d644343cad3819d9",
+      "lookup": "e12e7f66a13349efa89ad831967ef367411d0c9831081b8d420993c4afb46995"
+    },
+    {
+      "name": "quarry-charge-mirrored-x",
+      "note": "The Quarry Charge mirrored across X: the Cinderrock on -X and a Rustband on +X. A different arrangement; it compiles nothing.",
+      "size": {
+        "x": 3,
+        "y": 3,
+        "z": 3
+      },
+      "cells": [
+        [
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          1,
+          1,
+          0,
+          5
+        ],
+        [
+          2,
+          1,
+          1,
+          5
+        ],
+        [
+          1,
+          1,
+          1,
+          40
+        ],
+        [
+          0,
+          1,
+          1,
+          7
+        ],
+        [
+          1,
+          1,
+          2,
+          5
+        ],
+        [
+          1,
+          2,
+          1,
+          2
+        ]
+      ],
+      "encoding_length": 80,
+      "encoding": "435942455253504143455f424c55455052494e545f5631030303000000000000000000020000000000000000000000050000000700280005000000050000000000000000000000020000000000000000",
+      "key": "9acfb17d43dab718f2ad8824e2e6a1cc10b3e5fdfebf2a6d430f6283ca8667b5",
+      "lookup": "614e4b49781d79c8cc034489eb9dac75963ab121230f0f41c671cc3fbe31fbf1"
+    },
+    {
+      "name": "quarry-charge-mirrored-z",
+      "note": "The Quarry Charge mirrored across Z: it swaps two Rustband, so it is the same arrangement as the recipe.",
+      "size": {
+        "x": 3,
+        "y": 3,
+        "z": 3
+      },
+      "cells": [
+        [
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          1,
+          1,
+          2,
+          5
+        ],
+        [
+          0,
+          1,
+          1,
+          5
+        ],
+        [
+          1,
+          1,
+          1,
+          40
+        ],
+        [
+          2,
+          1,
+          1,
+          7
+        ],
+        [
+          1,
+          1,
+          0,
+          5
+        ],
+        [
+          1,
+          2,
+          1,
+          2
+        ]
+      ],
+      "encoding_length": 80,
+      "encoding": "435942455253504143455f424c55455052494e545f5631030303000000000000000000020000000000000000000000050000000500280007000000050000000000000000000000020000000000000000",
+      "key": "4a98648039e97902a1e300ec678a4a2d37dfdebf177b8ef5d644343cad3819d9",
+      "lookup": "e12e7f66a13349efa89ad831967ef367411d0c9831081b8d420993c4afb46995"
+    },
+    {
       "name": "one-gridstone",
       "note": "A single Gridstone: the shortest encoding, 28 bytes.",
       "size": {
