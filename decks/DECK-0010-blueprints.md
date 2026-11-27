@@ -588,6 +588,7 @@ How a Quarry Charge behaves is the client's, like everything an inventory holds 
 - **A fuse.** Once placed, it burns for a short fuse, then blasts.
 - **The blast.** It clears the 7 by 7 by 7 cells centred on the charge, written in the player's own layer as mining those cells would be (DECK-0009 §5.4), so that it changes the world only for the player and for readers who rank the player first, as any edit does.
 - **Pickups.** The blocks it clears are kept as floating pickups for 10 minutes, on the device only, which the player walks into to collect. Nobody else sees them, and nothing about them is published.
+- **How many.** There is no cap on how many charges a player holds. Each compile of the recipe adds 7, and placing one subtracts one. At zero, the charge stays in the inventory, shown at 0 and disabled, until more are compiled.
 
 ## 9. Inventory (non-normative)
 
