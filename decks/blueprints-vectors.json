@@ -6,8 +6,8 @@
     "salt_hex": "435942455253504143455f424c55455052494e545f5631",
     "rounds": 500000,
     "key_bytes": 32,
-    "window_below": 8,
-    "window_above": 7,
+    "reach_compiler": 16,
+    "reach_bare": 3,
     "max_side": 16,
     "record_max_bytes": 98304,
     "record_kind": 33343,
@@ -17,105 +17,138 @@
   "arrangements": [
     {
       "name": "compiler",
-      "note": "The Compiler's recipe (§8.3): four Gridstone in a plus around a Ferrovein, a Glowcore on top. Box 3 by 2 by 3.",
+      "note": "The Compiler's recipe (§8.3): an upright T hammer, two Ferrovein for the handle, Rustband, Glowcore, Rustband for the head. Box 3 (X) by 3 (Y) by 1 (Z).",
       "size": {
         "x": 3,
-        "y": 2,
-        "z": 3
+        "y": 3,
+        "z": 1
       },
       "cells": [
         [
           1,
           0,
           0,
-          1
-        ],
-        [
-          0,
-          0,
-          1,
-          1
-        ],
-        [
-          1,
-          0,
-          1,
           40
         ],
         [
+          1,
+          1,
+          0,
+          40
+        ],
+        [
+          0,
           2,
           0,
-          1,
-          1
+          5
         ],
         [
           1,
-          0,
           2,
-          1
-        ],
-        [
-          1,
-          1,
-          1,
+          0,
           42
+        ],
+        [
+          2,
+          2,
+          0,
+          5
         ]
       ],
-      "encoding_length": 62,
-      "encoding": "435942455253504143455f424c55455052494e545f56310303020000000100000001002800010000000100000000000000000000002a0000000000000000",
-      "key": "65d408f994300326544e75e15077f54b9fd4540eb80434d15962263ed0dbb50a",
-      "lookup": "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+      "encoding_length": 44,
+      "encoding": "435942455253504143455f424c55455052494e545f56310301030000002800000000002800000005002a0005",
+      "key": "593eabd69f12d642d07764e4a7599d1ce1aa1f75912928ef892dfdead5821e77",
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
     },
     {
-      "name": "compiler-glowcore-below",
-      "note": "The same blocks with the Glowcore under the plus: a different arrangement.",
+      "name": "compiler-upside-down",
+      "note": "The same blocks with the head at the bottom: a different arrangement.",
       "size": {
         "x": 3,
-        "y": 2,
+        "y": 3,
+        "z": 1
+      },
+      "cells": [
+        [
+          0,
+          0,
+          0,
+          5
+        ],
+        [
+          1,
+          0,
+          0,
+          42
+        ],
+        [
+          2,
+          0,
+          0,
+          5
+        ],
+        [
+          1,
+          1,
+          0,
+          40
+        ],
+        [
+          1,
+          2,
+          0,
+          40
+        ]
+      ],
+      "encoding_length": 44,
+      "encoding": "435942455253504143455f424c55455052494e545f56310301030005002a0005000000280000000000280000",
+      "key": "bff528808527416ccb36856580113483a9b35241ea03abfd44fcf1852a539948",
+      "lookup": "cc3c967e374a74afb37f3883287f3ddb03dd3d0ecabb5268356b94f190eb9a1e"
+    },
+    {
+      "name": "compiler-turned",
+      "note": "The same T turned a quarter turn about Y, its head along Z: a different arrangement, box 1 by 3 by 3.",
+      "size": {
+        "x": 1,
+        "y": 3,
         "z": 3
       },
       "cells": [
         [
-          1,
-          1,
           0,
-          1
+          0,
+          1,
+          40
         ],
         [
           0,
-          1,
-          1,
-          1
-        ],
-        [
-          1,
           1,
           1,
           40
         ],
         [
-          2,
-          1,
-          1,
-          1
-        ],
-        [
-          1,
-          1,
-          2,
-          1
-        ],
-        [
-          1,
           0,
+          2,
+          0,
+          5
+        ],
+        [
+          0,
+          2,
           1,
           42
+        ],
+        [
+          0,
+          2,
+          2,
+          5
         ]
       ],
-      "encoding_length": 62,
-      "encoding": "435942455253504143455f424c55455052494e545f56310303020000000000000000002a0000000000000000000000010000000100280001000000010000",
-      "key": "16fab17e0e7968d2f7b51531d8f9c80e748283cd4dc306c805f0bbe879a89569",
-      "lookup": "f9c975cc4ec18435fc33dd818724547c00c41c618625b5d79bb69fcadd94f5ee"
+      "encoding_length": 44,
+      "encoding": "435942455253504143455f424c55455052494e545f56310103030000002800000000002800000005002a0005",
+      "key": "07bedb5f84be6ce459bab74f01956570d94b4eb74b730b066809d4037398ca5a",
+      "lookup": "08bb985fc2957eef47d6c42a5f0d54561eca8e2a1e5025cd727a85df134b2b26"
     },
     {
       "name": "one-gridstone",
@@ -770,7 +803,7 @@
     }
   ],
   "location": {
-    "note": "The Compiler's recipe built with its box at (10..12, 4..5, 20..22) in dataspace. The location encoding is the standard encoding followed by the region key (§3.5).",
+    "note": "The Compiler's recipe built with its box at (10..12, 4..6, 20) in dataspace. The location encoding is the standard encoding followed by the region key (§3.5).",
     "box": {
       "lo": {
         "x": 10,
@@ -779,8 +812,8 @@
       },
       "hi": {
         "x": 12,
-        "y": 5,
-        "z": 22
+        "y": 6,
+        "z": 20
       }
     },
     "h5": {
@@ -799,51 +832,45 @@
       "note": "Location lock at height 5: the origin chunk (DECK-0009's origin, lookup id 3c5d8c49...c649).",
       "size": {
         "x": 3,
-        "y": 2,
-        "z": 3
+        "y": 3,
+        "z": 1
       },
       "cells": [
         [
           1,
           0,
           0,
-          1
-        ],
-        [
-          0,
-          0,
-          1,
-          1
-        ],
-        [
-          1,
-          0,
-          1,
           40
         ],
         [
+          1,
+          1,
+          0,
+          40
+        ],
+        [
+          0,
           2,
           0,
-          1,
-          1
+          5
         ],
         [
           1,
-          0,
           2,
-          1
-        ],
-        [
-          1,
-          1,
-          1,
+          0,
           42
+        ],
+        [
+          2,
+          2,
+          0,
+          5
         ]
       ],
-      "encoding_length": 94,
-      "encoding": "435942455253504143455f424c55455052494e545f56310303020000000100000001002800010000000100000000000000000000002a0000000000000000788c32df43243fc56f6f363d610a969f12ac856f3255c84017c456304905e145",
-      "key": "eb7b2449b3c27160a5ff36364de6fde3aca06b73e490318757f3ee6b47b36a7d",
-      "lookup": "57da11b2d46119789acbc3b917dc75e2eaf344bf015e0257d528042668e2612a"
+      "encoding_length": 76,
+      "encoding": "435942455253504143455f424c55455052494e545f56310301030000002800000000002800000005002a0005788c32df43243fc56f6f363d610a969f12ac856f3255c84017c456304905e145",
+      "key": "67da5ba23c6683ec4e42bf863807f69917e2f7db668a40b771244f40cc3759ca",
+      "lookup": "f34610ca40eac005349fc2d088c3a01766bdaf354c89bae876915ae327f7d3b8"
     },
     "h6": {
       "region": {
@@ -861,51 +888,45 @@
       "note": "Location lock at height 6: a different region key, so a different key and lookup.",
       "size": {
         "x": 3,
-        "y": 2,
-        "z": 3
+        "y": 3,
+        "z": 1
       },
       "cells": [
         [
           1,
           0,
           0,
-          1
-        ],
-        [
-          0,
-          0,
-          1,
-          1
-        ],
-        [
-          1,
-          0,
-          1,
           40
         ],
         [
+          1,
+          1,
+          0,
+          40
+        ],
+        [
+          0,
           2,
           0,
-          1,
-          1
+          5
         ],
         [
           1,
-          0,
           2,
-          1
-        ],
-        [
-          1,
-          1,
-          1,
+          0,
           42
+        ],
+        [
+          2,
+          2,
+          0,
+          5
         ]
       ],
-      "encoding_length": 94,
-      "encoding": "435942455253504143455f424c55455052494e545f56310303020000000100000001002800010000000100000000000000000000002a000000000000000018f87aa70dcd8f02381299e775480e188efffa01659ad03894572bd37b133bea",
-      "key": "468bb70bcbf3f92164dcc2f62f5c2fcacd48e4b6502eabc7ae4a0086941774bd",
-      "lookup": "51525b4c0f7d625237626be26f3e1cd399d6bb8c8292539fd9a89aa29a3edb1d"
+      "encoding_length": 76,
+      "encoding": "435942455253504143455f424c55455052494e545f56310301030000002800000000002800000005002a000518f87aa70dcd8f02381299e775480e188efffa01659ad03894572bd37b133bea",
+      "key": "16fe17e658518c9300db28513df4b7d9bb11cf57cec83de02198c090a16ce73e",
+      "lookup": "729105baf5fc25cc89c56ca12eaab7b709d1d52803518927a851570df0ccab7f"
     },
     "straddle": {
       "note": "A box at (30..32, 4..5, 20..22) crosses the border x = 32 of the height 5 regions, so it has no location encoding at height 5. At height 6 it stands in the region at the origin.",
@@ -935,497 +956,1189 @@
   },
   "gather": [
     {
-      "name": "compiler-alone",
-      "note": "The Compiler's recipe in open air, struck on its Ferrovein: isolated, the recipe's lookup.",
+      "name": "T-compiler-lower-ferrovein",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its lower Ferrovein: the whole T, isolated, the recipe's lookup.",
       "world": [
         [
           101,
           50,
           200,
-          1
-        ],
-        [
-          100,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          201,
           40
-        ],
-        [
-          102,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          202,
-          1
         ],
         [
           101,
           51,
-          201,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
           42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
         ]
       ],
       "hit": [
         101,
         50,
-        201
+        200
       ],
-      "smashed": [
+      "bare": false,
+      "reach": 16,
+      "group": [
         [
           101,
           50,
           200,
-          1
-        ],
-        [
-          100,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          201,
           40
-        ],
-        [
-          102,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          202,
-          1
         ],
         [
           101,
           51,
-          201,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
           42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
         ]
       ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
       "isolated": true,
       "intruders": [],
+      "arrangement": true,
       "box": {
         "x": 3,
-        "y": 2,
-        "z": 3
+        "y": 3,
+        "z": 1
       },
-      "lookup": "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
     },
     {
-      "name": "compiler-struck-on-glowcore",
-      "note": "The same, struck on the Glowcore: the same group and lookup.",
+      "name": "T-compiler-upper-ferrovein",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its upper Ferrovein: the whole T, isolated, the recipe's lookup.",
       "world": [
         [
           101,
           50,
           200,
-          1
-        ],
-        [
-          100,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          201,
           40
-        ],
-        [
-          102,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          202,
-          1
         ],
         [
           101,
           51,
-          201,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
           42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
         ]
       ],
       "hit": [
         101,
         51,
-        201
+        200
       ],
-      "smashed": [
+      "bare": false,
+      "reach": 16,
+      "group": [
         [
           101,
           50,
           200,
-          1
-        ],
-        [
-          100,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          201,
           40
-        ],
-        [
-          102,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          202,
-          1
         ],
         [
           101,
           51,
-          201,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
           42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
         ]
       ],
-      "isolated": true,
-      "intruders": [],
-      "box": {
+      "extent": {
         "x": 3,
-        "y": 2,
-        "z": 3
+        "y": 3,
+        "z": 1
       },
-      "lookup": "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
-    },
-    {
-      "name": "compiler-corner-stray",
-      "note": "A Driftsilt (3) at (100, 49, 199), touching the plus only at a corner of the Gridstone at (101, 50, 200): taken with it, isolated, and a different lookup.",
-      "world": [
-        [
-          101,
-          50,
-          200,
-          1
-        ],
-        [
-          100,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          201,
-          40
-        ],
-        [
-          102,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          202,
-          1
-        ],
-        [
-          101,
-          51,
-          201,
-          42
-        ],
-        [
-          100,
-          49,
-          199,
-          3
-        ]
-      ],
-      "hit": [
-        101,
-        50,
-        201
-      ],
-      "smashed": [
-        [
-          100,
-          49,
-          199,
-          3
-        ],
-        [
-          101,
-          50,
-          200,
-          1
-        ],
-        [
-          100,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          201,
-          40
-        ],
-        [
-          102,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          202,
-          1
-        ],
-        [
-          101,
-          51,
-          201,
-          42
-        ]
-      ],
       "isolated": true,
       "intruders": [],
+      "arrangement": true,
       "box": {
         "x": 3,
         "y": 3,
-        "z": 4
+        "z": 1
       },
-      "lookup": "9f07cecb9ec6a3285adb42cbb3d7c5b9307bf031fe5ee8f214aca44876a18377"
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-compiler-left-rustband",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its left Rustband: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        100,
+        52,
+        200
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-compiler-glowcore",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its Glowcore: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        101,
+        52,
+        200
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-compiler-right-rustband",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its right Rustband: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        102,
+        52,
+        200
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-bare-lower-ferrovein",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its lower Ferrovein: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        101,
+        50,
+        200
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-bare-upper-ferrovein",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its upper Ferrovein: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        101,
+        51,
+        200
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-bare-left-rustband",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its left Rustband: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        100,
+        52,
+        200
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-bare-glowcore",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its Glowcore: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        101,
+        52,
+        200
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-bare-right-rustband",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its right Rustband: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        102,
+        52,
+        200
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "compiler-corner-stray",
+      "note": "A Driftsilt (3) at (102, 49, 201), touching the T only at a corner of the lower Ferrovein: in the group, isolated, an arrangement with a different lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ],
+        [
+          102,
+          49,
+          201,
+          3
+        ]
+      ],
+      "hit": [
+        101,
+        50,
+        200
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          102,
+          49,
+          201,
+          3
+        ],
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 4,
+        "z": 2
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 4,
+        "z": 2
+      },
+      "lookup": "5b7fcb1092b0350c06063cfc86994aa16155485cd6d7f26e5580bb9abc7c24d2"
     },
     {
       "name": "compiler-clear-above",
-      "note": "A Gridstone at (101, 53, 201), two cells above the Glowcore: outside the grown box, left alone, still isolated.",
+      "note": "A Gridstone at (101, 54, 200), two cells above the Glowcore: outside the grown box, not in the group; still the recipe.",
       "world": [
         [
           101,
           50,
           200,
-          1
-        ],
-        [
-          100,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          201,
           40
-        ],
-        [
-          102,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          202,
-          1
         ],
         [
           101,
           51,
-          201,
-          42
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
         ],
         [
           101,
-          53,
-          201,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          54,
+          200,
           1
         ]
       ],
       "hit": [
         101,
         50,
-        201
+        200
       ],
-      "smashed": [
+      "bare": false,
+      "reach": 16,
+      "group": [
         [
           101,
           50,
           200,
-          1
-        ],
-        [
-          100,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          201,
           40
-        ],
-        [
-          102,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          202,
-          1
         ],
         [
           101,
           51,
-          201,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
           42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
         ]
       ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
       "isolated": true,
       "intruders": [],
+      "arrangement": true,
       "box": {
         "x": 3,
-        "y": 2,
-        "z": 3
+        "y": 3,
+        "z": 1
       },
-      "lookup": "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
     },
     {
       "name": "compiler-in-grown-box",
-      "note": "A Gridstone at (101, 52, 203): inside the grown box (y 49..52, z 199..203) but touching nothing: left alone, and the group is not isolated.",
+      "note": "A Gridstone at (103, 50, 201): inside the grown box (x 99..103, y 49..53, z 199..201) but touching nothing: not isolated, no arrangement.",
       "world": [
         [
           101,
           50,
           200,
-          1
-        ],
-        [
-          100,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          201,
           40
-        ],
-        [
-          102,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          202,
-          1
         ],
         [
           101,
           51,
-          201,
-          42
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
         ],
         [
           101,
           52,
-          203,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ],
+        [
+          103,
+          50,
+          201,
           1
         ]
       ],
       "hit": [
         101,
         50,
-        201
+        200
       ],
-      "smashed": [
+      "bare": false,
+      "reach": 16,
+      "group": [
         [
           101,
           50,
           200,
-          1
-        ],
-        [
-          100,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          201,
           40
-        ],
-        [
-          102,
-          50,
-          201,
-          1
-        ],
-        [
-          101,
-          50,
-          202,
-          1
         ],
         [
           101,
           51,
-          201,
-          42
-        ]
-      ],
-      "isolated": false,
-      "intruders": [
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
         [
           101,
           52,
-          203
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
         ]
-      ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": false,
+      "intruders": [
+        [
+          103,
+          50,
+          201
+        ]
+      ],
+      "arrangement": false
     },
     {
       "name": "L-notch",
-      "note": "An L of five Gridstone with a block in its notch at (0, 0, 2), touching nothing: the notch block is left, and the group is not isolated (§4.2).",
+      "note": "An L of five Gridstone with a block in its notch at (0, 0, 2), touching nothing: not isolated, no arrangement (§4.2).",
       "world": [
         [
           0,
@@ -1469,7 +2182,9 @@
         0,
         0
       ],
-      "smashed": [
+      "bare": false,
+      "reach": 16,
+      "group": [
         [
           0,
           0,
@@ -1501,6 +2216,11 @@
           1
         ]
       ],
+      "extent": {
+        "x": 3,
+        "y": 1,
+        "z": 3
+      },
       "isolated": false,
       "intruders": [
         [
@@ -1508,11 +2228,12 @@
           0,
           2
         ]
-      ]
+      ],
+      "arrangement": false
     },
     {
-      "name": "row-20-middle",
-      "note": "A row of 20 Gridstone, x 0..19, struck at x 10: the window is x 2..17, so 16 are taken, and x 1 and x 18 touch the group from outside the window: not isolated.",
+      "name": "row-16-minus-end",
+      "note": "A row of 16 Gridstone, x 0..15, struck at x 0, its minus end: the window is x -15..15, the whole row, isolated, 16 cells long: an arrangement.",
       "world": [
         [
           0,
@@ -1606,41 +2327,31 @@
         ],
         [
           15,
-          10,
-          10,
-          1
-        ],
-        [
-          16,
-          10,
-          10,
-          1
-        ],
-        [
-          17,
-          10,
-          10,
-          1
-        ],
-        [
-          18,
-          10,
-          10,
-          1
-        ],
-        [
-          19,
           10,
           10,
           1
         ]
       ],
       "hit": [
-        10,
+        0,
         10,
         10
       ],
-      "smashed": [
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
         [
           2,
           10,
@@ -1724,37 +2435,26 @@
           10,
           10,
           1
-        ],
-        [
-          16,
-          10,
-          10,
-          1
-        ],
-        [
-          17,
-          10,
-          10,
-          1
         ]
       ],
-      "isolated": false,
-      "intruders": [
-        [
-          1,
-          10,
-          10
-        ],
-        [
-          18,
-          10,
-          10
-        ]
-      ]
+      "extent": {
+        "x": 16,
+        "y": 1,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 16,
+        "y": 1,
+        "z": 1
+      },
+      "lookup": "0f465faf42e601555d12123a9ed7047e865924d79b72b25e7a2e1ef232475ed8"
     },
     {
-      "name": "row-16-ninth",
-      "note": "A row of 16, x 0..15, struck at x 8 (its ninth cell): the window is x 0..15, all 16 taken, isolated.",
+      "name": "row-16-plus-end",
+      "note": "The same row struck at x 15, its plus end: the same arrangement and lookup.",
       "world": [
         [
           0,
@@ -1848,6 +2548,233 @@
         ],
         [
           15,
+          10,
+          10,
+          1
+        ]
+      ],
+      "hit": [
+        15,
+        10,
+        10
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ],
+        [
+          3,
+          10,
+          10,
+          1
+        ],
+        [
+          4,
+          10,
+          10,
+          1
+        ],
+        [
+          5,
+          10,
+          10,
+          1
+        ],
+        [
+          6,
+          10,
+          10,
+          1
+        ],
+        [
+          7,
+          10,
+          10,
+          1
+        ],
+        [
+          8,
+          10,
+          10,
+          1
+        ],
+        [
+          9,
+          10,
+          10,
+          1
+        ],
+        [
+          10,
+          10,
+          10,
+          1
+        ],
+        [
+          11,
+          10,
+          10,
+          1
+        ],
+        [
+          12,
+          10,
+          10,
+          1
+        ],
+        [
+          13,
+          10,
+          10,
+          1
+        ],
+        [
+          14,
+          10,
+          10,
+          1
+        ],
+        [
+          15,
+          10,
+          10,
+          1
+        ]
+      ],
+      "extent": {
+        "x": 16,
+        "y": 1,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 16,
+        "y": 1,
+        "z": 1
+      },
+      "lookup": "0f465faf42e601555d12123a9ed7047e865924d79b72b25e7a2e1ef232475ed8"
+    },
+    {
+      "name": "row-17-middle",
+      "note": "A row of 17, x 0..16, struck at x 8: the whole row is in the window and isolated, but 17 cells long, more than the reach: no arrangement.",
+      "world": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ],
+        [
+          3,
+          10,
+          10,
+          1
+        ],
+        [
+          4,
+          10,
+          10,
+          1
+        ],
+        [
+          5,
+          10,
+          10,
+          1
+        ],
+        [
+          6,
+          10,
+          10,
+          1
+        ],
+        [
+          7,
+          10,
+          10,
+          1
+        ],
+        [
+          8,
+          10,
+          10,
+          1
+        ],
+        [
+          9,
+          10,
+          10,
+          1
+        ],
+        [
+          10,
+          10,
+          10,
+          1
+        ],
+        [
+          11,
+          10,
+          10,
+          1
+        ],
+        [
+          12,
+          10,
+          10,
+          1
+        ],
+        [
+          13,
+          10,
+          10,
+          1
+        ],
+        [
+          14,
+          10,
+          10,
+          1
+        ],
+        [
+          15,
+          10,
+          10,
+          1
+        ],
+        [
+          16,
           10,
           10,
           1
@@ -1858,7 +2785,9 @@
         10,
         10
       ],
-      "smashed": [
+      "bare": false,
+      "reach": 16,
+      "group": [
         [
           0,
           10,
@@ -1954,20 +2883,26 @@
           10,
           10,
           1
+        ],
+        [
+          16,
+          10,
+          10,
+          1
         ]
       ],
-      "isolated": true,
-      "intruders": [],
-      "box": {
-        "x": 16,
+      "extent": {
+        "x": 17,
         "y": 1,
         "z": 1
       },
-      "lookup": "0f465faf42e601555d12123a9ed7047e865924d79b72b25e7a2e1ef232475ed8"
+      "isolated": true,
+      "intruders": [],
+      "arrangement": false
     },
     {
-      "name": "row-16-eighth",
-      "note": "The same row struck at x 7: the window is x -1..14, 15 taken, x 15 touches the group from outside: not isolated.",
+      "name": "row-40-middle",
+      "note": "A row of 40, x 0..39, struck at x 20: the window is x 5..35, so the group is 31 cells, and x 4 and x 36 touch it from outside the window: not isolated, and too long: no arrangement.",
       "world": [
         [
           0,
@@ -2061,47 +2996,163 @@
         ],
         [
           15,
+          10,
+          10,
+          1
+        ],
+        [
+          16,
+          10,
+          10,
+          1
+        ],
+        [
+          17,
+          10,
+          10,
+          1
+        ],
+        [
+          18,
+          10,
+          10,
+          1
+        ],
+        [
+          19,
+          10,
+          10,
+          1
+        ],
+        [
+          20,
+          10,
+          10,
+          1
+        ],
+        [
+          21,
+          10,
+          10,
+          1
+        ],
+        [
+          22,
+          10,
+          10,
+          1
+        ],
+        [
+          23,
+          10,
+          10,
+          1
+        ],
+        [
+          24,
+          10,
+          10,
+          1
+        ],
+        [
+          25,
+          10,
+          10,
+          1
+        ],
+        [
+          26,
+          10,
+          10,
+          1
+        ],
+        [
+          27,
+          10,
+          10,
+          1
+        ],
+        [
+          28,
+          10,
+          10,
+          1
+        ],
+        [
+          29,
+          10,
+          10,
+          1
+        ],
+        [
+          30,
+          10,
+          10,
+          1
+        ],
+        [
+          31,
+          10,
+          10,
+          1
+        ],
+        [
+          32,
+          10,
+          10,
+          1
+        ],
+        [
+          33,
+          10,
+          10,
+          1
+        ],
+        [
+          34,
+          10,
+          10,
+          1
+        ],
+        [
+          35,
+          10,
+          10,
+          1
+        ],
+        [
+          36,
+          10,
+          10,
+          1
+        ],
+        [
+          37,
+          10,
+          10,
+          1
+        ],
+        [
+          38,
+          10,
+          10,
+          1
+        ],
+        [
+          39,
           10,
           10,
           1
         ]
       ],
       "hit": [
-        7,
+        20,
         10,
         10
       ],
-      "smashed": [
-        [
-          0,
-          10,
-          10,
-          1
-        ],
-        [
-          1,
-          10,
-          10,
-          1
-        ],
-        [
-          2,
-          10,
-          10,
-          1
-        ],
-        [
-          3,
-          10,
-          10,
-          1
-        ],
-        [
-          4,
-          10,
-          10,
-          1
-        ],
+      "bare": false,
+      "reach": 16,
+      "group": [
         [
           5,
           10,
@@ -2161,21 +3212,306 @@
           10,
           10,
           1
-        ]
-      ],
-      "isolated": false,
-      "intruders": [
+        ],
         [
           15,
           10,
+          10,
+          1
+        ],
+        [
+          16,
+          10,
+          10,
+          1
+        ],
+        [
+          17,
+          10,
+          10,
+          1
+        ],
+        [
+          18,
+          10,
+          10,
+          1
+        ],
+        [
+          19,
+          10,
+          10,
+          1
+        ],
+        [
+          20,
+          10,
+          10,
+          1
+        ],
+        [
+          21,
+          10,
+          10,
+          1
+        ],
+        [
+          22,
+          10,
+          10,
+          1
+        ],
+        [
+          23,
+          10,
+          10,
+          1
+        ],
+        [
+          24,
+          10,
+          10,
+          1
+        ],
+        [
+          25,
+          10,
+          10,
+          1
+        ],
+        [
+          26,
+          10,
+          10,
+          1
+        ],
+        [
+          27,
+          10,
+          10,
+          1
+        ],
+        [
+          28,
+          10,
+          10,
+          1
+        ],
+        [
+          29,
+          10,
+          10,
+          1
+        ],
+        [
+          30,
+          10,
+          10,
+          1
+        ],
+        [
+          31,
+          10,
+          10,
+          1
+        ],
+        [
+          32,
+          10,
+          10,
+          1
+        ],
+        [
+          33,
+          10,
+          10,
+          1
+        ],
+        [
+          34,
+          10,
+          10,
+          1
+        ],
+        [
+          35,
+          10,
+          10,
+          1
+        ]
+      ],
+      "extent": {
+        "x": 31,
+        "y": 1,
+        "z": 1
+      },
+      "isolated": false,
+      "intruders": [
+        [
+          4,
+          10,
+          10
+        ],
+        [
+          36,
+          10,
           10
         ]
-      ]
+      ],
+      "arrangement": false
+    },
+    {
+      "name": "bare-row-3-end",
+      "note": "A row of 3, x 0..2, struck bare-handed at x 0: the window is x -2..2, the whole row, isolated, 3 long: an arrangement.",
+      "world": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ]
+      ],
+      "hit": [
+        0,
+        10,
+        10
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 1,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 1,
+        "z": 1
+      },
+      "lookup": "86839764863c1f01a5417e3b6217fe62f448217e512ddbf041bd157ab717a8f5"
+    },
+    {
+      "name": "bare-row-4-end",
+      "note": "A row of 4, x 0..3, struck bare-handed at x 0: the window is x -2..2, so the group is 3 cells and x 3 touches it from outside: not isolated, no arrangement.",
+      "world": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ],
+        [
+          3,
+          10,
+          10,
+          1
+        ]
+      ],
+      "hit": [
+        0,
+        10,
+        10
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 1,
+        "z": 1
+      },
+      "isolated": false,
+      "intruders": [
+        [
+          3,
+          10,
+          10
+        ]
+      ],
+      "arrangement": false
     },
     {
       "name": "joined-outside-window",
-      "note": "Two Gridstone columns at x 0 and x 2, joined only by a bridge through x 1 at y 18, above the window (y 2..17 for a hit at y 10): only the 16 cells of the struck column inside the window are taken; the other column is not, and the group is not isolated, because its own top cell at y 18, outside the window, is in its grown box.",
+      "note": "Two Gridstone columns, y 0..40 at x 0 and at x 2, joined only by a bridge at (1, 40, 0), outside the window of a hit at (0, 10, 0) (y -5..25): the group is the struck column's 26 cells in the window; the other column is not in it; not isolated and too tall.",
       "world": [
+        [
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          0,
+          1
+        ],
         [
           0,
           2,
@@ -2279,110 +3615,386 @@
           1
         ],
         [
+          0,
+          19,
+          0,
+          1
+        ],
+        [
+          0,
+          20,
+          0,
+          1
+        ],
+        [
+          0,
+          21,
+          0,
+          1
+        ],
+        [
+          0,
+          22,
+          0,
+          1
+        ],
+        [
+          0,
+          23,
+          0,
+          1
+        ],
+        [
+          0,
+          24,
+          0,
+          1
+        ],
+        [
+          0,
+          25,
+          0,
+          1
+        ],
+        [
+          0,
+          26,
+          0,
+          1
+        ],
+        [
+          0,
+          27,
+          0,
+          1
+        ],
+        [
+          0,
+          28,
+          0,
+          1
+        ],
+        [
+          0,
+          29,
+          0,
+          1
+        ],
+        [
+          0,
+          30,
+          0,
+          1
+        ],
+        [
+          0,
+          31,
+          0,
+          1
+        ],
+        [
+          0,
+          32,
+          0,
+          1
+        ],
+        [
+          0,
+          33,
+          0,
+          1
+        ],
+        [
+          0,
+          34,
+          0,
+          1
+        ],
+        [
+          0,
+          35,
+          0,
+          1
+        ],
+        [
+          0,
+          36,
+          0,
+          1
+        ],
+        [
+          0,
+          37,
+          0,
+          1
+        ],
+        [
+          0,
+          38,
+          0,
+          1
+        ],
+        [
+          0,
+          39,
+          0,
+          1
+        ],
+        [
+          0,
+          40,
+          0,
+          1
+        ],
+        [
           1,
+          40,
+          0,
+          1
+        ],
+        [
+          2,
+          0,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          2,
+          0,
+          1
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          2,
+          4,
+          0,
+          1
+        ],
+        [
+          2,
+          5,
+          0,
+          1
+        ],
+        [
+          2,
+          6,
+          0,
+          1
+        ],
+        [
+          2,
+          7,
+          0,
+          1
+        ],
+        [
+          2,
+          8,
+          0,
+          1
+        ],
+        [
+          2,
+          9,
+          0,
+          1
+        ],
+        [
+          2,
+          10,
+          0,
+          1
+        ],
+        [
+          2,
+          11,
+          0,
+          1
+        ],
+        [
+          2,
+          12,
+          0,
+          1
+        ],
+        [
+          2,
+          13,
+          0,
+          1
+        ],
+        [
+          2,
+          14,
+          0,
+          1
+        ],
+        [
+          2,
+          15,
+          0,
+          1
+        ],
+        [
+          2,
+          16,
+          0,
+          1
+        ],
+        [
+          2,
+          17,
+          0,
+          1
+        ],
+        [
+          2,
+          18,
+          0,
+          1
+        ],
+        [
+          2,
           19,
           0,
           1
         ],
         [
           2,
-          2,
+          20,
           0,
           1
         ],
         [
           2,
-          3,
+          21,
           0,
           1
         ],
         [
           2,
-          4,
+          22,
           0,
           1
         ],
         [
           2,
-          5,
+          23,
           0,
           1
         ],
         [
           2,
-          6,
+          24,
           0,
           1
         ],
         [
           2,
-          7,
+          25,
           0,
           1
         ],
         [
           2,
-          8,
+          26,
           0,
           1
         ],
         [
           2,
-          9,
+          27,
           0,
           1
         ],
         [
           2,
-          10,
+          28,
           0,
           1
         ],
         [
           2,
-          11,
+          29,
           0,
           1
         ],
         [
           2,
-          12,
+          30,
           0,
           1
         ],
         [
           2,
-          13,
+          31,
           0,
           1
         ],
         [
           2,
-          14,
+          32,
           0,
           1
         ],
         [
           2,
-          15,
+          33,
           0,
           1
         ],
         [
           2,
-          16,
+          34,
           0,
           1
         ],
         [
           2,
-          17,
+          35,
           0,
           1
         ],
         [
           2,
-          18,
+          36,
+          0,
+          1
+        ],
+        [
+          2,
+          37,
+          0,
+          1
+        ],
+        [
+          2,
+          38,
+          0,
+          1
+        ],
+        [
+          2,
+          39,
+          0,
+          1
+        ],
+        [
+          2,
+          40,
           0,
           1
         ]
@@ -2392,7 +4004,21 @@
         10,
         0
       ],
-      "smashed": [
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          0,
+          1
+        ],
         [
           0,
           2,
@@ -2488,16 +4114,70 @@
           17,
           0,
           1
+        ],
+        [
+          0,
+          18,
+          0,
+          1
+        ],
+        [
+          0,
+          19,
+          0,
+          1
+        ],
+        [
+          0,
+          20,
+          0,
+          1
+        ],
+        [
+          0,
+          21,
+          0,
+          1
+        ],
+        [
+          0,
+          22,
+          0,
+          1
+        ],
+        [
+          0,
+          23,
+          0,
+          1
+        ],
+        [
+          0,
+          24,
+          0,
+          1
+        ],
+        [
+          0,
+          25,
+          0,
+          1
         ]
       ],
+      "extent": {
+        "x": 1,
+        "y": 26,
+        "z": 1
+      },
       "isolated": false,
       "intruders": [
         [
           0,
-          18,
+          26,
           0
         ]
-      ]
+      ],
+      "arrangement": false
     }
   ],
   "sheets": {
@@ -2506,57 +4186,44 @@
         "name": "compiler-all-revealed",
         "size": {
           "x": 3,
-          "y": 2,
-          "z": 3
+          "y": 3,
+          "z": 1
         },
         "pal": [
           0,
-          1,
+          5,
           40,
           42
         ],
         "cells": [
           0,
-          1,
-          0,
-          1,
           2,
-          1,
+          0,
+          -1,
+          2,
           0,
           1,
-          0,
-          -4,
           3,
-          0,
-          -3
+          1
         ],
         "expanded": [
           0,
-          1,
-          0,
-          1,
           40,
-          1,
-          0,
-          1,
           0,
           0,
+          40,
           0,
-          0,
-          0,
+          5,
           42,
-          0,
-          0,
-          0,
-          0
+          5
         ]
       },
       {
         "name": "compiler-glowcore-revealed",
         "size": {
           "x": 3,
-          "y": 2,
-          "z": 3
+          "y": 3,
+          "z": 1
         },
         "pal": [
           0,
@@ -2567,43 +4234,31 @@
           0,
           1,
           0,
-          1,
-          -2,
-          0,
+          -1,
           1,
           0,
-          -4,
+          1,
           2,
-          0,
-          -3
+          1
         ],
         "expanded": [
           0,
           null,
           0,
-          null,
-          null,
-          null,
           0,
           null,
           0,
-          0,
-          0,
-          0,
-          0,
+          null,
           42,
-          0,
-          0,
-          0,
-          0
+          null
         ]
       },
       {
         "name": "compiler-nothing-revealed",
         "size": {
           "x": 3,
-          "y": 2,
-          "z": 3
+          "y": 3,
+          "z": 1
         },
         "pal": [
           0,
@@ -2613,47 +4268,34 @@
           0,
           1,
           0,
-          1,
-          -2,
-          0,
+          -1,
           1,
           0,
-          -4,
           1,
-          0,
-          -3
+          -2
         ],
         "expanded": [
           0,
           null,
           0,
-          null,
-          null,
-          null,
           0,
           null,
           0,
-          0,
-          0,
-          0,
-          0,
           null,
-          0,
-          0,
-          0,
-          0
+          null,
+          null
         ]
       }
     ],
     "reject": [
       {
         "name": "runs-short",
-        "reason": "the runs expand to 17 cells, not 18",
+        "reason": "the runs expand to one cell fewer than the box holds",
         "sheet": {
           "size": {
             "x": 3,
-            "y": 2,
-            "z": 3
+            "y": 3,
+            "z": 1
           },
           "pal": [
             0,
@@ -2664,15 +4306,11 @@
             0,
             1,
             0,
-            1,
-            -2,
-            0,
+            -1,
             1,
             0,
-            -4,
-            2,
-            0,
-            -2
+            1,
+            2
           ]
         }
       },
@@ -2682,8 +4320,8 @@
         "sheet": {
           "size": {
             "x": 3,
-            "y": 2,
-            "z": 3
+            "y": 3,
+            "z": 1
           },
           "pal": [
             0,
@@ -2695,15 +4333,12 @@
             0,
             1,
             0,
-            1,
-            -2,
-            0,
+            -1,
             1,
             0,
-            -4,
+            1,
             2,
-            0,
-            -3
+            1
           ]
         }
       },
@@ -2713,8 +4348,8 @@
         "sheet": {
           "size": {
             "x": 3,
-            "y": 2,
-            "z": 3
+            "y": 3,
+            "z": 1
           },
           "pal": [
             0,
@@ -2726,26 +4361,23 @@
             0,
             1,
             0,
-            1,
-            -2,
-            0,
+            -1,
             1,
             0,
-            -4,
+            1,
             2,
-            0,
-            -3
+            1
           ]
         }
       },
       {
         "name": "not-tight",
-        "reason": "the box is 4 along X, but no cell is occupied at x = 3",
+        "reason": "the box is one cell wider along X than its cells: no cell is occupied at x = 3",
         "sheet": {
           "size": {
             "x": 4,
-            "y": 2,
-            "z": 3
+            "y": 3,
+            "z": 1
           },
           "pal": [
             0,
@@ -2756,17 +4388,14 @@
             0,
             1,
             0,
-            -1,
-            1,
             -2,
+            1,
             0,
             -1,
             1,
-            0,
-            -6,
             2,
-            0,
-            -5
+            1,
+            0
           ]
         }
       },
@@ -2819,8 +4448,8 @@
       "sheet": {
         "size": {
           "x": 3,
-          "y": 2,
-          "z": 3
+          "y": 3,
+          "z": 1
         },
         "pal": [
           0,
@@ -2831,15 +4460,12 @@
           0,
           1,
           0,
-          1,
-          -2,
-          0,
+          -1,
           1,
           0,
-          -4,
+          1,
           2,
-          0,
-          -3
+          1
         ],
         "lock": "standard",
         "prize": {
@@ -2906,17 +4532,17 @@
           ]
         }
       },
-      "key": "65d408f994300326544e75e15077f54b9fd4540eb80434d15962263ed0dbb50a",
+      "key": "593eabd69f12d642d07764e4a7599d1ce1aa1f75912928ef892dfdead5821e77",
       "nonce": "8b3412f49abd191e7ad0ca87",
-      "serialized_length": 1096,
+      "serialized_length": 1088,
       "event": {
         "kind": 33343,
         "created_at": 1795000000,
-        "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+        "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
         "tags": [
           [
             "d",
-            "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+            "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
           ],
           [
             "version",
@@ -2925,7 +4551,7 @@
           [
             "encrypted",
             "aes-256-gcm",
-            "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+            "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
             "cyberspace:blueprint"
           ],
           [
@@ -2938,18 +4564,18 @@
           ]
         ],
         "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-        "id": "4ab2c81e6aa7165c9d132273eb7fc4ca880b44504117df3f209be2942a4309e2",
-        "sig": "4f5145b91f5431c2479f01119f71ae5974952b66087863ad0c83eced700a07ebd6ac79c4ed5061e2ed6683427ee0811d04403320e4d1c89f79ef011eda04aa6b"
+        "id": "d6757720f7ad9d45fbde6b70dcf9c676bbfbd3075218d99f706782e154faec28",
+        "sig": "4eeb5564812e27bf95effb38d2c26c2104efb9b4afbc31b7ec0c9c6aee25147d3d5317c6acdefeacdaf3672a31589f03b05700c0b429a6bab6af7b8b8ccddc5a"
       },
       "opens_with_key": true,
-      "opens_with_compiler_glowcore_below_key": false
+      "opens_with_compiler_upside_down_key": false
     },
     "location": {
       "sheet": {
         "size": {
           "x": 3,
-          "y": 2,
-          "z": 3
+          "y": 3,
+          "z": 1
         },
         "pal": [
           0,
@@ -2960,15 +4586,12 @@
           0,
           1,
           0,
-          1,
-          -2,
-          0,
+          -1,
           1,
           0,
-          -4,
+          1,
           2,
-          0,
-          -3
+          1
         ],
         "lock": "location",
         "prize": {
@@ -2981,16 +4604,16 @@
         },
         "height": 5
       },
-      "key": "eb7b2449b3c27160a5ff36364de6fde3aca06b73e490318757f3ee6b47b36a7d",
+      "key": "67da5ba23c6683ec4e42bf863807f69917e2f7db668a40b771244f40cc3759ca",
       "nonce": "c4509c51636823eeaa94ae4e",
       "event": {
         "kind": 33343,
         "created_at": 1795000060,
-        "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"location\",\"prize\":{\"reveal\":\"silhouette\",\"name\":\"Little prism\",\"views\":{\"iso\":\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=\",\"y\":\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=\"}},\"height\":5}",
+        "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"location\",\"prize\":{\"reveal\":\"silhouette\",\"name\":\"Little prism\",\"views\":{\"iso\":\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=\",\"y\":\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=\"}},\"height\":5}",
         "tags": [
           [
             "d",
-            "57da11b2d46119789acbc3b917dc75e2eaf344bf015e0257d528042668e2612a"
+            "f34610ca40eac005349fc2d088c3a01766bdaf354c89bae876915ae327f7d3b8"
           ],
           [
             "version",
@@ -2999,7 +4622,7 @@
           [
             "encrypted",
             "aes-256-gcm",
-            "xFCcUWNoI+6qlK5OxrZ3bUERI95yDsb9zDTi+RSpKOZYXKRKhd1EtkVsW4rkPZPPja2uugfv1eykzo5bUQMqLIPe42KnxNXaq9LqQ/lLtWTkaj9jpoSYSODE82x2ro6+ee/RFSNz/H+VKZ8f+PA/1MiUMjMC0KiciPls60Z544SPLG+LxjQRqZob5a8qhWYQ34YGyW62GcXVI/qf2YgH5UolqISQNKc1iWvGd15h5s3AWdalSghDrS01NLozhmwd4ILr14uQri5r3ovi/zsn/hq1J9E=",
+            "xFCcUWNoI+6qlK5OVcMj6GTheYNRNShlprzcn+UIZ/m8Wd/6Mo+NbMkGfdM3nT5Lis1rQ2Ce4wbHyAtnOkAVDpmTcmNqZ8/L0VIwOXSeR9y/sL6zdzWydNqdM/cnSrWiYekc3XvHBUSgn7Q3pCmidCejQl13u6lOM8An6NpHS4QTWmP8gEv8gbP5YPeJF4qhiAmus3sk6bFtmVhGrPsY5xtY53MirhtQTZHRKwRkVkFfkp4+nJLQ7b/3cH1bGGLYXrxeOpyuj1aAVtMUNKdP68MCeb4=",
             "cyberspace:blueprint"
           ],
           [
@@ -3012,8 +4635,8 @@
           ]
         ],
         "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-        "id": "ff721f07f43c496aa56963a95c1667e2d9e549183562a5ed11afa666bb0950ce",
-        "sig": "5b1ecb3c705d48dd86383e7aafbab2c5b099fe88082a4db5b8b4b758c27da418fe17bed610dd9d1a5a446a9cf648e33fdb3e49a5ff840f33dd2a82374babd723"
+        "id": "4d18c37b5faf39333425682c8d009f29a1d421289829f35ebf941df207e1f005",
+        "sig": "6a822e320fbba3e0fde80c0fd0f99af991299779e9e613d01e3dfc57c96f77416b54c604f04f8ef4411c23b94c6f2c1841631f3ca6ae90d531aae1a8ead927ca"
       },
       "opens_with_standard_key": false
     },
@@ -3025,16 +4648,16 @@
         "event": {
           "kind": 33343,
           "created_at": 1795000000,
-          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
           "tags": [
             [
               "d",
-              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
             ],
             [
               "encrypted",
               "aes-256-gcm",
-              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
               "cyberspace:blueprint"
             ],
             [
@@ -3047,8 +4670,8 @@
             ]
           ],
           "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-          "id": "f47f5de964e062637fc9d02d7027c7f40ea1e00b09aeffe05ff3769d389d5fc2",
-          "sig": "91937b1bf86db02dae5b37a1f757364e5b4f98dbc020512995839e3dffeaa5f93567838e485ba09bec02639689b8ec41f9321ab24712dd5ecafa06921772e3e6"
+          "id": "fd2eee0e8bc899e0d8c4a2ba98f242b562f4e897712ee965a82b2b4645c34623",
+          "sig": "f7bc13cca4728f688e888d1f9d8eb7fcb9428a9308523f40f36204a926a816a9cbf87a9ae32274dc5a3788236d3dab13014865b76e000a3a1cdde9b2f67cb2d1"
         }
       },
       {
@@ -3058,16 +4681,16 @@
         "event": {
           "kind": 33343,
           "created_at": 1795000000,
-          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
           "tags": [
             [
               "d",
-              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
             ],
             [
               "encrypted",
               "aes-256-gcm",
-              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
               "cyberspace:blueprint"
             ],
             [
@@ -3084,8 +4707,8 @@
             ]
           ],
           "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-          "id": "6057e67b0693cbfd047457d9721bf2a4df15ff4803e8ba21efc49a5310c3547f",
-          "sig": "626d497037333b73e701363037bb25c1114eb23f75fb499bc79fc40a462afd1df97106428e5903f4aa609059750034fea6e010d55bec872f083e893db905454d"
+          "id": "fdb999a71cfbe9f7e4cb07a50c67d338b1d960ab01af77b7c643f59876061d9d",
+          "sig": "aa8483fad8e3a6c5e72b20a3e28cdf3e14d7023c09e4dfbe2d10b94382958d83e542efa0042d7752c5fd4b0677c46e35f583c474bf8c92d4dbf8c80bb702e3b2"
         }
       },
       {
@@ -3095,11 +4718,11 @@
         "event": {
           "kind": 33343,
           "created_at": 1795000000,
-          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
           "tags": [
             [
               "d",
-              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
             ],
             [
               "version",
@@ -3108,7 +4731,7 @@
             [
               "encrypted",
               "aes-256-gcm",
-              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
               "cyberspace:blueprint"
             ],
             [
@@ -3125,8 +4748,8 @@
             ]
           ],
           "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-          "id": "44968d98675ed67e070a258a05d568772bbfa48c4d460e3579858d990cb5758f",
-          "sig": "89c407fbcff79d52d2a7f6ea93eee93c655f80de3f357d7156b9e358a8f835320011976198ec546747431a3475a45640c7df8473c7495fa04e542ffccb913c50"
+          "id": "d8f793b381c6de787dfcd6524dcbc9b2abf0a0c327a98146a99e7c989207cf45",
+          "sig": "e0437fabaced8794cb90c4a54d53d1e93e03d332ac521dbab612acf9d37940beace442377da17fe0045cc35c70923520dd08d41b3a578683b0e43e0617c64e66"
         }
       },
       {
@@ -3136,11 +4759,11 @@
         "event": {
           "kind": 33343,
           "created_at": 1795000000,
-          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
           "tags": [
             [
               "d",
-              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
             ],
             [
               "version",
@@ -3149,7 +4772,7 @@
             [
               "encrypted",
               "aes-256-gcm",
-              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
               "https://example.com/key"
             ],
             [
@@ -3162,8 +4785,8 @@
             ]
           ],
           "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-          "id": "ab2159b8b31b18004d3160642ef2c44e38b2ba82be28554adfcb3ced6e403f22",
-          "sig": "4b9f0ed1fa45266d17dfbc4a3ebbc24ccb34db5d2058b81abde5d27503893885bc870ae6dc0e048f50a66e1b8cd4937949f7190227889e60f0b583dc71a106f9"
+          "id": "fc4e836f16d10c9905245b1c9b1bde28021454d2c9190ba04e57937d1ca8d9bf",
+          "sig": "2665a993c29bacefee6d7110fafcc62799b94251fc07503ccca4487da1e1db41b92207c0815ebafd6be30e53db624ccc9cdae49db12dec5f673e6a2183554e5f"
         }
       },
       {
@@ -3173,11 +4796,11 @@
         "event": {
           "kind": 33343,
           "created_at": 1795000000,
-          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"hidden\",\"text\":\"x\"}}",
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"hidden\",\"text\":\"x\"}}",
           "tags": [
             [
               "d",
-              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
             ],
             [
               "version",
@@ -3186,7 +4809,7 @@
             [
               "encrypted",
               "aes-256-gcm",
-              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
               "cyberspace:blueprint"
             ],
             [
@@ -3199,8 +4822,8 @@
             ]
           ],
           "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-          "id": "49c61bc401efbb128a2cef6af8d6f1a8ddc9dc329428c220b4758cd95965c753",
-          "sig": "8bc0f1d0f905c26de30c3f068504e0be0969feefcaae81c8ad3d2a501d8f734e327d619a724dda46ecf986418c3b1f273ef7a7c8ccf8a3238bb56b82a23d2551"
+          "id": "ac983f4890292315a44cf00e10a1ddf98a9f019b2609408df347dee33a67738c",
+          "sig": "90818c254fb94e494e2e1ec267f235658b138d17373366a7e824479bb5d6d0694ca571d46fe6c8eea4a8746fff8fe8a7f25be410c139f89ed48c0477a639531b"
         }
       },
       {
@@ -3210,11 +4833,11 @@
         "event": {
           "kind": 33343,
           "created_at": 1795000000,
-          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\",\"name\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\",\"name\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
           "tags": [
             [
               "d",
-              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
             ],
             [
               "version",
@@ -3223,7 +4846,7 @@
             [
               "encrypted",
               "aes-256-gcm",
-              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
               "cyberspace:blueprint"
             ],
             [
@@ -3236,8 +4859,8 @@
             ]
           ],
           "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-          "id": "4f1f5691d4a6b8126b08486b9f1d8657c4b9b3c3288d76f355d20887cfed0fa8",
-          "sig": "8b252e03ce12357c95c0eab76bf1d4ff5e03fe1d1d80d606b1f473fef9b99f822a68f5a0f09e6e2eba7c329eda7397380e62158220d43e9c48156dab0d7e86c5"
+          "id": "8b01e91605b99e20cc322495681dd4de2921b95319a4e0b12a7260cc3a60ef87",
+          "sig": "efedc30ea9062b62e2943c15e9c08f347eb9595c206538a2037314b3e24749be54bc847e46dd0c0fcb04b85529c8d1d37155c1838c9ce68b89a65ab2d641e1a7"
         }
       },
       {
@@ -3247,11 +4870,11 @@
         "event": {
           "kind": 33343,
           "created_at": 1795000000,
-          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"location\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"location\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
           "tags": [
             [
               "d",
-              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
             ],
             [
               "version",
@@ -3260,7 +4883,7 @@
             [
               "encrypted",
               "aes-256-gcm",
-              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
               "cyberspace:blueprint"
             ],
             [
@@ -3273,8 +4896,8 @@
             ]
           ],
           "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-          "id": "fba6df516d776a0f17dbdde5100134a2abc0d80f393ec5f499ffd4e20feb6663",
-          "sig": "9a665fcced99a58646df72e01aefbb2cf2f74e2bb2b96dadb43950efc1c5e70258651a009e612ef2edfea1c0cfa3c5caad997fc47e1f1e0439a964ffc579d219"
+          "id": "31d1d81d48f27f77b4fefd02fbc20bcb74db05af73f3b683a419d4f4e8dcc83e",
+          "sig": "362a4902ae5dabd537bfade0ef2e2920080660691d0037a58eb7d26bb8e5992fb58db002aa6e2354bb4eca542fe66ceb891ac634b4021cac9764f85e3d9b090a"
         }
       },
       {
@@ -3284,11 +4907,11 @@
         "event": {
           "kind": 33343,
           "created_at": 1795000000,
-          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42,1],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42,1],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
           "tags": [
             [
               "d",
-              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
             ],
             [
               "version",
@@ -3297,7 +4920,7 @@
             [
               "encrypted",
               "aes-256-gcm",
-              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
               "cyberspace:blueprint"
             ],
             [
@@ -3310,8 +4933,8 @@
             ]
           ],
           "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-          "id": "452153d5b61f0c91056778502edf8df02d5923e66e30cdff312430cded3e8f11",
-          "sig": "3389b6445f13ac95a8e11dfb9a5aff8ce5cdcc5f56d0c37475efb6cdc5cf562b1aebb78ab79eb868742c56ff176b978585a22c351787a2e9ccc0911ef11afec2"
+          "id": "3b84456dbc1f608fbdfddf4eaf24553c5756bff8c1054bb0dff151cb28008b99",
+          "sig": "892cd9d377c5d774852d0b7f81e9206da519810e432243e71aae42aa28193be1ec1cf79d86427575fc3462380c2f20409013718fe846e438bc77412f98223851"
         }
       },
       {
@@ -3321,11 +4944,11 @@
         "event": {
           "kind": 33343,
           "created_at": 1795000000,
-          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
           "tags": [
             [
               "d",
-              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
             ],
             [
               "version",
@@ -3334,7 +4957,7 @@
             [
               "encrypted",
               "aes-256-gcm",
-              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
               "cyberspace:blueprint"
             ],
             [
@@ -3351,8 +4974,8 @@
             ]
           ],
           "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-          "id": "f7309c8e6775b0d326802b70952f7e7511372f845afd313cbe3b393bc879f6d1",
-          "sig": "5f55381dbdf040e6ba8220c9e49faf2ce8f871fe158d352433dff49b6f3642cec3be4e9cfbac07bf79bddace25f0942c8d4503c425275247c131ce94af4895fe"
+          "id": "327729d9baf13928b7d8a1eabcdc3ec7b4544ff4da19a17ea3e86af584e21b0c",
+          "sig": "5196dd5f5133dedff0f4eafad897b5f70c8ea2f8184a61cf7e3a9e69bf204c04f0e60e9f2987f1d0633bdbec9b39f05fcc89c434f588f1a5ecac177cd621dee2"
         }
       },
       {
@@ -3362,11 +4985,11 @@
         "event": {
           "kind": 33343,
           "created_at": 1795000000,
-          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
           "tags": [
             [
               "d",
-              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
             ],
             [
               "version",
@@ -3375,7 +4998,7 @@
             [
               "encrypted",
               "aes-256-gcm",
-              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
               "cyberspace:blueprint"
             ],
             [
@@ -3389,8 +5012,8 @@
             ]
           ],
           "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-          "id": "b0ccfcda3433b93a199f60317b6993008c2358238aae0ec257cb3482c0d8e802",
-          "sig": "9a53adee93be9ebf7fce354ae70a097bcc2ad2df9cd0aad13cf806a4cb36818fa4739c84e9d408836906d8e9fb64cbca2209664fb70f4d0d16d0cb0bad8c7cd5"
+          "id": "7cbb658aee071c62291c1f4211b90394de25635e6d159c4ebd91b4e9061e1bee",
+          "sig": "69102f562545fce105a80dfefbb192738692186684ec556b97d6c019e11921538d0a92ce1e26f18252483627646e9fdab5636e1fd9690b37ba8bec678f28d68c"
         }
       },
       {
@@ -3400,11 +5023,11 @@
         "event": {
           "kind": 33343,
           "created_at": 1795000000,
-          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"},\"note\":\"hello\"}",
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"},\"note\":\"hello\"}",
           "tags": [
             [
               "d",
-              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
             ],
             [
               "version",
@@ -3413,7 +5036,7 @@
             [
               "encrypted",
               "aes-256-gcm",
-              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
               "cyberspace:blueprint"
             ],
             [
@@ -3426,8 +5049,8 @@
             ]
           ],
           "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-          "id": "481acdc1c2a2fe7b88cc5aa91470f030f91221152599e82bd0ee00bad020f8c4",
-          "sig": "cf8bc65774a9a65ef94effda42e7a460b822fb8560245fcd49b256dc9f97d90e659a3da16d579a70f9eb5e634a67d07221d6bd9cc9d339d07311693c7b0ef7ce"
+          "id": "6d334c67128f91353799378d82f207507cd9c39b78864972940aa98995d85262",
+          "sig": "a92af94afa8e61af34153d9aa5433fd25d70fd1ae3ae75f02ad1c0912b6441caacea45281f6c72442988813bbba0ca4f5f46248e6a2f209f0ce9997127dd68b6"
         }
       },
       {
@@ -3437,11 +5060,11 @@
         "event": {
           "kind": 33343,
           "created_at": 1795000000,
-          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\",\"colour\":\"red\"}}",
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\",\"colour\":\"red\"}}",
           "tags": [
             [
               "d",
-              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
             ],
             [
               "version",
@@ -3450,7 +5073,7 @@
             [
               "encrypted",
               "aes-256-gcm",
-              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
               "cyberspace:blueprint"
             ],
             [
@@ -3463,8 +5086,8 @@
             ]
           ],
           "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-          "id": "fbbdf5fa77f79f1a9c95b787233546ed0ee10cae00812ba55c777b41ff0edfb1",
-          "sig": "8c748e6a6587e113c1f1b4567edb99397f365a2e9642d01c33f88d71b02c74e98ef9ae36606dd1a3fe067af68bb453da59f658618a2a2058bfa8b6c88e2b3874"
+          "id": "6eb960eba97de0b6ca934c3185d14fb7154a0d3ba03f39d4e13f1b99b97725c7",
+          "sig": "4d1e85acd0818215bcac0a995546e587cf18d54f788cbac0df43aace6d1615491d992005d04033c17119fafa67643d13a98c3fd4b1c9dcfeafca440f5274da66"
         }
       },
       {
@@ -3474,11 +5097,11 @@
         "event": {
           "kind": 33343,
           "created_at": 1795000000,
-          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"\\u0073tandard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"\\u0073tandard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
           "tags": [
             [
               "d",
-              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
             ],
             [
               "version",
@@ -3487,7 +5110,7 @@
             [
               "encrypted",
               "aes-256-gcm",
-              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
               "cyberspace:blueprint"
             ],
             [
@@ -3500,8 +5123,8 @@
             ]
           ],
           "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-          "id": "f5fad2a7fa5ef271b7b350c1604ea90e3901c78e6b170971c35b8e081fd7f804",
-          "sig": "f058547e9ed94cc0fa4aa68d19023f704375ebff0f8b1323d24a1dc466491367d3af98313c4128f9e5644d7a97ac54156b794c359e453f304c88c6a7e70c6216"
+          "id": "f99751bee78f4e5ef4fa7f0cd661b1ab96f9d4bc8675dde98b719d7c113dcd53",
+          "sig": "8fbe7884e753890978583052a4a9ae9c2970d3ca1d1414f3b9308dd25c9efd226588fd5e1ec25f2d4937a4158277d91234047bc64c6b2aef2d4edc3e649018e4"
         }
       },
       {
@@ -3511,11 +5134,11 @@
         "event": {
           "kind": 33343,
           "created_at": 1795000000,
-          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\": \"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\": \"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
           "tags": [
             [
               "d",
-              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
             ],
             [
               "version",
@@ -3524,7 +5147,7 @@
             [
               "encrypted",
               "aes-256-gcm",
-              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
               "cyberspace:blueprint"
             ],
             [
@@ -3537,8 +5160,8 @@
             ]
           ],
           "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-          "id": "98df43441d5c5af891b89ee9116854f989df243067a2d2c3d4f59a43a664c6a8",
-          "sig": "80db5b9be8ef6494be1b4f030e6c21de7e431150429dfa0eed37883fa30a0e54080468e71e95df929661d490f551768fc9a44a4c724fd50469c0c8ed9250d625"
+          "id": "11a8e94d4fe46e51d67f5bcdfe1f05abe9d1e56bb7ab863fcd0bc62e36f39450",
+          "sig": "91f75277d9360b9e1ae601624021fb691d9abafb93d389bd980231486361a62c7c8126053bb51040816562aed1d607b2d02a7fd9f5b25904d4783822a7d199be"
         }
       },
       {
@@ -3548,11 +5171,11 @@
         "event": {
           "kind": 33343,
           "created_at": 1795000000,
-          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
           "tags": [
             [
               "d",
-              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
             ],
             [
               "version",
@@ -3561,7 +5184,7 @@
             [
               "encrypted",
               "aes-256-gcm",
-              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
               "cyberspace:blueprint"
             ],
             [
@@ -3574,8 +5197,8 @@
             ]
           ],
           "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-          "id": "79da6341f5f88df291ad8a0a2c4ef57493c11a593453892ef97b49d7aa9a822b",
-          "sig": "5ab25fbd112d40d8217fb04ee2b23f9a4f6e4aac97cb10308202cf1ba358624c212aaf16d1f0b992094715cd1501a24485df2117c9d0fd6fb588374a0bdfe32b"
+          "id": "4b762f4f1f9626d1f0de68ad3e7ae6bccfda847eadf2c37babe0503a8e5561ac",
+          "sig": "26deaff5e992add17c9faa2466cd1d3116e1f6134231f22c6865903a557bf468edfd129106427e61d3853a9c0512280847fd0e2099831ee6a289ef91c546fede"
         }
       },
       {
@@ -3585,11 +5208,11 @@
         "event": {
           "kind": 33343,
           "created_at": 1795000000,
-          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\",\"name\":\"   \"}}",
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\",\"name\":\"   \"}}",
           "tags": [
             [
               "d",
-              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
             ],
             [
               "version",
@@ -3598,7 +5221,7 @@
             [
               "encrypted",
               "aes-256-gcm",
-              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
               "cyberspace:blueprint"
             ],
             [
@@ -3611,16 +5234,16 @@
             ]
           ],
           "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-          "id": "afac9487ecc415ae10a48debe72cf776e77a4f071cb50bb3a425e4f3a14926d4",
-          "sig": "66c0dc16648cbeb673f260a7b4e7b485c47616f51ba6467bb2081617ccc1a72c5db88195e4ad6bcc2bccabf6ef8f55afb291f08ed881ab453558d481d288f1c1"
+          "id": "99dabcadf186706f84aa8a71e530f02fd50084371ab7adb752083af739331e4b",
+          "sig": "ee92426885f63dc0d894f82a2d78998966a7bcfa1aa9e3385bea34ffc7633553660a18ccfdd4308badabe4b915eefbbae673b0aeadc9419df74b35ca8fa1d98d"
         }
       },
       {
         "name": "too-large",
         "reason": "over 98,304 bytes serialized (§5.2)",
         "check_failed": "too large",
-        "serialized_length": 100109,
-        "event_sha256": "a08ea175198a9741e0acdecd984ee644c47a12aaf1db4d1f6e897fe347b3124e",
+        "serialized_length": 100101,
+        "event_sha256": "37f5323cc8c1f6ee072bdd47acc91e33488b65232968dd46053adebf32cfe6b5",
         "note": "too long to print; build it by adding a 99,000-character field to the standard record's prize object"
       }
     ]
@@ -3631,7 +5254,7 @@
       "event": {
         "kind": 3343,
         "created_at": 1795003600,
-        "content": "{\"id\":\"4ab2c81e6aa7165c9d132273eb7fc4ca880b44504117df3f209be2942a4309e2\",\"pubkey\":\"f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6\",\"created_at\":1795000000,\"kind\":33343,\"tags\":[[\"d\",\"f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d\"],[\"version\",\"1\"],[\"encrypted\",\"aes-256-gcm\",\"izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=\",\"cyberspace:blueprint\"],[\"title\",\"First prism\"],[\"alt\",\"A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech\"]],\"content\":\"{\\\"size\\\":{\\\"x\\\":3,\\\"y\\\":2,\\\"z\\\":3},\\\"pal\\\":[0,null,42],\\\"cells\\\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\\\"lock\\\":\\\"standard\\\",\\\"prize\\\":{\\\"reveal\\\":\\\"description\\\",\\\"text\\\":\\\"A small prism that catches the light.\\\"}}\",\"sig\":\"4f5145b91f5431c2479f01119f71ae5974952b66087863ad0c83eced700a07ebd6ac79c4ed5061e2ed6683427ee0811d04403320e4d1c89f79ef011eda04aa6b\"}",
+        "content": "{\"id\":\"d6757720f7ad9d45fbde6b70dcf9c676bbfbd3075218d99f706782e154faec28\",\"pubkey\":\"f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6\",\"created_at\":1795000000,\"kind\":33343,\"tags\":[[\"d\",\"84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564\"],[\"version\",\"1\"],[\"encrypted\",\"aes-256-gcm\",\"izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=\",\"cyberspace:blueprint\"],[\"title\",\"First prism\"],[\"alt\",\"A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech\"]],\"content\":\"{\\\"size\\\":{\\\"x\\\":3,\\\"y\\\":3,\\\"z\\\":1},\\\"pal\\\":[0,null,42],\\\"cells\\\":[0,1,0,-1,1,0,1,2,1],\\\"lock\\\":\\\"standard\\\",\\\"prize\\\":{\\\"reveal\\\":\\\"description\\\",\\\"text\\\":\\\"A small prism that catches the light.\\\"}}\",\"sig\":\"4eeb5564812e27bf95effb38d2c26c2104efb9b4afbc31b7ec0c9c6aee25147d3d5317c6acdefeacdaf3672a31589f03b05700c0b429a6bab6af7b8b8ccddc5a\"}",
         "tags": [
           [
             "C",
@@ -3642,8 +5265,8 @@
           ]
         ],
         "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-        "id": "5a650724239b60a3a32d3fa89b7c780caf8047d6e17889fb54f9eb5772bd7f88",
-        "sig": "d9001c7b6bed7b777f12004d752845e5cad735be565c0f8841dadea263d7a57431decd1e03a1d81c8e8b8efbd863be592bd5feba89186b1f1d1bb60d4a06d37a"
+        "id": "db5d1bd5bf8130c35320ddc610c5ae269fa8620b732f1eae10072625dcbf6f5b",
+        "sig": "c71a491b99c961b6f82b7f01481faba0ea1b392b512115c16fc8fd09659789cb4e5990816d35cf6a90b1e6c9d3736d4376351cd3282573e0cc5518e8e3cc45a3"
       }
     },
     "copy_by_finder": {
@@ -3651,7 +5274,7 @@
       "event": {
         "kind": 3343,
         "created_at": 1795003600,
-        "content": "{\"id\":\"4ab2c81e6aa7165c9d132273eb7fc4ca880b44504117df3f209be2942a4309e2\",\"pubkey\":\"f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6\",\"created_at\":1795000000,\"kind\":33343,\"tags\":[[\"d\",\"f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d\"],[\"version\",\"1\"],[\"encrypted\",\"aes-256-gcm\",\"izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=\",\"cyberspace:blueprint\"],[\"title\",\"First prism\"],[\"alt\",\"A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech\"]],\"content\":\"{\\\"size\\\":{\\\"x\\\":3,\\\"y\\\":2,\\\"z\\\":3},\\\"pal\\\":[0,null,42],\\\"cells\\\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\\\"lock\\\":\\\"standard\\\",\\\"prize\\\":{\\\"reveal\\\":\\\"description\\\",\\\"text\\\":\\\"A small prism that catches the light.\\\"}}\",\"sig\":\"4f5145b91f5431c2479f01119f71ae5974952b66087863ad0c83eced700a07ebd6ac79c4ed5061e2ed6683427ee0811d04403320e4d1c89f79ef011eda04aa6b\"}",
+        "content": "{\"id\":\"d6757720f7ad9d45fbde6b70dcf9c676bbfbd3075218d99f706782e154faec28\",\"pubkey\":\"f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6\",\"created_at\":1795000000,\"kind\":33343,\"tags\":[[\"d\",\"84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564\"],[\"version\",\"1\"],[\"encrypted\",\"aes-256-gcm\",\"izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=\",\"cyberspace:blueprint\"],[\"title\",\"First prism\"],[\"alt\",\"A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech\"]],\"content\":\"{\\\"size\\\":{\\\"x\\\":3,\\\"y\\\":3,\\\"z\\\":1},\\\"pal\\\":[0,null,42],\\\"cells\\\":[0,1,0,-1,1,0,1,2,1],\\\"lock\\\":\\\"standard\\\",\\\"prize\\\":{\\\"reveal\\\":\\\"description\\\",\\\"text\\\":\\\"A small prism that catches the light.\\\"}}\",\"sig\":\"4eeb5564812e27bf95effb38d2c26c2104efb9b4afbc31b7ec0c9c6aee25147d3d5317c6acdefeacdaf3672a31589f03b05700c0b429a6bab6af7b8b8ccddc5a\"}",
         "tags": [
           [
             "C",
@@ -3662,8 +5285,8 @@
           ]
         ],
         "pubkey": "240eea3780b8ebda0a4f27c417d5927578a491fa14e7c89a20f8ee52772c1c70",
-        "id": "854b079e74b9e1860d7e10a97413dc80f043a57a5c6badb95ba55e9961ab9bf9",
-        "sig": "c1d541d1e09664ad817a5b0ea76ac67a7bae6315d209077834d4206d7e1c787f71e893147cabcbc6767bed0b9230d2a1d97bcd07773886662c2e1e1b61e8d8b7"
+        "id": "d1c8eb83be667a2e156896fa9d1cb771c9289fb40d603a4b52bcf8b7578229fe",
+        "sig": "87cf8dc351362d378a944776cec7bf9c662daea7a5aa62494cc428eb9ea0f0e01b00ea7d4f2b96c7035a4f2bd3c26b28d9829ba26bc557847d18c6b91f1f5f20"
       }
     },
     "reject_altered": {
@@ -3671,7 +5294,7 @@
       "event": {
         "kind": 3343,
         "created_at": 1795003600,
-        "content": "{\"id\":\"4ab2c81e6aa7165c9d132273eb7fc4ca880b44504117df3f209be2942a4309e2\",\"pubkey\":\"f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6\",\"created_at\":1795000000,\"kind\":33343,\"tags\":[[\"d\",\"f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d\"],[\"version\",\"1\"],[\"encrypted\",\"aes-256-gcm\",\"izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=\",\"cyberspace:blueprint\"],[\"title\",\"Mine now\"],[\"alt\",\"A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech\"]],\"content\":\"{\\\"size\\\":{\\\"x\\\":3,\\\"y\\\":2,\\\"z\\\":3},\\\"pal\\\":[0,null,42],\\\"cells\\\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\\\"lock\\\":\\\"standard\\\",\\\"prize\\\":{\\\"reveal\\\":\\\"description\\\",\\\"text\\\":\\\"A small prism that catches the light.\\\"}}\",\"sig\":\"4f5145b91f5431c2479f01119f71ae5974952b66087863ad0c83eced700a07ebd6ac79c4ed5061e2ed6683427ee0811d04403320e4d1c89f79ef011eda04aa6b\"}",
+        "content": "{\"id\":\"d6757720f7ad9d45fbde6b70dcf9c676bbfbd3075218d99f706782e154faec28\",\"pubkey\":\"f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6\",\"created_at\":1795000000,\"kind\":33343,\"tags\":[[\"d\",\"84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564\"],[\"version\",\"1\"],[\"encrypted\",\"aes-256-gcm\",\"izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=\",\"cyberspace:blueprint\"],[\"title\",\"Mine now\"],[\"alt\",\"A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech\"]],\"content\":\"{\\\"size\\\":{\\\"x\\\":3,\\\"y\\\":3,\\\"z\\\":1},\\\"pal\\\":[0,null,42],\\\"cells\\\":[0,1,0,-1,1,0,1,2,1],\\\"lock\\\":\\\"standard\\\",\\\"prize\\\":{\\\"reveal\\\":\\\"description\\\",\\\"text\\\":\\\"A small prism that catches the light.\\\"}}\",\"sig\":\"4eeb5564812e27bf95effb38d2c26c2104efb9b4afbc31b7ec0c9c6aee25147d3d5317c6acdefeacdaf3672a31589f03b05700c0b429a6bab6af7b8b8ccddc5a\"}",
         "tags": [
           [
             "C",
@@ -3682,8 +5305,8 @@
           ]
         ],
         "pubkey": "240eea3780b8ebda0a4f27c417d5927578a491fa14e7c89a20f8ee52772c1c70",
-        "id": "28a973a93f026336ccc3993faadc68faec3d74f60555bb4a410a8bbc9862d39f",
-        "sig": "8214ad3732d63822aa6245eeba9c40134b7c50c228a800b71d8d718e042f53f8accb13bb24e132a4b3a22d29d0608cfc059d9638d77e8e27fff8f1a479b6f196"
+        "id": "4276594a5be73f00f649fca95a8ee33faef8fd8044ddb22f5dd29192ebcdf36b",
+        "sig": "c77707749ab0bbcdad28e6cfd8264ab382248f9f63fef000f7cdfddcb284c9525f93edb6c61419ab0d2b2f6faf95c5a598cb50eebc4df8540f4bd1a5faa60ecf"
       }
     },
     "reject_not_canonical": {
@@ -3691,7 +5314,7 @@
       "event": {
         "kind": 3343,
         "created_at": 1795003600,
-        "content": "{\"kind\":33343,\"created_at\":1795000000,\"content\":\"{\\\"size\\\":{\\\"x\\\":3,\\\"y\\\":2,\\\"z\\\":3},\\\"pal\\\":[0,null,42],\\\"cells\\\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\\\"lock\\\":\\\"standard\\\",\\\"prize\\\":{\\\"reveal\\\":\\\"description\\\",\\\"text\\\":\\\"A small prism that catches the light.\\\"}}\",\"tags\":[[\"d\",\"f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d\"],[\"version\",\"1\"],[\"encrypted\",\"aes-256-gcm\",\"izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=\",\"cyberspace:blueprint\"],[\"title\",\"First prism\"],[\"alt\",\"A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech\"]],\"pubkey\":\"f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6\",\"id\":\"4ab2c81e6aa7165c9d132273eb7fc4ca880b44504117df3f209be2942a4309e2\",\"sig\":\"4f5145b91f5431c2479f01119f71ae5974952b66087863ad0c83eced700a07ebd6ac79c4ed5061e2ed6683427ee0811d04403320e4d1c89f79ef011eda04aa6b\"}",
+        "content": "{\"kind\":33343,\"created_at\":1795000000,\"content\":\"{\\\"size\\\":{\\\"x\\\":3,\\\"y\\\":3,\\\"z\\\":1},\\\"pal\\\":[0,null,42],\\\"cells\\\":[0,1,0,-1,1,0,1,2,1],\\\"lock\\\":\\\"standard\\\",\\\"prize\\\":{\\\"reveal\\\":\\\"description\\\",\\\"text\\\":\\\"A small prism that catches the light.\\\"}}\",\"tags\":[[\"d\",\"84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564\"],[\"version\",\"1\"],[\"encrypted\",\"aes-256-gcm\",\"izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=\",\"cyberspace:blueprint\"],[\"title\",\"First prism\"],[\"alt\",\"A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech\"]],\"pubkey\":\"f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6\",\"id\":\"d6757720f7ad9d45fbde6b70dcf9c676bbfbd3075218d99f706782e154faec28\",\"sig\":\"4eeb5564812e27bf95effb38d2c26c2104efb9b4afbc31b7ec0c9c6aee25147d3d5317c6acdefeacdaf3672a31589f03b05700c0b429a6bab6af7b8b8ccddc5a\"}",
         "tags": [
           [
             "C",
@@ -3702,8 +5325,8 @@
           ]
         ],
         "pubkey": "240eea3780b8ebda0a4f27c417d5927578a491fa14e7c89a20f8ee52772c1c70",
-        "id": "39aab2b1f7b86888f7094ac902c29b15a36e2c1e2dbaa3b4f545286b81965312",
-        "sig": "3b4d9ffa2536fb8dcbb7d5c60c9046a3c7e3b52ed1b1fe9ab7879ec0a62f29692e214bde08dee8147ec0918361a9d5c97a5946c61073d0fffe41e839327471a6"
+        "id": "2d5ca27f098776de9258385ebcfb8efdd6d2b6cbbf844005502aad8b420ba92d",
+        "sig": "fe47a5a12ff38e392639704f4ccb6f4eec7e40df8f73fc8a9dd1c4df4d4531187da6ecc4de93bc1a5ffe4d27d94c74712a9cb6d6720fcfcc00928d2d2cb78f84"
       }
     }
   },
@@ -3728,47 +5351,47 @@
     ],
     "records": [
       {
-        "id": "3bccc05ef8c6c0ae7cb35373b664c97c01882b139fa2135b6e7c94dcfe66ed29",
+        "id": "a00785b401367c00a70d796a3ba3fae39b6e8bf34337d6697f07b16c592b89a9",
         "pubkey": "cb482cdad31cba1b8a56880b67021e908e6a2a96ab639cb3cd7f97a0ef773b18",
         "created_at": 1795000010,
         "title": "rank stranger old"
       },
       {
-        "id": "14b84023f329ed424fa38d3a9aa9cee02552b55c53e315ef3848bb5874f195b5",
+        "id": "fc6d11aceda0e1e6b6101360d571cd997573a9e5a5f1f8e9eba859064b9c16e0",
         "pubkey": "6c91214ff135b0291954336610840d743e546f2bcfe68c74d0ac7a51ff844de8",
         "created_at": 1795000030,
         "title": "rank stranger new"
       },
       {
-        "id": "ce52c9c25c713f906b5929f34681a4a957b83fbef18844aef54e69bc240173fe",
+        "id": "5554941c5a87e0afa4f3e012b3866a502e425e8a9166996cdd47cfbaedcf372a",
         "pubkey": "de6404b5420c91c390babe8a8a95d3f8ed7fb8d989a8ae7b815ba40c512151c4",
         "created_at": 1795000005,
         "title": "rank follow"
       },
       {
-        "id": "efe1272680870a8597b666125ef366a9182d44cbef5ae1a485779de0ea3b3cdd",
+        "id": "f49587b4b59df20f02aa03266d0f6da0159c84cb3c3eec02db0b4db56a1668b5",
         "pubkey": "87c295f0898ff14cca4c01317121153b405eec27c8c90e07485c1ed718393590",
         "created_at": 1795000099,
         "title": "rank muted"
       },
       {
-        "id": "1b877145d2fc3d59288de7a710e2c372fb00c7e9a7c3d8d93b64b1409c02663b",
+        "id": "71e02cc97e9d6d33925c9e485a21ab33cb7ef131154aaa4144f26bb1c05a7fa7",
         "pubkey": "a8fe1159e9b5504d95af63463a3e7bcb8fef395d3a301348fa5a0d111071cbdd",
         "created_at": 1795000001,
         "title": "rank reader"
       },
       {
-        "id": "4b32df251df60a4eacb0e31b9cbb03fe74cdf3865ba14aa53287f567fdd9bf04",
+        "id": "4fe246d0457de3187d0f340036f89d0dcdd0f32a08087f876af2c0c48986742f",
         "pubkey": "cb482cdad31cba1b8a56880b67021e908e6a2a96ab639cb3cd7f97a0ef773b18",
         "created_at": 1795000040,
         "title": "rank stranger newer version"
       }
     ],
     "order": [
-      "1b877145d2fc3d59288de7a710e2c372fb00c7e9a7c3d8d93b64b1409c02663b",
-      "ce52c9c25c713f906b5929f34681a4a957b83fbef18844aef54e69bc240173fe",
-      "4b32df251df60a4eacb0e31b9cbb03fe74cdf3865ba14aa53287f567fdd9bf04",
-      "14b84023f329ed424fa38d3a9aa9cee02552b55c53e315ef3848bb5874f195b5"
+      "71e02cc97e9d6d33925c9e485a21ab33cb7ef131154aaa4144f26bb1c05a7fa7",
+      "5554941c5a87e0afa4f3e012b3866a502e425e8a9166996cdd47cfbaedcf372a",
+      "4fe246d0457de3187d0f340036f89d0dcdd0f32a08087f876af2c0c48986742f",
+      "fc6d11aceda0e1e6b6101360d571cd997573a9e5a5f1f8e9eba859064b9c16e0"
     ],
     "note": "The reader's own record, then the follow, then strangers newest first; the stranger's older version and the muted creator are gone. Every remaining record is kept (§6.1)."
   }

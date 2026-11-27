@@ -16,8 +16,8 @@ export const DOMAIN_BYTES = enc.encode(DOMAIN)
 export const ITERATIONS = 500000                   // PBKDF2 rounds, fixed by the version
 export const KEY_BYTES = 32
 export const MAX_SIDE = 16                         // the most cells a box has on one axis
-export const WINDOW_BELOW = 8                      // the window is hit - 8 .. hit + 7 on each axis
-export const WINDOW_ABOVE = 7
+export const REACH_COMPILER = 16                   // the reach N of a smash with the Compiler (§4.1)
+export const REACH_BARE = 3                        // and with a bare hand (§8.2)
 export const RECORD_KIND = 33343
 export const CARD_KIND = 3343
 export const RECORD_MAX_BYTES = 98304
@@ -31,11 +31,12 @@ export const TOOLS = ['compiler']
 export const AXIS_BITS = 85n
 export const AXIS_MASK = (1n << AXIS_BITS) - 1n
 
-// The Compiler's recipe (DECK-0010 §8): four Gridstone (1) in a plus around a Ferrovein (40), a
-// Glowcore (42) on top. Cells are [x, y, z, id] relative to the box's lowest corner.
+// The Compiler's recipe (DECK-0010 §8.3, owner 2026-11-27): an upright T hammer in a box 3 (X) by 3 (Y)
+// by 1 (Z). Two Ferrovein (40) are the handle; Rustband (5), Glowcore (42), Rustband (5) are the head.
+// Cells are [x, y, z, id] relative to the box's lowest corner.
 export const COMPILER_RECIPE = [
-  [1, 0, 0, 1], [0, 0, 1, 1], [1, 0, 1, 40], [2, 0, 1, 1], [1, 0, 2, 1],
-  [1, 1, 1, 42],
+  [1, 0, 0, 40], [1, 1, 0, 40],
+  [0, 2, 0, 5], [1, 2, 0, 42], [2, 2, 0, 5],
 ]
 
 // ---------- primitives ----------
@@ -102,13 +103,15 @@ export const lookupOf = (key) => hex(sha256(key))
 // world: a Map from "x,y,z" to a nonzero block id: every occupied cell the smasher's client resolves
 // near the hit, in one plane (DECK-0009 §7, plus unpublished changes). Coordinates are plain integers
 // here; a client works modulo 2^85 on each axis.
-export function gather(world, hit) {
+// Gathering (§4.1, §4.2). bare = true is a bare-hand smash. N is the reach; the window is the hit's
+// minus (N - 1) to plus (N - 1) on each axis, (2N - 1) cells, the hit at its centre. The group is the
+// arrangement when it is isolated and at most N cells on every axis, whichever of its cells was struck.
+export function gather(world, hit, bare = false) {
   const [hx, hy, hz] = hit
   if (!world.get(k3(hx, hy, hz))) throw new Error('the hit cell is empty')
+  const N = bare ? REACH_BARE : REACH_COMPILER, r = N - 1
   const inWindow = (x, y, z) =>
-    x >= hx - WINDOW_BELOW && x <= hx + WINDOW_ABOVE &&
-    y >= hy - WINDOW_BELOW && y <= hy + WINDOW_ABOVE &&
-    z >= hz - WINDOW_BELOW && z <= hz + WINDOW_ABOVE
+    x >= hx - r && x <= hx + r && y >= hy - r && y <= hy + r && z >= hz - r && z <= hz + r
   const seen = new Set([k3(hx, hy, hz)])
   const queue = [[hx, hy, hz]]
   const group = []
@@ -122,18 +125,22 @@ export function gather(world, hit) {
       seen.add(key); queue.push([nx, ny, nz])
     }
   }
-  // Sort the smashed cells in scan order of the window, for stable output.
   group.sort((a, b) => a[1] - b[1] || a[2] - b[2] || a[0] - b[0])
-  const arr = arrangementFrom(group)
-  const { origin: o, size: s } = arr
-  // Isolation (§4.2): every cell of the box grown by one, other than the group's own, is empty.
+  let mx = Infinity, my = Infinity, mz = Infinity, Mx = -Infinity, My = -Infinity, Mz = -Infinity
+  for (const [x, y, z] of group) {
+    mx = Math.min(mx, x); my = Math.min(my, y); mz = Math.min(mz, z); Mx = Math.max(Mx, x); My = Math.max(My, y); Mz = Math.max(Mz, z)
+  }
+  const extent = { x: Mx - mx + 1, y: My - my + 1, z: Mz - mz + 1 }
+  // Isolation: every cell of the box grown by one, other than the group's own, is empty.
   const members = new Set(group.map(([x, y, z]) => k3(x, y, z)))
   const intruders = []
-  for (let y = o.y - 1; y <= o.y + s.y; y++) for (let z = o.z - 1; z <= o.z + s.z; z++) for (let x = o.x - 1; x <= o.x + s.x; x++) {
+  for (let y = my - 1; y <= My + 1; y++) for (let z = mz - 1; z <= Mz + 1; z++) for (let x = mx - 1; x <= Mx + 1; x++) {
     const key = k3(x, y, z)
     if (!members.has(key) && world.get(key)) intruders.push([x, y, z])
   }
-  return { smashed: group, arrangement: arr, isolated: intruders.length === 0, intruders }
+  const isolated = intruders.length === 0
+  const fits = extent.x <= N && extent.y <= N && extent.z <= N
+  return { reach: N, group, extent, isolated, intruders, fits, arrangement: isolated && fits ? arrangementFrom(group) : null }
 }
 
 // ---------- regions, for the location lock (CYBERSPACE_V2.md §4.6, §4.7, §7.2) ----------
