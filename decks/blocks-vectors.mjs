@@ -243,7 +243,7 @@ const baseRevisionCases = [
   { name: 'rank first: a stranger who dates a survey 0 does not decide for a reader who follows an earlier-ranked surveyor', surveys: [SV(3, 4, 0, 0xa0, 1), SV(2, 3, 500, 0xf1, 2)] },
   { name: 'the same rank and the same surveyed second: the lower author pubkey decides', surveys: [SV(3, 4, 100, 0xb0, 2), SV(2, 4, 100, 0xa0, 1)] },
   { name: 'no counted survey: the base is empty', surveys: [] },
-  { name: 'surveyed read from a plane: absent, or later than created_at, reads as created_at', surveys: [], surveyed_examples: [[{}, 500], [{ surveyed: 400 }, 500], [{ surveyed: 900 }, 500]].map(([pl, ca]) => ({ plane: pl, created_at: ca, surveyed: R.surveyedAt(pl, ca) })) },
+  { name: 'surveyed read from a plane: anything but a non-negative integer no later than created_at reads as created_at', surveys: [], surveyed_examples: [[{}, 500], [{ surveyed: 400 }, 500], [{ surveyed: 900 }, 500], [{ surveyed: -1 }, 500], [{ surveyed: '400' }, 500], [{ surveyed: 400.5 }, 500]].map(([pl, ca]) => ({ plane: pl, created_at: ca, surveyed: R.surveyedAt(pl, ca) })) },
 ].map((c) => ({ ...c, base_revision: R.baseRevision(c.surveys) }))
 // A layer written against revision 3 over a chunk whose base is revision 2: its changed cells are decoded against the
 // revision 3 ground, and every cell it did not change shows the revision 2 ground.

@@ -28747,7 +28747,7 @@
     "base_revision": null
    },
    {
-    "name": "surveyed read from a plane: absent, or later than created_at, reads as created_at",
+    "name": "surveyed read from a plane: anything but a non-negative integer no later than created_at reads as created_at",
     "surveys": [],
     "surveyed_examples": [
      {
@@ -28765,6 +28765,27 @@
      {
       "plane": {
        "surveyed": 900
+      },
+      "created_at": 500,
+      "surveyed": 500
+     },
+     {
+      "plane": {
+       "surveyed": -1
+      },
+      "created_at": 500,
+      "surveyed": 500
+     },
+     {
+      "plane": {
+       "surveyed": "400"
+      },
+      "created_at": 500,
+      "surveyed": 500
+     },
+     {
+      "plane": {
+       "surveyed": 400.5
       },
       "created_at": 500,
       "surveyed": 500

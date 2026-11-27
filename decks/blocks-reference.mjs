@@ -706,4 +706,4 @@ export function baseRevision(surveys) {
   return first.revision
 }
 /** §5.4 A plane's survey date: its `surveyed`, or the layer's created_at when that is absent or later. */
-export const surveyedAt = (plane, createdAt) => (Number.isInteger(plane.surveyed) && plane.surveyed <= createdAt ? plane.surveyed : createdAt)
+export const surveyedAt = (plane, createdAt) => (Number.isInteger(plane.surveyed) && plane.surveyed >= 0 && plane.surveyed <= createdAt ? plane.surveyed : createdAt)
