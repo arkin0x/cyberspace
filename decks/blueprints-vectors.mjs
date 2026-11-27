@@ -30,6 +30,7 @@ const T0 = 1795000000
 
 // ---------- arrangements ----------
 function arrVector(name, note, cells, regionKey = null) {
+  if (regionKey && !(regionKey instanceof Uint8Array)) regionKey = null
   const arr = B.arrangementFrom(cells)
   const e = B.encodeArrangement(arr, regionKey)
   const key = B.arrangementKey(e)
@@ -57,6 +58,9 @@ const arrangements = [
   arrVector('compiler', 'The Compiler\'s recipe (§8.3): an upright T hammer, two Ferrovein for the handle, Rustband, Glowcore, Rustband for the head. Box 3 (X) by 3 (Y) by 1 (Z).', B.COMPILER_RECIPE),
   arrVector('compiler-upside-down', 'The same blocks with the head at the bottom: a different arrangement.', compilerUpsideDown),
   arrVector('compiler-turned', 'The same T turned a quarter turn about Y, its head along Z: a different arrangement, box 1 by 3 by 3.', compilerTurned),
+  arrVector('quarry-charge', 'The Quarry Charge\'s recipe (§8.5): a cross of seven, Umberslate below and above a Ferrovein, Rustband on -X, -Z and +Z, Cinderrock on +X. Box 3 by 3 by 3.', B.QUARRY_CHARGE_RECIPE),
+  arrVector('quarry-charge-mirrored-x', 'The Quarry Charge mirrored across X: the Cinderrock on -X and a Rustband on +X. A different arrangement; it compiles nothing.', B.QUARRY_CHARGE_RECIPE.map(([x, y, z, id]) => [2 - x, y, z, id])),
+  arrVector('quarry-charge-mirrored-z', 'The Quarry Charge mirrored across Z: it swaps two Rustband, so it is the same arrangement as the recipe.', B.QUARRY_CHARGE_RECIPE.map(([x, y, z, id]) => [x, y, 2 - z, id]), { dup: true }),
   arrVector('one-gridstone', 'A single Gridstone: the shortest encoding, 28 bytes.', [[0, 0, 0, G]]),
   arrVector('L', 'Four Ferrovein in an L in the XZ plane: three along X, one more along Z at the +X end.', L),
   arrVector('L-turned', 'The L turned a quarter turn about Y: a different key (§3.1).', Lturned),
@@ -68,7 +72,11 @@ const arrangements = [
   arrVector('diagonal-16', 'A diagonal of 16 blocks through a 16 by 16 by 16 box, Gridstone and Glowcore alternating, each touching the next only at a corner: the longest encoding without a lock, 8,218 bytes.', diagonal),
 ]
 const byName = Object.fromEntries(arrangements.map((a) => [a.name, a]))
-check(new Set(arrangements.map((a) => a.lookup)).size === arrangements.length, 'every lookup differs')
+const qc = arrangements.find((a) => a.name === 'quarry-charge')
+check(arrangements.find((a) => a.name === 'quarry-charge-mirrored-x').lookup !== qc.lookup, 'the Quarry Charge mirrored across X differs')
+check(arrangements.find((a) => a.name === 'quarry-charge-mirrored-z').lookup === qc.lookup, 'the Quarry Charge mirrored across Z is the same')
+check(new Set(arrangements.filter((a) => a.name !== 'quarry-charge-mirrored-z').map((a) => a.lookup)).size === arrangements.length - 1, 'every other lookup differs')
+check(B.readPrize(B.GAME_RECIPES[1].prize, true)?.count === 7 && B.readPrize(B.GAME_RECIPES[1].prize, false) === null, 'a tool prize only from a game recipe')
 check(byName.compiler.lookup === '84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564', 'compiler lookup')
 
 // ---------- location ----------

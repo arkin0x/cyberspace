@@ -32,6 +32,7 @@ This DECK writes down arkinox's rulings of 2026-11-26 and 2026-11-27: the arrang
 | The card | `kind 3343`, a bag item or chest entry, signed by whoever placed it, whose `content` is the creator's signed record (§7) |
 | The Compiler | a held tool, kept on the device; its own recipe is the one recipe a bare hand can smash (§8) |
 | A starter recipe | a blueprint whose record reveals every block, so that its arrangement is public (§8.4) |
+| A game recipe | a starter recipe this DECK defines, which every client knows built in and which alone may yield a tool: the Compiler's (§8.3) and the Quarry Charge's (§8.5) |
 
 ## Terms
 
@@ -237,7 +238,7 @@ A client MAY show, at any time, the build cage and stencil of a card its user ho
 After the strike, when the group is the arrangement (§4.2), the smasher's client:
 
 1. makes the encoding (§3.3), the key and the lookup (§3.4), and any location keys and lookups it tries (§3.5);
-2. looks for each lookup among the records of the cards its user holds and among the starter recipes it knows (§8.4);
+2. looks for each lookup among the game recipes (§8.4), the records of the cards its user holds and the starter recipes it knows;
 3. asks the relays it reads for `{"kinds": [33343], "#d": ["<lookup>", ...]}`;
 4. unseals what it finds, as §6 says.
 
@@ -365,9 +366,11 @@ The prize is a JSON object, UTF-8, sealed with the key under the cipher of `CYBE
 | `type` | Fields | The prize |
 |---|---|---|
 | `"sno"` | `payload`: a SNO object payload (DECK-0003 §1.1) | the object. A reader validates the payload as DECK-0003 §1.9 says. The pubkey that counts for its objects table (DECK-0003 §1.10) is the record's creator |
-| `"tool"` | `tool`: `"compiler"` | the Compiler (§8). This revision defines no other tool |
+| `"tool"` | `tool`: `"compiler"` or `"quarry-charge"`; `count`: OPTIONAL, a positive integer, 1 when absent | that many of the tool: the Compiler (§8.3), or Quarry Charges (§8.5). A tool prize is honoured only from a game recipe (§8.4) |
 
 A reader MUST keep a prize whose `type` or `tool` it does not know, and say that it holds a prize it cannot show, because a later revision may define it. Made blocks as prizes, and other tools, are for later revisions (§13).
+
+**Tools come only from game recipes (normative).** A tool is game equipment, and anyone can publish a record. A reader MUST NOT give its user a tool from a record it read from a relay or from a card, whatever the record's prize says; it treats such a prize as one it cannot show. A tool comes only from a smash whose lookup is a game recipe's, out of the client's own copy of that recipe (§6.1, §8.4).
 
 A writer MUST seal a fresh nonce every time it publishes a record, a revision included. Writers seal prizes only with the key of the record's own arrangement. A prize that does not open with the key of the lookup in `d` is not this blueprint's prize, and a reader ignores the record when unsealing (§6.1).
 
@@ -403,7 +406,7 @@ For each lookup it computed, the smasher's client gathers the candidate records:
 
 Every prize that opens is the smasher's. A client SHOULD show all of them, in the order of §6.2 (arkinox, 2026-11-27: several prizes from one smash should feel abundant). It MAY present them in a picker when there are more than 8. It MAY bound how many records it fetches for one lookup, to bound the work of one smash, and SHOULD then say that there are more.
 
-The lookup of the Compiler's recipe is the one exception. A smash whose lookup is that recipe's yields the Compiler from the client's own copy of the recipe (§8.3), and the client SHOULD ignore records from relays under that lookup, so that nobody can attach a stranger's prize to every newcomer's first smash.
+The lookups of the game recipes (§8.4) are the exception. A smash whose lookup is a game recipe's yields that recipe's prize from the client's own copy of the recipe: the Compiler (§8.3), or seven Quarry Charges (§8.5). The client SHOULD ignore records from relays under a game recipe's lookup, so that nobody can attach a stranger's prize to every player's game recipe. A bare-hand smash yields only the Compiler's recipe (§8.2).
 
 ### 6.2 Order
 
@@ -482,7 +485,7 @@ A card that someone took and wants to place unchanged, with its original signer'
 
 A bag that publishes its contents (`CYBERSPACE_V2.md` §7.7) counts a card as `blueprint`, wherever it stands in the bag: inline, in a sealed entry, or inside a chest the bag holds. `blueprint` is written after `dna`. This DECK adds `blueprint` to the list of §7.7.
 
-## 8. The Compiler and starter recipes
+## 8. The Compiler, game recipes and starter recipes
 
 ### 8.1 The Compiler (normative for clients that implement smashing)
 
@@ -531,15 +534,61 @@ The recipe is symmetric across X (the mirror that swaps `x = 0` and `x = 2` swap
 
 A client knows this recipe without any relay: it carries the arrangement, computes or stores its lookup, and yields the Compiler from it (§6.1). Ferrovein and Rustband are common in the ground. Glowcore appears in about one chunk in ten (DECK-0009 §3.9), so finding a first Glowcore is a newcomer's first goal.
 
-### 8.4 Starter recipes (normative)
+### 8.4 Game recipes and starter recipes (normative)
 
 A **starter recipe** is a blueprint whose arrangement is public: its record reveals every block, so its sheet has no `null` in `pal`, and its sheet is the whole arrangement. Nothing else distinguishes it. It has the same encoding, key, lookup, record, prize and smash as every blueprint. It is not a category: it is a blueprint with the first setting at 100%.
 
 - A client MAY ship starter recipes built in: each one's record, or its arrangement and its prize, kept with the client's code, so that they work with no relay. A built-in starter recipe whose prize is a SNO object is sealed and unsealed like any other.
 - A client MAY show the starter recipes it knows in a recipe book, whether or not its user holds a card for them.
-- A record of a starter recipe MAY be published and carried on cards like any record, for example the Compiler's recipe on a card in a tutorial chest. Its prize under the Compiler's lookup is still the built-in Compiler (§6.1).
+- A record of a starter recipe MAY be published and carried on cards like any record, for example the Compiler's recipe on a card in a tutorial chest. Under a game recipe's lookup, its prize is still the game recipe's own (§6.1).
 
-This revision defines one starter recipe, the Compiler's. Further starter recipes need prizes this revision does not define (made blocks, other tools), and come with the revisions that define them (§13).
+A **game recipe** is a starter recipe that this DECK defines. Every client that implements smashing knows each one built in: its arrangement, its lookup and its prize. Game recipes are the only blueprints whose prize may be a tool (§5.5). This revision defines two:
+
+| Game recipe | Box (X, Y, Z) | Prize | Section |
+|---|---|---|---|
+| The Compiler | 3, 3, 1 | `{"type": "tool", "tool": "compiler"}` | §8.3 |
+| The Quarry Charge | 3, 3, 3 | `{"type": "tool", "tool": "quarry-charge", "count": 7}` | §8.5 |
+
+A later revision may add game recipes. Each one needs a tool or a prize of its own defined in §5.5, a lookup that no other game recipe has, and a section here. Further starter recipes whose prizes are made blocks come with the revisions that define made blocks (§13).
+
+**Showing game recipes (non-normative).** A client may hold a game recipe back from its recipe book until its user is ready for it. ONOSENDAI shows a game recipe's blueprint to a player once they have collected any one of its block types (arkinox, 2026-11-27). Holding it back hides nothing: the arrangement is in this DECK.
+
+### 8.5 The Quarry Charge's recipe (normative)
+
+A cross of seven blocks in a box of 3 cells on every axis (arkinox, 2026-11-27): a Ferrovein (id 40) at the centre; around it, on the X and Z axes, three Rustband (id 5) and one Cinderrock (id 7), the Cinderrock on +X; and an Umberslate (id 2) below the centre and another above it. In box offsets `(x, y, z)`:
+
+| Cell | Block |
+|---|---|
+| `(1, 0, 1)` | Umberslate, 2 |
+| `(1, 1, 1)` | Ferrovein, 40 |
+| `(0, 1, 1)`, `(1, 1, 0)`, `(1, 1, 2)` | Rustband, 5 |
+| `(2, 1, 1)` | Cinderrock, 7 |
+| `(1, 2, 1)` | Umberslate, 2 |
+
+Every other cell of the box is empty. The middle layer, drawn from above (looking along −Y, +X to the right, +Z up, the `y` view of §5.3), with `.` for an empty cell:
+
+```
+z = 2      .        Rustband       .
+z = 1   Rustband    Ferrovein   Cinderrock
+z = 0      .        Rustband       .
+         x = 0       x = 1       x = 2
+```
+
+The layers below and above it each hold one Umberslate, at `x = 1, z = 1`.
+
+The recipe is standard (no location lock). Its box is 3 by 3 by 3, so it is within the bare hand's reach, but a bare hand compiles only the Compiler's recipe (§8.2): the Quarry Charge needs the Compiler. Its prize is `{"type": "tool", "tool": "quarry-charge", "count": 7}`: seven Quarry Charges.
+
+**Which way it faces.** The Cinderrock on +X is the one block that sets the recipe's facing. Mirrored across X, with the Cinderrock at `x = 0` and a Rustband at `x = 2`, the build is a different arrangement with a different key, and compiles nothing; so is the build turned a quarter turn about Y, which puts the Cinderrock on +Z or −Z. Mirrored across Y or across Z, the build is the same arrangement, because it swaps two Umberslate or two Rustband. The vectors hold the recipe and its mirror image across X (§11).
+
+### 8.6 The Quarry Charge (non-normative)
+
+How a Quarry Charge behaves is the client's, like everything an inventory holds (§9). ONOSENDAI's (arkinox, 2026-11-27):
+
+- **Placed like a block.** The player places a charge in an empty cell, as they would place a block.
+- **A fuse.** Once placed, it burns for a short fuse, then blasts.
+- **The blast.** It clears the 7 by 7 by 7 cells centred on the charge, written in the player's own layer as mining those cells would be (DECK-0009 §5.4), so that it changes the world only for the player and for readers who rank the player first, as any edit does.
+- **Pickups.** The blocks it clears are kept as floating pickups for 10 minutes, on the device only, which the player walks into to collect. Nobody else sees them, and nothing about them is published.
+- **How many.** There is no cap on how many charges a player holds. Each compile of the recipe adds 7, and placing one subtracts one. At zero, the charge stays in the inventory, shown at 0 and disabled, until more are compiled.
 
 ## 9. Inventory (non-normative)
 
@@ -571,7 +620,7 @@ The canonical relay, `wss://relay.onosendai.tech`, accepts a kind only once it i
 | Section | What it holds |
 |---|---|
 | `constants` | the domain label as text and hex, the rounds, the key length, the reach with the Compiler (16) and bare-handed (3), the largest side, the record cap and the two kinds |
-| `arrangements` | arrangements given by their box and cells, each with its encoding (in full, or its length and SHA-256 when it is too long to print), its key and its lookup: the Compiler's recipe; the same T upside down; the same T turned a quarter turn about Y, its head along Z; one Gridstone; an L of 4 Ferrovein, the same L turned a quarter turn about Y, and the same L mirrored across X (three different keys); a hollow 3 by 3 by 3 cube of Gridstone and the solid cube (a hollow and a solid differ); two blocks joined only at a corner; an arrangement with a special id (197) and an extension id (300); and a diagonal of 16 blocks through a 16 by 16 by 16 box, each touching the next only at a corner, the longest encoding without a lock |
+| `arrangements` | arrangements given by their box and cells, each with its encoding (in full, or its length and SHA-256 when it is too long to print), its key and its lookup: the Compiler's recipe; the same T upside down; the same T turned a quarter turn about Y, its head along Z; the Quarry Charge's recipe, its mirror image across X (a different key) and its mirror image across Z (the same key); one Gridstone; an L of 4 Ferrovein, the same L turned a quarter turn about Y, and the same L mirrored across X (three different keys); a hollow 3 by 3 by 3 cube of Gridstone and the solid cube (a hollow and a solid differ); two blocks joined only at a corner; an arrangement with a special id (197) and an extension id (300); and a diagonal of 16 blocks through a 16 by 16 by 16 box, each touching the next only at a corner, the longest encoding without a lock |
 | `location` | the Compiler's recipe built inside the chunk at (0, 0, 0), the region of height 5 at the origin (DECK-0009's origin chunk, whose lookup id is `3c5d8c49...c649`): the region's base, `region_n`, key and lookup id, the location encoding's length and SHA-256, its key and its lookup. Also the same recipe at height 6, which differs, and a box that straddles a border of height 5 regions and so has no location encoding there |
 | `gather` | worlds of occupied cells, each with a hit cell, whether the hand is bare, and what the smash gathers: the reach, the group, its extent, whether it is isolated, the occupied cells that spoil isolation (`intruders`: the occupied cells of the grown box outside the group, including any just outside the window), whether the group is the arrangement, and, when it is, the box and the lookup. The cases: the Compiler's recipe struck on each of its five blocks, with the Compiler and bare-handed (ten cases, one arrangement and one lookup); the recipe with a stray block touching it only at a corner (an arrangement with a different lookup); with a block two cells above it, outside the grown box (still the recipe); with a block inside its grown box that touches nothing (no arrangement); an L with a block in its notch (no arrangement); a 16-cell row struck at either end (one arrangement, one lookup); a 17-cell row struck in the middle (isolated, but too long); a 40-cell row struck in the middle (the window holds 31 of it: not isolated, too long); bare-handed, a 3-cell row struck at an end (an arrangement) and a 4-cell row struck at an end (not isolated); and two columns joined only by a bridge outside the window |
 | `sheets` | the Compiler's recipe with every block revealed, with only the Glowcore revealed, and with nothing revealed: each sheet's `pal` and `cells`, and its expansion. Also sheets a reader MUST reject, each with the check it fails |
@@ -583,6 +632,7 @@ The canonical relay, `wss://relay.onosendai.tech`, accepts a kind only once it i
 Some single values, for a quick check:
 
 - The Compiler's recipe: encoding `435942455253504143455f424c55455052494e545f56310301030000002800000000002800000005002a0005` (44 bytes), key `593eabd69f12d642d07764e4a7599d1ce1aa1f75912928ef892dfdead5821e77`, lookup `84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564`.
+- The Quarry Charge's recipe: encoding of 80 bytes, key `4a98648039e97902a1e300ec678a4a2d37dfdebf177b8ef5d644343cad3819d9`, lookup `e12e7f66a13349efa89ad831967ef367411d0c9831081b8d420993c4afb46995`. Mirrored across X: lookup `614e4b49781d79c8cc034489eb9dac75963ab121230f0f41c671cc3fbe31fbf1`.
 - One Gridstone: encoding `435942455253504143455f424c55455052494e545f56310101010001` (28 bytes), lookup `31ad75408241a3fd7a5300c2196b0b0956e7edcdfa6f87e15e1948c012074e30`.
 - The Compiler's recipe with a location lock at height 5, built in the origin chunk: encoding of 76 bytes, lookup `f34610ca40eac005349fc2d088c3a01766bdaf354c89bae876915ae327f7d3b8`.
 
@@ -592,7 +642,7 @@ Some single values, for a quick check:
 - **Tables.** With no per-blueprint salt (§3.6), anyone can compute the keys of small or common shapes once and keep them. Whoever holds such a table opens any blueprint on it without building. That is accepted.
 - **Shared keys.** Two creators who publish the same arrangement share a key, so each can open the other's prize. A creator who wants a prize opened only by builders of their arrangement makes an arrangement nobody else is likely to make.
 - **A record's hints are its creator's claims.** Nothing checks, before a build, that a record's shape and revealed blocks are those of the arrangement its prize was sealed with (§5.4). A creator can publish a misleading sheet, and builders spend their blocks on it. The mute list removes such a creator (§6.1). A client that has unsealed a prize MAY check the sheet against the arrangement that opened it, and tell its user whether the hints were true.
-- **A record proves its creator knew the arrangement.** A prize that opens with the key was sealed by someone who held the key, which takes the arrangement (or a table, above). Nobody can attach a prize to someone else's lookup without knowing the arrangement, except under the Compiler's recipe and other public arrangements, and the Compiler's lookup is handled apart (§6.1).
+- **A record proves its creator knew the arrangement.** A prize that opens with the key was sealed by someone who held the key, which takes the arrangement (or a table, above). Nobody can attach a prize to someone else's lookup without knowing the arrangement, except under the game recipes and other public arrangements; the game recipes' lookups are handled apart (§6.1), and no record can give a tool (§5.5).
 - **Solutions in layers.** A smash deletes the blocks in the smasher's layer, but if the build was already published in that layer before the smash, anyone who holds the chunk's region key can read the build's cells from the older version, and with them the solution. A builder who wants a solution private smashes within the session in which they placed the blocks, before the layer publishes (§4.3); ONOSENDAI then publishes nothing at all for those cells.
 - **What a lookup query reveals.** A smasher's query names the lookup, so a relay learns that someone, from some network address, just built that blueprint, or tried a guess. A smash of a non-matching group asks for a lookup that names nothing, which also tells the relay that a smash happened. A client SHOULD ask only relays it already reads.
 - **Location locks prove knowledge, not travel.** A region key costs the same from anywhere (`CYBERSPACE_V2.md` §7.1). A location lock asks that the builder know the key of a region of the stated height, which takes the region's work, and that the box stand in that region as the smasher's client sees it. A modified client can claim any position. The height is public, and narrows nothing by itself.
@@ -607,7 +657,7 @@ Some single values, for a quick check:
 - **Paid blueprints.** A purchase secret, delivered by Fanfares, mixed into the key as a third kind of lock, so that a non-buyer who guesses the shape cannot find or open it. It needs a Fanfares team ruling and its content policy (no adult content).
 - **Crew-only locks**, a secret shared with a crew and mixed into the key.
 - **The turntable**, a low-detail grey model of the prize that the finder can turn.
-- **Made blocks and other tools as prizes**, with the starter recipes that yield them (Lumen brick, Glassteel, the wide pick and the rest of the design page), once made block ids (DECK-0009 §2.3, ids 64 to 191) and tool names are allocated.
+- **Made blocks, and tools beyond the Compiler and the Quarry Charge, as prizes**, with the starter recipes that yield them (Lumen brick, Glassteel, the wide pick and the rest of the design page), once made block ids (DECK-0009 §2.3, ids 64 to 191) and tool names are allocated.
 - **Wake recipes**, structures that are tapped to start working rather than smashed (a kiln, a cabinet, a beacon). They delete nothing, so they are not blueprints in this DECK's sense.
 - **"Built it" notes**, public proof that someone built a blueprint (a hash of the key and the builder's pubkey), for build counts and, later, ratings. Ratings are parked (arkinox, 2026-11-26).
 - **More hints**: block counts, a palette, riddles, blocks revealed at a Bitcoin block height, and partial checks that smash part of a build alone. Whatever is added, an automatic "you are getting closer" signal stays out, because it would be an answer key that guessers could climb one cell at a time.
@@ -624,7 +674,7 @@ Each of these was decided by Claude on delegation while writing this draft, and 
 5. **Kinds 33343 and 3343.** A census on 2026-11-27 of `relay.damus.io`, `nos.lol`, `relay.primal.net`, `relay.snort.social`, `offchain.pub`, `nostr.mom`, `relay.nostr.net` and `relay.onosendai.tech` found no event of kinds 3343 to 3349 or 33341 to 33348, except 3342 (a `bcp-size-test` app on damus and primal, from at least six pubkeys). `relay.nostr.band` and `nostr.net` refused connections. The NIP registry (nostr-protocol/nips at `bec0fc8`, 2026-11-16) lists none of them. The pair mirrors DECK-0004's 3340 and 33340: an item inline, a public event beside it.
 6. **A card embeds the whole record** (§7.1) rather than naming it by address, so that a card reads with no relay query (readers do not follow references in a chest, DECK-0004 §3.4), and the creator's signature travels with every copy. The cost is size, which is why the record is capped at 98,304 bytes (§5.2).
 7. **The record cap of 98,304 bytes** (§5.2), which bounds a prize shard to roughly 70 KB with small pictures.
-8. **The order of prizes** is the Stack's without the home (§6.2), and records under the Compiler's lookup are ignored (§6.1). Every prize that opens is shown (arkinox, 2026-11-27).
+8. **The order of prizes** is the Stack's without the home (§6.2), and records under a game recipe's lookup are ignored (§6.1). Every prize that opens is shown (arkinox, 2026-11-27).
 9. **Unlisted records use `no-broadcast`** (§5.7) rather than a new tag.
 10. **Records are signed by the creator's identity**, not a builder key (§5.1).
 11. **Makers may check their own build** (§4.4): the rule that the Compiler says nothing before a smash applies to solvers smashing. A maker's authoring tool may say whether a captured build stands alone, but never tests a build against a record and makes no key before publishing.
