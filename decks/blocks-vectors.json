@@ -27209,6 +27209,703 @@
     "rock_same_as_revision_2": true
    },
    {
+    "name": "vent-5",
+    "note": "A frozen chunk with no Cinderrock under revision 2, and a cinder vent of five Cinderrock cells under revision 3.",
+    "revision": 3,
+    "X": "26211978090631955041468480",
+    "Y": "18239898428969693621184352",
+    "Z": "37516079155004959921455200",
+    "plane": 0,
+    "region_n": "98314883404139157922702609181784779606727821892344989263304108342472452442955101911853307109257365880914197395453188893899409018879041724213762519409688018390098604377209214041675292359437093224714290402478096121130670632573452710311356765818279659536496562149539946405039251514191858750027809030760940312960449405169875338754961007360316481873554693660670362760655841716144202559362997785560890299702785535395107189240026684699447089597826058966363157365118402520907442514295150797905183526880171704718643317750971880404405789011288433578646699445535136562869361720779814169121481973870827379093524820013789736577279407510139460783511548631182551818625495626538778593030502984196875504961241085621635287411899945415938099269466352258710948201599306362338442495405119899804935846981720035538149846696588975995598935337850604038029128639167426943025836473661254808986762867350932022208556177407858175888555773129781171115781621678373304820691174075460582656640937736866089380637654090782065359409073969809326917283546109514352595130595632722782325858509761326560325255972224577895642003404427987503555926124055231409016679655250270455731644038763537059990789711220927976593307807571659003645754956890882068857645299417967602311502907956374325003139891589310747722139234322215072386114709849724522401312486890935055176030963363790559566175091438446434670020785529230709915383413737064846771435309934612339671135440122399236822039618878459967501019416361159700929930986441720981408183783472557298347700771760286659232453155071002468374176746912013376564366434104083287583353811030986132813539266463072796539592657086807930131936709726285803395520183231534472120116456601684277297996020780861872827815556246916631431572450578862986792348127742402020075426878111608045819421700838389484891883820144767670307281065093841499267618842036960592692015332133676621970922923890425962492094192171082533300232005927165241654350341073563302611384933835964359673644723052483459309857531875269313443544390113493051591360681078401937613958693635228180524463436722206354547428657715163983627287382641652617592884646682573199562583259893455007872506137194895105372634709304441643799063044219892403032807196444203014895873986248569165922481992174963336821288375906817357889638639633645967235220982844352636657088014525059748604537727760243956190803598543916728186111831972363904439905908416404959004728248147430413355540049338237155660434175084043800216297372864046381610571814112148670056223294251231780787456881936453075012839949924170871838270499388715377861816822156779774700566780825231092024182991129072515461111744004464107991302833986831577514657957581823267810239718671260776311001057851260589214134145153133835679282302925387781093194248370268457843725544503006031569407412361890391588031492335254270779091724929522010129365977316504695195982783099458636747106292192351302152784998544415847000485136370894491856174372045890063136209521272305106373020914257389458612621925548390109467656010741284688682728449988987464366092156980922751760026927850111797774365674220519777128758142373301811357614023339610682014037616848429892629583385694936801873404489677789411523926257665877681132933064735045909705350551441904985280561461347076249362108858669196575581836580399260622723109225965007780866222893942880",
+    "lookup_id": "bb4b51b6450ec2d4b90281541737d6bfc2ce69817d8763712daeabd75f42d1db",
+    "survey_seed": "d5104d807e707242c624c5d9f6a930e70b8c3958141972ef298b18155d365a9f",
+    "stream_head": "8685d4057fc0024bd34e5a21028f6a92e4e4a1c4aa0496157f5e781770b155ea",
+    "stream_above_head": "e0b59c3a4b76b1ade3e00fd2338fdde880c1753a35272369ff9af31f4b938b67",
+    "family": "frozen",
+    "strata_thickness": 6,
+    "band_offset": 186,
+    "d9_head": "9e282bba",
+    "d11_head": "5ee0",
+    "cube_K": [
+     9,
+     10,
+     11,
+     10,
+     8,
+     9,
+     8,
+     11,
+     10,
+     11,
+     10,
+     12,
+     9,
+     10,
+     12,
+     8,
+     10,
+     9,
+     9,
+     9,
+     10,
+     11,
+     9,
+     9,
+     11,
+     10,
+     9,
+     10,
+     10,
+     11,
+     11,
+     10,
+     10,
+     10,
+     11,
+     11,
+     10,
+     11,
+     11,
+     12,
+     11,
+     10,
+     10,
+     11,
+     10,
+     11,
+     11,
+     11,
+     10,
+     11,
+     10,
+     9,
+     11,
+     10,
+     10,
+     8,
+     10,
+     8,
+     10,
+     9,
+     10,
+     9,
+     10,
+     12
+    ],
+    "max_K": 12,
+    "costliest_cube": 11,
+    "sum_K": 644,
+    "tree_sites": 0,
+    "features": [
+     "tidewater:62",
+     "cinder",
+     "ferrovein:3",
+     "cobaltine:2",
+     "prismite"
+    ],
+    "feature_branches": [
+     "tidewater:undone"
+    ],
+    "feature_bytes_read": 150,
+    "feature_stream_head": "1bd6db31754c228f87cb1d7b6b9537abcf7f436e89ab8a708f5f9d53a10f5e74",
+    "rock_sha256": "3e92fb6b37091351186fcef0a7acff063787df564dee4479ce2228fb7b920644",
+    "ground_sha256": "7e3d174c5a87f6beb7897027f616a0250eb9a0f73b5054a4bd9a8d5009bee060",
+    "counts": {
+     "0": 13130,
+     "1": 9106,
+     "2": 3987,
+     "5": 3854,
+     "6": 2600,
+     "7": 5,
+     "8": 3,
+     "11": 62,
+     "40": 15,
+     "41": 6
+    },
+    "samples": [
+     {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "index": 0,
+      "id": 0,
+      "name": "empty",
+      "cube_K": 9,
+      "fine": 134,
+      "cave8": 83,
+      "cave4": 80,
+      "tun8": 137,
+      "big": 115,
+      "kS": 144,
+      "D": 939,
+      "thr": 1211,
+      "tunnel": false,
+      "solid": false,
+      "veinT": 51,
+      "rock": 0,
+      "warp": 135,
+      "w9": [
+       1,
+       -6,
+       -1
+      ],
+      "w11": [
+       0,
+       7,
+       -16
+      ],
+      "family_here": "frozen",
+      "solid_above": false
+     },
+     {
+      "x": 31,
+      "y": 0,
+      "z": 0,
+      "index": 31,
+      "id": 2,
+      "name": "Umberslate",
+      "cube_K": 10,
+      "fine": 234,
+      "cave8": 203,
+      "cave4": 156,
+      "tun8": 245,
+      "big": 117,
+      "kS": 144,
+      "D": 1795,
+      "thr": 1211,
+      "tunnel": false,
+      "solid": true,
+      "veinT": 186,
+      "rock": 2,
+      "warp": 129,
+      "w9": [
+       3,
+       -3,
+       -4
+      ],
+      "w11": [
+       -4,
+       5,
+       -14
+      ],
+      "family_here": "frozen",
+      "solid_above": true
+     },
+     {
+      "x": 0,
+      "y": 31,
+      "z": 0,
+      "index": 31744,
+      "id": 1,
+      "name": "Gridstone",
+      "cube_K": 10,
+      "fine": 105,
+      "cave8": 203,
+      "cave4": 95,
+      "tun8": 127,
+      "big": 105,
+      "kS": 129,
+      "D": 1520,
+      "thr": 1224,
+      "tunnel": false,
+      "solid": true,
+      "veinT": 103,
+      "rock": 1,
+      "warp": 143,
+      "w9": [
+       2,
+       -5,
+       3
+      ],
+      "w11": [
+       8,
+       8,
+       -13
+      ],
+      "family_here": "frozen",
+      "solid_above": true
+     },
+     {
+      "x": 0,
+      "y": 0,
+      "z": 31,
+      "index": 992,
+      "id": 0,
+      "name": "empty",
+      "cube_K": 9,
+      "fine": 191,
+      "cave8": 46,
+      "cave4": 129,
+      "tun8": 126,
+      "big": 119,
+      "kS": 159,
+      "D": 917,
+      "thr": 1196,
+      "tunnel": true,
+      "solid": false,
+      "veinT": 27,
+      "rock": 0,
+      "warp": 138,
+      "w9": [
+       4,
+       -8,
+       -1
+      ],
+      "w11": [
+       4,
+       10,
+       -25
+      ],
+      "family_here": "frozen",
+      "solid_above": false
+     },
+     {
+      "x": 31,
+      "y": 31,
+      "z": 31,
+      "index": 32767,
+      "id": 0,
+      "name": "empty",
+      "cube_K": 12,
+      "fine": 208,
+      "cave8": 82,
+      "cave4": 183,
+      "tun8": 156,
+      "big": 118,
+      "kS": 130,
+      "D": 1220,
+      "thr": 1223,
+      "tunnel": false,
+      "solid": false,
+      "veinT": 26,
+      "rock": 0,
+      "warp": 131,
+      "w9": [
+       2,
+       -5,
+       -1
+      ],
+      "w11": [
+       3,
+       0,
+       -17
+      ],
+      "family_here": "frozen",
+      "solid_above": false
+     },
+     {
+      "x": 7,
+      "y": 8,
+      "z": 9,
+      "index": 8487,
+      "id": 0,
+      "name": "empty",
+      "cube_K": 10,
+      "fine": 123,
+      "cave8": 159,
+      "cave4": 138,
+      "tun8": 120,
+      "big": 114,
+      "kS": 174,
+      "D": 1422,
+      "thr": 1183,
+      "tunnel": true,
+      "solid": false,
+      "veinT": 22,
+      "rock": 0,
+      "warp": 137,
+      "w9": [
+       2,
+       -7,
+       1
+      ],
+      "w11": [
+       4,
+       7,
+       -18
+      ],
+      "family_here": "frozen",
+      "solid_above": true
+     },
+     {
+      "x": 8,
+      "y": 8,
+      "z": 8,
+      "index": 8456,
+      "id": 2,
+      "name": "Umberslate",
+      "cube_K": 11,
+      "fine": 173,
+      "cave8": 165,
+      "cave4": 131,
+      "tun8": 117,
+      "big": 113,
+      "kS": 176,
+      "D": 1486,
+      "thr": 1182,
+      "tunnel": false,
+      "solid": true,
+      "veinT": 14,
+      "rock": 2,
+      "warp": 137,
+      "w9": [
+       3,
+       -6,
+       0
+      ],
+      "w11": [
+       4,
+       8,
+       -18
+      ],
+      "family_here": "frozen",
+      "solid_above": true
+     },
+     {
+      "x": 16,
+      "y": 16,
+      "z": 16,
+      "index": 16912,
+      "id": 0,
+      "name": "empty",
+      "cube_K": 10,
+      "fine": 21,
+      "cave8": 122,
+      "cave4": 104,
+      "tun8": 152,
+      "big": 113,
+      "kS": 160,
+      "D": 1065,
+      "thr": 1196,
+      "tunnel": false,
+      "solid": false,
+      "veinT": 153,
+      "rock": 0,
+      "warp": 137,
+      "w9": [
+       -2,
+       -7,
+       2
+      ],
+      "w11": [
+       -2,
+       0,
+       -12
+      ],
+      "family_here": "frozen",
+      "solid_above": false
+     },
+     {
+      "x": 3,
+      "y": 30,
+      "z": 17,
+      "index": 31267,
+      "id": 1,
+      "name": "Gridstone",
+      "cube_K": 10,
+      "fine": 98,
+      "cave8": 203,
+      "cave4": 130,
+      "tun8": 164,
+      "big": 106,
+      "kS": 157,
+      "D": 1585,
+      "thr": 1198,
+      "tunnel": false,
+      "solid": true,
+      "veinT": 69,
+      "rock": 1,
+      "warp": 145,
+      "w9": [
+       3,
+       -8,
+       4
+      ],
+      "w11": [
+       9,
+       9,
+       -18
+      ],
+      "family_here": "frozen",
+      "solid_above": true
+     },
+     {
+      "x": 29,
+      "y": 2,
+      "z": 11,
+      "index": 2429,
+      "id": 0,
+      "name": "empty",
+      "cube_K": 11,
+      "fine": 94,
+      "cave8": 131,
+      "cave4": 91,
+      "tun8": 122,
+      "big": 123,
+      "kS": 163,
+      "D": 1177,
+      "thr": 1193,
+      "tunnel": false,
+      "solid": false,
+      "veinT": 121,
+      "rock": 0,
+      "warp": 128,
+      "w9": [
+       -2,
+       -5,
+       -3
+      ],
+      "w11": [
+       -9,
+       -2,
+       -11
+      ],
+      "family_here": "frozen",
+      "solid_above": false
+     },
+     {
+      "x": 12,
+      "y": 31,
+      "z": 5,
+      "index": 31916,
+      "id": 5,
+      "name": "Rustband",
+      "cube_K": 11,
+      "fine": 10,
+      "cave8": 163,
+      "cave4": 104,
+      "tun8": 120,
+      "big": 106,
+      "kS": 146,
+      "D": 1245,
+      "thr": 1209,
+      "tunnel": false,
+      "solid": true,
+      "veinT": 183,
+      "rock": 5,
+      "warp": 140,
+      "w9": [
+       -1,
+       -7,
+       3
+      ],
+      "w11": [
+       1,
+       3,
+       -9
+      ],
+      "family_here": "frozen",
+      "solid_above": true
+     },
+     {
+      "x": 20,
+      "y": 13,
+      "z": 27,
+      "index": 14196,
+      "id": 1,
+      "name": "Gridstone",
+      "cube_K": 11,
+      "fine": 70,
+      "cave8": 171,
+      "cave4": 105,
+      "tun8": 147,
+      "big": 119,
+      "kS": 171,
+      "D": 1373,
+      "thr": 1186,
+      "tunnel": false,
+      "solid": true,
+      "veinT": 168,
+      "rock": 1,
+      "warp": 134,
+      "w9": [
+       -1,
+       -7,
+       0
+      ],
+      "w11": [
+       -3,
+       0,
+       -13
+      ],
+      "family_here": "frozen",
+      "solid_above": true
+     },
+     {
+      "x": 1,
+      "y": 17,
+      "z": 30,
+      "index": 18369,
+      "id": 0,
+      "name": "empty",
+      "cube_K": 10,
+      "fine": 60,
+      "cave8": 70,
+      "cave4": 147,
+      "tun8": 70,
+      "big": 108,
+      "kS": 160,
+      "D": 920,
+      "thr": 1196,
+      "tunnel": false,
+      "solid": false,
+      "veinT": 142,
+      "rock": 0,
+      "warp": 144,
+      "w9": [
+       3,
+       -10,
+       5
+      ],
+      "w11": [
+       8,
+       10,
+       -21
+      ],
+      "family_here": "frozen",
+      "solid_above": false
+     },
+     {
+      "x": 25,
+      "y": 25,
+      "z": 4,
+      "index": 25753,
+      "id": 6,
+      "name": "Frostshale",
+      "cube_K": 9,
+      "fine": 186,
+      "cave8": 135,
+      "cave4": 107,
+      "tun8": 211,
+      "big": 108,
+      "kS": 136,
+      "D": 1291,
+      "thr": 1218,
+      "tunnel": false,
+      "solid": true,
+      "veinT": 182,
+      "rock": 6,
+      "warp": 136,
+      "w9": [
+       1,
+       -2,
+       -2
+      ],
+      "w11": [
+       -1,
+       2,
+       -9
+      ],
+      "family_here": "frozen",
+      "solid_above": false
+     },
+     {
+      "x": 10,
+      "y": 5,
+      "z": 22,
+      "index": 5834,
+      "id": 6,
+      "name": "Frostshale",
+      "cube_K": 11,
+      "fine": 164,
+      "cave8": 195,
+      "cave4": 84,
+      "tun8": 128,
+      "big": 119,
+      "kS": 170,
+      "D": 1545,
+      "thr": 1187,
+      "tunnel": false,
+      "solid": true,
+      "veinT": 99,
+      "rock": 6,
+      "warp": 136,
+      "w9": [
+       1,
+       -5,
+       -2
+      ],
+      "w11": [
+       -1,
+       4,
+       -18
+      ],
+      "family_here": "frozen",
+      "solid_above": false
+     },
+     {
+      "x": 31,
+      "y": 16,
+      "z": 0,
+      "index": 16415,
+      "id": 0,
+      "name": "empty",
+      "cube_K": 11,
+      "fine": 4,
+      "cave8": 144,
+      "cave4": 64,
+      "tun8": 165,
+      "big": 109,
+      "kS": 160,
+      "D": 1070,
+      "thr": 1196,
+      "tunnel": false,
+      "solid": false,
+      "veinT": 243,
+      "rock": 0,
+      "warp": 134,
+      "w9": [
+       -4,
+       -3,
+       -2
+      ],
+      "w11": [
+       -12,
+       -4,
+       0
+      ],
+      "family_here": "frozen",
+      "solid_above": false
+     },
+     {
+      "x": 30,
+      "y": 20,
+      "z": 8,
+      "index": 20766,
+      "id": 7,
+      "name": "Cinderrock",
+      "cube_K": 12,
+      "fine": 136,
+      "cave8": 200,
+      "cave4": 129,
+      "tun8": 196,
+      "big": 113,
+      "kS": 160,
+      "D": 1620,
+      "thr": 1196,
+      "tunnel": false,
+      "solid": true,
+      "veinT": 162,
+      "rock": 1,
+      "warp": 133,
+      "w9": [
+       0,
+       -3,
+       -2
+      ],
+      "w11": [
+       -3,
+       0,
+       -9
+      ],
+      "family_here": "frozen",
+      "solid_above": true
+     }
+    ],
+    "revision_2_ground_sha256": "9217520312e633e7749dc449f7b11101ced124a4c088dc81b7f5a930585acc45",
+    "rock_same_as_revision_2": true
+   },
+   {
     "name": "vent-glowcore-k9",
     "note": "A karst chunk whose costliest cube is K 9: a cinder vent, and a Glowcore vein that revision 2 could not place (it needed K 10).",
     "revision": 3,
@@ -27947,7 +28644,8 @@
     "surveys": [
      {
       "revision": 2,
-      "created_at": 100,
+      "rank": 4,
+      "surveyed": 100,
       "author": "a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0",
       "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "id": "0101010101010101010101010101010101010101010101010101010101010101"
@@ -27960,14 +28658,16 @@
     "surveys": [
      {
       "revision": 2,
-      "created_at": 100,
+      "rank": 4,
+      "surveyed": 100,
       "author": "a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0",
       "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "id": "0101010101010101010101010101010101010101010101010101010101010101"
      },
      {
       "revision": 3,
-      "created_at": 200,
+      "rank": 4,
+      "surveyed": 200,
       "author": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0",
       "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "id": "0202020202020202020202020202020202020202020202020202020202020202"
@@ -27976,18 +28676,20 @@
     "base_revision": 2
    },
    {
-    "name": "a fresh chunk first surveyed at revision 3, then at revision 2 by an older client: the chunk keeps revision 3",
+    "name": "surveyed is the first survey, carried forward: a revision 3 survey of 200 republished later still comes before a revision 2 survey of 300",
     "surveys": [
      {
       "revision": 2,
-      "created_at": 300,
+      "rank": 4,
+      "surveyed": 300,
       "author": "a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0",
       "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "id": "0101010101010101010101010101010101010101010101010101010101010101"
      },
      {
       "revision": 3,
-      "created_at": 200,
+      "rank": 4,
+      "surveyed": 200,
       "author": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0",
       "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "id": "0202020202020202020202020202020202020202020202020202020202020202"
@@ -27996,18 +28698,42 @@
     "base_revision": 3
    },
    {
-    "name": "two surveys in the same second: the lower author pubkey is earlier",
+    "name": "rank first: a stranger who dates a survey 0 does not decide for a reader who follows an earlier-ranked surveyor",
     "surveys": [
      {
       "revision": 3,
-      "created_at": 100,
+      "rank": 4,
+      "surveyed": 0,
+      "author": "a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0",
+      "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "id": "0101010101010101010101010101010101010101010101010101010101010101"
+     },
+     {
+      "revision": 2,
+      "rank": 3,
+      "surveyed": 500,
+      "author": "f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1",
+      "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "id": "0202020202020202020202020202020202020202020202020202020202020202"
+     }
+    ],
+    "base_revision": 2
+   },
+   {
+    "name": "the same rank and the same surveyed second: the lower author pubkey decides",
+    "surveys": [
+     {
+      "revision": 3,
+      "rank": 4,
+      "surveyed": 100,
       "author": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0",
       "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "id": "0202020202020202020202020202020202020202020202020202020202020202"
      },
      {
       "revision": 2,
-      "created_at": 100,
+      "rank": 4,
+      "surveyed": 100,
       "author": "a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0",
       "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "id": "0101010101010101010101010101010101010101010101010101010101010101"
@@ -28018,6 +28744,32 @@
    {
     "name": "no counted survey: the base is empty",
     "surveys": [],
+    "base_revision": null
+   },
+   {
+    "name": "surveyed read from a plane: absent, or later than created_at, reads as created_at",
+    "surveys": [],
+    "surveyed_examples": [
+     {
+      "plane": {},
+      "created_at": 500,
+      "surveyed": 500
+     },
+     {
+      "plane": {
+       "surveyed": 400
+      },
+      "created_at": 500,
+      "surveyed": 400
+     },
+     {
+      "plane": {
+       "surveyed": 900
+      },
+      "created_at": 500,
+      "surveyed": 500
+     }
+    ],
     "base_revision": null
    }
   ],

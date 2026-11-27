@@ -225,6 +225,7 @@ const chunksR3 = [
   r3Vector('origin', 'The pinned chunk under revision 3. It is volcanic, so no cinder vent is drawn, and its Glowcore draw fails under both revisions: its ground is the revision 2 ground, byte for byte.', 0n, 0n, 0n, 0),
   r3Vector('home', 'The home vector chunk (frozen) under revision 3.', home.X, home.Y, home.Z, home.P),
   r3Vector('pools', 'The pools chunk (dune, K 12) under revision 3: its cinder vent draw, just before Ferrovein, fails, but it reads four bytes, which shifts every draw after it.', 30332262474415856249900160n, 34207092734754452336590560n, 4153259675813629090509088n, 0),
+  r3Vector('vent-5', 'A frozen chunk with no Cinderrock under revision 2, and a cinder vent of five Cinderrock cells under revision 3.', 26211978090631955041468480n, 18239898428969693621184352n, 37516079155004959921455200n, 0),
   r3Vector('vent-glowcore-k9', 'A karst chunk whose costliest cube is K 9: a cinder vent, and a Glowcore vein that revision 2 could not place (it needed K 10).', 37727701688262624033138944n, 35731174093016409277930144n, 15860157954469236067618080n, 0),
 ]
 for (const c of chunksR3) {
@@ -234,16 +235,19 @@ for (const c of chunksR3) {
 }
 
 // §7.5: the base revision of a chunk plane is the revision of its earliest counted survey.
+const SV = (revision, rank, surveyed, author, id) => ({ revision, rank, surveyed, author: ID(author), builder: ID(0xbb), id: ID(id) })
 const baseRevisionCases = [
-  { name: 'one survey at revision 2', surveys: [{ revision: 2, created_at: 100, author: ID(0xa0), builder: ID(0xbb), id: ID(1) }] },
-  { name: 'a revision 2 survey, then a newer client surveys at revision 3: the chunk keeps revision 2', surveys: [{ revision: 2, created_at: 100, author: ID(0xa0), builder: ID(0xbb), id: ID(1) }, { revision: 3, created_at: 200, author: ID(0xb0), builder: ID(0xbb), id: ID(2) }] },
-  { name: 'a fresh chunk first surveyed at revision 3, then at revision 2 by an older client: the chunk keeps revision 3', surveys: [{ revision: 2, created_at: 300, author: ID(0xa0), builder: ID(0xbb), id: ID(1) }, { revision: 3, created_at: 200, author: ID(0xb0), builder: ID(0xbb), id: ID(2) }] },
-  { name: 'two surveys in the same second: the lower author pubkey is earlier', surveys: [{ revision: 3, created_at: 100, author: ID(0xb0), builder: ID(0xbb), id: ID(2) }, { revision: 2, created_at: 100, author: ID(0xa0), builder: ID(0xbb), id: ID(1) }] },
+  { name: 'one survey at revision 2', surveys: [SV(2, 4, 100, 0xa0, 1)] },
+  { name: 'a revision 2 survey, then a newer client surveys at revision 3: the chunk keeps revision 2', surveys: [SV(2, 4, 100, 0xa0, 1), SV(3, 4, 200, 0xb0, 2)] },
+  { name: 'surveyed is the first survey, carried forward: a revision 3 survey of 200 republished later still comes before a revision 2 survey of 300', surveys: [SV(2, 4, 300, 0xa0, 1), SV(3, 4, 200, 0xb0, 2)] },
+  { name: 'rank first: a stranger who dates a survey 0 does not decide for a reader who follows an earlier-ranked surveyor', surveys: [SV(3, 4, 0, 0xa0, 1), SV(2, 3, 500, 0xf1, 2)] },
+  { name: 'the same rank and the same surveyed second: the lower author pubkey decides', surveys: [SV(3, 4, 100, 0xb0, 2), SV(2, 4, 100, 0xa0, 1)] },
   { name: 'no counted survey: the base is empty', surveys: [] },
+  { name: 'surveyed read from a plane: absent, or later than created_at, reads as created_at', surveys: [], surveyed_examples: [[{}, 500], [{ surveyed: 400 }, 500], [{ surveyed: 900 }, 500]].map(([pl, ca]) => ({ plane: pl, created_at: ca, surveyed: R.surveyedAt(pl, ca) })) },
 ].map((c) => ({ ...c, base_revision: R.baseRevision(c.surveys) }))
 // A layer written against revision 3 over a chunk whose base is revision 2: its changed cells are decoded against the
 // revision 3 ground, and every cell it did not change shows the revision 2 ground.
-const ventChunk = chunksR3[3]
+const ventChunk = chunksR3.find((c) => c.name === 'vent-glowcore-k9')
 const vX = BigInt(ventChunk.X), vY = BigInt(ventChunk.Y), vZ = BigInt(ventChunk.Z)
 const g2 = R.generateChunk(vX, vY, vZ, 0, false, 2), g3 = R.generateChunk(vX, vY, vZ, 0, false, 3)
 const differ = []

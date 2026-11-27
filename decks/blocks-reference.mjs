@@ -694,12 +694,16 @@ export function countedLayers(layers, ctx, cap = 64) {
 }
 
 /**
- * §7.5 The base revision of a chunk plane: the revision of its earliest counted survey, so that a chunk keeps the
- * revision it was first surveyed at. surveys: [{ revision, created_at, author, builder, id }] for the counted plane
- * objects of this plane whose survey is true and whose revision the reader implements. Returns null when there is none.
+ * §7.5 The base revision of a chunk plane. surveys: [{ revision, rank, surveyed, author, builder, id }] for the counted
+ * plane objects of this plane whose survey is true and whose revision the reader implements; rank is the layer's own
+ * rank (§7.3) and surveyed the plane's `surveyed` (§5.4: absent or later than created_at reads as created_at).
+ * The first in order (better rank, smaller surveyed, lower author, builder, id) decides. Returns null when there is none.
  */
 export function baseRevision(surveys) {
   if (surveys.length === 0) return null
-  const first = surveys.slice().sort((a, b) => a.created_at - b.created_at || (a.author < b.author ? -1 : a.author > b.author ? 1 : 0) || (a.builder < b.builder ? -1 : a.builder > b.builder ? 1 : 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))[0]
+  const cmp = (x, y) => (x < y ? -1 : x > y ? 1 : 0)
+  const first = surveys.slice().sort((a, b) => a.rank - b.rank || a.surveyed - b.surveyed || cmp(a.author, b.author) || cmp(a.builder, b.builder) || cmp(a.id, b.id))[0]
   return first.revision
 }
+/** §5.4 A plane's survey date: its `surveyed`, or the layer's created_at when that is absent or later. */
+export const surveyedAt = (plane, createdAt) => (Number.isInteger(plane.surveyed) && plane.surveyed <= createdAt ? plane.surveyed : createdAt)
