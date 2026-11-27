@@ -31,12 +31,15 @@ export const TOOLS = ['compiler']
 export const AXIS_BITS = 85n
 export const AXIS_MASK = (1n << AXIS_BITS) - 1n
 
-// The Compiler's recipe (DECK-0010 §8): four Gridstone (1) in a plus around a Ferrovein (40), a
-// Glowcore (42) on top. Cells are [x, y, z, id] relative to the box's lowest corner.
+// The Compiler's recipe (DECK-0010 §8.3, owner 2026-11-27): an upright T hammer in a box 3 (X) by 3 (Y)
+// by 1 (Z). Two Ferrovein (40) are the handle; Rustband (5), Glowcore (42), Rustband (5) are the head.
+// Cells are [x, y, z, id] relative to the box's lowest corner.
 export const COMPILER_RECIPE = [
-  [1, 0, 0, 1], [0, 0, 1, 1], [1, 0, 1, 40], [2, 0, 1, 1], [1, 0, 2, 1],
-  [1, 1, 1, 42],
+  [1, 0, 0, 40], [1, 1, 0, 40],
+  [0, 2, 0, 5], [1, 2, 0, 42], [2, 2, 0, 5],
 ]
+// A bare-hand smash reaches only the hit's minus 1 to plus 1 on each axis (DECK-0010 §8.2).
+export const BARE_REACH = 1
 
 // ---------- primitives ----------
 export function sha256(...parts) {
@@ -102,13 +105,15 @@ export const lookupOf = (key) => hex(sha256(key))
 // world: a Map from "x,y,z" to a nonzero block id: every occupied cell the smasher's client resolves
 // near the hit, in one plane (DECK-0009 §7, plus unpublished changes). Coordinates are plain integers
 // here; a client works modulo 2^85 on each axis.
-export function gather(world, hit) {
+// bare = true: a bare-hand smash, whose window is the hit's minus 1 to plus 1 (§8.2).
+export function gather(world, hit, bare = false) {
   const [hx, hy, hz] = hit
   if (!world.get(k3(hx, hy, hz))) throw new Error('the hit cell is empty')
+  const below = bare ? BARE_REACH : WINDOW_BELOW, above = bare ? BARE_REACH : WINDOW_ABOVE
   const inWindow = (x, y, z) =>
-    x >= hx - WINDOW_BELOW && x <= hx + WINDOW_ABOVE &&
-    y >= hy - WINDOW_BELOW && y <= hy + WINDOW_ABOVE &&
-    z >= hz - WINDOW_BELOW && z <= hz + WINDOW_ABOVE
+    x >= hx - below && x <= hx + above &&
+    y >= hy - below && y <= hy + above &&
+    z >= hz - below && z <= hz + above
   const seen = new Set([k3(hx, hy, hz)])
   const queue = [[hx, hy, hz]]
   const group = []

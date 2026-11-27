@@ -128,13 +128,14 @@ The sizes are written in the order X, Z, Y, from the fastest axis of the scan to
 
 Every block id is written as it is, natural, made, special or unknown (DECK-0009 §2.3). An implementation MUST NOT map an id it does not know to another id.
 
-For example, the Compiler's recipe (§8.3) has a box of 3 by 2 by 3 (`sx` 3, `sy` 2, `sz` 3) and encodes to 62 bytes:
+For example, the Compiler's recipe (§8.3) has a box of 3 by 3 by 1 (`sx` 3, `sy` 3, `sz` 1) and encodes to 44 bytes:
 
 ```
 435942455253504143455f424c55455052494e545f5631   CYBERSPACE_BLUEPRINT_V1
-03 03 02                                         sx, sz, sy
-0000 0001 0000   0001 0028 0001   0000 0001 0000 y = 0: z = 0, 1, 2 (X fastest)
-0000 0000 0000   0000 002a 0000   0000 0000 0000 y = 1: z = 0, 1, 2
+03 01 03                                         sx, sz, sy
+0000 0028 0000                                   y = 0, z = 0: x = 0, 1, 2
+0000 0028 0000                                   y = 1, z = 0
+0005 002a 0005                                   y = 2, z = 0
 ```
 
 ### 3.4 The key and the lookup
@@ -155,7 +156,7 @@ lookup = SHA-256(key)
 
 This is the shape of `CYBERSPACE_V2.md` §7.2: a key that takes work to compute from its preimage, and a lookup that is safe to publish because it does not give the key back.
 
-For the Compiler's recipe: key `65d408f994300326544e75e15077f54b9fd4540eb80434d15962263ed0dbb50a`, lookup `f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d`.
+For the Compiler's recipe: key `593eabd69f12d642d07764e4a7599d1ce1aa1f75912928ef892dfdead5821e77`, lookup `84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564`.
 
 ### 3.5 The location lock
 
@@ -488,26 +489,38 @@ ONOSENDAI keeps the Compiler in hotbar slot 1 once its user has one (arkinox, 20
 The Compiler's recipe is the only recipe a bare hand can compile (arkinox, 2026-11-26). A **bare-hand smash** is a smash made with no Compiler in hand:
 
 - A client SHOULD ask for a hold of 20 seconds before a bare-hand smash strikes.
-- A bare-hand smash takes the group and deletes it exactly as any smash does (§4.1 to §4.3), and makes the standard key and lookup of an isolated group.
+- A bare-hand smash reaches less far than the Compiler: its window is the 3 by 3 by 3 cells around the hit cell, the hit's minus 1 to plus 1 on each axis, in place of the 16 by 16 by 16 window of §4.1. Otherwise it takes the group and deletes it exactly as any smash does (§4.1 to §4.3), checks isolation the same way (the grown box may reach one cell outside the window, and those cells are read too), and makes the standard key and lookup of an isolated group.
+- The Compiler's recipe fits that window: its box is 3 by 3 by 1, so a bare-hand smash struck in its middle cell, the upper Ferrovein at `(1, 1, 0)`, takes the whole T. Struck anywhere else, the window cuts the T, and the group is not isolated.
 - It unseals only the Compiler's recipe (§8.3). A client MUST NOT unseal any other record from a bare-hand smash, and tells its user only that nothing compiled. It MUST NOT tell its user that some other blueprint would have compiled with the Compiler, which would be the pre-check that §4.4 forbids, after the fact.
 
 The long hold is on purpose: it makes the Compiler feel like an upgrade the moment a player has one.
 
 ### 8.3 The Compiler's recipe (normative)
 
-Four Gridstone (id 1) in a plus around a Ferrovein (id 40), with a Glowcore (id 42) on top. In box offsets `(x, y, z)`, the box being 3 cells along X, 2 along Y and 3 along Z:
+An upright T hammer (arkinox, 2026-11-27): two Ferrovein (id 40) stacked as the handle, and a head of Rustband (id 5), Glowcore (id 42) and Rustband across the top. In box offsets `(x, y, z)`, the box being 3 cells along X, 3 along Y and 1 along Z:
 
-| Cell | Block |
-|---|---|
-| `(1, 0, 0)`, `(0, 0, 1)`, `(2, 0, 1)`, `(1, 0, 2)` | Gridstone, 1 |
-| `(1, 0, 1)` | Ferrovein, 40 |
-| `(1, 1, 1)` | Glowcore, 42 |
+| Cell | Block | Part |
+|---|---|---|
+| `(1, 0, 0)` | Ferrovein, 40 | the handle |
+| `(1, 1, 0)` | Ferrovein, 40 | the handle |
+| `(0, 2, 0)` | Rustband, 5 | the head |
+| `(1, 2, 0)` | Glowcore, 42 | the head |
+| `(2, 2, 0)` | Rustband, 5 | the head |
+
+Drawn facing the sun (`CYBERSPACE_V2.md` §11.3: looking along +Z, +X to the right, +Y up), with `.` for an empty cell:
+
+```
+y = 2   Rustband   Glowcore    Rustband
+y = 1      .       Ferrovein      .
+y = 0      .       Ferrovein      .
+         x = 0      x = 1       x = 2
+```
 
 Every other cell of the box is empty. The recipe is standard (no location lock). Its encoding, key and lookup are given in §3.3 and §3.4. Its prize is `{"type": "tool", "tool": "compiler"}`.
 
-The recipe is symmetric under a half turn about Y, and under the mirror images across X and across Z, so a builder cannot get those wrong. A builder who puts the Glowcore under the plus instead of over it builds a different arrangement.
+The recipe is symmetric across X (the mirror that swaps `x = 0` and `x = 2` swaps the two Rustband), and, being one cell deep, under a half turn about Y, so a builder cannot get those wrong. A builder who stands the T upside down, with its head at the bottom, or turns it a quarter turn about Y so that its head runs along Z, builds a different arrangement.
 
-A client knows this recipe without any relay: it carries the arrangement, computes or stores its lookup, and yields the Compiler from it (§6.1). Gridstone and Ferrovein are everywhere in the ground. Glowcore appears in about one chunk in ten (DECK-0009 §3.9), so finding a first Glowcore is a newcomer's first goal.
+A client knows this recipe without any relay: it carries the arrangement, computes or stores its lookup, and yields the Compiler from it (§6.1). Ferrovein and Rustband are common in the ground. Glowcore appears in about one chunk in ten (DECK-0009 §3.9), so finding a first Glowcore is a newcomer's first goal.
 
 ### 8.4 Starter recipes (normative)
 
@@ -549,20 +562,20 @@ The canonical relay, `wss://relay.onosendai.tech`, accepts a kind only once it i
 | Section | What it holds |
 |---|---|
 | `constants` | the domain label as text and hex, the rounds, the key length, the window's reach below and above the hit, the largest side, the record cap and the two kinds |
-| `arrangements` | arrangements given by their box and cells, each with its encoding (in full, or its length and SHA-256 when it is too long to print), its key and its lookup: the Compiler's recipe; the same recipe with its Glowcore below the plus instead of above it; one Gridstone; an L of 4 Ferrovein, the same L turned a quarter turn about Y, and the same L mirrored across X (three different keys); a hollow 3 by 3 by 3 cube of Gridstone and the solid cube (a hollow and a solid differ); two blocks joined only at a corner; an arrangement with a special id (197) and an extension id (300); and a diagonal of 16 blocks through a 16 by 16 by 16 box, each touching the next only at a corner, the longest encoding without a lock |
+| `arrangements` | arrangements given by their box and cells, each with its encoding (in full, or its length and SHA-256 when it is too long to print), its key and its lookup: the Compiler's recipe; the same T upside down; the same T turned a quarter turn about Y, its head along Z; one Gridstone; an L of 4 Ferrovein, the same L turned a quarter turn about Y, and the same L mirrored across X (three different keys); a hollow 3 by 3 by 3 cube of Gridstone and the solid cube (a hollow and a solid differ); two blocks joined only at a corner; an arrangement with a special id (197) and an extension id (300); and a diagonal of 16 blocks through a 16 by 16 by 16 box, each touching the next only at a corner, the longest encoding without a lock |
 | `location` | the Compiler's recipe built inside the chunk at (0, 0, 0), the region of height 5 at the origin (DECK-0009's origin chunk, whose lookup id is `3c5d8c49...c649`): the region's base, `region_n`, key and lookup id, the location encoding's length and SHA-256, its key and its lookup. Also the same recipe at height 6, which differs, and a box that straddles a border of height 5 regions and so has no location encoding there |
-| `gather` | worlds of occupied cells, each with a hit cell and what a smash does there: the cells it takes, whether the group is isolated, the occupied cells that spoil isolation (`intruders`: the occupied cells of the grown box outside the group, including any just outside the window), and, when isolated, the box and the lookup. The cases: the Compiler's recipe alone, struck on its Ferrovein and on its Glowcore (the same group); the recipe with a stray block touching it only at a corner (taken with it, isolated, a different lookup); the recipe with a block two cells above it, outside the grown box (left alone, still isolated); the recipe with a block inside its grown box that touches nothing (left alone, not isolated); an L with a block in its notch, touching nothing (left alone, not isolated); a row of 20 Gridstone struck in the middle (16 taken, not isolated: the window cut it); a 16-cell row struck in its ninth cell (all taken, isolated) and in its eighth cell (15 taken, not isolated); two columns joined only by a bridge above the window (one column's 16 cells in the window taken, not isolated) |
+| `gather` | worlds of occupied cells, each with a hit cell and what a smash does there: the cells it takes, whether the group is isolated, the occupied cells that spoil isolation (`intruders`: the occupied cells of the grown box outside the group, including any just outside the window), and, when isolated, the box and the lookup. The cases: the Compiler's recipe alone, struck on its lower Ferrovein and on its Glowcore (the same group); a bare-hand smash (§8.2) struck on its middle cell (the whole T, isolated) and on its lower Ferrovein (the handle only, not isolated); the recipe with a stray block touching it only at a corner (taken with it, isolated, a different lookup); the recipe with a block two cells above it, outside the grown box (left alone, still isolated); the recipe with a block inside its grown box that touches nothing (left alone, not isolated); an L with a block in its notch, touching nothing (left alone, not isolated); a row of 20 Gridstone struck in the middle (16 taken, not isolated: the window cut it); a 16-cell row struck in its ninth cell (all taken, isolated) and in its eighth cell (15 taken, not isolated); two columns joined only by a bridge above the window (one column's 16 cells in the window taken, not isolated) |
 | `sheets` | the Compiler's recipe with every block revealed, with only the Glowcore revealed, and with nothing revealed: each sheet's `pal` and `cells`, and its expansion. Also sheets a reader MUST reject, each with the check it fails |
-| `record` | a record of the Compiler-shaped arrangement with a `sno` prize, signed with a test key, with only the Glowcore revealed and the prize as a description; its sheet, its prize plaintext, the AES-GCM nonce, the prize payload, its serialized length, and that the prize opens with the key and not with the key of the recipe with its Glowcore below. Also a location-locked record of the same arrangement at height 5, with silhouette views and the prize's name shown, whose prize does not open with the standard key; and records a reader MUST drop, each with the check it fails: a missing or unknown version, a `C` tag, a `client` tag, a `title` with an extra element, an unknown sheet field and an unknown prize field, a needless escape and a space in `content`, a tab in the title, a prize name too long and one empty after trimming, a wrong key mark, a hidden prize with text, a location lock with no height, an unused palette id, and one over the size cap (given by its length and hash) |
+| `record` | a record of the Compiler-shaped arrangement with a `sno` prize, signed with a test key, with only the Glowcore revealed and the prize as a description; its sheet, its prize plaintext, the AES-GCM nonce, the prize payload, its serialized length, and that the prize opens with the key and not with the key of the upside-down T. Also a location-locked record of the same arrangement at height 5, with silhouette views and the prize's name shown, whose prize does not open with the standard key; and records a reader MUST drop, each with the check it fails: a missing or unknown version, a `C` tag, a `client` tag, a `title` with an extra element, an unknown sheet field and an unknown prize field, a needless escape and a space in `content`, a tab in the title, a prize name too long and one empty after trimming, a wrong key mark, a hidden prize with text, a location lock with no height, an unused palette id, and one over the size cap (given by its length and hash) |
 | `card` | a card carrying that record, signed by the creator; a copy left by another key (§7.5), carrying the same record unchanged; a card whose record was altered, which a reader drops; and a card whose record is right but serialized with its fields in another order, which a reader drops because its `content` is not the canonical serialization |
 | `size_bounds` | the worst case of §5.2 and §10, built and measured: a record at the cap with every tag and field, a full palette, four views and all free text made of quotation marks; its 148 structural and 2,212 total escapable bytes, the card of 101,012 bytes, the 30,058 bytes left in a chest, the sealed entry of 135,342 bytes, and the 103,808 bytes a relay that escapes free text could count |
 | `rank` | records from the reader, a follow, two strangers and a muted stranger under one lookup, with two versions from one creator, and the order of §6.2 |
 
 Some single values, for a quick check:
 
-- The Compiler's recipe: encoding `435942455253504143455f424c55455052494e545f5631030302000000010000000100280001000000010000000000000000000000002a0000000000000000` (62 bytes), key `65d408f994300326544e75e15077f54b9fd4540eb80434d15962263ed0dbb50a`, lookup `f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d`.
+- The Compiler's recipe: encoding `435942455253504143455f424c55455052494e545f56310301030000002800000000002800000005002a0005` (44 bytes), key `593eabd69f12d642d07764e4a7599d1ce1aa1f75912928ef892dfdead5821e77`, lookup `84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564`.
 - One Gridstone: encoding `435942455253504143455f424c55455052494e545f56310101010001` (28 bytes), lookup `31ad75408241a3fd7a5300c2196b0b0956e7edcdfa6f87e15e1948c012074e30`.
-- The Compiler's recipe with a location lock at height 5, built in the origin chunk: encoding of 94 bytes, lookup `57da11b2d46119789acbc3b917dc75e2eaf344bf015e0257d528042668e2612a`.
+- The Compiler's recipe with a location lock at height 5, built in the origin chunk: encoding of 76 bytes, lookup `f34610ca40eac005349fc2d088c3a01766bdaf354c89bae876915ae327f7d3b8`.
 
 ## 12. Security and privacy considerations
 
@@ -608,6 +621,7 @@ Each of these was decided by Claude on delegation while writing this draft, and 
 11. **Makers may check their own build** (§4.4): the rule that the Compiler says nothing before a smash applies to solvers smashing. A maker's authoring tool may say whether a captured build stands alone, but never tests a build against a record and makes no key before publishing.
 12. **The relay whitelist** is done: `relay.onosendai.tech` accepts `33343` (cap 106,496) and refuses `3343` alone since cyberspace-relay #52 (§10).
 13. **Strict records** (§5.1 to §5.4): unknown tags and fields fail the record, the sheet and a card's record are written without needless escapes, and free text holds no control characters, so that the size of every card is bounded (§5.2). A malformed prize `name` fails the record rather than being ignored.
+14. **The bare hand's window** (§8.2) is the 3 by 3 by 3 cells around the hit, as ONOSENDAI's tuning has it, so that the Compiler's recipe compiles bare-handed only when struck in its middle cell.
 
 ## 15. Implementations (non-normative)
 
