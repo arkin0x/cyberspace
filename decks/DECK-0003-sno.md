@@ -5,7 +5,7 @@ Title: SNO (Simple Nostr Objects)
 Status: Draft
 Mandatory: no
 Created: 2026-09-14
-Last updated: 2026-11-16
+Last updated: 2026-11-23
 Requires: `CYBERSPACE_V2.md` (spec version `2026-03-16-h34-corrected`)
 
 ## Abstract
@@ -81,7 +81,7 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | `type` | string | no | A legacy field. A reader MUST ignore it wherever it appears, and MUST NOT require it or reject on its value. A publisher SHOULD NOT write it (§1.1a). |
 | `name` | string | yes | A name for humans. A reader MUST truncate to 64 characters. |
 | `unit` | integer | yes | Scale exponent, `0` to `84`. One model unit is `2^unit` base units (§1.6). |
-| `extent` | integer | no | Grid half-width in model units, `1` to `64`. Advisory and self-repairing (§1.8). Absent or malformed means `8`. |
+| `extent` | integer | no | Grid half-width in model units, `1` to `4096`. Advisory and self-repairing (§1.8). Absent or malformed means `8`. |
 | `mode` | string | yes | `"solid"`, `"points"` or `"lines"` (§1.5). A reader MUST reject any other value. |
 | `vertices` | array | yes | One `[x, y, z]` triple of **whole units** per vertex (§1.2). |
 | `ticks` | array | no | The sub-unit part of each position (§1.2). Absent means every position is whole. |
@@ -89,9 +89,9 @@ An object is a JSON object. Fields marked required MUST be present; a reader MUS
 | `faces` | array | yes | Triangles as `[a, b, c]` vertex indices (§1.4). MAY be empty. |
 | `facecolors` | array | no | One palette index per face, run-length encoded, for hard color seams (§1.4a). Absent means every face interpolates its vertices. |
 | `opacity` | integer | no | How solid the object is drawn, a percent, `0` to `100` (§1.11). At `0` the object draws nothing of its own, and its glow, in `points` mode, still shows. Repaired, never rejected: absent or malformed means `100`, fully opaque. |
-| `pointsize` | integer | no | How wide each point is drawn in `points` mode, in ticks of the object's lattice, `0` to `7680`; `0` means no points (§1.15). Read rather than validated: absent or malformed means the reader's own size. Kept, not drawn, in `solid` and `lines`. Never a rejection. |
+| `pointsize` | integer | no | How wide each point is drawn in `points` mode, in ticks of the object's lattice, `0` to `491520`; `0` means no points (§1.15). Read rather than validated: absent or malformed means the reader's own size. Kept, not drawn, in `solid` and `lines`. Never a rejection. |
 | `glow` | array | no | A light or a fog around each point in `points` mode: the word `"light"` or `"fog"`, a radius in ticks and a glow strength in percent (§1.16). Read rather than validated: absent or malformed means no glow. Kept, not drawn, in `solid` and `lines`. Never a rejection. |
-| `eye` | array | no | Where a viewer looks from when it wears the object as an avatar and sees in first person: three whole numbers of ticks of the object's lattice, `-7680` to `7680` each, in the payload's own frame (§1.17). Read rather than validated: absent or malformed means the automatic eye, one eighth of the avatar's height below its top. Kept, not used, by an object that is not worn. Never a rejection. |
+| `eye` | array | no | Where a viewer looks from when it wears the object as an avatar and sees in first person: three whole numbers of ticks of the object's lattice, `-491520` to `491520` each, in the payload's own frame (§1.17). Read rather than validated: absent or malformed means the automatic eye, one eighth of the avatar's height below its top. Kept, not used, by an object that is not worn. Never a rejection. |
 | `face` | string | no | How the object turns as it moves when it is worn as an avatar: `"path"` or `"upright"` (§1.18). Read rather than validated: absent, malformed or a name this document does not define means `"path"`. Kept, not used, by an object that is not worn. Never a rejection. |
 | `constrain` | string | no | Whether the object's faces stop a walker: `"all"`, `"opaque"` or `"off"` (§1.12). `"off"` and absent mean they stop nothing; a malformed value is repaired to mean the same, never rejected. An authoring tool writes `"opaque"`, and never omits it, unless its author chooses otherwise. |
 | `anim` | array | no | Up to four motions that move the object in a loop, timed in seconds by the reader's clock (§1.14). Read rather than validated: absent or malformed means the object is still, and a malformed motion is ignored while the rest apply. Never a rejection. |
@@ -281,7 +281,9 @@ An application outside Cyberspace that has no natural base unit MAY treat `unit`
 
 A reader MUST reject a `spin` that is present and is not an integer in range, whether or not `up` is present, because a payload carrying a nonsense bearing is malformed even where the bearing is unused. A reader MUST ignore the value of `spin` when `up` is not `true`.
 
-The frame is right-handed in Cyberspace's axes. This is not obvious and is worth stating: the canonical GPS mapping (`CYBERSPACE_V2.md` §9.4) swaps the ECEF Y and Z axes, which mirrors the frame, so (east, up, north) comes out right-handed in Cyberspace where it would be left-handed in ECEF.
+The `+X`, `+Y` and `+Z` of this section are the object's axes after the flip that places it into Cyberspace (§2, §1.18), not the payload's own axes in the frame of §2. The `+Z` that points local north, and that faces the bearing `spin`, is therefore Cyberspace's `+Z`, which is the payload's `-Z`: at `spin` `0` an object's §2 `-Z` faces north. This is what ONOSENDAI does (`src/lib/pose.ts`). A reader that applied this section to the payload's axes before the flip would stand every object mirrored north to south.
+
+The frame has the same handedness as Cyberspace's axes. This is not obvious and is worth stating: the canonical GPS mapping (`CYBERSPACE_V2.md` §9.4) swaps the ECEF Y and Z axes, which mirrors the frame, so (east, up, north), which has the opposite handedness to ECEF's axes, has the same handedness as Cyberspace's. Both are left-handed (`CYBERSPACE_V2.md` §11.1).
 
 A reader that does not implement `up` draws the object in the application's axes and is not wrong, only unoriented.
 
@@ -291,7 +293,8 @@ A reader that does not implement `up` draws the object in the application's axes
 |---|---|---|
 | vertices, faces, refs, parts | **none** | the size of an event is the relay's concern, as it is for every other kind of event; see below. An avatar is the one exception: `CYBERSPACE_V2.md` §8.10 limits its content to 131,072 bytes, and a larger payload is still valid SNO but is not drawn as an avatar |
 | nesting depth | 4 | how far a reader follows placements (§1.10). A bound on the reader's work, not on the object |
-| `extent` | 1 to 64 model units | a hint at the lattice size, so a reader can size a grid before it reads the data |
+| `extent` | 1 to 4,096 model units | a hint at the lattice size, so a reader can size a grid before it reads the data |
+| position | 4,096 model units (`491520` ticks) from the origin on any axis | a bound on publishers, set by the 32-bit floats a graphics processor draws in; see below |
 | `unit` | 0 to 84 | the Cyberspace address space is `2^85` gibsons on a side |
 | `name` | 64 characters | truncated, not rejected |
 
@@ -299,20 +302,49 @@ A reader that does not implement `up` draws the object in the application's axes
 
 What replaces the ceiling is a publisher who knows what things cost and a container that stops multiplying: an object of any size can have an event of its own (§3.1, §3.4), so a bag, which is one event shared by everything hidden at a place, need never grow with the objects it names. The rest of this section is the arithmetic, so a publisher can plan against the relays it uses; none of it is a rule.
 
-`extent` is **advisory and self-repairing**, which is one of the places this format is deliberately forgiving rather than strict; `opacity` (§1.11) and `constrain` (§1.12) are others, for the same reason. A reader MUST substitute the default of `8` for an `extent` that is absent, not an integer, or outside `1..64`, and MUST then grow it until it contains every vertex. An object is therefore never rejected for disagreeing with its own extent; the data wins and the hint is corrected. This is what lets a modeling tool write geometry first and a bounding hint second without the two ever contradicting.
+`extent` is **advisory and self-repairing**, which is one of the places this format is deliberately forgiving rather than strict; `opacity` (§1.11) and `constrain` (§1.12) are others, for the same reason. A reader MUST substitute the default of `8` for an `extent` that is absent, not an integer, or outside `1..4096`, and MUST then grow it until it contains every vertex. An object is therefore never rejected for disagreeing with its own extent; the data wins and the hint is corrected. This is what lets a modeling tool write geometry first and a bounding hint second without the two ever contradicting.
 
-The position bound is stated as an obligation on publishers rather than readers: a publisher MUST NOT write a vertex further than `64` model units (`7680` ticks) from the origin on any axis. A reader MAY reject such a payload and MAY instead repair it by growing the extent. ONOSENDAI currently repairs. §8 records the consequence.
+The position bound is stated as an obligation on publishers rather than readers: a publisher MUST NOT write a vertex further than `4096` model units (`491520` ticks) from the origin on any axis. A reader MAY reject such a payload and MAY instead repair it by growing the extent. ONOSENDAI currently repairs. §8 records the consequence.
 
-**What things cost (non-normative).** strfry's stock `events.maxEventSize` is 65,536 bytes, and strfry is the most deployed relay software in the network; a relay's operator may raise it, and the ones this world runs on have (below). What a full serialized event costs at 512 vertices and 1,024 faces, the format's former ceiling and still a useful yardstick, worst case throughout, with coordinates at the extent bound and every field at its most expensive:
+**Every distance in ticks shares this bound.** `491520` is `4096 × 120`, the position bound written in ticks (§1.2). It is the bound on a placement's offset (§1.9 rule 12, §1.10), on a point's size (§1.15), on a glow's radius (§1.16), on an eye (§1.17), and on how far a motion moves an object (§1.14). It is one number, so that an object never carries a distance that its own grid could not hold.
+
+**Why 4,096 (non-normative).** The bound was `64` model units (`7680` ticks) until 2026-11-23. That number was picked for the first grid panel in ONOSENDAI on 2026-09-05 and was never derived from anything. What does limit an object is the 32-bit floating point number that every graphics processor draws in. A vertex's position, the model-view matrix and the product of the two are each rounded to 32 bits, so near the far corner of a large grid the error adds up to more than the rounding of the position alone. The worst error of a drawn tick, simulated with the camera close to the far corner of a grid of each half-width, is:
+
+| Half-width in model units | Worst error, in ticks | Result |
+|---|---|---|
+| 64, the former bound | under 0.01 | exact, far from the limit |
+| **4,096, this bound** | **0.13** | **inside a quarter of a tick, with room to spare** |
+| 8,192 | 0.24 to 0.28, depending on the samples | on the line |
+| 16,384 | 0.51 | past it |
+| 32,768 | 1.00, and 0.8% of neighbouring ticks draw in the same place | visibly wrong |
+| 65,536 | 2.10, and 9.6% of neighbouring ticks draw in the same place | broken |
+
+`4096` is the largest power of two that keeps every tick within a quarter of a tick of where it belongs in every sample, with room to spare; at 8,192 some samples cross that line. A larger bound would need camera-relative rendering, in which a reader subtracts the camera's position from each vertex in 64-bit arithmetic before anything is rounded to 32 bits. That is a change to how readers draw, not to this format, and it is left for later. The bound does not change what a tick is: a position is still an exact pair of integers (§1.2), and welding and equality are still exact at any distance from the origin.
+
+**Readers that enforce the former bound (non-normative).** A reader written before 2026-11-23 knows `64` and `7680`. Such a reader treats an object that uses the larger bound as follows:
+
+| What the object uses | What a reader that knows only `64` does |
+|---|---|
+| an `extent` above `64` | repairs it to `8` and grows it to contain the vertices, so the object is drawn correctly (rule 9) |
+| a vertex further than 64 model units from the origin | accepts it and grows the extent, because the position bound is the publisher's, so the object is drawn correctly |
+| a placement offset outside `-7680..7680` | refuses the whole object, as rule 12 says. The object does not open until that reader is updated |
+| a `pointsize`, glow radius or `eye` past `7680` | reads the field as absent, as rules 18 to 20 say, so the object opens and is drawn at the reader's own size, with no glow, or with the automatic eye |
+| a motion that moves further than `7680` ticks | ignores that motion and keeps the others, as rule 17 says |
+
+So a reader that enforces the former bound refuses a larger object only when one of its placements stands past 64 model units. A publisher that wants such a build to open in older readers keeps every placement within `-7680..7680` until those readers are updated. Objects within 64 model units read exactly as they always have.
+
+**What things cost (non-normative).** strfry's stock `events.maxEventSize` is 65,536 bytes, and strfry is the most deployed relay software in the network; a relay's operator may raise it, and the ones this world runs on have (below). What a full serialized event costs at 512 vertices and 1,024 faces, the format's former ceiling and still a useful yardstick, worst case throughout, with coordinates at the position bound of 4,096 model units and every field at its most expensive:
 
 | At 512 vertices and 1024 faces | No `facecolors` | With `facecolors` |
 |---|---|---|
-| **palette indices, the built-in (§1.3)** | **29.9 KB** | **33.5 KB** |
-| plus a full 256-entry custom palette | 33.1 KB | 36.7 KB |
+| **palette indices, the built-in (§1.3)** | **32.9 KB** | **36.5 KB** |
+| plus a full 256-entry custom palette | 36.1 KB | 39.7 KB |
+
+At the former bound of 64 model units each of these was 3.0 KB smaller: a coordinate at `-4096` is two characters longer than one at `-64`, which is 6 bytes a vertex and 3,072 bytes over 512 vertices.
 
 Both fit with room to spare, and face colors now cost 3.6 KB rather than doubling the object. Two earlier drafts of this section did not: three numbers per color at four decimal places reached 62.6 KB with face colors, and at full double precision 115.1 KB, which is over every relay in the network. §1.3 carries that comparison, because it is the whole reason color is an index.
 
-The cost is now dominated by geometry rather than color. Worst case, a vertex costs 32 bytes, of which about 4 are its color; a face costs 13, and a face that carries its own color 17. A publisher that wants the largest possible object spends its budget on vertices.
+The cost is now dominated by geometry rather than color. Worst case, a vertex costs 38 bytes, of which about 4 are its color; a face costs 13, and a face that carries its own color 17. A publisher that wants the largest possible object spends its budget on vertices.
 
 A real object is far below that, because the worst case above assumes every position needs its sub-unit part written out and every face carries a color of its own. An object built on whole units, which is what the lattice is for, compresses its `ticks` to a single number and its `facecolors` to one run:
 
@@ -329,7 +361,7 @@ These numbers are the whole argument for the change in §1.3: the same object th
 
 Two facts make this margin more comfortable than it looks. Escaping the payload into a JSON string costs about 12 bytes, under 0.05%, because the content is almost entirely integers, so the fear that nesting JSON inside JSON is wasteful does not apply here. And the geometry belongs in `content` rather than tags: strfry caps a tag value at 1,024 bytes and the tag count at 2,000, while content is roomy everywhere.
 
-**The relays in use, measured 2026-09-24** (NIP-11 `max_message_length`): cyberspace.nostr1.com **262,200** bytes; nos.lol 131,072; relay.primal.net and relay.damus.io 1,000,000. Worst case a vertex costs 32 bytes and a face 13, or 17 with a color of its own; a typical whole-unit object costs about a third of that. So the world's own relay takes a worst-case object of about 3,500 vertices, or a typical one of about 10,000, standing alone; a stock relay takes about 800 worst case. A publisher who knows its relays can size to them; one who does not should publish and read the refusal, which names the reason.
+**The relays in use, measured 2026-09-24** (NIP-11 `max_message_length`): cyberspace.nostr1.com **262,200** bytes; nos.lol 131,072; relay.primal.net and relay.damus.io 1,000,000. Worst case, with every coordinate at the position bound, a vertex costs 38 bytes and a face 13, or 17 with a color of its own; a typical whole-unit object costs about a third of that. So the world's own relay takes a worst-case object of about 3,200 vertices, or a typical one of about 10,000, standing alone; a stock relay takes about 750 worst case. (Within the former bound of 64 model units a vertex costs at most 32 bytes, and those figures were about 3,500 and 800.) A publisher who knows its relays can size to them; one who does not should publish and read the refusal, which names the reason.
 
 **A bag is the one place size still multiplies.** Everything hidden at one place by one author travels in one event, encrypted and base64'd, so three large objects inline are three times the size and the bag fails before any object would alone. §3.2 and §3.4 give every object the option of an event of its own; a publisher SHOULD take it for anything large, and the bag then stays small however much stands at the place.
 
@@ -355,15 +387,15 @@ A reader MUST perform all of the following before rendering, and MUST reject the
 9. `extent`, if present, is repaired rather than validated (§1.8): out of range becomes `8`, then it grows to contain the data.
 10. `up`, if present, is a boolean; `spin`, if present, is an integer in `0..359`.
 11. `refs`, if present, is an array whose entries are each `["e", <64 lowercase hex>]` or `["a", "33331:<64 lowercase hex>:<d>"]`, optionally followed by one relay URL (§1.10).
-12. `parts`, if present, is an array whose entries are each eight integers: a `refs` index in range, three tick offsets each in `-7680..7680`, three whole degrees each in `0..359`, and a scale step such that the placed object's unit stays in `0..84` (§1.10). `parts` without `refs`, or a `refs` index past the end, is a reason to reject.
+12. `parts`, if present, is an array whose entries are each eight integers: a `refs` index in range, three tick offsets each in `-491520..491520`, three whole degrees each in `0..359`, and a scale step such that the placed object's unit stays in `0..84` (§1.10). `parts` without `refs`, or a `refs` index past the end, is a reason to reject.
 13. A payload with `parts` and no `vertices` of its own is valid: an object may be nothing but the arrangement of others (§1.10).
 14. `opacity`, if present, is repaired rather than validated (§1.11): a value that is not an integer in `0..100`, null included, means `100`. `0` is valid, and there is no floor. It is never a reason to reject.
 15. `constrain`, if present, is read rather than validated (§1.12). `"off"` is a valid word, and means the object stops nothing. A value that is not exactly the string `"all"`, `"opaque"` or `"off"`, null included, is repaired to mean the same. It is never a reason to reject.
 16. `objects`, if present, is read rather than validated (§1.10). It is never a reason to reject this payload. A value that is not a JSON object, null included, is read as absent. A key that is not an address of the form `33331:<64 lowercase hex>:<d>` is ignored. For example, the key `"glass-tetra"` is ignored, and so is a key whose pubkey is written in uppercase hex. Each value is a payload. It is checked by rules 1 to 15, on its own, when a placement draws from it, and any `objects` field inside it is ignored. A value that fails is a placeholder for each placement that names it.
 17. `anim`, if present, is read rather than validated (§1.14). A value that is not an array, null included, means the object is still. Only its first four entries are read, and an entry that is malformed, names an unknown motion, or runs faster than two cycles a second is ignored while the rest apply. It is never a reason to reject.
-18. `pointsize`, if present, is read rather than validated (§1.15): a value that is not a JSON integer in `0..7680`, null included, means the reader's own size. It is never a reason to reject.
-19. `glow`, if present, is read rather than validated (§1.16): a value that is not a JSON array of exactly three elements, the word `"light"` or `"fog"`, a JSON integer in `1..7680` and a JSON integer in `1..100`, null included, means no glow. It is never a reason to reject.
-20. `eye`, if present, is read rather than validated (§1.17): a value that is not a JSON array of exactly three JSON integers, each in `-7680..7680`, null included, means the automatic eye. It is never a reason to reject.
+18. `pointsize`, if present, is read rather than validated (§1.15): a value that is not a JSON integer in `0..491520`, null included, means the reader's own size. It is never a reason to reject.
+19. `glow`, if present, is read rather than validated (§1.16): a value that is not a JSON array of exactly three elements, the word `"light"` or `"fog"`, a JSON integer in `1..491520` and a JSON integer in `1..100`, null included, means no glow. It is never a reason to reject.
+20. `eye`, if present, is read rather than validated (§1.17): a value that is not a JSON array of exactly three JSON integers, each in `-491520..491520`, null included, means the automatic eye. It is never a reason to reject.
 21. `face`, if present, is read rather than validated (§1.18): a value that is not exactly the JSON string `"path"` or `"upright"`, null included, and a name a later revision may add, means `"path"`. It is never a reason to reject.
 
 ---
@@ -396,7 +428,7 @@ An `a` reference names an addressable object (§3.1) and follows its author's ne
 | Position | Meaning |
 |---|---|
 | 0 | index into `refs`: which object |
-| 1, 2, 3 | where its origin stands, in the parent's **ticks** (§1.2), so `120` is one whole unit; each in `-7680..7680`, the 64-unit position bound of §1.8 |
+| 1, 2, 3 | where its origin stands, in the parent's **ticks** (§1.2), so `120` is one whole unit; each in `-491520..491520`, the 4,096-unit position bound of §1.8 |
 | 4, 5, 6 | its turn about its own origin, whole degrees `0..359` about the parent's X, then Y, then Z axes, in that order, in the right-handed frame of §2 |
 | 7 | scale step: the placed object is drawn at `2^(its unit + step)` base units per model unit. `0` keeps its own size; `1` doubles it; `-1` halves it. The result MUST stay in `0..84` |
 
@@ -405,6 +437,14 @@ Positions are ticks and turns are whole degrees because everything else in this 
 **Why the placements are in the payload and not in the event's tags.** A copy of the payload is the whole object, on the clipboard, in a bag, in another client; placements carried as tags would fall off it. Inside a bag the tags are encrypted with everything else, so nothing would be gained there. A publisher of a public `kind 33331` SHOULD also write each `refs` entry as an `e` or `a` tag on the event, unchanged, so a relay can answer "what places this object" (`#a`, `#e`); a reader MUST take the placements from the payload and MUST NOT read them from tags. A hidden object (§3.4) is also a `kind 33331`, but it MUST NOT carry these tags, because its tags are not encrypted (§3.4).
 
 **What a placed object keeps and what it loses.** A placed object keeps its own `palette`, `mode`, `opacity`, `constrain`, `pointsize`, `glow`, `facecolors` and geometry. It is drawn as its author drew it, and the parent's `opacity` and `constrain` do not reach it (§1.11, §1.12). It also keeps its own `anim`, so it moves in its own frame wherever it is placed, and a parent's motion carries it (§1.14). It loses `up` and `spin`. The reason is that the parent's placement decides where it stands and which way it faces, and a parent standing on the Earth (§1.7) carries its parts with it. Its `extent` is ignored. Instead, the parent's extent is repaired to contain the placed objects' bounds, in the same way that it is repaired to contain the parent's own vertices (§1.8). A reader can only do this once it has each placed object, either fetched or read from an objects table (below). A parent's advertised extent may therefore be smaller than what is finally drawn.
+
+**How far a placed object reaches.** The offset bounds where a placed object's origin stands, not how far its geometry reaches. On any axis of the parent, a placed object reaches at most
+
+`|offset| / 120 + √3 × 2^(its unit + step - the parent's unit) × r`
+
+model units of the parent from the parent's origin, where `offset` is that axis's tick offset and `r` is how far the placed object's own geometry, its placements included, reaches from its own origin, in its own model units. The `√3` is what a turn can do: a cube turned so that its diagonal lies along an axis reaches √3 times its half-width along that axis. With turns that are all multiples of `90`, the factor is `1`. For example, at the same unit and a step of `0`, an object that reaches `4096` units, placed `491520` ticks (4,096 units) out, reaches 8,192 parent units with quarter turns and about 11,190 with any other turn. Each level of placement adds its own term in the same way, up to the depth bound of `4`. (At the former bound of 64 model units, the same example reached 128 and about 175 units.)
+
+A build may therefore reach past 4,096 units of its root, and this is valid: the position bound is on what one payload writes, and the parent's extent is repaired to contain whatever its parts reach (above). (Non-normative: precision follows each payload and not the build. A reader that draws each placed object with its own transform, composed in 64-bit arithmetic as `partMatrix` in sno-core does, rounds each object's own vertices within its own 4,096 units and keeps every tick within the error of §1.8. A reader that flattens a build into one list of positions in the root's units, for example to test a walker against it (§1.12), SHOULD compute those positions in 64-bit arithmetic, or test against each placed object in its own frame. Otherwise, positions past 4,096 root units lose the precision that §1.8 counts on.)
 
 **Depth and cycles.** A placed object may itself have parts. A reader MUST follow placements no deeper than `4` levels from the object it is rendering. It MUST draw a placeholder in place of anything deeper. A reader MUST also treat a reference to any object already in the chain of parents as missing. For example, if object A places object B, and B places A again, that placement of A inside B is missing, and it is drawn as a placeholder. A reader can enforce both of these bounds by itself, without trusting the author of the object. This section states only bounds of that kind, because a bound that relies on the author's good behavior does not protect a reader from an author who ignores it.
 
@@ -524,7 +564,7 @@ These sizes were measured on the Maze Kit, a kit of 277 dungeon pieces. Sixteen 
 | A flooded room (`cistern-atrium-flooded-low`), which places 2 pieces | 17,519 bytes | 17,702 bytes | 18,079 bytes | 24,659 bytes |
 | The largest build, a join (`join-across-kits`) that places 16 pieces in 19 placements | 82,996 bytes | 84,453 bytes | 86,621 bytes | 116,047 bytes |
 
-The objects table is larger than the payloads alone by its keys and its own punctuation. The whole parent adds the parent's own fields, such as its `refs` and `parts`. The last column is the whole parent encrypted, written as base64, and wrapped in a `kind 33331` event (§3.4). These are the kit's own pieces, which carry far more geometry than the two flat squares in the example above. The largest build fits in a hidden object on a relay that accepts 131,072 bytes. It does not fit on a stock strfry relay. A build too large to carry its objects is hidden in several pieces, or its objects are given events of their own. §8 (question 8) records the alternatives.
+The objects table is larger than the payloads alone by its keys and its own punctuation. The whole parent adds the parent's own fields, such as its `refs` and `parts`. The last column is the whole parent encrypted, written as base64, and wrapped in a `kind 33331` event (§3.4). These are the kit's own pieces, which carry far more geometry than the two flat squares in the example above. The largest build fits in a hidden object on a relay that accepts 131,072 bytes. It does not fit on a stock strfry relay. A build too large to carry its objects is hidden in several pieces, each a hidden object of its own that the parent places (see **Sealed parts**, below).
 
 **Why a table entry is never fetched.** There are two reasons, and the first is the more important.
 
@@ -541,6 +581,27 @@ A new field is ignored by those readers (§5). The `a` ref stays an ordinary ref
 **Why one table at the root, and not a table on each object.** One table carries an object once, even when the object is placed in many places and at several depths. One lookup in that table answers for every depth. A reader therefore never has to decide which of two copies of one address to draw inside one build. Only an object fetched as its own event brings a table of its own. The reason for that exception is that its table travelled in a different event, signed or sealed by that event's own author.
 
 **A copy, not a link.** An object in the table is a copy of the object as its author had it when the parent was written. It does not follow later edits, as an `a` ref to a published object does (see `refs`, above). A finder draws what was written, until the parent's author writes the parent again. (Non-normative: the address of a carried object need not name any event. A client MAY key a copy under a `d` of its own, such as random hex. A copy that has since been changed is then never mistaken for the object it was copied from, either by a reader that fetches the address or by the tools of the author who made the copy.)
+
+**Sealed parts.** A placed object MAY be a hidden object (§3.4) of its own. Such an object is called a **sealed part**. A sealed part is how a build too large for one event, or for one signature, is hidden in pieces. Each piece is a hidden object, and a small parent places the pieces. For example, a relay holds each event to a size it chooses, and a remote signer (NIP-46) carries each request in one event of its relay's. A parent whose pieces are in its objects table is one event, signed whole, in one request. A parent whose pieces are sealed parts is signed alone, and so is each piece.
+
+- **The event.** A sealed part is a `kind 33331` hidden object exactly as §3.4 defines it. Its payload is encrypted with the key of the bag that holds the root. For an item in an ordinary bag that key is the bag's region key (`CYBERSPACE_V2.md` §7.2). For an item in a room bag it is the room key (DECK-0004 §3.7.2). It carries nothing that says where it is, and no `a` or `e` tag naming what it places (§3.4). A writer SHOULD give it a `d` of fresh random hex, which says nothing about the build or the piece.
+- **Its signer.** A sealed part is signed by the pubkey that counts for the root's table (**Keys are under the author's own pubkey**, above). In most cases that is the root's author. A sealed part names an event of that pubkey, and of no one else.
+- **The placement.** The parent places a sealed part by an ordinary `a` ref, `["a", "33331:<pubkey hex>:<d>"]`, with or without a relay hint, and an ordinary placement. The root's table does not hold that address, because a table entry is never fetched. A sealed part MAY itself place sealed parts. Its placements are written the same way.
+- **Where it applies.** The root is an item in a bag (§3.2), or a hidden object that a bag references (§3.4). A reader that opened that bag holds its key. A public object (§3.1) and an avatar (§3.3) have no bag key, so a hidden object that either places is missing. A look (DECK-0004 §3.6) uses only the sealed look that section defines.
+
+**Reading a sealed part.** A reader resolving a placement by an `a` ref under the pubkey that counts for the root fetches the event that the ref names, as it fetches any placed object. Then:
+
+1. When the event is signed by that pubkey, carries the `d` that the address names, and carries an `encrypted` tag that opens with the key of the bag the reader read the root from, the reader reads the decrypted payload as the placed object. It checks the payload under §1.9, as it checks any placed object. The key is the one the reader already used to open the bag. A reader MUST NOT ask anyone for it (`cyberspace:region`, §3.4). The sealed part's own placements by `a` refs under the same pubkey open with the same key, at any depth within the bound of four.
+2. When the event cannot be fetched, does not open with that key, or opens to a payload that fails §1.9, the placement is missing, and it is drawn as a placeholder (**A missing part is a placeholder, never a rejection**, above). A reader MUST NOT draw the hidden object's public preview as the object.
+3. When the event is a public object, one with no `encrypted` tag, it is an ordinary placed object, and the reader draws it as one.
+
+A reader MUST NOT try the bag's key on a hidden object under any other pubkey. Such a placement is missing. The reason is that the bag's key opens what the bag's author sealed, and an object under another pubkey is not the author's to seal.
+
+**Moving and removing sealed parts.** A sealed part is tied to the key of the bag that holds its root (§3.4, "One key opens the place and everything referenced from it"). A writer that moves the root into a bag with another key MUST seal each sealed part again under the new key. It MAY do this under the same address, which replaces the event, or under a new address that the rewritten parent names. A writer that removes the root, or no longer names a sealed part, SHOULD retract that sealed part (NIP-09) once no bag of the writer's names the parent that named it. A copy of the root that a finder takes and hides elsewhere keeps its refs, and in its new bag its sealed parts do not open, so they are drawn as placeholders. A finder who wants the copy whole carries the pieces in the copy's objects table instead.
+
+**Older readers and sealed parts.** A reader that predates sealed parts fetches the event as a placed object. It finds only the preview in the content, which fails §1.9, so it draws a placeholder where the piece would stand. It never rejects the parent.
+
+**Why sealed parts.** An objects table is part of its parent's event, so a build is held to what one event carries and what one signature carries. A sealed part counts toward the size of its own event, not toward the size of its parent's event or of the bag. Sealed parts keep the privacy that a table keeps: each is encrypted with the bag's key, so exactly the readers who can read the bag can draw the build, and nobody else can. Two costs remain. A writer publishes one event for each piece and each placement of the build, and the number and timing of those events tie them to the bag. A reader asks relays for each piece's address, as it does for any hidden object a bag references (§3.2). (Non-normative: ONOSENDAI seals as a sealed part every object a hidden shard places from its author's own workshop, under a `d` of 32 random hex digits, and holds each piece to the size it holds any hidden object to, 240,000 bytes as signed. That is a piece of about 179,000 bytes of payload. A build too large to hide whole is split into pieces under that size, and a parent that places them.)
 
 **What this buys, in bytes.** An `a` reference is about 110 bytes and an `e` reference about 78; a placement is 28 at most. Twelve palm trees as twelve inline copies cost 396 vertices; as one tree and twelve placements they cost 33 vertices and about 450 bytes. The 129-square floor that motivated this cost 516 vertices pasted and 291 welded; as one tile and 129 placements it is about 3.7 KB and 4 vertices of its own, and the tile's author can repaint every floor built from it in one edit.
 
@@ -713,12 +774,12 @@ Each word below is one motion. In every shape, `axis` is one of the strings `"x"
 |---|---|---|---|
 | `turn` | `["turn", axis, c, b, φ]` | turns about the axis by `360 × u` degrees | none |
 | `swing` | `["swing", axis, reach, c, b, φ]` | turns about the axis by `reach × sin(2πu)` degrees | `reach`: `1` to `180` |
-| `slide` | `["slide", axis, reach, c, b, φ]` | moves along the axis by `reach × sin(2πu)` ticks | `reach`: `1` to `7680` |
-| `orbit` | `["orbit", axis, radius, c, b, φ]` | moves by an offset of `radius` ticks along the next axis in the order `x`, `y`, `z`, `x`, turned about the axis by `360 × u` degrees. The object travels a circle and does not turn | `radius`: `1` to `7680` |
-| `lift` | `["lift", axis, travel, dwell, c, b, φ]` | moves along the axis by `travel × h(u)` ticks, with `h` in the table below: it rests, travels, rests at the far stop, and comes back | `travel`: `-7680` to `7680`, not `0`; `dwell`: `0` to `49` |
-| `path` | `["path", c, b, φ, [x, y, z, w], ...]` | moves by a point that travels a closed loop of waypoints, in straight legs | 2 to 32 waypoints; `x`, `y`, `z`: `-7680` to `7680`; `w`: `1` to `1000` |
+| `slide` | `["slide", axis, reach, c, b, φ]` | moves along the axis by `reach × sin(2πu)` ticks | `reach`: `1` to `491520` |
+| `orbit` | `["orbit", axis, radius, c, b, φ]` | moves by an offset of `radius` ticks along the next axis in the order `x`, `y`, `z`, `x`, turned about the axis by `360 × u` degrees. The object travels a circle and does not turn | `radius`: `1` to `491520` |
+| `lift` | `["lift", axis, travel, dwell, c, b, φ]` | moves along the axis by `travel × h(u)` ticks, with `h` in the table below: it rests, travels, rests at the far stop, and comes back | `travel`: `-491520` to `491520`, not `0`; `dwell`: `0` to `49` |
+| `path` | `["path", c, b, φ, [x, y, z, w], ...]` | moves by a point that travels a closed loop of waypoints, in straight legs | 2 to 32 waypoints; `x`, `y`, `z`: `-491520` to `491520`; `w`: `1` to `1000` |
 
-The bound of `7680` ticks is the 64-unit position bound of §1.8. An editor MAY offer familiar names as presets, such as a bob, a pendulum, a spinner or an elevator, but it writes one of the six words above.
+The bound of `491520` ticks is the 4,096-unit position bound of §1.8. (It was `7680`, the former 64-unit bound, until 2026-11-23; a reader that still knows only `7680` ignores a motion that moves further, and keeps the others, as rule 17 says.) An editor MAY offer familiar names as presets, such as a bob, a pendulum, a spinner or an elevator, but it writes one of the six words above.
 
 **`lift`.** With `d = dwell / 100` and `ease(x) = 3x² - 2x³`, a lift is at the share `h(u)` of its travel:
 
@@ -813,7 +874,7 @@ The last two rows hold the same two motions in the two orders, and land in diffe
 
 ### 1.15 Point size
 
-`pointsize` says how wide each point of an object in `points` mode is drawn. It is a whole number of ticks of the object's own lattice (§1.2), from `0` to `7680`, and it is a width: a point of `pointsize` `120` is one model unit across. Absent means the reader's own size, which is how every point was drawn before this field existed and how every point without it is drawn still.
+`pointsize` says how wide each point of an object in `points` mode is drawn. It is a whole number of ticks of the object's own lattice (§1.2), from `0` to `491520`, the position bound of §1.8 in ticks, and it is a width: a point of `pointsize` `120` is one model unit across. Absent means the reader's own size, which is how every point was drawn before this field existed and how every point without it is drawn still.
 
 ```json
 "pointsize": 48
@@ -824,9 +885,9 @@ That object's points are each 48 ticks across, two fifths of a model unit.
 | `pointsize` | Drawn at |
 |---|---|
 | absent | the reader's own size |
-| `1` to `7680` | that many ticks across |
+| `1` to `491520` | that many ticks across |
 | `0` | no points at all: the object draws its vertices as nothing, and only its glow (§1.16) shows |
-| anything else: negative, above `7680`, fractional, a string, a boolean, an array, an object, null | the reader's own size, exactly as if it were absent |
+| anything else: negative, above `491520`, fractional, a string, a boolean, an array, an object, null | the reader's own size, exactly as if it were absent |
 
 **It is read only in `points` mode.** In `solid` and `lines` the field is kept and not drawn, and the points a client draws under the faces or the edges (§1.5) keep the client's own size, `0` included: a `pointsize` of `0` on a `solid` object does not take away the points §1.5 asks a client to draw under its faces. An object whose mode is changed back to `points` draws at its `pointsize` again.
 
@@ -863,7 +924,7 @@ That object's points each carry a fog in their own color, strongest at the point
 | Element | What it says |
 |---|---|
 | the word | `"light"` or `"fog"`, below |
-| the radius | how far from each point's center the glow reaches before it fades to nothing, a whole number of ticks of the object's lattice (§1.2), from `1` to `7680` |
+| the radius | how far from each point's center the glow reaches before it fades to nothing, a whole number of ticks of the object's lattice (§1.2), from `1` to `491520`, the position bound of §1.8 in ticks |
 | the glow strength | how strong the glow is at each point's center, a whole percent from `1` to `100` |
 
 Absent means no glow, which is how every point was drawn before this field existed and how every point without it is drawn still.
@@ -934,7 +995,7 @@ That avatar's eyes are 159 ticks above its origin. That is a unit and a little o
 | `eye` | The viewer looks from |
 |---|---|
 | absent | the automatic eye, below |
-| three JSON integers, each `-7680` to `7680` | that point |
+| three JSON integers, each `-491520` to `491520` | that point |
 | anything else: two or four elements, a fraction, `159.0`, a number out of range, a string, a boolean, an object, null | the automatic eye, exactly as if it were absent |
 
 **It is read only for an avatar's own viewer.** A client that shows its viewer the world from inside the viewer's own avatar, as ONOSENDAI's WALK does, SHOULD put the camera at the avatar's eye. Nobody else's screen changes: other people draw the avatar where its chain says and turned as their own client turns it, and an eye is never drawn. A view that orbits a point, such as ONOSENDAI's HOP and VIEW, is the client's own and stays on its own point; the eye is used only in first person. An object that is not worn keeps the field and does not use it, so an object made into an avatar later still has its eye. An `eye` on an object an avatar places is not read (§1.10); only the worn payload's own is. An eye does not grow `extent` (§1.8).
@@ -954,7 +1015,7 @@ Placed objects (§1.10) do not count toward it. A placement may turn by any whol
 
 **The default avatar.** A client's default avatar (empty content, or content it does not draw, `CYBERSPACE_V2.md` §8.10) is the client's own shape, not a payload. A client SHOULD give it an eye by this same rule applied to the shape it draws, so that a viewer without an avatar of their own does not look out from inside the floor. ONOSENDAI draws a wireframe icosahedron one gibson across at true scale, and one step of its grid across at any zoom, with a vertex straight above and below its center. Its lowest vertex is its origin, the point that touches the ground (§3.3), so its top is that whole width above its origin, and its eye is `1 - 1/8` of that width above its origin: 0.875, which is 0.375 above the icosahedron's center. A client that draws a custom avatar as its default shape, for example when it is too small on the screen to draw, SHOULD use the default shape's eye while it does.
 
-**The eye may be anywhere in reach.** A reader does not hold a written eye to the avatar's own shape. An author may put it behind the avatar and a little above, for a view of the avatar from behind (third person), or off to one side, for a cockpit on a wing. Its only bound is the 64-unit bound of a position (§1.8). A client that limits how far an avatar may reach, for example by shrinking an avatar that reaches further than it allows, shrinks the eye with it, and then brings the eye straight toward the origin until it too is within that limit, so that it keeps its direction from the origin.
+**The eye may be anywhere in reach.** A reader does not hold a written eye to the avatar's own shape. An author may put it behind the avatar and a little above, for a view of the avatar from behind (third person), or off to one side, for a cockpit on a wing. Its only bound is the 4,096-unit bound of a position (§1.8). A client that limits how far an avatar may reach, for example by shrinking an avatar that reaches further than it allows, shrinks the eye with it, and then brings the eye straight toward the origin until it too is within that limit, so that it keeps its direction from the origin.
 
 **It never looks through a wall.** A client that looks from the eye and stops its walker at the faces of §1.12 MUST bring the camera nearer the walker's point, along the line from the walker's point to the eye, so that the camera does not look from the far side of a face that stops a walker, or from so near one that the client's own near plane cuts the face away. The faces are those §1.12 tests, where they are drawn. The camera then sits short of a low ceiling over a tall avatar, and short of a wall behind an avatar seen from behind. A face through the walker's own point that is near level against the walker's up, such as the floor it walks along (§1.12), does not hold a camera above it, and holds a camera below it at the walker's point. A steeper face through the walker's point, a wall the walker stands in the plane of, holds the camera at the walker's point whichever way the eye lies, since one side of it or the other is behind the wall. A client MUST NOT move the camera further from the walker than the eye. (Non-normative: a face that stops no walker, such as one of an object whose `constrain` is absent or `"off"`, does not hold the camera, because the walker could walk through it. In open air, with no face between them, a high eye sees further than the walker stands. A maze that does not want to be seen from above has a ceiling.)
 
@@ -964,7 +1025,7 @@ Placed objects (§1.10) do not count toward it. A placement may turn by any whol
 
 **It moves nobody.** The eye is where the camera is, never where the walker is. A walker stays a point at the center of its gibson (§1.12), and every wall, floor and step is tested from that point. An eye placed high on a tall avatar sees over a wall the walker cannot cross, and the walker stays on its own side of it.
 
-**It is read, never a reason to reject** (§1.9 rule 20). A reader reads an `eye` that is not a JSON array of exactly three JSON integers, each in `-7680..7680`, as absent, and uses the automatic eye. A reader MUST NOT reject the payload for it. A publisher MUST write it as three JSON integers (digits only, with a minus sign where negative: `-12`, never `-12.0`, `1.59e2` or `-0`), MUST NOT write a malformed value, and MUST omit it when its author has not chosen an eye. An editor SHOULD show the automatic eye in that case and write nothing, so that the automatic eye follows the shape as it is edited. `[0, 0, 0]` is a choice, not a spelling of absent: it keeps the eye at the origin, where readers written before this section put it. A reader whose JSON parser cannot tell `159.0` from `159` MAY read such a value as `159`.
+**It is read, never a reason to reject** (§1.9 rule 20). A reader reads an `eye` that is not a JSON array of exactly three JSON integers, each in `-491520..491520`, as absent, and uses the automatic eye. A reader MUST NOT reject the payload for it. A publisher MUST write it as three JSON integers (digits only, with a minus sign where negative: `-12`, never `-12.0`, `1.59e2` or `-0`), MUST NOT write a malformed value, and MUST omit it when its author has not chosen an eye. An editor SHOULD show the automatic eye in that case and write nothing, so that the automatic eye follows the shape as it is edited. `[0, 0, 0]` is a choice, not a spelling of absent: it keeps the eye at the origin, where readers written before this section put it. A reader whose JSON parser cannot tell `159.0` from `159` MAY read such a value as `159`.
 
 **Why ticks.** Every distance an object carries is in ticks of its own lattice: its positions, a placement's offset, a point's size, a glow's reach, a motion's travel. An eye in ticks is exact, grows with the avatar, and lands where a vertex would. A fraction of the height would move whenever a vertex was added on top, and a vertex index would name the wrong point after any editor that does not know the field added or removed one (the note that closes §1.11).
 
@@ -1105,7 +1166,7 @@ An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload
 
 (Non-normative: an avatar drawn at the center of its gibson stands up to a gibson above a floor that is not on a gibson's center, and a whole gibson above the top of anything built on whole units, since a walker never lands on a face. Drawing the origin on the surface keeps every avatar's feet on what it stands on, wherever between gibsons that is. A client that moves its viewer smoothly between gibsons, as ONOSENDAI's WALK does, draws the origin on the surface under the drawn point in the same way. A face that stops no walker holds no avatar up, as it holds no walker.)
 
-**An avatar never moves by itself.** A reader MUST ignore `anim` (§1.14) in an avatar's payload, and in every object the avatar places (§1.10), and draw the avatar at its rest pose. An avatar is how one person knows where another stands, and a slide or an orbit of up to 64 units would draw the person somewhere they are not.
+**An avatar never moves by itself.** A reader MUST ignore `anim` (§1.14) in an avatar's payload, and in every object the avatar places (§1.10), and draw the avatar at its rest pose. An avatar is how one person knows where another stands, and a slide or an orbit of up to 4,096 units would draw the person somewhere they are not.
 
 ### 3.4 A hidden object as its own event
 
@@ -1120,9 +1181,11 @@ An avatar event (`kind 11333`, `CYBERSPACE_V2.md` §8.10) carries an SNO payload
 
 **The event MUST carry nothing that says where the object is.** No `C`, no height tag (`H`, or the `h` of `CYBERSPACE_V2.md` §8.6), no hint and no sector tag: those belong to the bag, which is what the region key protects. The event is a locked box in plain view; the bag is the note that says where the box stands and is readable only there.
 
-**One key opens the place and everything referenced from it.** The object is encrypted with the same region key that opens the bag, so a reader that has opened the bag opens every object it references with the key in hand, and a reader that has not can open neither. The cost is that the object is tied to the region: moving it to another place means re-encrypting it. A per-object key carried inside the bag would lift that and let one event be referenced from several places; §8 records it as open.
+**One key opens the place and everything referenced from it.** The object is encrypted with the same region key that opens the bag, so a reader that has opened the bag opens every object it references with the key in hand, and a reader that has not can open neither. The cost is that the object is tied to the region: moving it to another place means re-encrypting it. A per-object key carried inside the bag would lift that and let one event be referenced from several places; §8 records it as open. A chest's sealed look (DECK-0004 §3.6) is a hidden object of this form, encrypted with the key of the bag that holds the chest, and named from the chest's `look` tag instead of from the bag.
 
 **It may carry what it places.** The payload MAY carry the objects it places, in its `objects` table (§1.10). The carried objects are encrypted together with the payload, under the same region key. The table counts toward the size of this event, not toward the size of the bag.
+
+**It may place sealed parts.** The objects it places MAY be hidden objects of their own, sealed with the same key (§1.10, **Sealed parts**). A large build is hidden this way in pieces, each signed and published as its own event.
 
 **No ref tags in the clear.** A hidden object MUST NOT carry `a` or `e` tags that name the objects it places or carries, such as `["a", "33331:<pubkey hex>:<d>"]`. The event's tags are not encrypted. Such tags would reveal the addresses that its encrypted payload and its objects table keep private. A reader takes the placements from the decrypted payload in any case (§1.10).
 
@@ -1257,9 +1320,9 @@ A tool that writes SNO from a modeling package performs four conversions, and ea
 | **Quantization to the lattice.** Float positions become integers on a 1/120 lattice. | Real precision. See below. |
 | **Decimation, if the exporter chooses it.** | The format sets no ceiling (§1.8); an exporter decimates to what its relays take and its readers draw well. When it does, this is the one loss that changes the art rather than the numbers. |
 
-**The precision budget, stated plainly, and it is better than it looks.** One unit is 120 ticks, which is log2(120) = 6.91 bits. A grid at the maximum extent of 64 is 15,360 ticks across, about 13.9 bits of resolution per axis; at the default extent of 8 it is about 10.9 bits.
+**The precision budget, stated plainly, and it is better than it looks.** One unit is 120 ticks, which is log2(120) = 6.91 bits. A grid at the default extent of 8 is 1,920 ticks across, about 10.9 bits of resolution per axis; at an extent of 64 it is 15,360 ticks, about 13.9 bits; at the maximum extent of 4,096 it is 983,040 ticks, about 19.9 bits.
 
-The instinct is to call that low precision. It is not. Draco's encoder defaults to 11 bits for positions and 14 is the common production setting; gltfpack also defaults to 14. SNO's 13.9 bits sits directly on top of the number the rest of the industry ships. SNO is not a low-precision format. It is a **fixed-window** format at industry-standard precision, and what it gives up is dynamic range rather than accuracy, which is exactly what the `unit` exponent exists to recover.
+The instinct is to call that low precision. It is not. Draco's encoder defaults to 11 bits for positions and 14 is the common production setting; gltfpack also defaults to 14. SNO's 13.9 bits at an extent of 64 sits directly on top of the number the rest of the industry ships, and a larger grid has more. At 19.9 bits the format holds more than a 32-bit float draws exactly once a model-view matrix is applied, and that is what sets the maximum (§1.8). SNO is not a low-precision format. It is a **fixed-window** format at industry-standard precision, and what it gives up is dynamic range rather than accuracy, which is exactly what the `unit` exponent exists to recover.
 
 The lattice also buys something the float formats cannot have at any bit depth: exactness. Two objects authored to share an edge share it forever, on every implementation, and welding, deduplication and hashing are integer tuple comparisons rather than an epsilon that is always wrong somewhere.
 
@@ -1313,12 +1376,12 @@ One apparent gap is not one. SNO has per-vertex color and no material, which is 
 
 1. **A base unit outside Cyberspace.** `unit` is an exponent over a base the application defines, which is meaningless to a client with no such base. An optional field giving meters per model unit would make an object's real size portable, at the cost of a field that Cyberspace itself would never write.
 2. **Whether a reader's limit is a relay bound or a client bound.** *Settled 2026-09-24: neither. The format sets no limit (§1.8); the relay bounds the event as it does every kind, and a client that cannot draw an object is a client's problem to solve as it solves it for a long article or a large image. Kept for the record; the earlier text follows.* This was once the question of whether 512 and 1024 were derived from anything; §1.8 now measures what fits, and at 32 bytes a vertex about 832 vertices with a color on every face would still clear a 56 KB budget. So the numbers are a deliberate reserve rather than a ceiling the event size forces, and the paragraph there says why the headroom was spent on face colors instead. What is not settled is which bound should set them. The size a relay will accept and the size a client can hold and draw are different limits that happen to be the same number today, and only the first is measured.
-3. **There is no hard bound on how far a vertex may lie from the origin.** §1.8 puts the 64-unit bound on publishers and lets readers repair instead of reject, which is what ONOSENDAI does today: it grows the extent to fit, without a ceiling. That is safe for a client rendering its own author's work and unsafe as a general rule, since a payload of 512 vertices at 2^50 units is valid under this text and will produce a grid no renderer wants. Making the bound a reader obligation is a one-line change and would make the current client non-conformant until it is updated, which is why it is a question rather than a rule.
+3. **There is no hard bound on how far a vertex may lie from the origin.** §1.8 puts the 4,096-unit bound on publishers and lets readers repair instead of reject, which is what ONOSENDAI does today: it grows the extent to fit, without a ceiling. That is safe for a client rendering its own author's work and unsafe as a general rule, since a payload of 512 vertices at 2^50 units is valid under this text and will produce a grid no renderer wants. Making the bound a reader obligation is a one-line change and would make the current client non-conformant until it is updated, which is why it is a question rather than a rule.
 4. **A per-object key for a hidden object carried by reference.** §3.4 encrypts the object with the region key, which ties it to the place. A key of its own, carried inside the bag beside the reference, would let one large object be referenced from several places and moved without re-encryption, at the cost of a second key to lose.
 5. **Whether `parts` should also allow a mirror.** Eight integers place and turn and scale; a negative scale step halves, it does not mirror. A left glove from a right glove needs one more flag or a second object. Left out until someone needs it.
 6. **The rotation order.** §1.10 fixes X then Y then Z about the parent's axes. It is a convention, not a derivation; if a modeling tool in common use disagrees, the cost of matching it is one sentence now and every published object later.
 7. **Crediting a large copy privately.** §3.5 leaves the credit off a copy carried as its own hidden event (§3.4), because that event's tags are public. Carrying it inside the seal would need either a field in the payload, which every reader would then have to ignore, or a second encrypted tag on the event. Neither is decided. A copy of another author's object carried in an `objects` table (§1.10) has the same problem in a different place. The copy has no event of its own that could carry a `q` tag. The event that carries the table is the parent's event, and its tags are public whenever the parent is public.
-8. **A build too large to carry its objects.** An `objects` table counts toward the size of the parent's event (§1.10). A build whose carried objects together exceed what a relay accepts therefore cannot carry them. Two alternatives were weighed against the table and kept for later:
+8. **A build too large to carry its objects.** *Settled 2026-11-22: the first alternative below, as sealed parts (§1.10), so that a build too large for one signature can be split into pieces (owner, 2026-11-22). Kept for the record; the earlier text follows.* An `objects` table counts toward the size of the parent's event (§1.10). A build whose carried objects together exceed what a relay accepts therefore cannot carry them. Two alternatives were weighed against the table and kept for later:
    - Seal each object as a hidden object of its own (§3.4), with the bag's region key and under a fresh `d`, and have the parent's `refs` name those events. This removes the size ceiling. Its cost is that it publishes one event per object per placement, and the number and timing of those events tie them to the bag.
    - Give each object a key of its own (question 4). This would let finders follow the object's author's edits without a new seal. Its cost is a key that, once handed out, cannot be taken back.
 9. **Which side of an object is its front.** *Settled 2026-11-16: an avatar's front is its `-Z` in the frame of §2 and its top its `+Y` (§1.18), which is what ONOSENDAI already did. An object that is not worn needs no front, since no rule turns it toward anything; `spin` (§1.7) names a bearing for its `+Z` and is not a front. Kept for the record; the earlier text follows.* Nothing in this format says which axis an object faces along, and §2 names an undefined forward as the classic way a format fails. It matters most for an avatar: a client turns an avatar to face the way its owner moves or looks, and an eye written behind the avatar (§1.17) is behind it only if every client agrees which way it faces. ONOSENDAI turns an avatar's `-Z` in the frame of §2 toward the way its viewer looks. Fixing one axis for every reader is a one-line rule; which axis to fix is not decided.

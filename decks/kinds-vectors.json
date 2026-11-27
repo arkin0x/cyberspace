@@ -76,6 +76,56 @@
       "sig": "8cc0b1b3c0a43c5dd7091cf1d8492e9082e5001e359a8819718a3f53097fe9c9efa50be4b0589035ba9f907a277c1d5a5a0c11efa93d7ecf0b4928cb0f4c5c20"
     }
   },
+  "large_chest": {
+    "note": "DECK-0004 §3.2, Size. A chest at the cap, sealed to the same item with the NIP-44 v2 extended length prefix. The plaintext is a list of one message rumor whose content is the letter x repeated message_content_x_count times; event is the chest with its content left out, and payload_sha256 is the SHA-256 of that content as ASCII. sealed_entry_payload_chars is the base64 length of the chest carried alone in a sealed entry (CYBERSPACE_V2.md §7.6), nonce, ciphertext and tag. over_cap is one byte past the cap, which a writer refuses.",
+    "message_content_x_count": 130787,
+    "message_id": "2a8a08844c97c2daf6068d6857849e2f0c7ac7683bddd1eb915d431fca93315e",
+    "plaintext_bytes": 131072,
+    "plaintext_sha256": "96f15ac1f11d068ac4c02921406afd4b18f2dbf3e80257bf36b0945ec9701110",
+    "nip44_nonce": "13d82aa38a4b243d4d6b3f5dd1c563223382d79c8f62c5c860665e7a49a3a811",
+    "conversation_key": "1f46bd1ffe3eb3fc9d8504b33abd79b24a14971c9ce76364c056a80a5fdedc87",
+    "length_prefix_hex": "000000020000",
+    "padded_bytes": 131072,
+    "padded_with_prefix_bytes": 131078,
+    "payload_chars": 174860,
+    "payload_sha256": "a375800d3b31aba07e879bd6bd59183a05eb0d95dd7b4666ff0035d7c08b52bd",
+    "event": {
+      "pubkey": "d6453e0ec7126a6c7e7d3732f8c836165fafadfdd1b661fee85bcf1066fd841c",
+      "created_at": 1791800000,
+      "kind": 3341,
+      "tags": [
+        [
+          "C",
+          "c4924924924924924924920c53c81e9d260623340e5c3a75b6de6e4715cd1724"
+        ],
+        [
+          "title",
+          "Hoard"
+        ],
+        [
+          "lock",
+          "17f2f2753715a844de39c398f3e6b112d36b61a2ad6a38d9a75a93579d35dec9",
+          "5b7867d9db042997c9c96b1e48af1333cb9503daae9948fed62ef6826286f28c"
+        ],
+        [
+          "requires",
+          "Vapor Key"
+        ],
+        [
+          "-"
+        ]
+      ],
+      "id": "5cba172522108d5ca9228a89af364192d569ef0d1b0a402b3f17b4494a2245df",
+      "sig": "2bae54c20289427fad1fa46e03b87e5141a2628bb82c734183ab37b95af881f772d0fb138883111a255ed6b96980652ace4d662c7a837fa09a8532ae4c31acce"
+    },
+    "event_bytes": 175469,
+    "sealed_entry_payload_chars": 233996,
+    "over_cap": {
+      "plaintext_bytes": 131073,
+      "padded_bytes": 163840,
+      "payload_chars": 218548
+    }
+  },
   "item_listing": {
     "proof_message": "7280db9d03d428f7c4988953013c18c804052fe912df82028cd765647e7ac527",
     "event": {

@@ -309,7 +309,7 @@ These limits belong to the language and are not priced.
 | the axiom | at most the symbol cap (§3.6, §7) | invalid |
 | values | `-1,000,000..1,000,000` (§3.4) | clamped |
 | the turtle stack | 64 states (§5.2) | a push beyond it is dropped |
-| positions | 64 model units from the origin on each axis (§5.2), the bound DECK-0003 §1.8 sets for publishers | clamped |
+| positions | 64 model units from the origin on each axis (§5.2). This is Seeds' own bound. It was the bound DECK-0003 §1.8 set for publishers when revision 1 was written, and it stays `64` now that DECK-0003 allows 4,096 units, because it decides where a bloom is clamped and so what every reader grows; a bloom within it is within DECK-0003's bound | clamped |
 
 The validity limits bound the work of one symbol step: matching evaluates at most the 256 condition and chance nodes of the symbol's head and arity, and each symbol written evaluates at most four arguments of 64 nodes. The priced caps (§7) bound how many steps there are. The two node budgets are provisional (2026-11-10); the six example DNAs use at most 81 condition and chance nodes in all. Every limit of this table belongs to the revision (§3.10): a later budget or limit is a later revision's, and a DNA of revision 1 is held to revision 1's limits for as long as it exists.
 
@@ -472,7 +472,7 @@ A reader draws the string of generation `g` with a turtle, at the age of §4.1, 
 | `ONE` | `16384`, fixed-point 1.0 for directions |
 | `TICK` | `120` SNO ticks per model unit (DECK-0003 §1.2). Positions are in ticks |
 | `STEP` | `12` ticks, a tenth of a unit: one SEEDO length step |
-| `R` | `64 × TICK = 7680` ticks, the position bound |
+| `R` | `64 × TICK = 7680` ticks, Seeds' position bound (§3.8). It is not DECK-0003's bound of 4,096 units, and it does not follow that bound |
 | `fdiv(a, b)` | `a / b` rounded toward minus infinity. Note: this differs from expression division (§3.4), which truncates toward zero |
 | `fx(a)` | `fdiv(a + 8192, ONE)`: a fixed-point product brought back to ticks, rounding half up |
 | `isin(d)` | for whole degrees: `d = ((d mod 360) + 360) mod 360`; then `SIN[d]` for `d ≤ 90`, `SIN[180 - d]` for `d ≤ 180`, `-SIN[d - 180]` for `d ≤ 270`, and `-SIN[360 - d]` otherwise |

@@ -1,0 +1,5569 @@
+{
+  "note": "Deterministic vectors for DECK-0010. Keys are SHA-256(\"cyberspace vectors: <label>\"); AES-GCM nonces are the first 12 bytes of SHA-256(\"cyberspace vectors nonce: <label>\"); BIP-340 aux randomness is 32 zero bytes. Readers MUST accept any valid signature. Cells are [x, y, z, id]. Not normative: where this file and the DECK disagree, the DECK is right.",
+  "constants": {
+    "domain": "CYBERSPACE_BLUEPRINT_V1",
+    "domain_hex": "435942455253504143455f424c55455052494e545f5631",
+    "salt_hex": "435942455253504143455f424c55455052494e545f5631",
+    "rounds": 500000,
+    "key_bytes": 32,
+    "reach_compiler": 16,
+    "reach_bare": 3,
+    "max_side": 16,
+    "record_max_bytes": 98304,
+    "record_kind": 33343,
+    "card_kind": 3343,
+    "prize_mark": "cyberspace:blueprint"
+  },
+  "arrangements": [
+    {
+      "name": "compiler",
+      "note": "The Compiler's recipe (§8.3): an upright T hammer, two Ferrovein for the handle, Rustband, Glowcore, Rustband for the head. Box 3 (X) by 3 (Y) by 1 (Z).",
+      "size": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "cells": [
+        [
+          1,
+          0,
+          0,
+          40
+        ],
+        [
+          1,
+          1,
+          0,
+          40
+        ],
+        [
+          0,
+          2,
+          0,
+          5
+        ],
+        [
+          1,
+          2,
+          0,
+          42
+        ],
+        [
+          2,
+          2,
+          0,
+          5
+        ]
+      ],
+      "encoding_length": 44,
+      "encoding": "435942455253504143455f424c55455052494e545f56310301030000002800000000002800000005002a0005",
+      "key": "593eabd69f12d642d07764e4a7599d1ce1aa1f75912928ef892dfdead5821e77",
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "compiler-upside-down",
+      "note": "The same blocks with the head at the bottom: a different arrangement.",
+      "size": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "cells": [
+        [
+          0,
+          0,
+          0,
+          5
+        ],
+        [
+          1,
+          0,
+          0,
+          42
+        ],
+        [
+          2,
+          0,
+          0,
+          5
+        ],
+        [
+          1,
+          1,
+          0,
+          40
+        ],
+        [
+          1,
+          2,
+          0,
+          40
+        ]
+      ],
+      "encoding_length": 44,
+      "encoding": "435942455253504143455f424c55455052494e545f56310301030005002a0005000000280000000000280000",
+      "key": "bff528808527416ccb36856580113483a9b35241ea03abfd44fcf1852a539948",
+      "lookup": "cc3c967e374a74afb37f3883287f3ddb03dd3d0ecabb5268356b94f190eb9a1e"
+    },
+    {
+      "name": "compiler-turned",
+      "note": "The same T turned a quarter turn about Y, its head along Z: a different arrangement, box 1 by 3 by 3.",
+      "size": {
+        "x": 1,
+        "y": 3,
+        "z": 3
+      },
+      "cells": [
+        [
+          0,
+          0,
+          1,
+          40
+        ],
+        [
+          0,
+          1,
+          1,
+          40
+        ],
+        [
+          0,
+          2,
+          0,
+          5
+        ],
+        [
+          0,
+          2,
+          1,
+          42
+        ],
+        [
+          0,
+          2,
+          2,
+          5
+        ]
+      ],
+      "encoding_length": 44,
+      "encoding": "435942455253504143455f424c55455052494e545f56310103030000002800000000002800000005002a0005",
+      "key": "07bedb5f84be6ce459bab74f01956570d94b4eb74b730b066809d4037398ca5a",
+      "lookup": "08bb985fc2957eef47d6c42a5f0d54561eca8e2a1e5025cd727a85df134b2b26"
+    },
+    {
+      "name": "quarry-charge",
+      "note": "The Quarry Charge's recipe (§8.5): a cross of seven, Umberslate below and above a Ferrovein, Rustband on -X, -Z and +Z, Cinderrock on +X. Box 3 by 3 by 3.",
+      "size": {
+        "x": 3,
+        "y": 3,
+        "z": 3
+      },
+      "cells": [
+        [
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          1,
+          1,
+          0,
+          5
+        ],
+        [
+          0,
+          1,
+          1,
+          5
+        ],
+        [
+          1,
+          1,
+          1,
+          40
+        ],
+        [
+          2,
+          1,
+          1,
+          7
+        ],
+        [
+          1,
+          1,
+          2,
+          5
+        ],
+        [
+          1,
+          2,
+          1,
+          2
+        ]
+      ],
+      "encoding_length": 80,
+      "encoding": "435942455253504143455f424c55455052494e545f5631030303000000000000000000020000000000000000000000050000000500280007000000050000000000000000000000020000000000000000",
+      "key": "4a98648039e97902a1e300ec678a4a2d37dfdebf177b8ef5d644343cad3819d9",
+      "lookup": "e12e7f66a13349efa89ad831967ef367411d0c9831081b8d420993c4afb46995"
+    },
+    {
+      "name": "quarry-charge-mirrored-x",
+      "note": "The Quarry Charge mirrored across X: the Cinderrock on -X and a Rustband on +X. A different arrangement; it compiles nothing.",
+      "size": {
+        "x": 3,
+        "y": 3,
+        "z": 3
+      },
+      "cells": [
+        [
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          1,
+          1,
+          0,
+          5
+        ],
+        [
+          2,
+          1,
+          1,
+          5
+        ],
+        [
+          1,
+          1,
+          1,
+          40
+        ],
+        [
+          0,
+          1,
+          1,
+          7
+        ],
+        [
+          1,
+          1,
+          2,
+          5
+        ],
+        [
+          1,
+          2,
+          1,
+          2
+        ]
+      ],
+      "encoding_length": 80,
+      "encoding": "435942455253504143455f424c55455052494e545f5631030303000000000000000000020000000000000000000000050000000700280005000000050000000000000000000000020000000000000000",
+      "key": "9acfb17d43dab718f2ad8824e2e6a1cc10b3e5fdfebf2a6d430f6283ca8667b5",
+      "lookup": "614e4b49781d79c8cc034489eb9dac75963ab121230f0f41c671cc3fbe31fbf1"
+    },
+    {
+      "name": "quarry-charge-mirrored-z",
+      "note": "The Quarry Charge mirrored across Z: it swaps two Rustband, so it is the same arrangement as the recipe.",
+      "size": {
+        "x": 3,
+        "y": 3,
+        "z": 3
+      },
+      "cells": [
+        [
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          1,
+          1,
+          2,
+          5
+        ],
+        [
+          0,
+          1,
+          1,
+          5
+        ],
+        [
+          1,
+          1,
+          1,
+          40
+        ],
+        [
+          2,
+          1,
+          1,
+          7
+        ],
+        [
+          1,
+          1,
+          0,
+          5
+        ],
+        [
+          1,
+          2,
+          1,
+          2
+        ]
+      ],
+      "encoding_length": 80,
+      "encoding": "435942455253504143455f424c55455052494e545f5631030303000000000000000000020000000000000000000000050000000500280007000000050000000000000000000000020000000000000000",
+      "key": "4a98648039e97902a1e300ec678a4a2d37dfdebf177b8ef5d644343cad3819d9",
+      "lookup": "e12e7f66a13349efa89ad831967ef367411d0c9831081b8d420993c4afb46995"
+    },
+    {
+      "name": "one-gridstone",
+      "note": "A single Gridstone: the shortest encoding, 28 bytes.",
+      "size": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "cells": [
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ],
+      "encoding_length": 28,
+      "encoding": "435942455253504143455f424c55455052494e545f56310101010001",
+      "key": "a7964aa8d6f2820998691fd85cdb50a9f8bce906e5cfb050786475224837520d",
+      "lookup": "31ad75408241a3fd7a5300c2196b0b0956e7edcdfa6f87e15e1948c012074e30"
+    },
+    {
+      "name": "L",
+      "note": "Four Ferrovein in an L in the XZ plane: three along X, one more along Z at the +X end.",
+      "size": {
+        "x": 3,
+        "y": 1,
+        "z": 2
+      },
+      "cells": [
+        [
+          0,
+          0,
+          0,
+          40
+        ],
+        [
+          1,
+          0,
+          0,
+          40
+        ],
+        [
+          2,
+          0,
+          0,
+          40
+        ],
+        [
+          2,
+          0,
+          1,
+          40
+        ]
+      ],
+      "encoding_length": 38,
+      "encoding": "435942455253504143455f424c55455052494e545f5631030201002800280028000000000028",
+      "key": "826e8565cbb02d757d300961f2541a3691b59c0cced31e346adee0b56a676d5c",
+      "lookup": "f4ddb4c4a31adf650773dfe20dece41e37fb08196af9168a74b69ca144cff2b3"
+    },
+    {
+      "name": "L-turned",
+      "note": "The L turned a quarter turn about Y: a different key (§3.1).",
+      "size": {
+        "x": 2,
+        "y": 1,
+        "z": 3
+      },
+      "cells": [
+        [
+          0,
+          0,
+          2,
+          40
+        ],
+        [
+          0,
+          0,
+          1,
+          40
+        ],
+        [
+          0,
+          0,
+          0,
+          40
+        ],
+        [
+          1,
+          0,
+          0,
+          40
+        ]
+      ],
+      "encoding_length": 38,
+      "encoding": "435942455253504143455f424c55455052494e545f5631020301002800280028000000280000",
+      "key": "e3f0ed4aaf91ef4af506eedec6b7ae3cbba5121cb5b02df1ab6406c16941a3e1",
+      "lookup": "6ba4fdcddafc15e981f26deff773f251f208121a5cc4236f1b7c1e761bd4c29c"
+    },
+    {
+      "name": "L-mirrored",
+      "note": "The L mirrored across X: a different key.",
+      "size": {
+        "x": 3,
+        "y": 1,
+        "z": 2
+      },
+      "cells": [
+        [
+          2,
+          0,
+          0,
+          40
+        ],
+        [
+          1,
+          0,
+          0,
+          40
+        ],
+        [
+          0,
+          0,
+          0,
+          40
+        ],
+        [
+          0,
+          0,
+          1,
+          40
+        ]
+      ],
+      "encoding_length": 38,
+      "encoding": "435942455253504143455f424c55455052494e545f5631030201002800280028002800000000",
+      "key": "3a6c84149ddc010fc5db68b3d20f9e8b315b1e067dcca41c6421391fa2f3a21e",
+      "lookup": "6d32ff7a91d48a45053fcccc41dcbbb7e20452d818d0951b32ae5c58bfc67f72"
+    },
+    {
+      "name": "hollow",
+      "note": "A hollow 3 by 3 by 3 cube of Gridstone, its centre empty.",
+      "size": {
+        "x": 3,
+        "y": 3,
+        "z": 3
+      },
+      "cells": [
+        [
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          0,
+          1
+        ],
+        [
+          2,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1,
+          1
+        ],
+        [
+          1,
+          0,
+          1,
+          1
+        ],
+        [
+          2,
+          0,
+          1,
+          1
+        ],
+        [
+          0,
+          0,
+          2,
+          1
+        ],
+        [
+          1,
+          0,
+          2,
+          1
+        ],
+        [
+          2,
+          0,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          1,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          1,
+          1,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          1
+        ],
+        [
+          1,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          0,
+          2,
+          0,
+          1
+        ],
+        [
+          1,
+          2,
+          0,
+          1
+        ],
+        [
+          2,
+          2,
+          0,
+          1
+        ],
+        [
+          0,
+          2,
+          1,
+          1
+        ],
+        [
+          1,
+          2,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          1,
+          1
+        ],
+        [
+          0,
+          2,
+          2,
+          1
+        ],
+        [
+          1,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          1
+        ]
+      ],
+      "encoding_length": 80,
+      "encoding": "435942455253504143455f424c55455052494e545f5631030303000100010001000100010001000100010001000100010001000100000001000100010001000100010001000100010001000100010001",
+      "key": "e19a5a6ada998a406cd03f47c98e7e104963234ade69581b3b2751d2e777db5d",
+      "lookup": "e1fa557030f8e1ea35671e8a7a8f476ce0a41048cc3b67bb818a155551485ab2"
+    },
+    {
+      "name": "solid",
+      "note": "The solid 3 by 3 by 3 cube: differs from the hollow cube only in the centre cell.",
+      "size": {
+        "x": 3,
+        "y": 3,
+        "z": 3
+      },
+      "cells": [
+        [
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          0,
+          1
+        ],
+        [
+          2,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1,
+          1
+        ],
+        [
+          1,
+          0,
+          1,
+          1
+        ],
+        [
+          2,
+          0,
+          1,
+          1
+        ],
+        [
+          0,
+          0,
+          2,
+          1
+        ],
+        [
+          1,
+          0,
+          2,
+          1
+        ],
+        [
+          2,
+          0,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          1,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          1,
+          1,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          1
+        ],
+        [
+          1,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          0,
+          2,
+          0,
+          1
+        ],
+        [
+          1,
+          2,
+          0,
+          1
+        ],
+        [
+          2,
+          2,
+          0,
+          1
+        ],
+        [
+          0,
+          2,
+          1,
+          1
+        ],
+        [
+          1,
+          2,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          1,
+          1
+        ],
+        [
+          0,
+          2,
+          2,
+          1
+        ],
+        [
+          1,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          1
+        ]
+      ],
+      "encoding_length": 80,
+      "encoding": "435942455253504143455f424c55455052494e545f5631030303000100010001000100010001000100010001000100010001000100010001000100010001000100010001000100010001000100010001",
+      "key": "7ec5ee6f94394b38ae90be40fe1a98a6bb2d74da9611a3f3fe0a9bb585a14dee",
+      "lookup": "426e1750c7d8b6cd0bf2271b238fb64cb763ba610a04f2cde8bdddcf9ccb2f36"
+    },
+    {
+      "name": "corner-pair",
+      "note": "Two Gridstone joined only at a corner: (0,0,0) and (1,1,1).",
+      "size": {
+        "x": 2,
+        "y": 2,
+        "z": 2
+      },
+      "cells": [
+        [
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          1,
+          1,
+          1
+        ]
+      ],
+      "encoding_length": 42,
+      "encoding": "435942455253504143455f424c55455052494e545f563102020200010000000000000000000000000001",
+      "key": "1fcd21dd85a0d2962da2f9accd279ce97565be2105af96fccd3ff645a7aeb9fb",
+      "lookup": "65d83d6d00b33b1f2da426d5142a05d428ff017947bc9edbd5c75cc5dbd276cc"
+    },
+    {
+      "name": "special-and-extension",
+      "note": "A Genesis shard (197) on an extension id (300): ids are written as they are, in two bytes.",
+      "size": {
+        "x": 1,
+        "y": 2,
+        "z": 1
+      },
+      "cells": [
+        [
+          0,
+          0,
+          0,
+          300
+        ],
+        [
+          0,
+          1,
+          0,
+          197
+        ]
+      ],
+      "encoding_length": 30,
+      "encoding": "435942455253504143455f424c55455052494e545f5631010102012c00c5",
+      "key": "0dc3a2ab7e785283041a89ef1440607a3e219fa4d6205f09995d5b2bf3dec638",
+      "lookup": "f5ef365cd112f411a3d15f028331ef99bb28649ec1c48616e5155bf90170da1e"
+    },
+    {
+      "name": "diagonal-16",
+      "note": "A diagonal of 16 blocks through a 16 by 16 by 16 box, Gridstone and Glowcore alternating, each touching the next only at a corner: the longest encoding without a lock, 8,218 bytes.",
+      "size": {
+        "x": 16,
+        "y": 16,
+        "z": 16
+      },
+      "cells": [
+        [
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          1,
+          1,
+          42
+        ],
+        [
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          3,
+          3,
+          3,
+          42
+        ],
+        [
+          4,
+          4,
+          4,
+          1
+        ],
+        [
+          5,
+          5,
+          5,
+          42
+        ],
+        [
+          6,
+          6,
+          6,
+          1
+        ],
+        [
+          7,
+          7,
+          7,
+          42
+        ],
+        [
+          8,
+          8,
+          8,
+          1
+        ],
+        [
+          9,
+          9,
+          9,
+          42
+        ],
+        [
+          10,
+          10,
+          10,
+          1
+        ],
+        [
+          11,
+          11,
+          11,
+          42
+        ],
+        [
+          12,
+          12,
+          12,
+          1
+        ],
+        [
+          13,
+          13,
+          13,
+          42
+        ],
+        [
+          14,
+          14,
+          14,
+          1
+        ],
+        [
+          15,
+          15,
+          15,
+          42
+        ]
+      ],
+      "encoding_length": 8218,
+      "encoding_sha256": "85ee6920b26c154328054c9fd86c56cfc4aa028e838833d2fd24da5f271351e8",
+      "key": "7628fc62a13ceda3b7b9a9d10276fa3b61e70b3ab132af92d0d1d06065a373e7",
+      "lookup": "52b25f6f16cc9a34606f9412bc73e767905557804830add7688e29224203c6b1"
+    }
+  ],
+  "location": {
+    "note": "The Compiler's recipe built with its box at (10..12, 4..6, 20) in dataspace. The location encoding is the standard encoding followed by the region key (§3.5).",
+    "box": {
+      "lo": {
+        "x": 10,
+        "y": 4,
+        "z": 20
+      },
+      "hi": {
+        "x": 12,
+        "y": 6,
+        "z": 20
+      }
+    },
+    "h5": {
+      "region": {
+        "base": {
+          "x": "0",
+          "y": "0",
+          "z": "0"
+        },
+        "height": 5,
+        "region_n": "3863148529790599242610298211024158305408678716664334558103399696966220616259033556669333389806958292402166021326059246782257649099650245113491673973092703380036817745680339493073338388747085491962611512547331653967200",
+        "region_key": "788c32df43243fc56f6f363d610a969f12ac856f3255c84017c456304905e145",
+        "lookup_id": "3c5d8c498f57d6d61527c53b824efe9edd768c2efd4d05acad6ea2775727c649"
+      },
+      "name": "compiler-location-h5",
+      "note": "Location lock at height 5: the origin chunk (DECK-0009's origin, lookup id 3c5d8c49...c649).",
+      "size": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "cells": [
+        [
+          1,
+          0,
+          0,
+          40
+        ],
+        [
+          1,
+          1,
+          0,
+          40
+        ],
+        [
+          0,
+          2,
+          0,
+          5
+        ],
+        [
+          1,
+          2,
+          0,
+          42
+        ],
+        [
+          2,
+          2,
+          0,
+          5
+        ]
+      ],
+      "encoding_length": 76,
+      "encoding": "435942455253504143455f424c55455052494e545f56310301030000002800000000002800000005002a0005788c32df43243fc56f6f363d610a969f12ac856f3255c84017c456304905e145",
+      "key": "67da5ba23c6683ec4e42bf863807f69917e2f7db668a40b771244f40cc3759ca",
+      "lookup": "f34610ca40eac005349fc2d088c3a01766bdaf354c89bae876915ae327f7d3b8"
+    },
+    "h6": {
+      "region": {
+        "base": {
+          "x": "0",
+          "y": "0",
+          "z": "0"
+        },
+        "height": 6,
+        "region_n": "408796312872164922944730607582643163534898625164382556381946487536431771929659286900815764938327166766352801667275267113125879915623291717125991735986404966224550890999344140614736710331308855620783216941377504058380192320475657113764688961260301316874504367198531956506625714362116196307337688497261592217687605215002093841975017128605118305545552772808392837263314870161460084153729986462955118746251808726739943126735272755782832861849474528494900079378390851946275936955883747967352361301091292164173911508379040704",
+        "region_key": "18f87aa70dcd8f02381299e775480e188efffa01659ad03894572bd37b133bea",
+        "lookup_id": "c2f4b01637f02dbac8a44805cffeade2c0b66a3253b19a87d45379be2047533f"
+      },
+      "name": "compiler-location-h6",
+      "note": "Location lock at height 6: a different region key, so a different key and lookup.",
+      "size": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "cells": [
+        [
+          1,
+          0,
+          0,
+          40
+        ],
+        [
+          1,
+          1,
+          0,
+          40
+        ],
+        [
+          0,
+          2,
+          0,
+          5
+        ],
+        [
+          1,
+          2,
+          0,
+          42
+        ],
+        [
+          2,
+          2,
+          0,
+          5
+        ]
+      ],
+      "encoding_length": 76,
+      "encoding": "435942455253504143455f424c55455052494e545f56310301030000002800000000002800000005002a000518f87aa70dcd8f02381299e775480e188efffa01659ad03894572bd37b133bea",
+      "key": "16fe17e658518c9300db28513df4b7d9bb11cf57cec83de02198c090a16ce73e",
+      "lookup": "729105baf5fc25cc89c56ca12eaab7b709d1d52803518927a851570df0ccab7f"
+    },
+    "straddle": {
+      "note": "A box at (30..32, 4..5, 20..22) crosses the border x = 32 of the height 5 regions, so it has no location encoding at height 5. At height 6 it stands in the region at the origin.",
+      "lo": {
+        "x": 30,
+        "y": 4,
+        "z": 20
+      },
+      "hi": {
+        "x": 32,
+        "y": 5,
+        "z": 22
+      },
+      "region_h5": null,
+      "region_h6": {
+        "base": {
+          "x": "0",
+          "y": "0",
+          "z": "0"
+        },
+        "height": 6,
+        "region_n": "408796312872164922944730607582643163534898625164382556381946487536431771929659286900815764938327166766352801667275267113125879915623291717125991735986404966224550890999344140614736710331308855620783216941377504058380192320475657113764688961260301316874504367198531956506625714362116196307337688497261592217687605215002093841975017128605118305545552772808392837263314870161460084153729986462955118746251808726739943126735272755782832861849474528494900079378390851946275936955883747967352361301091292164173911508379040704",
+        "region_key": "18f87aa70dcd8f02381299e775480e188efffa01659ad03894572bd37b133bea",
+        "lookup_id": "c2f4b01637f02dbac8a44805cffeade2c0b66a3253b19a87d45379be2047533f"
+      }
+    }
+  },
+  "gather": [
+    {
+      "name": "T-compiler-lower-ferrovein",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its lower Ferrovein: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        101,
+        50,
+        200
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-compiler-upper-ferrovein",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its upper Ferrovein: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        101,
+        51,
+        200
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-compiler-left-rustband",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its left Rustband: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        100,
+        52,
+        200
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-compiler-glowcore",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its Glowcore: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        101,
+        52,
+        200
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-compiler-right-rustband",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its right Rustband: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        102,
+        52,
+        200
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-bare-lower-ferrovein",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its lower Ferrovein: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        101,
+        50,
+        200
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-bare-upper-ferrovein",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its upper Ferrovein: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        101,
+        51,
+        200
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-bare-left-rustband",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its left Rustband: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        100,
+        52,
+        200
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-bare-glowcore",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its Glowcore: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        101,
+        52,
+        200
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-bare-right-rustband",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its right Rustband: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        102,
+        52,
+        200
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "compiler-corner-stray",
+      "note": "A Driftsilt (3) at (102, 49, 201), touching the T only at a corner of the lower Ferrovein: in the group, isolated, an arrangement with a different lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ],
+        [
+          102,
+          49,
+          201,
+          3
+        ]
+      ],
+      "hit": [
+        101,
+        50,
+        200
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          102,
+          49,
+          201,
+          3
+        ],
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 4,
+        "z": 2
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 4,
+        "z": 2
+      },
+      "lookup": "5b7fcb1092b0350c06063cfc86994aa16155485cd6d7f26e5580bb9abc7c24d2"
+    },
+    {
+      "name": "compiler-clear-above",
+      "note": "A Gridstone at (101, 54, 200), two cells above the Glowcore: outside the grown box, not in the group; still the recipe.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          54,
+          200,
+          1
+        ]
+      ],
+      "hit": [
+        101,
+        50,
+        200
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "compiler-in-grown-box",
+      "note": "A Gridstone at (103, 50, 201): inside the grown box (x 99..103, y 49..53, z 199..201) but touching nothing: not isolated, no arrangement.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ],
+        [
+          103,
+          50,
+          201,
+          1
+        ]
+      ],
+      "hit": [
+        101,
+        50,
+        200
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": false,
+      "intruders": [
+        [
+          103,
+          50,
+          201
+        ]
+      ],
+      "arrangement": false
+    },
+    {
+      "name": "L-notch",
+      "note": "An L of five Gridstone with a block in its notch at (0, 0, 2), touching nothing: not isolated, no arrangement (§4.2).",
+      "world": [
+        [
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          0,
+          1
+        ],
+        [
+          2,
+          0,
+          0,
+          1
+        ],
+        [
+          2,
+          0,
+          1,
+          1
+        ],
+        [
+          2,
+          0,
+          2,
+          1
+        ],
+        [
+          0,
+          0,
+          2,
+          1
+        ]
+      ],
+      "hit": [
+        2,
+        0,
+        0
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          0,
+          1
+        ],
+        [
+          2,
+          0,
+          0,
+          1
+        ],
+        [
+          2,
+          0,
+          1,
+          1
+        ],
+        [
+          2,
+          0,
+          2,
+          1
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 1,
+        "z": 3
+      },
+      "isolated": false,
+      "intruders": [
+        [
+          0,
+          0,
+          2
+        ]
+      ],
+      "arrangement": false
+    },
+    {
+      "name": "row-16-minus-end",
+      "note": "A row of 16 Gridstone, x 0..15, struck at x 0, its minus end: the window is x -15..15, the whole row, isolated, 16 cells long: an arrangement.",
+      "world": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ],
+        [
+          3,
+          10,
+          10,
+          1
+        ],
+        [
+          4,
+          10,
+          10,
+          1
+        ],
+        [
+          5,
+          10,
+          10,
+          1
+        ],
+        [
+          6,
+          10,
+          10,
+          1
+        ],
+        [
+          7,
+          10,
+          10,
+          1
+        ],
+        [
+          8,
+          10,
+          10,
+          1
+        ],
+        [
+          9,
+          10,
+          10,
+          1
+        ],
+        [
+          10,
+          10,
+          10,
+          1
+        ],
+        [
+          11,
+          10,
+          10,
+          1
+        ],
+        [
+          12,
+          10,
+          10,
+          1
+        ],
+        [
+          13,
+          10,
+          10,
+          1
+        ],
+        [
+          14,
+          10,
+          10,
+          1
+        ],
+        [
+          15,
+          10,
+          10,
+          1
+        ]
+      ],
+      "hit": [
+        0,
+        10,
+        10
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ],
+        [
+          3,
+          10,
+          10,
+          1
+        ],
+        [
+          4,
+          10,
+          10,
+          1
+        ],
+        [
+          5,
+          10,
+          10,
+          1
+        ],
+        [
+          6,
+          10,
+          10,
+          1
+        ],
+        [
+          7,
+          10,
+          10,
+          1
+        ],
+        [
+          8,
+          10,
+          10,
+          1
+        ],
+        [
+          9,
+          10,
+          10,
+          1
+        ],
+        [
+          10,
+          10,
+          10,
+          1
+        ],
+        [
+          11,
+          10,
+          10,
+          1
+        ],
+        [
+          12,
+          10,
+          10,
+          1
+        ],
+        [
+          13,
+          10,
+          10,
+          1
+        ],
+        [
+          14,
+          10,
+          10,
+          1
+        ],
+        [
+          15,
+          10,
+          10,
+          1
+        ]
+      ],
+      "extent": {
+        "x": 16,
+        "y": 1,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 16,
+        "y": 1,
+        "z": 1
+      },
+      "lookup": "0f465faf42e601555d12123a9ed7047e865924d79b72b25e7a2e1ef232475ed8"
+    },
+    {
+      "name": "row-16-plus-end",
+      "note": "The same row struck at x 15, its plus end: the same arrangement and lookup.",
+      "world": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ],
+        [
+          3,
+          10,
+          10,
+          1
+        ],
+        [
+          4,
+          10,
+          10,
+          1
+        ],
+        [
+          5,
+          10,
+          10,
+          1
+        ],
+        [
+          6,
+          10,
+          10,
+          1
+        ],
+        [
+          7,
+          10,
+          10,
+          1
+        ],
+        [
+          8,
+          10,
+          10,
+          1
+        ],
+        [
+          9,
+          10,
+          10,
+          1
+        ],
+        [
+          10,
+          10,
+          10,
+          1
+        ],
+        [
+          11,
+          10,
+          10,
+          1
+        ],
+        [
+          12,
+          10,
+          10,
+          1
+        ],
+        [
+          13,
+          10,
+          10,
+          1
+        ],
+        [
+          14,
+          10,
+          10,
+          1
+        ],
+        [
+          15,
+          10,
+          10,
+          1
+        ]
+      ],
+      "hit": [
+        15,
+        10,
+        10
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ],
+        [
+          3,
+          10,
+          10,
+          1
+        ],
+        [
+          4,
+          10,
+          10,
+          1
+        ],
+        [
+          5,
+          10,
+          10,
+          1
+        ],
+        [
+          6,
+          10,
+          10,
+          1
+        ],
+        [
+          7,
+          10,
+          10,
+          1
+        ],
+        [
+          8,
+          10,
+          10,
+          1
+        ],
+        [
+          9,
+          10,
+          10,
+          1
+        ],
+        [
+          10,
+          10,
+          10,
+          1
+        ],
+        [
+          11,
+          10,
+          10,
+          1
+        ],
+        [
+          12,
+          10,
+          10,
+          1
+        ],
+        [
+          13,
+          10,
+          10,
+          1
+        ],
+        [
+          14,
+          10,
+          10,
+          1
+        ],
+        [
+          15,
+          10,
+          10,
+          1
+        ]
+      ],
+      "extent": {
+        "x": 16,
+        "y": 1,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 16,
+        "y": 1,
+        "z": 1
+      },
+      "lookup": "0f465faf42e601555d12123a9ed7047e865924d79b72b25e7a2e1ef232475ed8"
+    },
+    {
+      "name": "row-17-middle",
+      "note": "A row of 17, x 0..16, struck at x 8: the whole row is in the window and isolated, but 17 cells long, more than the reach: no arrangement.",
+      "world": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ],
+        [
+          3,
+          10,
+          10,
+          1
+        ],
+        [
+          4,
+          10,
+          10,
+          1
+        ],
+        [
+          5,
+          10,
+          10,
+          1
+        ],
+        [
+          6,
+          10,
+          10,
+          1
+        ],
+        [
+          7,
+          10,
+          10,
+          1
+        ],
+        [
+          8,
+          10,
+          10,
+          1
+        ],
+        [
+          9,
+          10,
+          10,
+          1
+        ],
+        [
+          10,
+          10,
+          10,
+          1
+        ],
+        [
+          11,
+          10,
+          10,
+          1
+        ],
+        [
+          12,
+          10,
+          10,
+          1
+        ],
+        [
+          13,
+          10,
+          10,
+          1
+        ],
+        [
+          14,
+          10,
+          10,
+          1
+        ],
+        [
+          15,
+          10,
+          10,
+          1
+        ],
+        [
+          16,
+          10,
+          10,
+          1
+        ]
+      ],
+      "hit": [
+        8,
+        10,
+        10
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ],
+        [
+          3,
+          10,
+          10,
+          1
+        ],
+        [
+          4,
+          10,
+          10,
+          1
+        ],
+        [
+          5,
+          10,
+          10,
+          1
+        ],
+        [
+          6,
+          10,
+          10,
+          1
+        ],
+        [
+          7,
+          10,
+          10,
+          1
+        ],
+        [
+          8,
+          10,
+          10,
+          1
+        ],
+        [
+          9,
+          10,
+          10,
+          1
+        ],
+        [
+          10,
+          10,
+          10,
+          1
+        ],
+        [
+          11,
+          10,
+          10,
+          1
+        ],
+        [
+          12,
+          10,
+          10,
+          1
+        ],
+        [
+          13,
+          10,
+          10,
+          1
+        ],
+        [
+          14,
+          10,
+          10,
+          1
+        ],
+        [
+          15,
+          10,
+          10,
+          1
+        ],
+        [
+          16,
+          10,
+          10,
+          1
+        ]
+      ],
+      "extent": {
+        "x": 17,
+        "y": 1,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": false
+    },
+    {
+      "name": "row-40-middle",
+      "note": "A row of 40, x 0..39, struck at x 20: the window is x 5..35, so the group is 31 cells, and x 4 and x 36 touch it from outside the window: not isolated, and too long: no arrangement.",
+      "world": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ],
+        [
+          3,
+          10,
+          10,
+          1
+        ],
+        [
+          4,
+          10,
+          10,
+          1
+        ],
+        [
+          5,
+          10,
+          10,
+          1
+        ],
+        [
+          6,
+          10,
+          10,
+          1
+        ],
+        [
+          7,
+          10,
+          10,
+          1
+        ],
+        [
+          8,
+          10,
+          10,
+          1
+        ],
+        [
+          9,
+          10,
+          10,
+          1
+        ],
+        [
+          10,
+          10,
+          10,
+          1
+        ],
+        [
+          11,
+          10,
+          10,
+          1
+        ],
+        [
+          12,
+          10,
+          10,
+          1
+        ],
+        [
+          13,
+          10,
+          10,
+          1
+        ],
+        [
+          14,
+          10,
+          10,
+          1
+        ],
+        [
+          15,
+          10,
+          10,
+          1
+        ],
+        [
+          16,
+          10,
+          10,
+          1
+        ],
+        [
+          17,
+          10,
+          10,
+          1
+        ],
+        [
+          18,
+          10,
+          10,
+          1
+        ],
+        [
+          19,
+          10,
+          10,
+          1
+        ],
+        [
+          20,
+          10,
+          10,
+          1
+        ],
+        [
+          21,
+          10,
+          10,
+          1
+        ],
+        [
+          22,
+          10,
+          10,
+          1
+        ],
+        [
+          23,
+          10,
+          10,
+          1
+        ],
+        [
+          24,
+          10,
+          10,
+          1
+        ],
+        [
+          25,
+          10,
+          10,
+          1
+        ],
+        [
+          26,
+          10,
+          10,
+          1
+        ],
+        [
+          27,
+          10,
+          10,
+          1
+        ],
+        [
+          28,
+          10,
+          10,
+          1
+        ],
+        [
+          29,
+          10,
+          10,
+          1
+        ],
+        [
+          30,
+          10,
+          10,
+          1
+        ],
+        [
+          31,
+          10,
+          10,
+          1
+        ],
+        [
+          32,
+          10,
+          10,
+          1
+        ],
+        [
+          33,
+          10,
+          10,
+          1
+        ],
+        [
+          34,
+          10,
+          10,
+          1
+        ],
+        [
+          35,
+          10,
+          10,
+          1
+        ],
+        [
+          36,
+          10,
+          10,
+          1
+        ],
+        [
+          37,
+          10,
+          10,
+          1
+        ],
+        [
+          38,
+          10,
+          10,
+          1
+        ],
+        [
+          39,
+          10,
+          10,
+          1
+        ]
+      ],
+      "hit": [
+        20,
+        10,
+        10
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          5,
+          10,
+          10,
+          1
+        ],
+        [
+          6,
+          10,
+          10,
+          1
+        ],
+        [
+          7,
+          10,
+          10,
+          1
+        ],
+        [
+          8,
+          10,
+          10,
+          1
+        ],
+        [
+          9,
+          10,
+          10,
+          1
+        ],
+        [
+          10,
+          10,
+          10,
+          1
+        ],
+        [
+          11,
+          10,
+          10,
+          1
+        ],
+        [
+          12,
+          10,
+          10,
+          1
+        ],
+        [
+          13,
+          10,
+          10,
+          1
+        ],
+        [
+          14,
+          10,
+          10,
+          1
+        ],
+        [
+          15,
+          10,
+          10,
+          1
+        ],
+        [
+          16,
+          10,
+          10,
+          1
+        ],
+        [
+          17,
+          10,
+          10,
+          1
+        ],
+        [
+          18,
+          10,
+          10,
+          1
+        ],
+        [
+          19,
+          10,
+          10,
+          1
+        ],
+        [
+          20,
+          10,
+          10,
+          1
+        ],
+        [
+          21,
+          10,
+          10,
+          1
+        ],
+        [
+          22,
+          10,
+          10,
+          1
+        ],
+        [
+          23,
+          10,
+          10,
+          1
+        ],
+        [
+          24,
+          10,
+          10,
+          1
+        ],
+        [
+          25,
+          10,
+          10,
+          1
+        ],
+        [
+          26,
+          10,
+          10,
+          1
+        ],
+        [
+          27,
+          10,
+          10,
+          1
+        ],
+        [
+          28,
+          10,
+          10,
+          1
+        ],
+        [
+          29,
+          10,
+          10,
+          1
+        ],
+        [
+          30,
+          10,
+          10,
+          1
+        ],
+        [
+          31,
+          10,
+          10,
+          1
+        ],
+        [
+          32,
+          10,
+          10,
+          1
+        ],
+        [
+          33,
+          10,
+          10,
+          1
+        ],
+        [
+          34,
+          10,
+          10,
+          1
+        ],
+        [
+          35,
+          10,
+          10,
+          1
+        ]
+      ],
+      "extent": {
+        "x": 31,
+        "y": 1,
+        "z": 1
+      },
+      "isolated": false,
+      "intruders": [
+        [
+          4,
+          10,
+          10
+        ],
+        [
+          36,
+          10,
+          10
+        ]
+      ],
+      "arrangement": false
+    },
+    {
+      "name": "bare-row-3-end",
+      "note": "A row of 3, x 0..2, struck bare-handed at x 0: the window is x -2..2, the whole row, isolated, 3 long: an arrangement.",
+      "world": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ]
+      ],
+      "hit": [
+        0,
+        10,
+        10
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 1,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 1,
+        "z": 1
+      },
+      "lookup": "86839764863c1f01a5417e3b6217fe62f448217e512ddbf041bd157ab717a8f5"
+    },
+    {
+      "name": "bare-row-4-end",
+      "note": "A row of 4, x 0..3, struck bare-handed at x 0: the window is x -2..2, so the group is 3 cells and x 3 touches it from outside: not isolated, no arrangement.",
+      "world": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ],
+        [
+          3,
+          10,
+          10,
+          1
+        ]
+      ],
+      "hit": [
+        0,
+        10,
+        10
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 1,
+        "z": 1
+      },
+      "isolated": false,
+      "intruders": [
+        [
+          3,
+          10,
+          10
+        ]
+      ],
+      "arrangement": false
+    },
+    {
+      "name": "joined-outside-window",
+      "note": "Two Gridstone columns, y 0..40 at x 0 and at x 2, joined only by a bridge at (1, 40, 0), outside the window of a hit at (0, 10, 0) (y -5..25): the group is the struck column's 26 cells in the window; the other column is not in it; not isolated and too tall.",
+      "world": [
+        [
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          2,
+          0,
+          1
+        ],
+        [
+          0,
+          3,
+          0,
+          1
+        ],
+        [
+          0,
+          4,
+          0,
+          1
+        ],
+        [
+          0,
+          5,
+          0,
+          1
+        ],
+        [
+          0,
+          6,
+          0,
+          1
+        ],
+        [
+          0,
+          7,
+          0,
+          1
+        ],
+        [
+          0,
+          8,
+          0,
+          1
+        ],
+        [
+          0,
+          9,
+          0,
+          1
+        ],
+        [
+          0,
+          10,
+          0,
+          1
+        ],
+        [
+          0,
+          11,
+          0,
+          1
+        ],
+        [
+          0,
+          12,
+          0,
+          1
+        ],
+        [
+          0,
+          13,
+          0,
+          1
+        ],
+        [
+          0,
+          14,
+          0,
+          1
+        ],
+        [
+          0,
+          15,
+          0,
+          1
+        ],
+        [
+          0,
+          16,
+          0,
+          1
+        ],
+        [
+          0,
+          17,
+          0,
+          1
+        ],
+        [
+          0,
+          18,
+          0,
+          1
+        ],
+        [
+          0,
+          19,
+          0,
+          1
+        ],
+        [
+          0,
+          20,
+          0,
+          1
+        ],
+        [
+          0,
+          21,
+          0,
+          1
+        ],
+        [
+          0,
+          22,
+          0,
+          1
+        ],
+        [
+          0,
+          23,
+          0,
+          1
+        ],
+        [
+          0,
+          24,
+          0,
+          1
+        ],
+        [
+          0,
+          25,
+          0,
+          1
+        ],
+        [
+          0,
+          26,
+          0,
+          1
+        ],
+        [
+          0,
+          27,
+          0,
+          1
+        ],
+        [
+          0,
+          28,
+          0,
+          1
+        ],
+        [
+          0,
+          29,
+          0,
+          1
+        ],
+        [
+          0,
+          30,
+          0,
+          1
+        ],
+        [
+          0,
+          31,
+          0,
+          1
+        ],
+        [
+          0,
+          32,
+          0,
+          1
+        ],
+        [
+          0,
+          33,
+          0,
+          1
+        ],
+        [
+          0,
+          34,
+          0,
+          1
+        ],
+        [
+          0,
+          35,
+          0,
+          1
+        ],
+        [
+          0,
+          36,
+          0,
+          1
+        ],
+        [
+          0,
+          37,
+          0,
+          1
+        ],
+        [
+          0,
+          38,
+          0,
+          1
+        ],
+        [
+          0,
+          39,
+          0,
+          1
+        ],
+        [
+          0,
+          40,
+          0,
+          1
+        ],
+        [
+          1,
+          40,
+          0,
+          1
+        ],
+        [
+          2,
+          0,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          2,
+          0,
+          1
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          2,
+          4,
+          0,
+          1
+        ],
+        [
+          2,
+          5,
+          0,
+          1
+        ],
+        [
+          2,
+          6,
+          0,
+          1
+        ],
+        [
+          2,
+          7,
+          0,
+          1
+        ],
+        [
+          2,
+          8,
+          0,
+          1
+        ],
+        [
+          2,
+          9,
+          0,
+          1
+        ],
+        [
+          2,
+          10,
+          0,
+          1
+        ],
+        [
+          2,
+          11,
+          0,
+          1
+        ],
+        [
+          2,
+          12,
+          0,
+          1
+        ],
+        [
+          2,
+          13,
+          0,
+          1
+        ],
+        [
+          2,
+          14,
+          0,
+          1
+        ],
+        [
+          2,
+          15,
+          0,
+          1
+        ],
+        [
+          2,
+          16,
+          0,
+          1
+        ],
+        [
+          2,
+          17,
+          0,
+          1
+        ],
+        [
+          2,
+          18,
+          0,
+          1
+        ],
+        [
+          2,
+          19,
+          0,
+          1
+        ],
+        [
+          2,
+          20,
+          0,
+          1
+        ],
+        [
+          2,
+          21,
+          0,
+          1
+        ],
+        [
+          2,
+          22,
+          0,
+          1
+        ],
+        [
+          2,
+          23,
+          0,
+          1
+        ],
+        [
+          2,
+          24,
+          0,
+          1
+        ],
+        [
+          2,
+          25,
+          0,
+          1
+        ],
+        [
+          2,
+          26,
+          0,
+          1
+        ],
+        [
+          2,
+          27,
+          0,
+          1
+        ],
+        [
+          2,
+          28,
+          0,
+          1
+        ],
+        [
+          2,
+          29,
+          0,
+          1
+        ],
+        [
+          2,
+          30,
+          0,
+          1
+        ],
+        [
+          2,
+          31,
+          0,
+          1
+        ],
+        [
+          2,
+          32,
+          0,
+          1
+        ],
+        [
+          2,
+          33,
+          0,
+          1
+        ],
+        [
+          2,
+          34,
+          0,
+          1
+        ],
+        [
+          2,
+          35,
+          0,
+          1
+        ],
+        [
+          2,
+          36,
+          0,
+          1
+        ],
+        [
+          2,
+          37,
+          0,
+          1
+        ],
+        [
+          2,
+          38,
+          0,
+          1
+        ],
+        [
+          2,
+          39,
+          0,
+          1
+        ],
+        [
+          2,
+          40,
+          0,
+          1
+        ]
+      ],
+      "hit": [
+        0,
+        10,
+        0
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          2,
+          0,
+          1
+        ],
+        [
+          0,
+          3,
+          0,
+          1
+        ],
+        [
+          0,
+          4,
+          0,
+          1
+        ],
+        [
+          0,
+          5,
+          0,
+          1
+        ],
+        [
+          0,
+          6,
+          0,
+          1
+        ],
+        [
+          0,
+          7,
+          0,
+          1
+        ],
+        [
+          0,
+          8,
+          0,
+          1
+        ],
+        [
+          0,
+          9,
+          0,
+          1
+        ],
+        [
+          0,
+          10,
+          0,
+          1
+        ],
+        [
+          0,
+          11,
+          0,
+          1
+        ],
+        [
+          0,
+          12,
+          0,
+          1
+        ],
+        [
+          0,
+          13,
+          0,
+          1
+        ],
+        [
+          0,
+          14,
+          0,
+          1
+        ],
+        [
+          0,
+          15,
+          0,
+          1
+        ],
+        [
+          0,
+          16,
+          0,
+          1
+        ],
+        [
+          0,
+          17,
+          0,
+          1
+        ],
+        [
+          0,
+          18,
+          0,
+          1
+        ],
+        [
+          0,
+          19,
+          0,
+          1
+        ],
+        [
+          0,
+          20,
+          0,
+          1
+        ],
+        [
+          0,
+          21,
+          0,
+          1
+        ],
+        [
+          0,
+          22,
+          0,
+          1
+        ],
+        [
+          0,
+          23,
+          0,
+          1
+        ],
+        [
+          0,
+          24,
+          0,
+          1
+        ],
+        [
+          0,
+          25,
+          0,
+          1
+        ]
+      ],
+      "extent": {
+        "x": 1,
+        "y": 26,
+        "z": 1
+      },
+      "isolated": false,
+      "intruders": [
+        [
+          0,
+          26,
+          0
+        ]
+      ],
+      "arrangement": false
+    }
+  ],
+  "sheets": {
+    "accept": [
+      {
+        "name": "compiler-all-revealed",
+        "size": {
+          "x": 3,
+          "y": 3,
+          "z": 1
+        },
+        "pal": [
+          0,
+          5,
+          40,
+          42
+        ],
+        "cells": [
+          0,
+          2,
+          0,
+          -1,
+          2,
+          0,
+          1,
+          3,
+          1
+        ],
+        "expanded": [
+          0,
+          40,
+          0,
+          0,
+          40,
+          0,
+          5,
+          42,
+          5
+        ]
+      },
+      {
+        "name": "compiler-glowcore-revealed",
+        "size": {
+          "x": 3,
+          "y": 3,
+          "z": 1
+        },
+        "pal": [
+          0,
+          null,
+          42
+        ],
+        "cells": [
+          0,
+          1,
+          0,
+          -1,
+          1,
+          0,
+          1,
+          2,
+          1
+        ],
+        "expanded": [
+          0,
+          null,
+          0,
+          0,
+          null,
+          0,
+          null,
+          42,
+          null
+        ]
+      },
+      {
+        "name": "compiler-nothing-revealed",
+        "size": {
+          "x": 3,
+          "y": 3,
+          "z": 1
+        },
+        "pal": [
+          0,
+          null
+        ],
+        "cells": [
+          0,
+          1,
+          0,
+          -1,
+          1,
+          0,
+          1,
+          -2
+        ],
+        "expanded": [
+          0,
+          null,
+          0,
+          0,
+          null,
+          0,
+          null,
+          null,
+          null
+        ]
+      }
+    ],
+    "reject": [
+      {
+        "name": "runs-short",
+        "reason": "the runs expand to one cell fewer than the box holds",
+        "sheet": {
+          "size": {
+            "x": 3,
+            "y": 3,
+            "z": 1
+          },
+          "pal": [
+            0,
+            null,
+            42
+          ],
+          "cells": [
+            0,
+            1,
+            0,
+            -1,
+            1,
+            0,
+            1,
+            2
+          ]
+        }
+      },
+      {
+        "name": "runs-start-repeat",
+        "reason": "the runs start with a repeat",
+        "sheet": {
+          "size": {
+            "x": 3,
+            "y": 3,
+            "z": 1
+          },
+          "pal": [
+            0,
+            null,
+            42
+          ],
+          "cells": [
+            -1,
+            0,
+            1,
+            0,
+            -1,
+            1,
+            0,
+            1,
+            2,
+            1
+          ]
+        }
+      },
+      {
+        "name": "unused-palette-id",
+        "reason": "the palette names Gridstone (1), which no cell uses: it would leak a hidden kind",
+        "sheet": {
+          "size": {
+            "x": 3,
+            "y": 3,
+            "z": 1
+          },
+          "pal": [
+            0,
+            null,
+            42,
+            1
+          ],
+          "cells": [
+            0,
+            1,
+            0,
+            -1,
+            1,
+            0,
+            1,
+            2,
+            1
+          ]
+        }
+      },
+      {
+        "name": "not-tight",
+        "reason": "the box is one cell wider along X than its cells: no cell is occupied at x = 3",
+        "sheet": {
+          "size": {
+            "x": 4,
+            "y": 3,
+            "z": 1
+          },
+          "pal": [
+            0,
+            null,
+            42
+          ],
+          "cells": [
+            0,
+            1,
+            0,
+            -2,
+            1,
+            0,
+            -1,
+            1,
+            2,
+            1,
+            0
+          ]
+        }
+      },
+      {
+        "name": "not-connected",
+        "reason": "two occupied cells with a gap between them, (0,0,0) and (2,0,0)",
+        "sheet": {
+          "size": {
+            "x": 3,
+            "y": 1,
+            "z": 1
+          },
+          "pal": [
+            0,
+            null
+          ],
+          "cells": [
+            1,
+            0,
+            1
+          ]
+        }
+      },
+      {
+        "name": "side-17",
+        "reason": "a side of 17 cells",
+        "sheet": {
+          "size": {
+            "x": 17,
+            "y": 1,
+            "z": 1
+          },
+          "pal": [
+            null
+          ],
+          "cells": [
+            0,
+            -16
+          ]
+        }
+      }
+    ]
+  },
+  "record": {
+    "keys": {
+      "creator": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+      "finder": "240eea3780b8ebda0a4f27c417d5927578a491fa14e7c89a20f8ee52772c1c70"
+    },
+    "standard": {
+      "sheet": {
+        "size": {
+          "x": 3,
+          "y": 3,
+          "z": 1
+        },
+        "pal": [
+          0,
+          null,
+          42
+        ],
+        "cells": [
+          0,
+          1,
+          0,
+          -1,
+          1,
+          0,
+          1,
+          2,
+          1
+        ],
+        "lock": "standard",
+        "prize": {
+          "reveal": "description",
+          "text": "A small prism that catches the light."
+        }
+      },
+      "prize": {
+        "type": "sno",
+        "payload": {
+          "v": 2,
+          "name": "Little prism",
+          "unit": 0,
+          "mode": "solid",
+          "vertices": [
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "colors": [
+            8,
+            8,
+            8,
+            8
+          ],
+          "faces": [
+            [
+              0,
+              2,
+              1
+            ],
+            [
+              0,
+              1,
+              3
+            ],
+            [
+              0,
+              3,
+              2
+            ],
+            [
+              1,
+              2,
+              3
+            ]
+          ]
+        }
+      },
+      "key": "593eabd69f12d642d07764e4a7599d1ce1aa1f75912928ef892dfdead5821e77",
+      "nonce": "8b3412f49abd191e7ad0ca87",
+      "serialized_length": 1088,
+      "event": {
+        "kind": 33343,
+        "created_at": 1795000000,
+        "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+        "tags": [
+          [
+            "d",
+            "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+          ],
+          [
+            "version",
+            "1"
+          ],
+          [
+            "encrypted",
+            "aes-256-gcm",
+            "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
+            "cyberspace:blueprint"
+          ],
+          [
+            "title",
+            "First prism"
+          ],
+          [
+            "alt",
+            "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+          ]
+        ],
+        "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+        "id": "d6757720f7ad9d45fbde6b70dcf9c676bbfbd3075218d99f706782e154faec28",
+        "sig": "4eeb5564812e27bf95effb38d2c26c2104efb9b4afbc31b7ec0c9c6aee25147d3d5317c6acdefeacdaf3672a31589f03b05700c0b429a6bab6af7b8b8ccddc5a"
+      },
+      "opens_with_key": true,
+      "opens_with_compiler_upside_down_key": false
+    },
+    "location": {
+      "sheet": {
+        "size": {
+          "x": 3,
+          "y": 3,
+          "z": 1
+        },
+        "pal": [
+          0,
+          null,
+          42
+        ],
+        "cells": [
+          0,
+          1,
+          0,
+          -1,
+          1,
+          0,
+          1,
+          2,
+          1
+        ],
+        "lock": "location",
+        "prize": {
+          "reveal": "silhouette",
+          "name": "Little prism",
+          "views": {
+            "iso": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
+            "y": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+          }
+        },
+        "height": 5
+      },
+      "key": "67da5ba23c6683ec4e42bf863807f69917e2f7db668a40b771244f40cc3759ca",
+      "nonce": "c4509c51636823eeaa94ae4e",
+      "event": {
+        "kind": 33343,
+        "created_at": 1795000060,
+        "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"location\",\"prize\":{\"reveal\":\"silhouette\",\"name\":\"Little prism\",\"views\":{\"iso\":\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=\",\"y\":\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=\"}},\"height\":5}",
+        "tags": [
+          [
+            "d",
+            "f34610ca40eac005349fc2d088c3a01766bdaf354c89bae876915ae327f7d3b8"
+          ],
+          [
+            "version",
+            "1"
+          ],
+          [
+            "encrypted",
+            "aes-256-gcm",
+            "xFCcUWNoI+6qlK5OVcMj6GTheYNRNShlprzcn+UIZ/m8Wd/6Mo+NbMkGfdM3nT5Lis1rQ2Ce4wbHyAtnOkAVDpmTcmNqZ8/L0VIwOXSeR9y/sL6zdzWydNqdM/cnSrWiYekc3XvHBUSgn7Q3pCmidCejQl13u6lOM8An6NpHS4QTWmP8gEv8gbP5YPeJF4qhiAmus3sk6bFtmVhGrPsY5xtY53MirhtQTZHRKwRkVkFfkp4+nJLQ7b/3cH1bGGLYXrxeOpyuj1aAVtMUNKdP68MCeb4=",
+            "cyberspace:blueprint"
+          ],
+          [
+            "title",
+            "Prism of the origin"
+          ],
+          [
+            "alt",
+            "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+          ]
+        ],
+        "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+        "id": "4d18c37b5faf39333425682c8d009f29a1d421289829f35ebf941df207e1f005",
+        "sig": "6a822e320fbba3e0fde80c0fd0f99af991299779e9e613d01e3dfc57c96f77416b54c604f04f8ef4411c23b94c6f2c1841631f3ca6ae90d531aae1a8ead927ca"
+      },
+      "opens_with_standard_key": false
+    },
+    "reject": [
+      {
+        "name": "no-version",
+        "reason": "no version tag (§5.4 check 3)",
+        "check_failed": "version",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "tags": [
+            [
+              "d",
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "fd2eee0e8bc899e0d8c4a2ba98f242b562f4e897712ee965a82b2b4645c34623",
+          "sig": "f7bc13cca4728f688e888d1f9d8eb7fcb9428a9308523f40f36204a926a816a9cbf87a9ae32274dc5a3788236d3dab13014865b76e000a3a1cdde9b2f67cb2d1"
+        }
+      },
+      {
+        "name": "version-2",
+        "reason": "a version this reader does not know",
+        "check_failed": "version",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "tags": [
+            [
+              "d",
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ],
+            [
+              "version",
+              "2"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "fdb999a71cfbe9f7e4cb07a50c67d338b1d960ab01af77b7c643f59876061d9d",
+          "sig": "aa8483fad8e3a6c5e72b20a3e28cdf3e14d7023c09e4dfbe2d10b94382958d83e542efa0042d7752c5fd4b0677c46e35f583c474bf8c92d4dbf8c80bb702e3b2"
+        }
+      },
+      {
+        "name": "C-tag",
+        "reason": "a C tag: a record says nothing about where it may be built",
+        "check_failed": "unknown tag C",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "tags": [
+            [
+              "d",
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ],
+            [
+              "C",
+              "0000000000000000000000000000000000000000000000000000000000000000"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "d8f793b381c6de787dfcd6524dcbc9b2abf0a0c327a98146a99e7c989207cf45",
+          "sig": "e0437fabaced8794cb90c4a54d53d1e93e03d332ac521dbab612acf9d37940beace442377da17fe0045cc35c70923520dd08d41b3a578683b0e43e0617c64e66"
+        }
+      },
+      {
+        "name": "wrong-mark",
+        "reason": "the encrypted tag names a key service instead of cyberspace:blueprint",
+        "check_failed": "encrypted",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "tags": [
+            [
+              "d",
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
+              "https://example.com/key"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "fc4e836f16d10c9905245b1c9b1bde28021454d2c9190ba04e57937d1ca8d9bf",
+          "sig": "2665a993c29bacefee6d7110fafcc62799b94251fc07503ccca4487da1e1db41b92207c0815ebafd6be30e53db624ccc9cdae49db12dec5f673e6a2183554e5f"
+        }
+      },
+      {
+        "name": "hidden-with-text",
+        "reason": "prize reveal hidden, but text is present",
+        "check_failed": "hidden prize shows something",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"hidden\",\"text\":\"x\"}}",
+          "tags": [
+            [
+              "d",
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "ac983f4890292315a44cf00e10a1ddf98a9f019b2609408df347dee33a67738c",
+          "sig": "90818c254fb94e494e2e1ec267f235658b138d17373366a7e824479bb5d6d0694ca571d46fe6c8eea4a8746fff8fe8a7f25be410c139f89ed48c0477a639531b"
+        }
+      },
+      {
+        "name": "prize-name-too-long",
+        "reason": "a prize name of 65 characters",
+        "check_failed": "prize name",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\",\"name\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
+          "tags": [
+            [
+              "d",
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "8b01e91605b99e20cc322495681dd4de2921b95319a4e0b12a7260cc3a60ef87",
+          "sig": "efedc30ea9062b62e2943c15e9c08f347eb9595c206538a2037314b3e24749be54bc847e46dd0c0fcb04b85529c8d1d37155c1838c9ce68b89a65ab2d641e1a7"
+        }
+      },
+      {
+        "name": "location-without-height",
+        "reason": "lock location with no height",
+        "check_failed": "height",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"location\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "tags": [
+            [
+              "d",
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "31d1d81d48f27f77b4fefd02fbc20bcb74db05af73f3b683a419d4f4e8dcc83e",
+          "sig": "362a4902ae5dabd537bfade0ef2e2920080660691d0037a58eb7d26bb8e5992fb58db002aa6e2354bb4eca542fe66ceb891ac634b4021cac9764f85e3d9b090a"
+        }
+      },
+      {
+        "name": "unused-palette-id",
+        "reason": "the palette names an id no cell uses",
+        "check_failed": "shape: pal names a value no cell uses",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42,1],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "tags": [
+            [
+              "d",
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "3b84456dbc1f608fbdfddf4eaf24553c5756bff8c1054bb0dff151cb28008b99",
+          "sig": "892cd9d377c5d774852d0b7f81e9206da519810e432243e71aae42aa28193be1ec1cf79d86427575fc3462380c2f20409013718fe846e438bc77412f98223851"
+        }
+      },
+      {
+        "name": "client-tag",
+        "reason": "a client tag: a record carries no tag but those of §5.1",
+        "check_failed": "unknown tag client",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "tags": [
+            [
+              "d",
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ],
+            [
+              "client",
+              "somewhere"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "327729d9baf13928b7d8a1eabcdc3ec7b4544ff4da19a17ea3e86af584e21b0c",
+          "sig": "5196dd5f5133dedff0f4eafad897b5f70c8ea2f8184a61cf7e3a9e69bf204c04f0e60e9f2987f1d0633bdbec9b39f05fcc89c434f588f1a5ecac177cd621dee2"
+        }
+      },
+      {
+        "name": "title-extra-element",
+        "reason": "a title tag with a third element",
+        "check_failed": "tag title elements",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "tags": [
+            [
+              "d",
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ],
+            [
+              "title",
+              "First prism",
+              "en"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "7cbb658aee071c62291c1f4211b90394de25635e6d159c4ebd91b4e9061e1bee",
+          "sig": "69102f562545fce105a80dfefbb192738692186684ec556b97d6c019e11921538d0a92ce1e26f18252483627646e9fdab5636e1fd9690b37ba8bec678f28d68c"
+        }
+      },
+      {
+        "name": "unknown-sheet-field",
+        "reason": "a sheet field §5.3 does not list",
+        "check_failed": "unknown sheet field",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"},\"note\":\"hello\"}",
+          "tags": [
+            [
+              "d",
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "6d334c67128f91353799378d82f207507cd9c39b78864972940aa98995d85262",
+          "sig": "a92af94afa8e61af34153d9aa5433fd25d70fd1ae3ae75f02ad1c0912b6441caacea45281f6c72442988813bbba0ca4f5f46248e6a2f209f0ce9997127dd68b6"
+        }
+      },
+      {
+        "name": "unknown-prize-field",
+        "reason": "a prize field §5.3 does not list",
+        "check_failed": "unknown prize field",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\",\"colour\":\"red\"}}",
+          "tags": [
+            [
+              "d",
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "6eb960eba97de0b6ca934c3185d14fb7154a0d3ba03f39d4e13f1b99b97725c7",
+          "sig": "4d1e85acd0818215bcac0a995546e587cf18d54f788cbac0df43aace6d1615491d992005d04033c17119fafa67643d13a98c3fd4b1c9dcfeafca440f5274da66"
+        }
+      },
+      {
+        "name": "needless-escape",
+        "reason": "content writes \"standard\" as \"\\u0073tandard\": it parses the same but is not written plainly (§5.3)",
+        "check_failed": "content not written plainly",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"\\u0073tandard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "tags": [
+            [
+              "d",
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "f99751bee78f4e5ef4fa7f0cd661b1ab96f9d4bc8675dde98b719d7c113dcd53",
+          "sig": "8fbe7884e753890978583052a4a9ae9c2970d3ca1d1414f3b9308dd25c9efd226588fd5e1ec25f2d4937a4158277d91234047bc64c6b2aef2d4edc3e649018e4"
+        }
+      },
+      {
+        "name": "whitespace",
+        "reason": "content has a space after a colon: not written plainly",
+        "check_failed": "content not written plainly",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\": \"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "tags": [
+            [
+              "d",
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "11a8e94d4fe46e51d67f5bcdfe1f05abe9d1e56bb7ab863fcd0bc62e36f39450",
+          "sig": "91f75277d9360b9e1ae601624021fb691d9abafb93d389bd980231486361a62c7c8126053bb51040816562aed1d607b2d02a7fd9f5b25904d4783822a7d199be"
+        }
+      },
+      {
+        "name": "control-character",
+        "reason": "a tab in the title (free text holds no control characters)",
+        "check_failed": "free text",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\"}}",
+          "tags": [
+            [
+              "d",
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ],
+            [
+              "title",
+              "First\tprism"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "4b762f4f1f9626d1f0de68ad3e7ae6bccfda847eadf2c37babe0503a8e5561ac",
+          "sig": "26deaff5e992add17c9faa2466cd1d3116e1f6134231f22c6865903a557bf468edfd129106427e61d3853a9c0512280847fd0e2099831ee6a289ef91c546fede"
+        }
+      },
+      {
+        "name": "empty-prize-name",
+        "reason": "a prize name that is empty after trimming: fails, it is not ignored",
+        "check_failed": "prize name",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":3,\"z\":1},\"pal\":[0,null,42],\"cells\":[0,1,0,-1,1,0,1,2,1],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\",\"name\":\"   \"}}",
+          "tags": [
+            [
+              "d",
+              "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "99dabcadf186706f84aa8a71e530f02fd50084371ab7adb752083af739331e4b",
+          "sig": "ee92426885f63dc0d894f82a2d78998966a7bcfa1aa9e3385bea34ffc7633553660a18ccfdd4308badabe4b915eefbbae673b0aeadc9419df74b35ca8fa1d98d"
+        }
+      },
+      {
+        "name": "too-large",
+        "reason": "over 98,304 bytes serialized (§5.2)",
+        "check_failed": "too large",
+        "serialized_length": 100101,
+        "event_sha256": "37f5323cc8c1f6ee072bdd47acc91e33488b65232968dd46053adebf32cfe6b5",
+        "note": "too long to print; build it by adding a 99,000-character field to the standard record's prize object"
+      }
+    ]
+  },
+  "card": {
+    "by_creator": {
+      "note": "A card left by the creator: shown \"by\" the creator, with no \"left here by\".",
+      "event": {
+        "kind": 3343,
+        "created_at": 1795003600,
+        "content": "{\"id\":\"d6757720f7ad9d45fbde6b70dcf9c676bbfbd3075218d99f706782e154faec28\",\"pubkey\":\"f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6\",\"created_at\":1795000000,\"kind\":33343,\"tags\":[[\"d\",\"84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564\"],[\"version\",\"1\"],[\"encrypted\",\"aes-256-gcm\",\"izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=\",\"cyberspace:blueprint\"],[\"title\",\"First prism\"],[\"alt\",\"A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech\"]],\"content\":\"{\\\"size\\\":{\\\"x\\\":3,\\\"y\\\":3,\\\"z\\\":1},\\\"pal\\\":[0,null,42],\\\"cells\\\":[0,1,0,-1,1,0,1,2,1],\\\"lock\\\":\\\"standard\\\",\\\"prize\\\":{\\\"reveal\\\":\\\"description\\\",\\\"text\\\":\\\"A small prism that catches the light.\\\"}}\",\"sig\":\"4eeb5564812e27bf95effb38d2c26c2104efb9b4afbc31b7ec0c9c6aee25147d3d5317c6acdefeacdaf3672a31589f03b05700c0b429a6bab6af7b8b8ccddc5a\"}",
+        "tags": [
+          [
+            "C",
+            "0000000000000000000000000000000000000000000000000000000000000000"
+          ],
+          [
+            "-"
+          ]
+        ],
+        "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+        "id": "db5d1bd5bf8130c35320ddc610c5ae269fa8620b732f1eae10072625dcbf6f5b",
+        "sig": "c71a491b99c961b6f82b7f01481faba0ea1b392b512115c16fc8fd09659789cb4e5990816d35cf6a90b1e6c9d3736d4376351cd3282573e0cc5518e8e3cc45a3"
+      }
+    },
+    "copy_by_finder": {
+      "note": "A copy left by the finder (§7.5): a new card signed by the finder, carrying the same record (same id and sig). Shown \"by\" the creator, \"left here by\" the finder when the container carries the finder's signature.",
+      "event": {
+        "kind": 3343,
+        "created_at": 1795003600,
+        "content": "{\"id\":\"d6757720f7ad9d45fbde6b70dcf9c676bbfbd3075218d99f706782e154faec28\",\"pubkey\":\"f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6\",\"created_at\":1795000000,\"kind\":33343,\"tags\":[[\"d\",\"84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564\"],[\"version\",\"1\"],[\"encrypted\",\"aes-256-gcm\",\"izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=\",\"cyberspace:blueprint\"],[\"title\",\"First prism\"],[\"alt\",\"A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech\"]],\"content\":\"{\\\"size\\\":{\\\"x\\\":3,\\\"y\\\":3,\\\"z\\\":1},\\\"pal\\\":[0,null,42],\\\"cells\\\":[0,1,0,-1,1,0,1,2,1],\\\"lock\\\":\\\"standard\\\",\\\"prize\\\":{\\\"reveal\\\":\\\"description\\\",\\\"text\\\":\\\"A small prism that catches the light.\\\"}}\",\"sig\":\"4eeb5564812e27bf95effb38d2c26c2104efb9b4afbc31b7ec0c9c6aee25147d3d5317c6acdefeacdaf3672a31589f03b05700c0b429a6bab6af7b8b8ccddc5a\"}",
+        "tags": [
+          [
+            "C",
+            "0000000000000000000000000000000000000000000000000000000000000010"
+          ],
+          [
+            "-"
+          ]
+        ],
+        "pubkey": "240eea3780b8ebda0a4f27c417d5927578a491fa14e7c89a20f8ee52772c1c70",
+        "id": "d1c8eb83be667a2e156896fa9d1cb771c9289fb40d603a4b52bcf8b7578229fe",
+        "sig": "87cf8dc351362d378a944776cec7bf9c662daea7a5aa62494cc428eb9ea0f0e01b00ea7d4f2b96c7035a4f2bd3c26b28d9829ba26bc557847d18c6b91f1f5f20"
+      }
+    },
+    "reject_altered": {
+      "note": "A card whose record had its title changed: the record no longer verifies, and a reader drops the card.",
+      "event": {
+        "kind": 3343,
+        "created_at": 1795003600,
+        "content": "{\"id\":\"d6757720f7ad9d45fbde6b70dcf9c676bbfbd3075218d99f706782e154faec28\",\"pubkey\":\"f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6\",\"created_at\":1795000000,\"kind\":33343,\"tags\":[[\"d\",\"84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564\"],[\"version\",\"1\"],[\"encrypted\",\"aes-256-gcm\",\"izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=\",\"cyberspace:blueprint\"],[\"title\",\"Mine now\"],[\"alt\",\"A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech\"]],\"content\":\"{\\\"size\\\":{\\\"x\\\":3,\\\"y\\\":3,\\\"z\\\":1},\\\"pal\\\":[0,null,42],\\\"cells\\\":[0,1,0,-1,1,0,1,2,1],\\\"lock\\\":\\\"standard\\\",\\\"prize\\\":{\\\"reveal\\\":\\\"description\\\",\\\"text\\\":\\\"A small prism that catches the light.\\\"}}\",\"sig\":\"4eeb5564812e27bf95effb38d2c26c2104efb9b4afbc31b7ec0c9c6aee25147d3d5317c6acdefeacdaf3672a31589f03b05700c0b429a6bab6af7b8b8ccddc5a\"}",
+        "tags": [
+          [
+            "C",
+            "0000000000000000000000000000000000000000000000000000000000000010"
+          ],
+          [
+            "-"
+          ]
+        ],
+        "pubkey": "240eea3780b8ebda0a4f27c417d5927578a491fa14e7c89a20f8ee52772c1c70",
+        "id": "4276594a5be73f00f649fca95a8ee33faef8fd8044ddb22f5dd29192ebcdf36b",
+        "sig": "c77707749ab0bbcdad28e6cfd8264ab382248f9f63fef000f7cdfddcb284c9525f93edb6c61419ab0d2b2f6faf95c5a598cb50eebc4df8540f4bd1a5faa60ecf"
+      }
+    },
+    "reject_not_canonical": {
+      "note": "A card whose content is the right record, signature and all, but serialized with its fields in another order: not the canonical serialization (§5.2), so a reader drops the card (§7.2 step 2).",
+      "event": {
+        "kind": 3343,
+        "created_at": 1795003600,
+        "content": "{\"kind\":33343,\"created_at\":1795000000,\"content\":\"{\\\"size\\\":{\\\"x\\\":3,\\\"y\\\":3,\\\"z\\\":1},\\\"pal\\\":[0,null,42],\\\"cells\\\":[0,1,0,-1,1,0,1,2,1],\\\"lock\\\":\\\"standard\\\",\\\"prize\\\":{\\\"reveal\\\":\\\"description\\\",\\\"text\\\":\\\"A small prism that catches the light.\\\"}}\",\"tags\":[[\"d\",\"84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564\"],[\"version\",\"1\"],[\"encrypted\",\"aes-256-gcm\",\"izQS9Jq9GR560MqHGeWGn4q4dWyhc6TSjlCi/quxI3+Eqk+vwQQqkv8RYxCZNs9albU6FCfJUDMW3Oy2JCPxxpvXQ9bFpTyH5vSQpAi6URwMDXX1FQW98LckNI5QV1dDS8Cbya1KhAC25tZjXoyaZez5NXuG3wyA2f0GoHsLm+k6x6QHjWfBnqOgE/jpoH/4mgf8JHGswBvyXzBDN7p3glW2P4JTm2A29c4SepiaugYliv2KguekbiC6f2kj8wvt7fhplAZIw+AGXa9qmx25+PMDakw=\",\"cyberspace:blueprint\"],[\"title\",\"First prism\"],[\"alt\",\"A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech\"]],\"pubkey\":\"f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6\",\"id\":\"d6757720f7ad9d45fbde6b70dcf9c676bbfbd3075218d99f706782e154faec28\",\"sig\":\"4eeb5564812e27bf95effb38d2c26c2104efb9b4afbc31b7ec0c9c6aee25147d3d5317c6acdefeacdaf3672a31589f03b05700c0b429a6bab6af7b8b8ccddc5a\"}",
+        "tags": [
+          [
+            "C",
+            "0000000000000000000000000000000000000000000000000000000000000010"
+          ],
+          [
+            "-"
+          ]
+        ],
+        "pubkey": "240eea3780b8ebda0a4f27c417d5927578a491fa14e7c89a20f8ee52772c1c70",
+        "id": "2d5ca27f098776de9258385ebcfb8efdd6d2b6cbbf844005502aad8b420ba92d",
+        "sig": "fe47a5a12ff38e392639704f4ccb6f4eec7e40df8f73fc8a9dd1c4df4d4531187da6ecc4de93bc1a5ffe4d27d94c74712a9cb6d6720fcfcc00928d2d2cb78f84"
+      }
+    }
+  },
+  "size_bounds": {
+    "note": "The worst case of §5.2 and §10: every tag and field present, a full palette, four views of 16,384 characters, all free text made of quotation marks, and the prize payload padded until the record is exactly at the cap. Placeholder values stand in for ids, keys and signatures, which have fixed lengths.",
+    "record_bytes": 98304,
+    "structural_escapes": 148,
+    "escapes": 2212,
+    "card_bytes": 101012,
+    "card_own_fields": 496,
+    "chest_room_left": 30058,
+    "sealed_entry_bytes": 135342,
+    "relay_worst_bytes": 103808
+  },
+  "rank": {
+    "reader": "a8fe1159e9b5504d95af63463a3e7bcb8fef395d3a301348fa5a0d111071cbdd",
+    "follows": [
+      "de6404b5420c91c390babe8a8a95d3f8ed7fb8d989a8ae7b815ba40c512151c4"
+    ],
+    "mutes": [
+      "87c295f0898ff14cca4c01317121153b405eec27c8c90e07485c1ed718393590"
+    ],
+    "records": [
+      {
+        "id": "a00785b401367c00a70d796a3ba3fae39b6e8bf34337d6697f07b16c592b89a9",
+        "pubkey": "cb482cdad31cba1b8a56880b67021e908e6a2a96ab639cb3cd7f97a0ef773b18",
+        "created_at": 1795000010,
+        "title": "rank stranger old"
+      },
+      {
+        "id": "fc6d11aceda0e1e6b6101360d571cd997573a9e5a5f1f8e9eba859064b9c16e0",
+        "pubkey": "6c91214ff135b0291954336610840d743e546f2bcfe68c74d0ac7a51ff844de8",
+        "created_at": 1795000030,
+        "title": "rank stranger new"
+      },
+      {
+        "id": "5554941c5a87e0afa4f3e012b3866a502e425e8a9166996cdd47cfbaedcf372a",
+        "pubkey": "de6404b5420c91c390babe8a8a95d3f8ed7fb8d989a8ae7b815ba40c512151c4",
+        "created_at": 1795000005,
+        "title": "rank follow"
+      },
+      {
+        "id": "f49587b4b59df20f02aa03266d0f6da0159c84cb3c3eec02db0b4db56a1668b5",
+        "pubkey": "87c295f0898ff14cca4c01317121153b405eec27c8c90e07485c1ed718393590",
+        "created_at": 1795000099,
+        "title": "rank muted"
+      },
+      {
+        "id": "71e02cc97e9d6d33925c9e485a21ab33cb7ef131154aaa4144f26bb1c05a7fa7",
+        "pubkey": "a8fe1159e9b5504d95af63463a3e7bcb8fef395d3a301348fa5a0d111071cbdd",
+        "created_at": 1795000001,
+        "title": "rank reader"
+      },
+      {
+        "id": "4fe246d0457de3187d0f340036f89d0dcdd0f32a08087f876af2c0c48986742f",
+        "pubkey": "cb482cdad31cba1b8a56880b67021e908e6a2a96ab639cb3cd7f97a0ef773b18",
+        "created_at": 1795000040,
+        "title": "rank stranger newer version"
+      }
+    ],
+    "order": [
+      "71e02cc97e9d6d33925c9e485a21ab33cb7ef131154aaa4144f26bb1c05a7fa7",
+      "5554941c5a87e0afa4f3e012b3866a502e425e8a9166996cdd47cfbaedcf372a",
+      "4fe246d0457de3187d0f340036f89d0dcdd0f32a08087f876af2c0c48986742f",
+      "fc6d11aceda0e1e6b6101360d571cd997573a9e5a5f1f8e9eba859064b9c16e0"
+    ],
+    "note": "The reader's own record, then the follow, then strangers newest first; the stranger's older version and the muted creator are gone. Every remaining record is kept (§6.1)."
+  }
+}
