@@ -2973,6 +2973,7 @@
         "lock": "location",
         "prize": {
           "reveal": "silhouette",
+          "name": "Little prism",
           "views": {
             "iso": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
             "y": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
@@ -2985,7 +2986,7 @@
       "event": {
         "kind": 33343,
         "created_at": 1795000060,
-        "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"location\",\"prize\":{\"reveal\":\"silhouette\",\"views\":{\"iso\":\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=\",\"y\":\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=\"}},\"height\":5}",
+        "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"location\",\"prize\":{\"reveal\":\"silhouette\",\"name\":\"Little prism\",\"views\":{\"iso\":\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=\",\"y\":\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=\"}},\"height\":5}",
         "tags": [
           [
             "d",
@@ -3011,8 +3012,8 @@
           ]
         ],
         "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
-        "id": "93abc8b10fcb194dfb3aba6e43a4f2e7eefb9f7b57d6192ed13ed461f1cc0f11",
-        "sig": "6c7ff4bae5049eb8406c88cee50d794bec761cd47fec600da62b9a17fbaae73c17fce688162bcfe87ee04a4c96f4f76b8ac8c18e7866926eec4c36127eb3f01e"
+        "id": "ff721f07f43c496aa56963a95c1667e2d9e549183562a5ed11afa666bb0950ce",
+        "sig": "5b1ecb3c705d48dd86383e7aafbab2c5b099fe88082a4db5b8b4b758c27da418fe17bed610dd9d1a5a446a9cf648e33fdb3e49a5ff840f33dd2a82374babd723"
       },
       "opens_with_standard_key": false
     },
@@ -3200,6 +3201,43 @@
           "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
           "id": "49c61bc401efbb128a2cef6af8d6f1a8ddc9dc329428c220b4758cd95965c753",
           "sig": "8bc0f1d0f905c26de30c3f068504e0be0969feefcaae81c8ad3d2a501d8f734e327d619a724dda46ecf986418c3b1f273ef7a7c8ccf8a3238bb56b82a23d2551"
+        }
+      },
+      {
+        "name": "prize-name-too-long",
+        "reason": "a prize name of 65 characters",
+        "check_failed": "prize name",
+        "event": {
+          "kind": 33343,
+          "created_at": 1795000000,
+          "content": "{\"size\":{\"x\":3,\"y\":2,\"z\":3},\"pal\":[0,null,42],\"cells\":[0,1,0,1,-2,0,1,0,-4,2,0,-3],\"lock\":\"standard\",\"prize\":{\"reveal\":\"description\",\"text\":\"A small prism that catches the light.\",\"name\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
+          "tags": [
+            [
+              "d",
+              "f61bb6171413d8ed06390bb83f000af859f12cedd3fbde80aa7b249c6642058d"
+            ],
+            [
+              "version",
+              "1"
+            ],
+            [
+              "encrypted",
+              "aes-256-gcm",
+              "izQS9Jq9GR560MqHznz310wX5KjGeT1gE3DG9BAByqkuGQpVTy79zdaceMSTE3RPU9vBsNn+C1/29T2J+G+2x9AtjSQGB7qQ29yQ/tabRVMshl0B3w/4Oe4lRkbvLDClPdop2wb2BNWLMivgDuq/ZE8o8JmuRKr4/N3VHl8H++RvSdbqWcLranVwP9jIOLc+iZ9C22829zfIhvT6wa48CWDOG9rxtf4jA0y/jylChe7dTqYZ1e6+A7HcCDj5srlWzLszlCedptjC+Bwaj2vfqfo+TMA=",
+              "cyberspace:blueprint"
+            ],
+            [
+              "title",
+              "First prism"
+            ],
+            [
+              "alt",
+              "A Cyberspace blueprint. Build it to find out what it makes: https://onosendai.tech"
+            ]
+          ],
+          "pubkey": "f50b277a1e14106ee9aa0ad0408cbb8e6202499e049643b562e92668bad86aa6",
+          "id": "4f1f5691d4a6b8126b08486b9f1d8657c4b9b3c3288d76f355d20887cfed0fa8",
+          "sig": "8b252e03ce12357c95c0eab76bf1d4ff5e03fe1d1d80d606b1f473fef9b99f822a68f5a0f09e6e2eba7c329eda7397380e62158220d43e9c48156dab0d7e86c5"
         }
       },
       {

@@ -192,7 +192,7 @@ check(B.openPrize(unhexKey(byName['compiler-glowcore-below'].key), rec.payload) 
 check(B.arrangementFitsSheet(compArr, sheetGlow), 'arrangement fits sheet')
 
 const locKey = unhexKey(location.h5.key)
-const sheetLoc = { ...sheetGlow, lock: 'location', height: 5, prize: { reveal: 'silhouette', views: { iso: PNG, y: PNG } } }
+const sheetLoc = { ...sheetGlow, lock: 'location', height: 5, prize: { reveal: 'silhouette', name: 'Little prism', views: { iso: PNG, y: PNG } } }
 const recLoc = recordOf('record location', creatorSk, location.h5.lookup, locKey, sheetLoc, prizeSno, T0 + 60, 'Prism of the origin')
 check(B.checkRecord(recLoc.event) === null, 'location record valid')
 check(Object.values(sheetLoc.prize.views).every(B.viewOk), 'location record views are well formed')
@@ -215,6 +215,7 @@ rejectRecord('version-2', 'a version this reader does not know', (e) => setTag(e
 rejectRecord('C-tag', 'a C tag: a record says nothing about where it may be built', (e) => { e.tags.push(['C', '00'.repeat(32)]); return e })
 rejectRecord('wrong-mark', 'the encrypted tag names a key service instead of cyberspace:blueprint', (e) => { e.tags = e.tags.map((t) => t[0] === 'encrypted' ? [t[0], t[1], t[2], 'https://example.com/key'] : t); return e })
 rejectRecord('hidden-with-text', 'prize reveal hidden, but text is present', (e) => { const s = JSON.parse(e.content); s.prize = { reveal: 'hidden', text: 'x' }; e.content = JSON.stringify(s); return e })
+rejectRecord('prize-name-too-long', 'a prize name of 65 characters', (e) => { const s = JSON.parse(e.content); s.prize.name = 'x'.repeat(65); e.content = JSON.stringify(s); return e })
 rejectRecord('location-without-height', 'lock location with no height', (e) => { const s = JSON.parse(e.content); s.lock = 'location'; e.content = JSON.stringify(s); return e })
 rejectRecord('unused-palette-id', 'the palette names an id no cell uses', (e) => { const s = JSON.parse(e.content); s.pal = [...s.pal, 1]; e.content = JSON.stringify(s); return e })
 rejectRecord('too-large', 'over 98,304 bytes serialized (§5.2)', (e) => { const s = JSON.parse(e.content); s.prize.pad = 'x'.repeat(99000); e.content = JSON.stringify(s); return e })

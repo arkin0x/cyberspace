@@ -301,6 +301,7 @@ export function checkRecord(ev) {
   const p = sheet.prize
   if (!p || !REVEALS.includes(p.reveal)) return 'prize reveal'
   if ('text' in p && (typeof p.text !== 'string' || [...p.text].length > TEXT_MAX)) return 'prize text'
+  if ('name' in p && (typeof p.name !== 'string' || [...p.name].length > TITLE_MAX)) return 'prize name'
   if (p.reveal === 'hidden' && ('text' in p || 'views' in p)) return 'hidden prize shows something'
   if (p.reveal === 'description' && (typeof p.text !== 'string' || !p.text.trim() || 'views' in p)) return 'description'
   if (p.reveal === 'silhouette' || p.reveal === 'render') {
