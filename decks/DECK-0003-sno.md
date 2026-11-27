@@ -281,7 +281,9 @@ An application outside Cyberspace that has no natural base unit MAY treat `unit`
 
 A reader MUST reject a `spin` that is present and is not an integer in range, whether or not `up` is present, because a payload carrying a nonsense bearing is malformed even where the bearing is unused. A reader MUST ignore the value of `spin` when `up` is not `true`.
 
-The frame is right-handed in Cyberspace's axes. This is not obvious and is worth stating: the canonical GPS mapping (`CYBERSPACE_V2.md` §9.4) swaps the ECEF Y and Z axes, which mirrors the frame, so (east, up, north) comes out right-handed in Cyberspace where it would be left-handed in ECEF.
+The `+X`, `+Y` and `+Z` of this section are the object's axes after the flip that places it into Cyberspace (§2, §1.18), not the payload's own axes in the frame of §2. The `+Z` that points local north, and that faces the bearing `spin`, is therefore Cyberspace's `+Z`, which is the payload's `-Z`: at `spin` `0` an object's §2 `-Z` faces north. This is what ONOSENDAI does (`src/lib/pose.ts`). A reader that applied this section to the payload's axes before the flip would stand every object mirrored north to south.
+
+The frame has the same handedness as Cyberspace's axes. This is not obvious and is worth stating: the canonical GPS mapping (`CYBERSPACE_V2.md` §9.4) swaps the ECEF Y and Z axes, which mirrors the frame, so (east, up, north), which has the opposite handedness to ECEF's axes, has the same handedness as Cyberspace's. Both are left-handed (`CYBERSPACE_V2.md` §11.1).
 
 A reader that does not implement `up` draws the object in the application's axes and is not wrong, only unoriented.
 

@@ -2494,6 +2494,14 @@ When the viewer is oriented per §11.3:
 - `+Y_cs` is up.
 - `+Z_cs` is forward (toward the black sun / east reference marker).
 
+**Cyberspace's axes are left-handed.** This follows from §9.4. ECEF is a right-handed frame, and the Cyberspace naming swaps its Y and Z axes; swapping two axes is a mirror, so the result is left-handed. Facing `+Z_cs` with `+Y_cs` up, `+X_cs` is on your right. Every statement in this document about right and left, above and below, and ahead and behind is made in this frame.
+
+Note (non-normative): many graphics engines are right-handed. three.js, for example, puts `+X` on the right when facing its own `-Z` with `+Y` up. Such an engine draws Cyberspace correctly by negating exactly one axis between Cyberspace coordinates and render coordinates (§11.4). Negating Z is the common choice, because it keeps X right and Y up and turns the canonical view of §11.3 into the engine's default camera direction; ONOSENDAI does this. Negating no axis, or two, draws the world mirrored.
+
+**Drawings (normative).** Any picture of Cyberspace geometry, whether a map, a diagram, a schematic or a view of an object or a build, MUST be a view that a viewer oriented as §11.3 describes, or that viewer after moving and turning, could actually see. A picture MUST NOT be the mirror image of such a view. This holds for every projection: from above, from the side, in section, isometric or in perspective. To check a picture, name the Cyberspace direction drawn toward the right of the page, the one drawn toward the top of the page, and the one pointing into the page; those three, in that order, MUST have the same handedness as `+X_cs`, `+Y_cs` and `+Z_cs`. With `+X_cs` to the right and `+Y_cs` up, `+Z_cs` points into the page, away from the reader, as in the canonical view. Seen from above with `+X_cs` to the right, `+Z_cs` points toward the top of the page.
+
+Note (non-normative): a mirrored drawing looks plausible and is easy to make by habit, because right-handed drawings are the usual convention elsewhere. It matters most for anything a person copies by hand: a mirrored drawing of a build that is not mirror-symmetric shows a different build.
+
 ### 11.2 Black sun reference marker
 
 The "black sun" is a reference to the hacker haven in Neal Stephenson's *Snow Crash*, one of the foundational works that inspired the Cyberspace Protocol. In Cyberspace, the black sun serves a simple practical purpose: it is a subtle guidepost so you know which direction you are facing. It is rendered as a purple circle marking the `+Z_cs` boundary of the coordinate space.
