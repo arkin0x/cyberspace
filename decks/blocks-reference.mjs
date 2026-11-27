@@ -32,8 +32,11 @@ export const W128 = (f) => 384 * f * f - 2 * f * f * f
 // §3.8 Open space thresholds (unchanged since revision 1).
 export const EMPTY_THR = [1337, 1323, 1308, 1294, 1280, 1266, 1253, 1239, 1225, 1211, 1196, 1182, 1168, 1153, 1138, 1123, 1108]
 
-/** §3.10 The ground revision this file computes; layers name it as `ground: 2`. */
+/** §3.10 Revision 2, the revision this file's layer vectors are written against (`ground: 2`). */
 export const GROUND_REVISION = 2
+/** §3.10 Every revision this file computes: 2 (frozen) and 3. A writer surveys a fresh chunk at the newest. */
+export const GROUND_REVISIONS = [2, 3]
+export const NEWEST_GROUND_REVISION = 3
 
 // §2.3 Block ids.
 export const ID = {
@@ -62,6 +65,8 @@ export const FEATURES = {
   prismite: { t: 1395864371, minK: 9 },
   glowcore: { t: 429496729, minK: 10 },
 }
+/** §3.9 Revision 3 changes only these rolls: Glowcore from K 8 at a higher chance, and the cinder vent. */
+export const FEATURES_R3 = { ...FEATURES, glowcore: { t: 515396076, minK: 8 }, cinder: { t: 1803886264, minK: 0 } }
 /** §3.9 Tidewater's threshold from the sum of the 64 cube K. */
 export const poolThreshold = (sumK) => Math.min(2576980377, Math.max(214748364, (768 - sumK) * 4194304))
 /** §3.9 The rare band, in order: [id, least K of the costliest cube, threshold]. */
@@ -334,7 +339,8 @@ class Draws {
 const RARE_IDS = new Set([192, 193, 194, 195, 43, 196, 197])
 
 /** §3 The generated ground of one chunk, revision 2: a Uint8Array of 32,768 global ids (every generated id is below 256). */
-export function generateChunk(X, Y, Z, P, detail = false) {
+export function generateChunk(X, Y, Z, P, detail = false, revision = 2) {
+  if (!GROUND_REVISIONS.includes(revision)) throw new Error('ground: revision ' + revision + ' is not implemented')
   const L = lattices(X, Y, Z, P)
   const stream = chacha20Keystream(surveySeed(X, Y, Z, P), CELLS + FEATURE_BYTES)
   const fine = stream.subarray(0, CELLS)
@@ -389,7 +395,7 @@ export function generateChunk(X, Y, Z, P, detail = false) {
   }
   const fired = []
   const branches = []
-  const F = FEATURES
+  const F = revision === 3 ? FEATURES_R3 : FEATURES
   // 1. Magmaflow.
   if (fam0.name === 'volcanic' && maxK >= F.magma.minK && draws.chance(F.magma.t)) {
     const at = rockInCostliest()
@@ -482,10 +488,12 @@ export function generateChunk(X, Y, Z, P, detail = false) {
       return
     }
   }
+  // Revision 3: the cinder vent, in chunks that are not volcanic, drawn just before Ferrovein, anywhere in the chunk.
+  if (revision === 3 && fam0.name !== 'volcanic' && draws.chance(F.cinder.t)) { fired.push('cinder'); vein(ID.CINDERROCK, 3 + (draws.u8() % 6), 0, null) }
   if (draws.chance(F.ferrovein.t)) { const n = 2 + (draws.u8() % 4); fired.push('ferrovein:' + n); for (let i = 0; i < n; i++) vein(ID.FERROVEIN, 4 + (draws.u8() % 9), 0, null) }
   if (maxK >= F.cobaltine.minK && draws.chance(F.cobaltine.t)) { const n = 1 + (draws.u8() % 2); fired.push('cobaltine:' + n); for (let i = 0; i < n; i++) vein(ID.COBALTINE, 3 + (draws.u8() % 6), F.cobaltine.minK, null) }
   if (maxK >= F.prismite.minK && draws.chance(F.prismite.t)) { fired.push('prismite'); vein(ID.PRISMITE, 4 + (draws.u8() % 7), F.prismite.minK, null) }
-  if (maxK >= F.glowcore.minK && draws.chance(F.glowcore.t)) { fired.push('glowcore'); vein(ID.GLOWCORE, 2 + (draws.u8() % 7), F.glowcore.minK, maxCube) }
+  if (maxK >= F.glowcore.minK && draws.chance(F.glowcore.t)) { fired.push('glowcore'); vein(ID.GLOWCORE, 2 + (draws.u8() % (revision === 3 ? 3 : 7)), F.glowcore.minK, maxCube) }
   // 5. The rare band.
   for (const [id, minK, t] of RARE) {
     if (maxK < minK || !draws.chance(t)) continue
@@ -538,6 +546,9 @@ export function encodeRuns(values) {
  * a diff plane under an unknown revision (the plane is set aside).
  */
 export function decodePlane(pl, ground) {
+  // ground: the revision 2 ground (a Uint8Array, as earlier versions of this file took it), or a function from a
+  // revision to its ground, returning null for a revision this reader does not implement.
+  const groundFor = typeof ground === 'function' ? ground : (rev) => (rev === GROUND_REVISION ? ground : null)
   if (!pl || typeof pl !== 'object') throw new Error('plane: not an object')
   if (pl.plane !== 0 && pl.plane !== 1) throw new Error('plane: bad plane')
   if (typeof pl.survey !== 'boolean') throw new Error('plane: bad survey')
@@ -548,12 +559,13 @@ export function decodePlane(pl, ground) {
     if (pl.form === 'diff' && i === 0) { if (g !== null) throw new Error('plane: a diff palette starts with null'); return }
     if (!Number.isInteger(g) || g < 0 || g > 65535) throw new Error('plane: bad global id')
   })
-  if (pl.survey && pl.ground !== GROUND_REVISION) {
+  const g0 = pl.survey ? (Number.isInteger(pl.ground) ? groundFor(pl.ground) : null) : null
+  if (pl.survey && !g0) {
     if (pl.form === 'diff') throw new Error('plane: a diff against a ground revision this reader does not implement')
     const idx = expandRuns(pl.cells, CELLS, pal.length)
     return { plane: pl.plane, survey: pl.survey, values: Int32Array.from(idx, (i) => pal[i]), changed: null, valuesOnly: true }
   }
-  const base = pl.survey ? ground : new Uint8Array(CELLS)
+  const base = pl.survey ? g0 : new Uint8Array(CELLS)
   const idx = expandRuns(pl.cells, CELLS, pal.length)
   const values = new Int32Array(CELLS)
   const changed = []
@@ -563,11 +575,11 @@ export function decodePlane(pl, ground) {
     // §5.4 In a diff a non-null entry is a change even at the base value; in a whole plane only a different value is.
     if (pl.form === 'diff' ? g !== null : values[o] !== base[o]) changed.push(o)
   }
-  return { plane: pl.plane, survey: pl.survey, values, changed }
+  return { plane: pl.plane, survey: pl.survey, ground: pl.ground, values, changed }
 }
 
 /** Encode one plane, choosing whichever form is shorter as compact JSON (§5.4, the writer's rule). explicit: cells marked as changed even at their base value (diff only). */
-export function encodePlane(plane, survey, values, ground, explicit = new Set()) {
+export function encodePlane(plane, survey, values, ground, explicit = new Set(), revision = GROUND_REVISION) {
   const base = survey ? ground : new Uint8Array(CELLS)
   const mk = (form) => {
     const pal = form === 'diff' ? [null] : []
@@ -579,7 +591,7 @@ export function encodePlane(plane, survey, values, ground, explicit = new Set())
       if (!pos.has(key)) { pos.set(key, keep ? 0 : pal.length); if (!keep) pal.push(values[o]) }
       idx[o] = pos.get(key)
     }
-    return { plane, survey, ground: GROUND_REVISION, form, pal, cells: encodeRuns(idx) }
+    return { plane, survey, ground: revision, form, pal, cells: encodeRuns(idx) }
   }
   const d = mk('diff')
   if (explicit.size) return d // whole cannot mark a cell explicitly at its base value
@@ -680,3 +692,18 @@ export function countedLayers(layers, ctx, cap = 64) {
   const allowed = new Set(authors.slice(0, cap))
   return kept.filter((l) => allowed.has(l.author))
 }
+
+/**
+ * §7.5 The base revision of a chunk plane. surveys: [{ revision, rank, surveyed, author, builder, id }] for the counted
+ * plane objects of this plane whose survey is true and whose revision the reader implements; rank is the layer's own
+ * rank (§7.3) and surveyed the plane's `surveyed` (§5.4: absent or later than created_at reads as created_at).
+ * The first in order (better rank, smaller surveyed, lower author, builder, id) decides. Returns null when there is none.
+ */
+export function baseRevision(surveys) {
+  if (surveys.length === 0) return null
+  const cmp = (x, y) => (x < y ? -1 : x > y ? 1 : 0)
+  const first = surveys.slice().sort((a, b) => a.rank - b.rank || a.surveyed - b.surveyed || cmp(a.author, b.author) || cmp(a.builder, b.builder) || cmp(a.id, b.id))[0]
+  return first.revision
+}
+/** §5.4 A plane's survey date: its `surveyed`, or the layer's created_at when that is absent or later. */
+export const surveyedAt = (plane, createdAt) => (Number.isInteger(plane.surveyed) && plane.surveyed >= 0 && plane.surveyed <= createdAt ? plane.surveyed : createdAt)
