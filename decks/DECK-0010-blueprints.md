@@ -292,14 +292,18 @@ A fully revealed sheet has no `null`, and its cells are the whole arrangement (�
 | `text` | the creator's words about the prize, at most 280 characters. Required for `description`, OPTIONAL for `silhouette` and `render`, absent for `hidden` |
 | `views` | required for `silhouette` and `render`, absent otherwise: an object with one to four of the keys `"x"`, `"y"`, `"z"` and `"iso"`, each a picture of the prize as a data URI |
 
-The views are drawn by the creator's client at publish time, and each is a picture of the prize in its own axes, at the orientation it will have when collected:
+The views are drawn by the creator's client at publish time, and each is a picture of the prize in its own axes, at the orientation it will have when collected. Cyberspace is left-handed: a viewer facing the black sun, looking along +Z with +Y up, has +X on screen-right (`CYBERSPACE_V2.md` §9.4, §11.1, §11.3). Each view is fixed in both where it looks from and how it lies on the picture (normative):
 
-| Key | View |
-|---|---|
-| `x` | from +X, looking along −X |
-| `y` | from above, from +Y looking along −Y |
-| `z` | from the sun, from +Z looking along −Z |
-| `iso` | isometric, from the (+X, +Y, +Z) octant, looking toward the origin |
+| Key | View | Looking along | Screen-right | Screen-up |
+|---|---|---|---|---|
+| `z` | facing the sun | +Z | +X | +Y |
+| `y` | from above | −Y | +X | +Z |
+| `x` | from +X | −X | +Z | +Y |
+| `iso` | isometric, from the (+X, +Y, −Z) octant toward the origin | the direction (−1, −1, +1) | +X runs down and to the right, +Z up and to the right | +Y straight up |
+
+`z` is the camera of `CYBERSPACE_V2.md` §11.3 itself. `y` is that camera tipped forward a quarter turn about X so that it looks straight down. `x` is that camera turned a quarter turn about Y so that it looks along −X. `iso` is that camera turned an eighth of a turn about Y toward −X and then tipped down until it looks along (−1, −1, +1), with the three axes at equal angles to the picture.
+
+**No mirror images (normative).** Every picture MUST be a view that a viewer oriented as `CYBERSPACE_V2.md` §11.3 says could actually see after turning, never a reflection: a writer MUST NOT flip a picture left to right or top to bottom, and MUST NOT draw with a camera whose screen-right, screen-up and looking direction are mirrored from those of §11.3. A client whose graphics engine is right-handed adapts as `CYBERSPACE_V2.md` §11.4 requires, and checks its pictures against the table above. A reader draws each view as it is, and MUST NOT flip it.
 
 A `silhouette` is a flat outline in one colour on a clear background. A `render` is a shaded picture. Each view MUST be `data:image/<png|jpeg|webp>;base64,<base64>` and at most 16,384 characters. A reader MUST NOT fetch anything a view names, and draws a view that breaks these rules as absent. A data URI travels inside the record and fetches nothing, as DECK-0004 §2.4 says of item pictures. ONOSENDAI draws 256-pixel views, a few kilobytes each.
 
