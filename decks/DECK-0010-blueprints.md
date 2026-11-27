@@ -18,13 +18,13 @@ The **blueprint record**, `kind 33343`, is public and signed by its creator. It 
 
 A smash always deletes the blocks it takes, whether or not they made a blueprint. It is an edit in the smasher's own block layer (DECK-0009), so it changes the world only for the smasher and for readers who rank the smasher first. What a player carries stays on the player's device, on the honor system (DECK-0009 §9).
 
-This DECK writes down arkinox's rulings of 2026-11-26 and 2026-11-27: the arrangement as the key, PBKDF2-SHA256 at 500,000 rounds with a fixed versioned salt, fixed world axes, touching through faces, edges and corners, the Compiler's 16 by 16 by 16 box and its silence before a smash, one data model with three settings, cards found like key items, re-hiding by finders with the creator's credit kept, and the Compiler's own recipe.
+This DECK writes down arkinox's rulings of 2026-11-26 and 2026-11-27: the arrangement as the key, PBKDF2-SHA256 at 500,000 rounds with a fixed versioned salt, fixed world axes, touching through faces, edges and corners, the reach of a smash (16 cells with the Compiler, 3 bare-handed) and that striking any block of a correct construction compiles it, the Compiler's silence before a smash, one data model with three settings, cards found like key items, re-hiding by finders with the creator's credit kept, and the Compiler's own recipe.
 
 **Defined here:**
 
 | Thing | Value |
 |---|---|
-| The arrangement | the blocks a smash takes: the group of occupied cells connected to the block hit, through faces, edges and corners, within the 16 by 16 by 16 window around it (§4.1). It counts only when nothing else occupies the box grown by one cell (§4.2) |
+| The arrangement | what a smash compiles: the group of occupied cells connected to the block hit, through faces, edges and corners, gathered within a window of `2N − 1` cells on each axis around it, where the reach `N` is 16 with the Compiler and 3 bare-handed (§4.1). It counts only when nothing else occupies the box grown by one cell and it is at most `N` cells on every axis, and then whichever of its blocks was struck (§4.2) |
 | The encoding | `CYBERSPACE_BLUEPRINT_V1`, the box's size along X, Z and Y (one byte each), then two bytes per cell of the box in scan order (Y outermost, then Z, then X fastest), 0 for empty; a location lock appends the 32-byte region key (§3) |
 | The key | PBKDF2-HMAC-SHA256 of the encoding, salt `CYBERSPACE_BLUEPRINT_V1`, 500,000 rounds, 32 bytes (§3.4) |
 | The lookup | SHA-256 of the key, 64 lowercase hex (§3.4) |
@@ -39,12 +39,13 @@ This DECK writes down arkinox's rulings of 2026-11-26 and 2026-11-27: the arrang
 - **Occupied:** a cell whose block id, as the smasher's client resolves it, is not 0. That is the cell's value under the Stack (DECK-0009 §7), with the smasher's own changes that are not yet published applied on top. Every nonzero id is occupied, liquids and unknown ids included. A cell of an unsurveyed chunk with no placed block is empty.
 - **Touching:** two cells touch when they differ by at most 1 on each axis and are not the same cell: through a face, an edge or a corner. Each cell touches 26 others.
 - **Hit cell:** the occupied cell the Compiler is aimed at when a smash strikes.
-- **Window:** the 16 by 16 by 16 cells around the hit cell (§4.1).
-- **Group:** the occupied cells connected to the hit cell through touching occupied cells inside the window (§4.1). A smash takes the group.
-- **Box:** the smallest axis-aligned box of cells that holds the group, or that holds an arrangement. At most 16 cells on each axis.
+- **Reach:** `N`, the most cells on each axis an arrangement a smash compiles may have: 16 with the Compiler, 3 with a bare hand (§4.1, §8.2).
+- **Window:** the `2N − 1` by `2N − 1` by `2N − 1` cells centred on the hit cell (§4.1).
+- **Group:** the occupied cells connected to the hit cell through touching occupied cells inside the window (§4.1).
+- **Box:** the smallest axis-aligned box of cells that holds the group, or that holds an arrangement. An arrangement's box is at most 16 cells on each axis.
 - **Grown box:** the box grown by one cell on every side.
 - **Isolated:** a group is isolated when every cell of its grown box that is not in the group is empty (§4.2).
-- **Arrangement:** a box and the block id of every cell in it, 0 for the cells it leaves empty. A smash of an isolated group produces one; a creator composes one in BUILD mode.
+- **Arrangement:** a box and the block id of every cell in it, 0 for the cells it leaves empty. A smash produces one when its group is the arrangement (§4.2); a creator composes one in BUILD mode.
 - **Scan order:** the order in which the cells of a box are read: Y outermost, from the lowest layer to the highest; within each layer Z from minus to plus; within each row X from minus to plus (§3.2).
 - **Encoding, key, lookup:** the bytes, the 32-byte secret and the public 32-byte hash of §3.
 - **Lock:** a blueprint's third setting, `standard` or `location` (§3.5).
@@ -162,9 +163,9 @@ For the Compiler's recipe: key `593eabd69f12d642d07764e4a7599d1ce1aa1f75912928ef
 
 A blueprint with a **location lock** must be built inside one aligned region (`CYBERSPACE_V2.md` §4) of a height `h` that its record states (§5.3), from 1 to 85: the cube of `2^h` cells on each axis, the same height on all three axes, as a bag's region is (`CYBERSPACE_V2.md` §7.6). Its encoding is the standard encoding followed by the 32 bytes of that region's key, the `location_decryption_key` of `CYBERSPACE_V2.md` §7.2. The key and the lookup are then made from that longer encoding exactly as §3.4 says. The region key is the same in a region and its twin, so a location-locked blueprint can be built in either plane of its region.
 
-- **Where the box must stand.** The region is the region of height `h` that holds every cell of the box, in world coordinates. For a smashed group, a cell at window offset `o` on an axis has the world coordinate `(hit − 8 + o) mod 2^85` on that axis (§4.1). A box that crosses a border of the regions of height `h` stands in no single region of that height, and has no location encoding at that height. A box that wraps past the end of an axis crosses a border at every height below 85.
+- **Where the box must stand.** The region is the region of height `h` that holds every cell of the box, in world coordinates. For a smashed group, a cell at window offset `o` on an axis has the world coordinate `(hit − (N − 1) + o) mod 2^85` on that axis (§4.1). A box that crosses a border of the regions of height `h` stands in no single region of that height, and has no location encoding at that height. A box that wraps past the end of an axis crosses a border at every height below 85.
 - **Making one.** A creator's client takes the region of height `h` that holds the box where the creator composed or captured it, or one the creator names, and makes the key from the standard encoding and that region's key.
-- **Smashing.** A smasher's client computes the standard key of every isolated group it smashes. It SHOULD also compute a location key at every height `h` named by a location-locked record its user holds a card for, when the box stands in one region of that height, and MAY compute one at other heights. Each costs one more PBKDF2 (§3.6), and the region key itself costs work that grows with the height (`CYBERSPACE_V2.md` §7.1). A client MAY bound how many heights it tries for one smash, and MAY decline a height whose region key it cannot compute in reasonable time; a card that names such a height is still read and shown. A creator SHOULD choose a height that builders' clients can compute.
+- **Smashing.** A smasher's client computes the standard key of every arrangement it smashes. It SHOULD also compute a location key at every height `h` named by a location-locked record its user holds a card for, when the box stands in one region of that height, and MAY compute one at other heights. Each costs one more PBKDF2 (§3.6), and the region key itself costs work that grows with the height (`CYBERSPACE_V2.md` §7.1). A client MAY bound how many heights it tries for one smash, and MAY decline a height whose region key it cannot compute in reasonable time; a card that names such a height is still read and shown. A creator SHOULD choose a height that builders' clients can compute.
 - **What the record says.** The record states the height and never the region. A creator who wants finders to know where to build says so in the prize's description, or leaves the card near the place.
 
 A location lock asks whether the builder knows the region's key and built there. Like every region key, the key costs the same to compute from anywhere (`CYBERSPACE_V2.md` §7.1), so a location lock proves knowledge, not travel (§12).
@@ -180,38 +181,46 @@ A location lock asks whether the builder knows the region's key and built there.
 
 ## 4. The smash (normative)
 
-A **smash** is the Compiler striking a block (§8). It always deletes what it takes, and it unseals a prize only when what it took was an isolated arrangement whose lookup finds a record.
+A **smash** is the Compiler, or a bare hand (§8.2), striking a block. It always deletes blocks, and it unseals a prize only when what it gathered was an arrangement whose lookup finds a record. The owner's rule (arkinox, 2026-11-27): "you shouldn't have to strike a specific block in your construction to compile it properly. if the construction is correct, hitting any block should succeed".
 
-### 4.1 The window and the group
+### 4.1 The reach, the window and the group
 
-1. The **hit cell** `(hx, hy, hz)`, in plane `P`, is the occupied cell the Compiler strikes.
-2. The **window** is every cell of plane `P` whose coordinate on each axis is from the hit's minus 8 to the hit's plus 7: `hx − 8` to `hx + 7`, and likewise for Y and Z. That is 16 cells on each axis, with the hit cell at offset 8. Coordinates are taken modulo 2^85 on each axis, so a window may cross the end of an axis, as the ground does (DECK-0009 §3.4). An implementation works in **window offsets**, `(coordinate − (hit − 8)) mod 2^85`, which run from 0 to 15 inside the window.
-3. The **group** is the set of occupied cells that can be reached from the hit cell by steps from a cell to a touching occupied cell (through a face, an edge or a corner), every step staying inside the window. The hit cell is in the group. Natural blocks of the ground and placed blocks count alike, whoever placed them (arkinox, 2026-11-26).
-4. The smash takes the group, all of it, and nothing else. An occupied cell outside the window is never taken, even when it touches the group. An occupied cell inside the window that is connected to the group only through cells outside the window is not taken either.
+1. The **hit cell** `(hx, hy, hz)`, in plane `P`, is the occupied cell the smash strikes.
+2. The **reach** `N` is 16 for a smash with the Compiler and 3 for a bare-hand smash (§8.2). It is the most cells on each axis that an arrangement the smash compiles may have.
+3. The **window** is every cell of plane `P` whose coordinate on each axis is within `N − 1` of the hit's: `hx − (N − 1)` to `hx + (N − 1)`, and likewise for Y and Z. That is `2N − 1` cells on each axis, 31 with the Compiler and 5 bare-handed, with the hit cell at its centre. Coordinates are taken modulo 2^85 on each axis, so a window may cross the end of an axis, as the ground does (DECK-0009 §3.4). An implementation works in **window offsets**, `(coordinate − (hit − (N − 1))) mod 2^85`, which run from 0 to `2N − 2` inside the window.
+4. The **group** is the set of occupied cells that can be reached from the hit cell by steps from a cell to a touching occupied cell (through a face, an edge or a corner), every step staying inside the window. The hit cell is in the group. Natural blocks of the ground and placed blocks count alike, whoever placed them (arkinox, 2026-11-26).
 
-The group's box (§3.2) is computed in window offsets, so it is at most 16 cells on each axis.
+**Why the window is big enough.** A connected set of occupied cells that holds the hit cell and is at most `N` cells long on an axis reaches at most `N − 1` cells from the hit on that axis, in either direction. So the window holds every such set whole, wherever in it the hit cell is, and the group contains it.
 
-A build 16 cells long on an axis is taken whole only when it is struck in the cell at offset 8 along that axis, which is its ninth cell from the minus end. A build of `n` cells along an axis is taken whole only when it is struck in one of its cells from the `(n − 7)`-th to the ninth, counting from 1 at the minus end; a build of 8 cells or fewer on every axis is taken whole wherever it is struck.
+The group's box (§3.2) is computed in window offsets.
 
-### 4.2 Isolation
+### 4.2 The arrangement
 
 The group is **isolated** when every cell of its grown box, the box grown by one cell on every side, that is not in the group is empty. The grown box may reach one cell outside the window, and those cells are read too.
 
-Only an isolated group is an arrangement. A group that is not isolated is still smashed (§4.3), but it has no encoding, no key and no lookup, and nothing is unsealed. This covers every way a build can fail to stand alone:
+The group is the **arrangement** when both of these hold:
 
-- **Something touches it.** A block that touches the build through a face, an edge or a corner is in the group whenever it is inside the window. It is smashed with the build and written into the arrangement, which is then a different arrangement, and its key will not match. A build that rests on the ground takes some ground with it in the same way.
+1. it is isolated; and
+2. its box is at most `N` cells on every axis.
+
+Whichever of its cells was struck, a construction that stands alone (nothing else in its grown box) and is at most `N` cells on every axis is gathered whole (§4.1), and nothing else joins it, because nothing else touches it. Its group, its box and its arrangement are therefore the same from every one of its cells, and so are its key and its lookup: striking any block of a correct construction compiles it.
+
+Otherwise there is no arrangement: no encoding, no key, no lookup, and nothing compiles. This covers every way a build can fail:
+
+- **Something touches it.** A block that touches the build through a face, an edge or a corner is in the group whenever it is inside the window. It is written into the arrangement, which is then a different arrangement, and its key will not match. A build that rests on the ground takes some ground into its group in the same way, and is usually no longer isolated or no longer within the reach.
 - **Something sits close.** A block inside the grown box that does not touch the build, such as one in a notch of the build or one a cell outside a face of it, is not in the group, and its presence leaves the group not isolated (arkinox, 2026-11-26: the box grown by one cell must be empty).
-- **The window cut it.** A build that runs past the window leaves an occupied cell just outside the window touching the group, inside the grown box, so the group is not isolated.
+- **It is too large.** A group longer than `N` cells on an axis is not an arrangement, even when it is isolated. A build that runs past the window leaves an occupied cell just outside the window touching the group, inside the grown box, so that group is not isolated either.
 
 Blueprints are therefore built in open air: above surveyed ground, inside a chunk nobody has surveyed, or on a scaffold mined away before the smash. TERRAIN keeps placed blocks where they are without support, so a floating build stays put.
 
-A smasher's client decides occupancy from what it resolves (Terms, Occupied). Two smashers whose Stacks differ can see different blocks around the same build, and one of them may find it isolated while the other does not. Each smash is decided by its own smasher's view.
+A smasher's client decides occupancy from what it resolves (Terms, Occupied). Two smashers whose Stacks differ can see different blocks around the same build, and one of them may find an arrangement where the other does not. Each smash is decided by its own smasher's view.
 
 ### 4.3 What a smash writes
 
-1. **The blocks go.** Every cell of the group becomes empty for the smasher, written in the smasher's own block layer under the writing rules of DECK-0009 §5.4. A cell that the smasher's own change decides, and that would resolve to empty without that change, goes back to no change (`null`); when the smasher's block there was never published, its placing and the smash fold together and nothing about the cell is published at all. Every other cell of the group becomes a change to 0: a cell of the ground, a block someone else placed, or the smasher's block over something else. A group that spans several chunks changes the smasher's layer in each of them. Nothing changes anyone else's layer (DECK-0009 §7): the blocks disappear for the smasher and for readers who rank the smasher above whoever placed them.
-2. **The prize, if any, is the smasher's.** What a smash yields is kept on the smasher's device (§6.3, §9). A smash publishes nothing beyond the layer change.
-3. **Always.** The blocks are deleted whether or not the group was isolated and whether or not a record was found. A client MUST NOT restore them because nothing compiled.
+1. **With an arrangement, the arrangement goes.** Every cell of the arrangement becomes empty for the smasher, written in the smasher's own block layer under the writing rules of DECK-0009 §5.4. A cell that the smasher's own change decides, and that would resolve to empty without that change, goes back to no change (`null`); when the smasher's block there was never published, its placing and the smash fold together and nothing about the cell is published at all. Every other cell becomes a change to 0: a cell of the ground, a block someone else placed, or the smasher's block over something else. An arrangement that spans several chunks changes the smasher's layer in each of them. Nothing changes anyone else's layer (DECK-0009 §7): the blocks disappear for the smasher and for readers who rank the smasher above whoever placed them.
+2. **Without an arrangement, nothing compiles, and the smash still deletes.** A smash always deletes blocks (arkinox, 2026-11-26), but which blocks a smash without an arrangement deletes is the client's, and not part of this DECK. Whatever it deletes is written as point 1 says. (Non-normative: a client might delete the part of the group near the hit, so that a mistaken build is spent; ONOSENDAI's fallback is described in its own code.)
+3. **The prize, if any, is the smasher's.** What a smash yields is kept on the smasher's device (§6.3, §9). A smash publishes nothing beyond the layer change.
+4. **Always.** Blocks are deleted whether or not there was an arrangement and whether or not a record was found. A client MUST NOT restore them because nothing compiled.
 
 A client SHOULD let its user cancel before the strike (letting go of the hold) with nothing spent, and MUST NOT offer to undo a smash after the strike.
 
@@ -225,7 +234,7 @@ A client MAY show, at any time, the build cage and stencil of a card its user ho
 
 ### 4.5 Finding the record
 
-After the strike, for an isolated group, the smasher's client:
+After the strike, when the group is the arrangement (§4.2), the smasher's client:
 
 1. makes the encoding (§3.3), the key and the lookup (§3.4), and any location keys and lookups it tries (§3.5);
 2. looks for each lookup among the records of the cards its user holds and among the starter recipes it knows (§8.4);
@@ -489,8 +498,8 @@ ONOSENDAI keeps the Compiler in hotbar slot 1 once its user has one (arkinox, 20
 The Compiler's recipe is the only recipe a bare hand can compile (arkinox, 2026-11-26). A **bare-hand smash** is a smash made with no Compiler in hand:
 
 - A client SHOULD ask for a hold of 20 seconds before a bare-hand smash strikes.
-- A bare-hand smash reaches less far than the Compiler: its window is the 3 by 3 by 3 cells around the hit cell, the hit's minus 1 to plus 1 on each axis, in place of the 16 by 16 by 16 window of §4.1. Otherwise it takes the group and deletes it exactly as any smash does (§4.1 to §4.3), checks isolation the same way (the grown box may reach one cell outside the window, and those cells are read too), and makes the standard key and lookup of an isolated group.
-- The Compiler's recipe fits that window: its box is 3 by 3 by 1, so a bare-hand smash struck in its middle cell, the upper Ferrovein at `(1, 1, 0)`, takes the whole T. Struck anywhere else, the window cuts the T, and the group is not isolated.
+- A bare-hand smash has a reach of 3 (§4.1): its window is the 5 by 5 by 5 cells centred on the hit cell, and its arrangement is at most 3 cells on every axis. Otherwise it gathers, checks and deletes exactly as any smash does (§4.1 to §4.3), and makes the standard key and lookup of an arrangement.
+- The Compiler's recipe fits that reach: its box is 3 by 3 by 1, so a bare-hand smash struck on any of its five blocks compiles it.
 - It unseals only the Compiler's recipe (§8.3). A client MUST NOT unseal any other record from a bare-hand smash, and tells its user only that nothing compiled. It MUST NOT tell its user that some other blueprint would have compiled with the Compiler, which would be the pre-check that §4.4 forbids, after the fact.
 
 The long hold is on purpose: it makes the Compiler feel like an upgrade the moment a player has one.
@@ -561,10 +570,10 @@ The canonical relay, `wss://relay.onosendai.tech`, accepts a kind only once it i
 
 | Section | What it holds |
 |---|---|
-| `constants` | the domain label as text and hex, the rounds, the key length, the window's reach below and above the hit, the largest side, the record cap and the two kinds |
+| `constants` | the domain label as text and hex, the rounds, the key length, the reach with the Compiler (16) and bare-handed (3), the largest side, the record cap and the two kinds |
 | `arrangements` | arrangements given by their box and cells, each with its encoding (in full, or its length and SHA-256 when it is too long to print), its key and its lookup: the Compiler's recipe; the same T upside down; the same T turned a quarter turn about Y, its head along Z; one Gridstone; an L of 4 Ferrovein, the same L turned a quarter turn about Y, and the same L mirrored across X (three different keys); a hollow 3 by 3 by 3 cube of Gridstone and the solid cube (a hollow and a solid differ); two blocks joined only at a corner; an arrangement with a special id (197) and an extension id (300); and a diagonal of 16 blocks through a 16 by 16 by 16 box, each touching the next only at a corner, the longest encoding without a lock |
 | `location` | the Compiler's recipe built inside the chunk at (0, 0, 0), the region of height 5 at the origin (DECK-0009's origin chunk, whose lookup id is `3c5d8c49...c649`): the region's base, `region_n`, key and lookup id, the location encoding's length and SHA-256, its key and its lookup. Also the same recipe at height 6, which differs, and a box that straddles a border of height 5 regions and so has no location encoding there |
-| `gather` | worlds of occupied cells, each with a hit cell and what a smash does there: the cells it takes, whether the group is isolated, the occupied cells that spoil isolation (`intruders`: the occupied cells of the grown box outside the group, including any just outside the window), and, when isolated, the box and the lookup. The cases: the Compiler's recipe alone, struck on its lower Ferrovein and on its Glowcore (the same group); a bare-hand smash (§8.2) struck on its middle cell (the whole T, isolated) and on its lower Ferrovein (the handle only, not isolated); the recipe with a stray block touching it only at a corner (taken with it, isolated, a different lookup); the recipe with a block two cells above it, outside the grown box (left alone, still isolated); the recipe with a block inside its grown box that touches nothing (left alone, not isolated); an L with a block in its notch, touching nothing (left alone, not isolated); a row of 20 Gridstone struck in the middle (16 taken, not isolated: the window cut it); a 16-cell row struck in its ninth cell (all taken, isolated) and in its eighth cell (15 taken, not isolated); two columns joined only by a bridge above the window (one column's 16 cells in the window taken, not isolated) |
+| `gather` | worlds of occupied cells, each with a hit cell, whether the hand is bare, and what the smash gathers: the reach, the group, its extent, whether it is isolated, the occupied cells that spoil isolation (`intruders`: the occupied cells of the grown box outside the group, including any just outside the window), whether the group is the arrangement, and, when it is, the box and the lookup. The cases: the Compiler's recipe struck on each of its five blocks, with the Compiler and bare-handed (ten cases, one arrangement and one lookup); the recipe with a stray block touching it only at a corner (an arrangement with a different lookup); with a block two cells above it, outside the grown box (still the recipe); with a block inside its grown box that touches nothing (no arrangement); an L with a block in its notch (no arrangement); a 16-cell row struck at either end (one arrangement, one lookup); a 17-cell row struck in the middle (isolated, but too long); a 40-cell row struck in the middle (the window holds 31 of it: not isolated, too long); bare-handed, a 3-cell row struck at an end (an arrangement) and a 4-cell row struck at an end (not isolated); and two columns joined only by a bridge outside the window |
 | `sheets` | the Compiler's recipe with every block revealed, with only the Glowcore revealed, and with nothing revealed: each sheet's `pal` and `cells`, and its expansion. Also sheets a reader MUST reject, each with the check it fails |
 | `record` | a record of the Compiler-shaped arrangement with a `sno` prize, signed with a test key, with only the Glowcore revealed and the prize as a description; its sheet, its prize plaintext, the AES-GCM nonce, the prize payload, its serialized length, and that the prize opens with the key and not with the key of the upside-down T. Also a location-locked record of the same arrangement at height 5, with silhouette views and the prize's name shown, whose prize does not open with the standard key; and records a reader MUST drop, each with the check it fails: a missing or unknown version, a `C` tag, a `client` tag, a `title` with an extra element, an unknown sheet field and an unknown prize field, a needless escape and a space in `content`, a tab in the title, a prize name too long and one empty after trimming, a wrong key mark, a hidden prize with text, a location lock with no height, an unused palette id, and one over the size cap (given by its length and hash) |
 | `card` | a card carrying that record, signed by the creator; a copy left by another key (§7.5), carrying the same record unchanged; a card whose record was altered, which a reader drops; and a card whose record is right but serialized with its fields in another order, which a reader drops because its `content` is not the canonical serialization |
@@ -608,7 +617,7 @@ Some single values, for a quick check:
 
 Each of these was decided by Claude on delegation while writing this draft, and is the owner's to change.
 
-1. **The window's placement.** "The 16 by 16 by 16 box around the block hit" is the hit's minus 8 to plus 7 on each axis (§4.1). A 16-cell build is then taken whole only when struck in its ninth cell along that axis. The alternative, a window of minus 7 to plus 8, is the same rule mirrored.
+1. **The window and the reach** (ruled by arkinox, 2026-11-27): striking any block of a correct construction compiles it. A smash of reach `N` gathers within `2N − 1` cells centred on the hit, and the group is the arrangement when it is isolated and at most `N` cells on every axis (§4.1, §4.2). This replaces the first draft's window of the hit's minus 8 to plus 7, under which a 16-cell build compiled only when struck in its ninth cell.
 2. **Strict isolation.** Every cell of the grown box outside the group must be empty, including a cell in a notch of the build that touches nothing (§4.2). The design page once said such a block would be left out of the scan and ignored; this draft follows the ruling that the box grown by one cell must be empty.
 3. **The size bytes in the order X, Z, Y** (§3.3), as the design page wrote them, which is the scan's order from fastest to slowest.
 4. **The location encoding appends the region key** after the cells (§3.5), so that its length always differs from a standard encoding's, and the record states the height but never the region.
@@ -621,10 +630,10 @@ Each of these was decided by Claude on delegation while writing this draft, and 
 11. **Makers may check their own build** (§4.4): the rule that the Compiler says nothing before a smash applies to solvers smashing. A maker's authoring tool may say whether a captured build stands alone, but never tests a build against a record and makes no key before publishing.
 12. **The relay whitelist** is done: `relay.onosendai.tech` accepts `33343` (cap 106,496) and refuses `3343` alone since cyberspace-relay #52 (§10).
 13. **Strict records** (§5.1 to §5.4): unknown tags and fields fail the record, the sheet and a card's record are written without needless escapes, and free text holds no control characters, so that the size of every card is bounded (§5.2). A malformed prize `name` fails the record rather than being ignored.
-14. **The bare hand's window** (§8.2) is the 3 by 3 by 3 cells around the hit, as ONOSENDAI's tuning has it, so that the Compiler's recipe compiles bare-handed only when struck in its middle cell.
+14. **The bare hand's reach** is 3 (§8.2), so its window is 5 cells on each axis and the Compiler's recipe, 3 by 3 by 1, compiles bare-handed from any of its blocks (arkinox, 2026-11-27).
 
 ## 15. Implementations (non-normative)
 
 - `blueprints-reference.mjs` (this directory): the encoding, key and lookup, gathering and isolation, regions for the location lock, the sheet and its runs, the prize seal, the record's own checks and the order of §6.2, in JavaScript with no dependencies beyond `node:crypto`.
-- An implementation in Python written by an independent reviewer from the prose of §3, §4 and §5.3 alone, before seeing the reference code, the generator or the vectors, which reproduced every encoding, key and lookup in `arrangements` and `location`, every case in `gather`, and every accepted and rejected sheet in `sheets`: 35 cases, no mismatch (2026-11-27). Its notes on the prose were folded into this draft: the window's coverage (§4.1), one height on all axes and the cost of high heights (§3.5), world coordinates of a smashed box (§3.5), and the spelling of integers and runs (§5.3).
+- An implementation in Python written by an independent reviewer from the prose of §3, §4 and §5.3 alone, before seeing the reference code, the generator or the vectors, which reproduced every encoding, key and lookup in `arrangements` and `location`, every case in `gather`, and every accepted and rejected sheet in `sheets`: 35 cases, no mismatch (2026-11-27). Its notes on the prose were folded into this draft: the window's coverage (§4.1), one height on all axes and the cost of high heights (§3.5), world coordinates of a smashed box (§3.5), and the spelling of integers and runs (§5.3). Its gathering follows the first draft's window (the hit's minus 8 to plus 7), which the owner's rule of 2026-11-27 replaced (§4.1), so it no longer reproduces the `gather` cases; everything else still matches.
 - ONOSENDAI: in progress, in parallel with this draft.

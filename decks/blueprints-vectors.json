@@ -6,8 +6,8 @@
     "salt_hex": "435942455253504143455f424c55455052494e545f5631",
     "rounds": 500000,
     "key_bytes": 32,
-    "window_below": 8,
-    "window_above": 7,
+    "reach_compiler": 16,
+    "reach_bare": 3,
     "max_side": 16,
     "record_max_bytes": 98304,
     "record_kind": 33343,
@@ -956,8 +956,8 @@
   },
   "gather": [
     {
-      "name": "compiler-alone",
-      "note": "The Compiler's recipe in open air, its handle at (101, 50..51, 200) and its head at (100..102, 52, 200), struck on the lower Ferrovein: isolated, the recipe's lookup.",
+      "name": "T-compiler-lower-ferrovein",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its lower Ferrovein: the whole T, isolated, the recipe's lookup.",
       "world": [
         [
           101,
@@ -996,7 +996,8 @@
         200
       ],
       "bare": false,
-      "smashed": [
+      "reach": 16,
+      "group": [
         [
           101,
           50,
@@ -1028,8 +1029,14 @@
           5
         ]
       ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
       "isolated": true,
       "intruders": [],
+      "arrangement": true,
       "box": {
         "x": 3,
         "y": 3,
@@ -1038,8 +1045,186 @@
       "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
     },
     {
-      "name": "compiler-struck-on-glowcore",
-      "note": "The same, struck on the Glowcore: the same group and lookup.",
+      "name": "T-compiler-upper-ferrovein",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its upper Ferrovein: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        101,
+        51,
+        200
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-compiler-left-rustband",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its left Rustband: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        100,
+        52,
+        200
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-compiler-glowcore",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its Glowcore: the whole T, isolated, the recipe's lookup.",
       "world": [
         [
           101,
@@ -1078,7 +1263,8 @@
         200
       ],
       "bare": false,
-      "smashed": [
+      "reach": 16,
+      "group": [
         [
           101,
           50,
@@ -1110,8 +1296,14 @@
           5
         ]
       ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
       "isolated": true,
       "intruders": [],
+      "arrangement": true,
       "box": {
         "x": 3,
         "y": 3,
@@ -1120,8 +1312,8 @@
       "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
     },
     {
-      "name": "compiler-bare-middle",
-      "note": "A bare-hand smash (window the hit's minus 1 to plus 1) struck on the upper Ferrovein, the recipe's middle cell: the whole T is in the window, isolated, the recipe's lookup (§8.2).",
+      "name": "T-compiler-right-rustband",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its right Rustband: the whole T, isolated, the recipe's lookup.",
       "world": [
         [
           101,
@@ -1155,12 +1347,13 @@
         ]
       ],
       "hit": [
-        101,
-        51,
+        102,
+        52,
         200
       ],
-      "bare": true,
-      "smashed": [
+      "bare": false,
+      "reach": 16,
+      "group": [
         [
           101,
           50,
@@ -1192,8 +1385,14 @@
           5
         ]
       ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
       "isolated": true,
       "intruders": [],
+      "arrangement": true,
       "box": {
         "x": 3,
         "y": 3,
@@ -1202,8 +1401,8 @@
       "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
     },
     {
-      "name": "compiler-bare-bottom",
-      "note": "A bare-hand smash struck on the lower Ferrovein: the window is y 49..51, so only the handle is taken; the head at y 52 touches it from outside the window: not isolated.",
+      "name": "T-bare-lower-ferrovein",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its lower Ferrovein: the whole T, isolated, the recipe's lookup.",
       "world": [
         [
           101,
@@ -1242,7 +1441,8 @@
         200
       ],
       "bare": true,
-      "smashed": [
+      "reach": 3,
+      "group": [
         [
           101,
           50,
@@ -1254,30 +1454,400 @@
           51,
           200,
           40
-        ]
-      ],
-      "isolated": false,
-      "intruders": [
+        ],
         [
           100,
           52,
-          200
+          200,
+          5
         ],
         [
           101,
           52,
-          200
+          200,
+          42
         ],
         [
           102,
           52,
-          200
+          200,
+          5
         ]
-      ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-bare-upper-ferrovein",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its upper Ferrovein: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        101,
+        51,
+        200
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-bare-left-rustband",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its left Rustband: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        100,
+        52,
+        200
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-bare-glowcore",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its Glowcore: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        101,
+        52,
+        200
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
+      "name": "T-bare-right-rustband",
+      "note": "The Compiler's recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its right Rustband: the whole T, isolated, the recipe's lookup.",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "hit": [
+        102,
+        52,
+        200
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
     },
     {
       "name": "compiler-corner-stray",
-      "note": "A Driftsilt (3) at (102, 49, 201), touching the T only at a corner of the lower Ferrovein: taken with it, isolated, and a different lookup.",
+      "note": "A Driftsilt (3) at (102, 49, 201), touching the T only at a corner of the lower Ferrovein: in the group, isolated, an arrangement with a different lookup.",
       "world": [
         [
           101,
@@ -1322,7 +1892,8 @@
         200
       ],
       "bare": false,
-      "smashed": [
+      "reach": 16,
+      "group": [
         [
           102,
           49,
@@ -1360,8 +1931,14 @@
           5
         ]
       ],
+      "extent": {
+        "x": 3,
+        "y": 4,
+        "z": 2
+      },
       "isolated": true,
       "intruders": [],
+      "arrangement": true,
       "box": {
         "x": 3,
         "y": 4,
@@ -1371,7 +1948,7 @@
     },
     {
       "name": "compiler-clear-above",
-      "note": "A Gridstone at (101, 54, 200), two cells above the Glowcore: outside the grown box, left alone, still isolated.",
+      "note": "A Gridstone at (101, 54, 200), two cells above the Glowcore: outside the grown box, not in the group; still the recipe.",
       "world": [
         [
           101,
@@ -1416,7 +1993,8 @@
         200
       ],
       "bare": false,
-      "smashed": [
+      "reach": 16,
+      "group": [
         [
           101,
           50,
@@ -1448,8 +2026,14 @@
           5
         ]
       ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
       "isolated": true,
       "intruders": [],
+      "arrangement": true,
       "box": {
         "x": 3,
         "y": 3,
@@ -1459,7 +2043,7 @@
     },
     {
       "name": "compiler-in-grown-box",
-      "note": "A Gridstone at (103, 50, 201): inside the grown box (x 99..103, y 49..53, z 199..201) but touching nothing: left alone, and the group is not isolated.",
+      "note": "A Gridstone at (103, 50, 201): inside the grown box (x 99..103, y 49..53, z 199..201) but touching nothing: not isolated, no arrangement.",
       "world": [
         [
           101,
@@ -1504,7 +2088,8 @@
         200
       ],
       "bare": false,
-      "smashed": [
+      "reach": 16,
+      "group": [
         [
           101,
           50,
@@ -1536,6 +2121,11 @@
           5
         ]
       ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
       "isolated": false,
       "intruders": [
         [
@@ -1543,11 +2133,12 @@
           50,
           201
         ]
-      ]
+      ],
+      "arrangement": false
     },
     {
       "name": "L-notch",
-      "note": "An L of five Gridstone with a block in its notch at (0, 0, 2), touching nothing: the notch block is left, and the group is not isolated (§4.2).",
+      "note": "An L of five Gridstone with a block in its notch at (0, 0, 2), touching nothing: not isolated, no arrangement (§4.2).",
       "world": [
         [
           0,
@@ -1592,7 +2183,8 @@
         0
       ],
       "bare": false,
-      "smashed": [
+      "reach": 16,
+      "group": [
         [
           0,
           0,
@@ -1624,6 +2216,11 @@
           1
         ]
       ],
+      "extent": {
+        "x": 3,
+        "y": 1,
+        "z": 3
+      },
       "isolated": false,
       "intruders": [
         [
@@ -1631,11 +2228,12 @@
           0,
           2
         ]
-      ]
+      ],
+      "arrangement": false
     },
     {
-      "name": "row-20-middle",
-      "note": "A row of 20 Gridstone, x 0..19, struck at x 10: the window is x 2..17, so 16 are taken, and x 1 and x 18 touch the group from outside the window: not isolated.",
+      "name": "row-16-minus-end",
+      "note": "A row of 16 Gridstone, x 0..15, struck at x 0, its minus end: the window is x -15..15, the whole row, isolated, 16 cells long: an arrangement.",
       "world": [
         [
           0,
@@ -1729,42 +2327,31 @@
         ],
         [
           15,
-          10,
-          10,
-          1
-        ],
-        [
-          16,
-          10,
-          10,
-          1
-        ],
-        [
-          17,
-          10,
-          10,
-          1
-        ],
-        [
-          18,
-          10,
-          10,
-          1
-        ],
-        [
-          19,
           10,
           10,
           1
         ]
       ],
       "hit": [
-        10,
+        0,
         10,
         10
       ],
       "bare": false,
-      "smashed": [
+      "reach": 16,
+      "group": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
         [
           2,
           10,
@@ -1848,37 +2435,26 @@
           10,
           10,
           1
-        ],
-        [
-          16,
-          10,
-          10,
-          1
-        ],
-        [
-          17,
-          10,
-          10,
-          1
         ]
       ],
-      "isolated": false,
-      "intruders": [
-        [
-          1,
-          10,
-          10
-        ],
-        [
-          18,
-          10,
-          10
-        ]
-      ]
+      "extent": {
+        "x": 16,
+        "y": 1,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 16,
+        "y": 1,
+        "z": 1
+      },
+      "lookup": "0f465faf42e601555d12123a9ed7047e865924d79b72b25e7a2e1ef232475ed8"
     },
     {
-      "name": "row-16-ninth",
-      "note": "A row of 16, x 0..15, struck at x 8 (its ninth cell): the window is x 0..15, all 16 taken, isolated.",
+      "name": "row-16-plus-end",
+      "note": "The same row struck at x 15, its plus end: the same arrangement and lookup.",
       "world": [
         [
           0,
@@ -1972,6 +2548,233 @@
         ],
         [
           15,
+          10,
+          10,
+          1
+        ]
+      ],
+      "hit": [
+        15,
+        10,
+        10
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ],
+        [
+          3,
+          10,
+          10,
+          1
+        ],
+        [
+          4,
+          10,
+          10,
+          1
+        ],
+        [
+          5,
+          10,
+          10,
+          1
+        ],
+        [
+          6,
+          10,
+          10,
+          1
+        ],
+        [
+          7,
+          10,
+          10,
+          1
+        ],
+        [
+          8,
+          10,
+          10,
+          1
+        ],
+        [
+          9,
+          10,
+          10,
+          1
+        ],
+        [
+          10,
+          10,
+          10,
+          1
+        ],
+        [
+          11,
+          10,
+          10,
+          1
+        ],
+        [
+          12,
+          10,
+          10,
+          1
+        ],
+        [
+          13,
+          10,
+          10,
+          1
+        ],
+        [
+          14,
+          10,
+          10,
+          1
+        ],
+        [
+          15,
+          10,
+          10,
+          1
+        ]
+      ],
+      "extent": {
+        "x": 16,
+        "y": 1,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 16,
+        "y": 1,
+        "z": 1
+      },
+      "lookup": "0f465faf42e601555d12123a9ed7047e865924d79b72b25e7a2e1ef232475ed8"
+    },
+    {
+      "name": "row-17-middle",
+      "note": "A row of 17, x 0..16, struck at x 8: the whole row is in the window and isolated, but 17 cells long, more than the reach: no arrangement.",
+      "world": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ],
+        [
+          3,
+          10,
+          10,
+          1
+        ],
+        [
+          4,
+          10,
+          10,
+          1
+        ],
+        [
+          5,
+          10,
+          10,
+          1
+        ],
+        [
+          6,
+          10,
+          10,
+          1
+        ],
+        [
+          7,
+          10,
+          10,
+          1
+        ],
+        [
+          8,
+          10,
+          10,
+          1
+        ],
+        [
+          9,
+          10,
+          10,
+          1
+        ],
+        [
+          10,
+          10,
+          10,
+          1
+        ],
+        [
+          11,
+          10,
+          10,
+          1
+        ],
+        [
+          12,
+          10,
+          10,
+          1
+        ],
+        [
+          13,
+          10,
+          10,
+          1
+        ],
+        [
+          14,
+          10,
+          10,
+          1
+        ],
+        [
+          15,
+          10,
+          10,
+          1
+        ],
+        [
+          16,
           10,
           10,
           1
@@ -1983,7 +2786,8 @@
         10
       ],
       "bare": false,
-      "smashed": [
+      "reach": 16,
+      "group": [
         [
           0,
           10,
@@ -2079,20 +2883,26 @@
           10,
           10,
           1
+        ],
+        [
+          16,
+          10,
+          10,
+          1
         ]
       ],
-      "isolated": true,
-      "intruders": [],
-      "box": {
-        "x": 16,
+      "extent": {
+        "x": 17,
         "y": 1,
         "z": 1
       },
-      "lookup": "0f465faf42e601555d12123a9ed7047e865924d79b72b25e7a2e1ef232475ed8"
+      "isolated": true,
+      "intruders": [],
+      "arrangement": false
     },
     {
-      "name": "row-16-eighth",
-      "note": "The same row struck at x 7: the window is x -1..14, 15 taken, x 15 touches the group from outside: not isolated.",
+      "name": "row-40-middle",
+      "note": "A row of 40, x 0..39, struck at x 20: the window is x 5..35, so the group is 31 cells, and x 4 and x 36 touch it from outside the window: not isolated, and too long: no arrangement.",
       "world": [
         [
           0,
@@ -2186,48 +2996,163 @@
         ],
         [
           15,
+          10,
+          10,
+          1
+        ],
+        [
+          16,
+          10,
+          10,
+          1
+        ],
+        [
+          17,
+          10,
+          10,
+          1
+        ],
+        [
+          18,
+          10,
+          10,
+          1
+        ],
+        [
+          19,
+          10,
+          10,
+          1
+        ],
+        [
+          20,
+          10,
+          10,
+          1
+        ],
+        [
+          21,
+          10,
+          10,
+          1
+        ],
+        [
+          22,
+          10,
+          10,
+          1
+        ],
+        [
+          23,
+          10,
+          10,
+          1
+        ],
+        [
+          24,
+          10,
+          10,
+          1
+        ],
+        [
+          25,
+          10,
+          10,
+          1
+        ],
+        [
+          26,
+          10,
+          10,
+          1
+        ],
+        [
+          27,
+          10,
+          10,
+          1
+        ],
+        [
+          28,
+          10,
+          10,
+          1
+        ],
+        [
+          29,
+          10,
+          10,
+          1
+        ],
+        [
+          30,
+          10,
+          10,
+          1
+        ],
+        [
+          31,
+          10,
+          10,
+          1
+        ],
+        [
+          32,
+          10,
+          10,
+          1
+        ],
+        [
+          33,
+          10,
+          10,
+          1
+        ],
+        [
+          34,
+          10,
+          10,
+          1
+        ],
+        [
+          35,
+          10,
+          10,
+          1
+        ],
+        [
+          36,
+          10,
+          10,
+          1
+        ],
+        [
+          37,
+          10,
+          10,
+          1
+        ],
+        [
+          38,
+          10,
+          10,
+          1
+        ],
+        [
+          39,
           10,
           10,
           1
         ]
       ],
       "hit": [
-        7,
+        20,
         10,
         10
       ],
       "bare": false,
-      "smashed": [
-        [
-          0,
-          10,
-          10,
-          1
-        ],
-        [
-          1,
-          10,
-          10,
-          1
-        ],
-        [
-          2,
-          10,
-          10,
-          1
-        ],
-        [
-          3,
-          10,
-          10,
-          1
-        ],
-        [
-          4,
-          10,
-          10,
-          1
-        ],
+      "reach": 16,
+      "group": [
         [
           5,
           10,
@@ -2287,21 +3212,306 @@
           10,
           10,
           1
-        ]
-      ],
-      "isolated": false,
-      "intruders": [
+        ],
         [
           15,
           10,
+          10,
+          1
+        ],
+        [
+          16,
+          10,
+          10,
+          1
+        ],
+        [
+          17,
+          10,
+          10,
+          1
+        ],
+        [
+          18,
+          10,
+          10,
+          1
+        ],
+        [
+          19,
+          10,
+          10,
+          1
+        ],
+        [
+          20,
+          10,
+          10,
+          1
+        ],
+        [
+          21,
+          10,
+          10,
+          1
+        ],
+        [
+          22,
+          10,
+          10,
+          1
+        ],
+        [
+          23,
+          10,
+          10,
+          1
+        ],
+        [
+          24,
+          10,
+          10,
+          1
+        ],
+        [
+          25,
+          10,
+          10,
+          1
+        ],
+        [
+          26,
+          10,
+          10,
+          1
+        ],
+        [
+          27,
+          10,
+          10,
+          1
+        ],
+        [
+          28,
+          10,
+          10,
+          1
+        ],
+        [
+          29,
+          10,
+          10,
+          1
+        ],
+        [
+          30,
+          10,
+          10,
+          1
+        ],
+        [
+          31,
+          10,
+          10,
+          1
+        ],
+        [
+          32,
+          10,
+          10,
+          1
+        ],
+        [
+          33,
+          10,
+          10,
+          1
+        ],
+        [
+          34,
+          10,
+          10,
+          1
+        ],
+        [
+          35,
+          10,
+          10,
+          1
+        ]
+      ],
+      "extent": {
+        "x": 31,
+        "y": 1,
+        "z": 1
+      },
+      "isolated": false,
+      "intruders": [
+        [
+          4,
+          10,
+          10
+        ],
+        [
+          36,
+          10,
           10
         ]
-      ]
+      ],
+      "arrangement": false
+    },
+    {
+      "name": "bare-row-3-end",
+      "note": "A row of 3, x 0..2, struck bare-handed at x 0: the window is x -2..2, the whole row, isolated, 3 long: an arrangement.",
+      "world": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ]
+      ],
+      "hit": [
+        0,
+        10,
+        10
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 1,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 1,
+        "z": 1
+      },
+      "lookup": "86839764863c1f01a5417e3b6217fe62f448217e512ddbf041bd157ab717a8f5"
+    },
+    {
+      "name": "bare-row-4-end",
+      "note": "A row of 4, x 0..3, struck bare-handed at x 0: the window is x -2..2, so the group is 3 cells and x 3 touches it from outside: not isolated, no arrangement.",
+      "world": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ],
+        [
+          3,
+          10,
+          10,
+          1
+        ]
+      ],
+      "hit": [
+        0,
+        10,
+        10
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          0,
+          10,
+          10,
+          1
+        ],
+        [
+          1,
+          10,
+          10,
+          1
+        ],
+        [
+          2,
+          10,
+          10,
+          1
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 1,
+        "z": 1
+      },
+      "isolated": false,
+      "intruders": [
+        [
+          3,
+          10,
+          10
+        ]
+      ],
+      "arrangement": false
     },
     {
       "name": "joined-outside-window",
-      "note": "Two Gridstone columns at x 0 and x 2, joined only by a bridge through x 1 at y 18, above the window (y 2..17 for a hit at y 10): only the 16 cells of the struck column inside the window are taken; the other column is not, and the group is not isolated, because its own top cell at y 18, outside the window, is in its grown box.",
+      "note": "Two Gridstone columns, y 0..40 at x 0 and at x 2, joined only by a bridge at (1, 40, 0), outside the window of a hit at (0, 10, 0) (y -5..25): the group is the struck column's 26 cells in the window; the other column is not in it; not isolated and too tall.",
       "world": [
+        [
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          0,
+          1
+        ],
         [
           0,
           2,
@@ -2405,110 +3615,386 @@
           1
         ],
         [
+          0,
+          19,
+          0,
+          1
+        ],
+        [
+          0,
+          20,
+          0,
+          1
+        ],
+        [
+          0,
+          21,
+          0,
+          1
+        ],
+        [
+          0,
+          22,
+          0,
+          1
+        ],
+        [
+          0,
+          23,
+          0,
+          1
+        ],
+        [
+          0,
+          24,
+          0,
+          1
+        ],
+        [
+          0,
+          25,
+          0,
+          1
+        ],
+        [
+          0,
+          26,
+          0,
+          1
+        ],
+        [
+          0,
+          27,
+          0,
+          1
+        ],
+        [
+          0,
+          28,
+          0,
+          1
+        ],
+        [
+          0,
+          29,
+          0,
+          1
+        ],
+        [
+          0,
+          30,
+          0,
+          1
+        ],
+        [
+          0,
+          31,
+          0,
+          1
+        ],
+        [
+          0,
+          32,
+          0,
+          1
+        ],
+        [
+          0,
+          33,
+          0,
+          1
+        ],
+        [
+          0,
+          34,
+          0,
+          1
+        ],
+        [
+          0,
+          35,
+          0,
+          1
+        ],
+        [
+          0,
+          36,
+          0,
+          1
+        ],
+        [
+          0,
+          37,
+          0,
+          1
+        ],
+        [
+          0,
+          38,
+          0,
+          1
+        ],
+        [
+          0,
+          39,
+          0,
+          1
+        ],
+        [
+          0,
+          40,
+          0,
+          1
+        ],
+        [
           1,
+          40,
+          0,
+          1
+        ],
+        [
+          2,
+          0,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          2,
+          0,
+          1
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          2,
+          4,
+          0,
+          1
+        ],
+        [
+          2,
+          5,
+          0,
+          1
+        ],
+        [
+          2,
+          6,
+          0,
+          1
+        ],
+        [
+          2,
+          7,
+          0,
+          1
+        ],
+        [
+          2,
+          8,
+          0,
+          1
+        ],
+        [
+          2,
+          9,
+          0,
+          1
+        ],
+        [
+          2,
+          10,
+          0,
+          1
+        ],
+        [
+          2,
+          11,
+          0,
+          1
+        ],
+        [
+          2,
+          12,
+          0,
+          1
+        ],
+        [
+          2,
+          13,
+          0,
+          1
+        ],
+        [
+          2,
+          14,
+          0,
+          1
+        ],
+        [
+          2,
+          15,
+          0,
+          1
+        ],
+        [
+          2,
+          16,
+          0,
+          1
+        ],
+        [
+          2,
+          17,
+          0,
+          1
+        ],
+        [
+          2,
+          18,
+          0,
+          1
+        ],
+        [
+          2,
           19,
           0,
           1
         ],
         [
           2,
-          2,
+          20,
           0,
           1
         ],
         [
           2,
-          3,
+          21,
           0,
           1
         ],
         [
           2,
-          4,
+          22,
           0,
           1
         ],
         [
           2,
-          5,
+          23,
           0,
           1
         ],
         [
           2,
-          6,
+          24,
           0,
           1
         ],
         [
           2,
-          7,
+          25,
           0,
           1
         ],
         [
           2,
-          8,
+          26,
           0,
           1
         ],
         [
           2,
-          9,
+          27,
           0,
           1
         ],
         [
           2,
-          10,
+          28,
           0,
           1
         ],
         [
           2,
-          11,
+          29,
           0,
           1
         ],
         [
           2,
-          12,
+          30,
           0,
           1
         ],
         [
           2,
-          13,
+          31,
           0,
           1
         ],
         [
           2,
-          14,
+          32,
           0,
           1
         ],
         [
           2,
-          15,
+          33,
           0,
           1
         ],
         [
           2,
-          16,
+          34,
           0,
           1
         ],
         [
           2,
-          17,
+          35,
           0,
           1
         ],
         [
           2,
-          18,
+          36,
+          0,
+          1
+        ],
+        [
+          2,
+          37,
+          0,
+          1
+        ],
+        [
+          2,
+          38,
+          0,
+          1
+        ],
+        [
+          2,
+          39,
+          0,
+          1
+        ],
+        [
+          2,
+          40,
           0,
           1
         ]
@@ -2519,7 +4005,20 @@
         0
       ],
       "bare": false,
-      "smashed": [
+      "reach": 16,
+      "group": [
+        [
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          0,
+          1
+        ],
         [
           0,
           2,
@@ -2615,16 +4114,70 @@
           17,
           0,
           1
+        ],
+        [
+          0,
+          18,
+          0,
+          1
+        ],
+        [
+          0,
+          19,
+          0,
+          1
+        ],
+        [
+          0,
+          20,
+          0,
+          1
+        ],
+        [
+          0,
+          21,
+          0,
+          1
+        ],
+        [
+          0,
+          22,
+          0,
+          1
+        ],
+        [
+          0,
+          23,
+          0,
+          1
+        ],
+        [
+          0,
+          24,
+          0,
+          1
+        ],
+        [
+          0,
+          25,
+          0,
+          1
         ]
       ],
+      "extent": {
+        "x": 1,
+        "y": 26,
+        "z": 1
+      },
       "isolated": false,
       "intruders": [
         [
           0,
-          18,
+          26,
           0
         ]
-      ]
+      ],
+      "arrangement": false
     }
   ],
   "sheets": {

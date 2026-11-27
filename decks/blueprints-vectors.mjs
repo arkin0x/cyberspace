@@ -104,13 +104,14 @@ location.h5.encoding_length === 76 || (() => { throw new Error('location encodin
 function world(cells) { const m = new Map(); for (const [x, y, z, id] of cells) m.set(k3(x, y, z), id); return m }
 function gatherVector(name, note, cells, hit, expect) {
   const r = B.gather(world(cells), hit, !!expect.bare)
-  const v = { name, note, world: cells, hit, bare: !!expect.bare, smashed: r.smashed, isolated: r.isolated, intruders: r.intruders }
-  if (r.isolated) {
+  const v = { name, note, world: cells, hit, bare: !!expect.bare, reach: r.reach, group: r.group, extent: r.extent, isolated: r.isolated, intruders: r.intruders, arrangement: !!r.arrangement }
+  if (r.arrangement) {
     const key = B.arrangementKey(B.encodeArrangement(r.arrangement))
     v.box = r.arrangement.size; v.lookup = B.lookupOf(key)
   }
   check(r.isolated === expect.isolated, `${name}: isolated`)
-  check(r.smashed.length === expect.smashed, `${name}: smashed count ${r.smashed.length}`)
+  check(!!r.arrangement === expect.arrangement, `${name}: arrangement`)
+  check(r.group.length === expect.group, `${name}: group count ${r.group.length}`)
   if (expect.lookup) check(v.lookup === expect.lookup, `${name}: lookup`)
   return v
 }
@@ -119,21 +120,32 @@ const comp = placed(B.COMPILER_RECIPE, 100, 50, 200)
 const row = (n, x0) => Array.from({ length: n }, (_, i) => [x0 + i, 10, 10, G])
 const Lnotch = [[0, 0, 0, G], [1, 0, 0, G], [2, 0, 0, G], [2, 0, 1, G], [2, 0, 2, G]]
 const gatherCases = [
-  gatherVector('compiler-alone', 'The Compiler\'s recipe in open air, its handle at (101, 50..51, 200) and its head at (100..102, 52, 200), struck on the lower Ferrovein: isolated, the recipe\'s lookup.', comp, [101, 50, 200], { isolated: true, smashed: 5, lookup: byName.compiler.lookup }),
-  gatherVector('compiler-struck-on-glowcore', 'The same, struck on the Glowcore: the same group and lookup.', comp, [101, 52, 200], { isolated: true, smashed: 5, lookup: byName.compiler.lookup }),
-  gatherVector('compiler-bare-middle', 'A bare-hand smash (window the hit\'s minus 1 to plus 1) struck on the upper Ferrovein, the recipe\'s middle cell: the whole T is in the window, isolated, the recipe\'s lookup (§8.2).', comp, [101, 51, 200], { bare: true, isolated: true, smashed: 5, lookup: byName.compiler.lookup }),
-  gatherVector('compiler-bare-bottom', 'A bare-hand smash struck on the lower Ferrovein: the window is y 49..51, so only the handle is taken; the head at y 52 touches it from outside the window: not isolated.', comp, [101, 50, 200], { bare: true, isolated: false, smashed: 2 }),
-  gatherVector('compiler-corner-stray', 'A Driftsilt (3) at (102, 49, 201), touching the T only at a corner of the lower Ferrovein: taken with it, isolated, and a different lookup.', [...comp, [102, 49, 201, 3]], [101, 50, 200], { isolated: true, smashed: 6 }),
-  gatherVector('compiler-clear-above', 'A Gridstone at (101, 54, 200), two cells above the Glowcore: outside the grown box, left alone, still isolated.', [...comp, [101, 54, 200, G]], [101, 50, 200], { isolated: true, smashed: 5, lookup: byName.compiler.lookup }),
-  gatherVector('compiler-in-grown-box', 'A Gridstone at (103, 50, 201): inside the grown box (x 99..103, y 49..53, z 199..201) but touching nothing: left alone, and the group is not isolated.', [...comp, [103, 50, 201, G]], [101, 50, 200], { isolated: false, smashed: 5 }),
-  gatherVector('L-notch', 'An L of five Gridstone with a block in its notch at (0, 0, 2), touching nothing: the notch block is left, and the group is not isolated (§4.2).', [...Lnotch, [0, 0, 2, G]], [2, 0, 0], { isolated: false, smashed: 5 }),
-  gatherVector('row-20-middle', 'A row of 20 Gridstone, x 0..19, struck at x 10: the window is x 2..17, so 16 are taken, and x 1 and x 18 touch the group from outside the window: not isolated.', row(20, 0), [10, 10, 10], { isolated: false, smashed: 16 }),
-  gatherVector('row-16-ninth', 'A row of 16, x 0..15, struck at x 8 (its ninth cell): the window is x 0..15, all 16 taken, isolated.', row(16, 0), [8, 10, 10], { isolated: true, smashed: 16 }),
-  gatherVector('row-16-eighth', 'The same row struck at x 7: the window is x -1..14, 15 taken, x 15 touches the group from outside: not isolated.', row(16, 0), [7, 10, 10], { isolated: false, smashed: 15 }),
-  gatherVector('joined-outside-window', 'Two Gridstone columns at x 0 and x 2, joined only by a bridge through x 1 at y 18, above the window (y 2..17 for a hit at y 10): only the 16 cells of the struck column inside the window are taken; the other column is not, and the group is not isolated, because its own top cell at y 18, outside the window, is in its grown box.', [
-    ...Array.from({ length: 17 }, (_, i) => [0, 2 + i, 0, G]), [1, 19, 0, G], ...Array.from({ length: 17 }, (_, i) => [2, 2 + i, 0, G]),
-  ], [0, 10, 0], { isolated: false, smashed: 16 }),
+  gatherVector('T-compiler-lower-ferrovein', 'The Compiler\'s recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its lower Ferrovein: the whole T, isolated, the recipe\'s lookup.', comp, [101, 50, 200], { isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
+  gatherVector('T-compiler-upper-ferrovein', 'The Compiler\'s recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its upper Ferrovein: the whole T, isolated, the recipe\'s lookup.', comp, [101, 51, 200], { isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
+  gatherVector('T-compiler-left-rustband', 'The Compiler\'s recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its left Rustband: the whole T, isolated, the recipe\'s lookup.', comp, [100, 52, 200], { isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
+  gatherVector('T-compiler-glowcore', 'The Compiler\'s recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its Glowcore: the whole T, isolated, the recipe\'s lookup.', comp, [101, 52, 200], { isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
+  gatherVector('T-compiler-right-rustband', 'The Compiler\'s recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck with the Compiler (reach 16, window 31 cells) on its right Rustband: the whole T, isolated, the recipe\'s lookup.', comp, [102, 52, 200], { isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
+  gatherVector('T-bare-lower-ferrovein', 'The Compiler\'s recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its lower Ferrovein: the whole T, isolated, the recipe\'s lookup.', comp, [101, 50, 200], { bare: true, isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
+  gatherVector('T-bare-upper-ferrovein', 'The Compiler\'s recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its upper Ferrovein: the whole T, isolated, the recipe\'s lookup.', comp, [101, 51, 200], { bare: true, isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
+  gatherVector('T-bare-left-rustband', 'The Compiler\'s recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its left Rustband: the whole T, isolated, the recipe\'s lookup.', comp, [100, 52, 200], { bare: true, isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
+  gatherVector('T-bare-glowcore', 'The Compiler\'s recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its Glowcore: the whole T, isolated, the recipe\'s lookup.', comp, [101, 52, 200], { bare: true, isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
+  gatherVector('T-bare-right-rustband', 'The Compiler\'s recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its right Rustband: the whole T, isolated, the recipe\'s lookup.', comp, [102, 52, 200], { bare: true, isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
+  gatherVector('compiler-corner-stray', 'A Driftsilt (3) at (102, 49, 201), touching the T only at a corner of the lower Ferrovein: in the group, isolated, an arrangement with a different lookup.', [...comp, [102, 49, 201, 3]], [101, 50, 200], { isolated: true, arrangement: true, group: 6 }),
+  gatherVector('compiler-clear-above', 'A Gridstone at (101, 54, 200), two cells above the Glowcore: outside the grown box, not in the group; still the recipe.', [...comp, [101, 54, 200, G]], [101, 50, 200], { isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
+  gatherVector('compiler-in-grown-box', 'A Gridstone at (103, 50, 201): inside the grown box (x 99..103, y 49..53, z 199..201) but touching nothing: not isolated, no arrangement.', [...comp, [103, 50, 201, G]], [101, 50, 200], { isolated: false, arrangement: false, group: 5 }),
+  gatherVector('L-notch', 'An L of five Gridstone with a block in its notch at (0, 0, 2), touching nothing: not isolated, no arrangement (§4.2).', [...Lnotch, [0, 0, 2, G]], [2, 0, 0], { isolated: false, arrangement: false, group: 5 }),
+  gatherVector('row-16-minus-end', 'A row of 16 Gridstone, x 0..15, struck at x 0, its minus end: the window is x -15..15, the whole row, isolated, 16 cells long: an arrangement.', row(16, 0), [0, 10, 10], { isolated: true, arrangement: true, group: 16 }),
+  gatherVector('row-16-plus-end', 'The same row struck at x 15, its plus end: the same arrangement and lookup.', row(16, 0), [15, 10, 10], { isolated: true, arrangement: true, group: 16 }),
+  gatherVector('row-17-middle', 'A row of 17, x 0..16, struck at x 8: the whole row is in the window and isolated, but 17 cells long, more than the reach: no arrangement.', row(17, 0), [8, 10, 10], { isolated: true, arrangement: false, group: 17 }),
+  gatherVector('row-40-middle', 'A row of 40, x 0..39, struck at x 20: the window is x 5..35, so the group is 31 cells, and x 4 and x 36 touch it from outside the window: not isolated, and too long: no arrangement.', row(40, 0), [20, 10, 10], { isolated: false, arrangement: false, group: 31 }),
+  gatherVector('bare-row-3-end', 'A row of 3, x 0..2, struck bare-handed at x 0: the window is x -2..2, the whole row, isolated, 3 long: an arrangement.', row(3, 0), [0, 10, 10], { bare: true, isolated: true, arrangement: true, group: 3 }),
+  gatherVector('bare-row-4-end', 'A row of 4, x 0..3, struck bare-handed at x 0: the window is x -2..2, so the group is 3 cells and x 3 touches it from outside: not isolated, no arrangement.', row(4, 0), [0, 10, 10], { bare: true, isolated: false, arrangement: false, group: 3 }),
+  gatherVector('joined-outside-window', 'Two Gridstone columns, y 0..40 at x 0 and at x 2, joined only by a bridge at (1, 40, 0), outside the window of a hit at (0, 10, 0) (y -5..25): the group is the struck column\'s 26 cells in the window; the other column is not in it; not isolated and too tall.', [
+    ...Array.from({ length: 41 }, (_, i) => [0, i, 0, G]), [1, 40, 0, G], ...Array.from({ length: 41 }, (_, i) => [2, i, 0, G]),
+  ], [0, 10, 0], { isolated: false, arrangement: false, group: 26 }),
 ]
+const lk = (n) => gatherCases.find((g) => g.name === n).lookup
+check(lk('row-16-minus-end') && lk('row-16-minus-end') === lk('row-16-plus-end'), 'a 16-long row compiles the same from either end')
 
 // ---------- sheets ----------
 const compArr = B.arrangementFrom(B.COMPILER_RECIPE)
@@ -301,7 +313,7 @@ const out = {
   note: 'Deterministic vectors for DECK-0010. Keys are SHA-256("cyberspace vectors: <label>"); AES-GCM nonces are the first 12 bytes of SHA-256("cyberspace vectors nonce: <label>"); BIP-340 aux randomness is 32 zero bytes. Readers MUST accept any valid signature. Cells are [x, y, z, id]. Not normative: where this file and the DECK disagree, the DECK is right.',
   constants: {
     domain: B.DOMAIN, domain_hex: hex(B.DOMAIN_BYTES), salt_hex: hex(B.DOMAIN_BYTES), rounds: B.ITERATIONS, key_bytes: B.KEY_BYTES,
-    window_below: B.WINDOW_BELOW, window_above: B.WINDOW_ABOVE, max_side: B.MAX_SIDE, record_max_bytes: B.RECORD_MAX_BYTES,
+    reach_compiler: B.REACH_COMPILER, reach_bare: B.REACH_BARE, max_side: B.MAX_SIDE, record_max_bytes: B.RECORD_MAX_BYTES,
     record_kind: B.RECORD_KIND, card_kind: B.CARD_KIND, prize_mark: B.PRIZE_MARK,
   },
   arrangements,
