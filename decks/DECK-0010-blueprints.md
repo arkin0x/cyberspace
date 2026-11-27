@@ -489,7 +489,7 @@ A bag that publishes its contents (`CYBERSPACE_V2.md` §7.7) counts a card as `b
 The **Compiler** is a held tool: a techy hammer whose head is a small lattice cage (arkinox, 2026-11-26). It is kept on the device, like every item of the inventory (§9), kept forever and never used up. A smash is the Compiler striking a block (§4). A client:
 
 - MUST give the Compiler only as the prize of a smash of the Compiler's recipe (§8.3). There is no other way to obtain one: no gift, no tutorial grant, no purchase (arkinox, 2026-11-26).
-- SHOULD ask its user to hold for 3 seconds with the Compiler in hand before a smash strikes, and SHOULD cancel with nothing spent when the user lets go first.
+- SHOULD ask its user to hold before a smash strikes, and SHOULD cancel with nothing spent when the user lets go first. The suggested hold is 4 seconds with the Compiler in hand (arkinox, 2026-11-27: "we'll adjust these to taste"). Hold times are a client's tuning, not protocol: nothing published depends on them, and a client MAY choose its own.
 
 ONOSENDAI keeps the Compiler in hotbar slot 1 once its user has one (arkinox, 2026-11-27). How the Compiler looks, sounds and animates is the client's (§13).
 
@@ -497,7 +497,7 @@ ONOSENDAI keeps the Compiler in hotbar slot 1 once its user has one (arkinox, 20
 
 The Compiler's recipe is the only recipe a bare hand can compile (arkinox, 2026-11-26). A **bare-hand smash** is a smash made with no Compiler in hand:
 
-- A client SHOULD ask for a hold of 20 seconds before a bare-hand smash strikes.
+- A client SHOULD ask for a longer hold before a bare-hand smash strikes than with the Compiler. The suggested hold is 7 seconds (arkinox, 2026-11-27), a client's tuning like the Compiler's (§8.1).
 - A bare-hand smash has a reach of 3 (§4.1): its window is the 5 by 5 by 5 cells centred on the hit cell, and its arrangement is at most 3 cells on every axis. Otherwise it gathers, checks and deletes exactly as any smash does (§4.1 to §4.3), and makes the standard key and lookup of an arrangement.
 - The Compiler's recipe fits that reach: its box is 3 by 3 by 1, so a bare-hand smash struck on any of its five blocks compiles it.
 - It unseals only the Compiler's recipe (§8.3). A client MUST NOT unseal any other record from a bare-hand smash, and tells its user only that nothing compiled. It MUST NOT tell its user that some other blueprint would have compiled with the Compiler, which would be the pre-check that §4.4 forbids, after the fact.
