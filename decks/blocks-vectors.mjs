@@ -397,6 +397,14 @@ const developTies = [
   { name: 'rank first the other way: a stranger who dates a survey 0 does not put rock under a followed developer\'s plot', surveys: [SVB(3, 4, 0, 0x51, 1), SVB(0, 3, 500, 0xd0, 2)] },
 ].map((c) => ({ ...c, base_ground: R.baseRevision(c.surveys) }))
 const sv = (id, author, ground, rank, surveyed) => ({ id: ID(id), author, revision: ground, rank, surveyed, builder: ID(0xbb) })
+// The mute case, built from layers: a stranger's survey of the away chunk, with and without a mute of the stranger.
+const muteLayers = [DL(0x31, S1, 900, [claimPlane(awayC, awayC.P, 3, 300, [])])]
+const surveysFor = (mutes) => {
+  const ctx = { reader: TH, follows: new Set(), mutes: new Set(mutes), now: NOW, chunk: awayC }
+  const counted = R.countedLayers(muteLayers, ctx).map((l) => ({ ...l, plane: l.planes[0], takesPart: true }))
+  return R.countedSurveys(counted, ctx)
+}
+const mutedView = surveysFor([S1]), unmutedView = surveysFor([])
 const writerChecks = [
   { name: 'D in a chunk nobody it counts has claimed: may develop', view: [], author_claims: [], choice: 'develop' },
   { name: 'D chooses SURVEY there instead: the newest revision', view: [], author_claims: [], choice: 'survey' },
@@ -404,9 +412,12 @@ const writerChecks = [
   { name: 'T, after a stranger surveyed the plane at revision 3: may not develop; building there surveys at revision 3', view: [sv(2, S1, 3, 4, 300)], author_claims: [], choice: 'develop' },
   { name: 'D, whose own layer developed the plane: may not develop it again or survey it (its claim never changes); its writer carries ground 0 forward', view: [sv(1, DEV, 0, 2, 200)], author_claims: [{ ground: 0, surveyed: 200 }], choice: 'survey' },
   { name: 'D\'s twin plane, unclaimed while plane P is developed: may develop (each plane is its own claim)', view: [], author_claims: [], choice: 'develop' },
-  { name: 'a reader who muted the only surveyor: its view has no counted survey, so it may develop', view: [], author_claims: [], choice: 'develop', muted: [S1] },
+  { name: 'a reader who muted the only surveyor: its view, built by countedLayers with the mute, has no counted survey, so it may develop', view: mutedView, author_claims: [], choice: 'develop', muted: [S1] },
+  { name: 'the same reader without the mute: the stranger\'s survey counts, so it may not develop', view: unmutedView, author_claims: [], choice: 'develop' },
+  { name: 'H in a chunk of its own home that a stranger surveyed before H built there: only H\'s claims will count, so H may develop, and its first claim is its own choice', view: [sv(3, S1, 3, 4, 50)], author_claims: [], choice: 'develop', in_own_home: true },
+  { name: 'H in its own home, choosing SURVEY there: the newest revision, not the stranger\'s', view: [sv(3, S1, 2, 4, 50)], author_claims: [], choice: 'survey', in_own_home: true },
   { name: 'an author whose own layer holds a plane its writer cannot read (a ground it does not implement): may not develop or survey there', view: [], author_claims: [{ ground: 7, surveyed: 150 }], choice: 'develop' },
-].map((c) => ({ ...c, may_develop: R.mayDevelop(c.view, c.author_claims), first_claim_ground: c.author_claims.length ? null : R.firstClaimGround(c.view, c.choice) }))
+].map((c) => ({ ...c, may_develop: R.mayDevelop(c.view, c.author_claims, !!c.in_own_home), first_claim_ground: c.author_claims.length ? null : R.firstClaimGround(c.view, c.choice, !!c.in_own_home) }))
 
 const develop = {
   note: 'Open ground (§3.10a): a plane object with survey true and ground 0 develops the plane: its base is every cell empty, and it is a first claim resolved by §7.5 exactly as a survey is, by own rank, then the earliest surveyed, then the lower author pubkey, builder pubkey and event id. Each view below decodes real plane objects against the reader\'s grounds and resolves the cells by §7.4. A cell gives what it shows, the id of the winning layer and its rank, or null when no counted layer changed it and it shows the base; ground_r3 is the cell in the revision 3 ground, for reference.',
@@ -447,7 +458,7 @@ const develop = {
     },
   },
   older_reader: {
-    note: 'A reader that implements revisions 2 and 3 but not open ground, reading layout A while following D and F. D\'s developed plane is a diff under a ground it does not implement, so it is set aside: it does not count as a survey, and none of its cells is drawn. F\'s survey decides, and D\'s plot is not drawn at all, never drawn over rock. D\'s layer is not dropped: its twin plane still counts. Beside it, the same reader once it implements open ground.',
+    note: 'A reader that implements revisions 2 and 3 but not open ground, reading layout A while following D and F. D\'s developed plane is a diff under a ground it does not implement, so it is set aside: it does not count as a survey, and none of its cells takes part in the Stack. The reader shows what it would show had the plot never been made: F\'s survey decides, so the plot\'s cells show F\'s revision 3 ground (the Rimeglass cell shows its rock), the rollout gap of §3.10a that closes when the reader updates. D\'s layer is not dropped: its twin plane still counts. Beside it, the same reader once it implements open ground.',
     views: [
       { name: 'older reader, plane P', ...strip(developView(awayC, layoutA, TH, [DEV, FR], awayCells, [2, 3])) },
       { name: 'older reader, the twin plane: D\'s layer still counts there', ...strip(developView(awayC, layoutA, TH, [DEV, FR], [['D placed Cobaltine (41) on the twin', twinCell]], [2, 3], twinP)) },
@@ -461,7 +472,7 @@ const develop = {
     },
   },
   ties: developTies,
-  writer_checks: { note: 'mayDevelop (§3.10a): the writer\'s own view has no counted survey or develop of the plane, and its author\'s own layers claim nothing there. first_claim_ground: what a first claim names (§3.10): the base of the writer\'s view when a counted layer claims the plane, otherwise the newest revision to survey or 0 to develop; null where the author already claims the plane.', cases: writerChecks },
+  writer_checks: { note: 'mayDevelop (§3.10a): the writer\'s own view has no counted survey or develop of the plane, and its author\'s own layers claim nothing there. first_claim_ground: what a first claim names (§3.10): the base of the writer\'s view when a counted layer claims the plane, otherwise the newest revision to survey or 0 to develop; null where the author already claims the plane. In the author\'s own home (in_own_home) other identities\' claims are ignored for both.', cases: writerChecks },
 }
 
 const out = {

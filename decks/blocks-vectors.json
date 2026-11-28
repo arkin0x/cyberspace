@@ -30007,7 +30007,7 @@
    }
   },
   "older_reader": {
-   "note": "A reader that implements revisions 2 and 3 but not open ground, reading layout A while following D and F. D's developed plane is a diff under a ground it does not implement, so it is set aside: it does not count as a survey, and none of its cells is drawn. F's survey decides, and D's plot is not drawn at all, never drawn over rock. D's layer is not dropped: its twin plane still counts. Beside it, the same reader once it implements open ground.",
+   "note": "A reader that implements revisions 2 and 3 but not open ground, reading layout A while following D and F. D's developed plane is a diff under a ground it does not implement, so it is set aside: it does not count as a survey, and none of its cells takes part in the Stack. The reader shows what it would show had the plot never been made: F's survey decides, so the plot's cells show F's revision 3 ground (the Rimeglass cell shows its rock), the rollout gap of §3.10a that closes when the reader updates. D's layer is not dropped: its twin plane still counts. Beside it, the same reader once it implements open ground.",
    "views": [
     {
      "name": "older reader, plane P",
@@ -30416,7 +30416,7 @@
    }
   ],
   "writer_checks": {
-   "note": "mayDevelop (§3.10a): the writer's own view has no counted survey or develop of the plane, and its author's own layers claim nothing there. first_claim_ground: what a first claim names (§3.10): the base of the writer's view when a counted layer claims the plane, otherwise the newest revision to survey or 0 to develop; null where the author already claims the plane.",
+   "note": "mayDevelop (§3.10a): the writer's own view has no counted survey or develop of the plane, and its author's own layers claim nothing there. first_claim_ground: what a first claim names (§3.10): the base of the writer's view when a counted layer claims the plane, otherwise the newest revision to survey or 0 to develop; null where the author already claims the plane. In the author's own home (in_own_home) other identities' claims are ignored for both.",
    "cases": [
     {
      "name": "D in a chunk nobody it counts has claimed: may develop",
@@ -30499,7 +30499,7 @@
      "first_claim_ground": 0
     },
     {
-     "name": "a reader who muted the only surveyor: its view has no counted survey, so it may develop",
+     "name": "a reader who muted the only surveyor: its view, built by countedLayers with the mute, has no counted survey, so it may develop",
      "view": [],
      "author_claims": [],
      "choice": "develop",
@@ -30508,6 +30508,59 @@
      ],
      "may_develop": true,
      "first_claim_ground": 0
+    },
+    {
+     "name": "the same reader without the mute: the stranger's survey counts, so it may not develop",
+     "view": [
+      {
+       "revision": 3,
+       "rank": 4,
+       "surveyed": 300,
+       "author": "5151515151515151515151515151515151515151515151515151515151515151",
+       "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+       "id": "3131313131313131313131313131313131313131313131313131313131313131"
+      }
+     ],
+     "author_claims": [],
+     "choice": "develop",
+     "may_develop": false,
+     "first_claim_ground": 3
+    },
+    {
+     "name": "H in a chunk of its own home that a stranger surveyed before H built there: only H's claims will count, so H may develop, and its first claim is its own choice",
+     "view": [
+      {
+       "id": "0303030303030303030303030303030303030303030303030303030303030303",
+       "author": "5151515151515151515151515151515151515151515151515151515151515151",
+       "revision": 3,
+       "rank": 4,
+       "surveyed": 50,
+       "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+     ],
+     "author_claims": [],
+     "choice": "develop",
+     "in_own_home": true,
+     "may_develop": true,
+     "first_claim_ground": 0
+    },
+    {
+     "name": "H in its own home, choosing SURVEY there: the newest revision, not the stranger's",
+     "view": [
+      {
+       "id": "0303030303030303030303030303030303030303030303030303030303030303",
+       "author": "5151515151515151515151515151515151515151515151515151515151515151",
+       "revision": 2,
+       "rank": 4,
+       "surveyed": 50,
+       "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+     ],
+     "author_claims": [],
+     "choice": "survey",
+     "in_own_home": true,
+     "may_develop": true,
+     "first_claim_ground": 3
     },
     {
      "name": "an author whose own layer holds a plane its writer cannot read (a ground it does not implement): may not develop or survey there",

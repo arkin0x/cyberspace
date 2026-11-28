@@ -747,10 +747,12 @@ export function countedSurveys(layers, ctx) {
 /**
  * §3.10a Whether a writer may develop a plane: its own view of the plane has no counted survey or develop (viewSurveys, from
  * countedSurveys over the layers its user counts), and its author's own layers at the chunk claim nothing in this plane
- * (authorClaims: the author's plane objects for it whose survey is true, readable or not).
+ * (authorClaims: the author's plane objects for it whose survey is true, readable or not). In the author's own home
+ * (inOwnHome) the view's claims are ignored: only the author's claims will count there.
  */
-export function mayDevelop(viewSurveys, authorClaims) {
-  return viewSurveys.length === 0 && authorClaims.length === 0
+export function mayDevelop(viewSurveys, authorClaims, inOwnHome = false) {
+  // In the author's own home only the author's claims will count (§7.5), so other identities' claims are ignored (rule 1).
+  return (inOwnHome || viewSurveys.length === 0) && authorClaims.length === 0
 }
 
 /**
@@ -758,8 +760,8 @@ export function mayDevelop(viewSurveys, authorClaims) {
  * when a counted layer already claims the plane; otherwise its user's choice, the newest revision to survey or open ground
  * to develop.
  */
-export function firstClaimGround(viewSurveys, choice) {
-  const base = baseRevision(viewSurveys)
+export function firstClaimGround(viewSurveys, choice, inOwnHome = false) {
+  const base = inOwnHome ? null : baseRevision(viewSurveys)
   if (base !== null) return base
   return choice === 'develop' ? OPEN_GROUND : NEWEST_GROUND_REVISION
 }
