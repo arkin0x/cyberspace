@@ -269,6 +269,212 @@ const mixed = {
   shown_at_second_differing_cell: differ.length > 1 ? { x: differ[1] & 31, y: differ[1] >> 10, z: (differ[1] >> 5) & 31, value: g2[differ[1]] } : null,
 }
 
+// §3.10a Open ground and DEVELOP: a developed plane names `ground: 0`, and a develop is a first claim resolved by §7.5
+// exactly as a survey is. Each view decodes real plane objects against the reader's grounds, so an older reader (one
+// that reads only revisions 2 and 3) sets a developed diff aside.
+const groundCache = new Map()
+function groundOf(c, value, implemented = R.GROUND_VALUES) {
+  if (!implemented.includes(value)) return null
+  if (value === R.OPEN_GROUND) return R.openGround()
+  const k = `${c.X}|${c.Y}|${c.Z}|${c.P}|${value}`
+  if (!groundCache.has(k)) groundCache.set(k, R.generateChunk(c.X, c.Y, c.Z, c.P, false, value))
+  return groundCache.get(k)
+}
+const xyz = (o) => ({ x: o & 31, y: o >> 10, z: (o >> 5) & 31 })
+// A plane object as a writer writes it: `values` over the base of `ground` (0 open ground, or a revision), with `surveyed`.
+function claimPlane(c, P, ground, surveyed, edits) {
+  const base = groundOf({ ...c, P }, ground)
+  const values = Int32Array.from(base)
+  for (const [o, v] of edits) values[o] = v
+  const pl = R.encodePlane(P, true, values, base, new Set(), ground)
+  return { plane: pl.plane, survey: true, surveyed, ground: pl.ground, form: pl.form, pal: pl.pal, cells: pl.cells }
+}
+const DL = (id, author, created_at, planes, opts = {}) => ({ id: ID(id), author, builder: opts.builder || ID(0xbb), created_at, cobuilders: opts.cobuilders || [], planes })
+// One reader's view of one plane: which surveys count, the base, and the cells shown.
+function developView(chunk, layers, reader, follows, cells, implemented = R.GROUND_VALUES, P = chunk.P) {
+  const c = { ...chunk, P }
+  const ctx = { reader, follows: new Set(follows), mutes: new Set(), now: NOW, chunk: c }
+  const counted = R.countedLayers(layers, ctx)
+  const decoded = counted.map((l) => {
+    const pl = l.planes.find((q) => q.plane === P) || null
+    let d = null, setAside = false
+    if (pl) {
+      try { d = R.decodePlane(pl, (v) => groundOf(c, v, implemented)) } catch (e) { setAside = true }
+      if (d && d.valuesOnly) { d = null; setAside = true }
+    }
+    return { id: l.id, author: l.author, builder: l.builder, created_at: l.created_at, cobuilders: l.cobuilders, plane: pl, takesPart: !!d, setAside, changed: new Map(d ? d.changed.map((o) => [o, d.values[o]]) : []) }
+  })
+  const surveys = R.countedSurveys(decoded, ctx)
+  const base = R.baseRevision(surveys)
+  const baseGround = base === null ? R.openGround() : groundOf(c, base, implemented)
+  const shown = (o) => { const r = R.resolveCell(o, decoded.filter((l) => l.takesPart), ctx); return r ? { value: r.value, from: r.from, rank: r.rank } : { value: baseGround[o], from: null, rank: null } }
+  return {
+    reader, follows, reads_ground_values: implemented, plane: P,
+    set_aside: decoded.filter((l) => l.setAside).map((l) => l.id),
+    counted_surveys: surveys.map((e) => ({ id: e.id, ground: e.revision, rank: e.rank, surveyed: e.surveyed })),
+    base: base === null ? 'unsurveyed: empty' : base === R.OPEN_GROUND ? 'open ground (0): empty' : `revision ${base}`,
+    base_ground: base,
+    cells: cells.map(([label, o]) => ({ label, cell: o, ...xyz(o), ground_r3: groundOf(c, 3)[o], ...shown(o) })),
+    _shown: shown,
+  }
+}
+const strip = (v) => { const { _shown, ...rest } = v; return rest }
+// Cells of a chunk, picked from its revision 3 ground: rock (not empty) and empty cells, scanning from a start.
+function pick(c, wantRock, from, skip = new Set()) {
+  const g = groundOf(c, 3)
+  for (let i = 0; i < R.CELLS; i++) { const o = (from + i) % R.CELLS; if (!skip.has(o) && (g[o] !== 0) === wantRock) return o }
+  throw new Error('no cell')
+}
+const DEV = ID(0xd0), FR = ID(0xe1), TH = ID(0x7a), OW = H
+const awayC = { ...away }
+const used = new Set()
+const take = (o) => { used.add(o); return o }
+const rockCell = take(pick(awayC, true, R.cellIndex(16, 16, 16)))
+const airCell = take(pick(awayC, false, R.cellIndex(16, 20, 16), used))
+const plotAir = take(pick(awayC, false, R.cellIndex(4, 24, 4), used))
+const plotRock = take(pick(awayC, true, R.cellIndex(4, 8, 4), used))
+if (groundOf(awayC, 3)[plotRock] === 10) throw new Error('pick another plot cell')
+const frMined = take(pick(awayC, true, R.cellIndex(24, 8, 24), used))
+const frPlaced = take(pick(awayC, false, R.cellIndex(24, 26, 24), used))
+const awayCells = [['rock in the ground, nobody changed it', rockCell], ['empty in the ground, nobody changed it', airCell],
+  ['D placed Glowcore (42) in a cell the ground leaves empty', plotAir], ['D placed Rimeglass (10) in a cell that is rock in the ground', plotRock],
+  ['F mined a cell of rock', frMined], ['F placed Prismite (8) in an empty cell', frPlaced]]
+const twinP = 1 - awayC.P
+const twinCell = pick({ ...awayC, P: twinP }, false, R.cellIndex(8, 28, 8))
+// D develops plane P of the away chunk (surveyed 200) and surveys its twin at revision 3; F surveys plane P (surveyed 300, or 100).
+const dLayer = DL(0x01, DEV, 1000, [
+  claimPlane(awayC, awayC.P, R.OPEN_GROUND, 200, [[plotAir, 42], [plotRock, 10]]),
+  claimPlane(awayC, twinP, 3, 200, [[twinCell, 41]]),
+].sort((a, b) => a.plane - b.plane))
+const fLayer = (surveyed) => DL(0x02, FR, 1100, [claimPlane(awayC, awayC.P, 3, surveyed, [[frMined, 0], [frPlaced, 8]])])
+const layoutA = [dLayer, fLayer(300)] // D claimed first
+const layoutB = [dLayer, fLayer(100)] // F claimed first (two claims made before either saw the other)
+const viewD = developView(awayC, layoutA, DEV, [FR], awayCells)
+let placedNonEmpty = 0, shownNonEmpty = 0
+for (let o = 0; o < R.CELLS; o++) { if (viewD._shown(o).value !== 0) shownNonEmpty++; if (viewD._shown(o).from !== null && viewD._shown(o).value !== 0) placedNonEmpty++ }
+
+// The home: H's develop decides for every reader in H's 27 chunks.
+const homeC = { ...hb }
+const hUsed = new Set()
+const hTake = (o) => { hUsed.add(o); return o }
+const hRock = hTake(pick(homeC, true, R.cellIndex(16, 16, 16)))
+const hPlot = hTake(pick(homeC, false, R.cellIndex(4, 24, 4), hUsed))
+const hReaderMined = hTake(pick(homeC, true, R.cellIndex(24, 8, 24), hUsed))
+const hReaderPlaced = hTake(pick(homeC, false, R.cellIndex(24, 26, 24), hUsed))
+const homeCells = [['rock in the ground, nobody changed it', hRock], ['H placed Glowcore (42)', hPlot], ['the reader mined a cell of rock', hReaderMined], ['the reader placed Prismite (8)', hReaderPlaced]]
+const homeLayers = [
+  DL(0x11, OW, 1500, [claimPlane(homeC, homeC.P, R.OPEN_GROUND, 500, [[hPlot, 42]])]),
+  DL(0x12, READER, 1200, [claimPlane(homeC, homeC.P, 3, 100, [[hReaderMined, 0], [hReaderPlaced, 8]])]),
+  DL(0x13, S1, 900, [claimPlane(homeC, homeC.P, 3, 50, [])]),
+]
+// A face neighbour in H's home, developed by D, who is not its home owner.
+const faceC = at(1, 0, 0)
+const fRock = pick(faceC, true, R.cellIndex(16, 16, 16))
+const fPlot = pick(faceC, false, R.cellIndex(4, 24, 4))
+const faceCells = [['rock in the ground, nobody changed it', fRock], ['D placed Glowcore (42)', fPlot]]
+const faceD = DL(0x21, DEV, 1000, [claimPlane(faceC, faceC.P, R.OPEN_GROUND, 200, [[fPlot, 42]])])
+const faceH = DL(0x22, OW, 1300, [claimPlane(faceC, faceC.P, 3, 600, [])])
+
+// A developed plane in whole form: an older reader reads it for its values only, and it takes no part in the Stack.
+const wholePlot = (() => {
+  const values = new Int32Array(R.CELLS)
+  values[plotAir] = 42; values[plotRock] = 10
+  const pal = [0, 42, 10]
+  const idx = Array.from(values, (v) => pal.indexOf(v))
+  return { plane: awayC.P, survey: true, surveyed: 200, ground: R.OPEN_GROUND, form: 'whole', pal, cells: R.encodeRuns(idx) }
+})()
+const wholeNew = R.decodePlane(wholePlot, (v) => groundOf(awayC, v))
+const wholeOld = R.decodePlane(wholePlot, (v) => groundOf(awayC, v, [2, 3]))
+
+const developOnly = { planes: [{ plane: 0, survey: true, surveyed: 1800000000, ground: R.OPEN_GROUND, form: 'diff', pal: [null], cells: [0, -32767] }] }
+const SVB = (revision, rank, surveyed, author, id, builder = 0xbb) => ({ revision, rank, surveyed, author: ID(author), builder: ID(builder), id: ID(id) })
+const developTies = [
+  { name: 'a develop and a survey of one rank in the same second: the lower author pubkey decides (the developer, d0, is lower than e1)', surveys: [SVB(3, 3, 200, 0xe1, 2), SVB(0, 3, 200, 0xd0, 1)] },
+  { name: 'the same, with the surveyor lower (0e): the survey decides', surveys: [SVB(0, 3, 200, 0xd0, 1), SVB(3, 3, 200, 0x0e, 2)] },
+  { name: 'one author, two builder keys that claimed the plane in the same second, one developing and one surveying: the lower builder pubkey decides', surveys: [SVB(3, 2, 200, 0xd0, 2, 0x22), SVB(0, 2, 200, 0xd0, 1, 0x11)] },
+  { name: 'one author, one builder key, two layers held in the same second (a reader that kept two versions): the lower event id decides', surveys: [SVB(3, 2, 200, 0xd0, 2, 0x11), SVB(0, 2, 200, 0xd0, 1, 0x11)] },
+  { name: 'rank first: a stranger who dates a develop 0 does not decide for a reader who follows a later surveyor', surveys: [SVB(0, 4, 0, 0x51, 1), SVB(3, 3, 500, 0xe1, 2)] },
+  { name: 'rank first the other way: a stranger who dates a survey 0 does not put rock under a followed developer\'s plot', surveys: [SVB(3, 4, 0, 0x51, 1), SVB(0, 3, 500, 0xd0, 2)] },
+].map((c) => ({ ...c, base_ground: R.baseRevision(c.surveys) }))
+const sv = (id, author, ground, rank, surveyed) => ({ id: ID(id), author, revision: ground, rank, surveyed, builder: ID(0xbb) })
+// The mute case, built from layers: a stranger's survey of the away chunk, with and without a mute of the stranger.
+const muteLayers = [DL(0x31, S1, 900, [claimPlane(awayC, awayC.P, 3, 300, [])])]
+const surveysFor = (mutes) => {
+  const ctx = { reader: TH, follows: new Set(), mutes: new Set(mutes), now: NOW, chunk: awayC }
+  const counted = R.countedLayers(muteLayers, ctx).map((l) => ({ ...l, plane: l.planes[0], takesPart: true }))
+  return R.countedSurveys(counted, ctx)
+}
+const mutedView = surveysFor([S1]), unmutedView = surveysFor([])
+const writerChecks = [
+  { name: 'D in a chunk nobody it counts has claimed: may develop', view: [], author_claims: [], choice: 'develop' },
+  { name: 'D chooses SURVEY there instead: the newest revision', view: [], author_claims: [], choice: 'survey' },
+  { name: 'F, who follows D and has not claimed the plane, after D developed it: may not develop, and building there names open ground, so F develops too', view: [sv(1, DEV, 0, 3, 200)], author_claims: [], choice: 'survey' },
+  { name: 'T, after a stranger surveyed the plane at revision 3: may not develop; building there surveys at revision 3', view: [sv(2, S1, 3, 4, 300)], author_claims: [], choice: 'develop' },
+  { name: 'D, whose own layer developed the plane: may not develop it again or survey it (its claim never changes); its writer carries ground 0 forward', view: [sv(1, DEV, 0, 2, 200)], author_claims: [{ ground: 0, surveyed: 200 }], choice: 'survey' },
+  { name: 'D\'s twin plane, unclaimed while plane P is developed: may develop (each plane is its own claim)', view: [], author_claims: [], choice: 'develop' },
+  { name: 'a reader who muted the only surveyor: its view, built by countedLayers with the mute, has no counted survey, so it may develop', view: mutedView, author_claims: [], choice: 'develop', muted: [S1] },
+  { name: 'the same reader without the mute: the stranger\'s survey counts, so it may not develop', view: unmutedView, author_claims: [], choice: 'develop' },
+  { name: 'H in a chunk of its own home that a stranger surveyed before H built there: only H\'s claims will count, so H may develop, and its first claim is its own choice', view: [sv(3, S1, 3, 4, 50)], author_claims: [], choice: 'develop', in_own_home: true },
+  { name: 'H in its own home, choosing SURVEY there: the newest revision, not the stranger\'s', view: [sv(3, S1, 2, 4, 50)], author_claims: [], choice: 'survey', in_own_home: true },
+  { name: 'an author whose own layer holds a plane its writer cannot read (a ground it does not implement): may not develop or survey there', view: [], author_claims: [{ ground: 7, surveyed: 150 }], choice: 'develop' },
+].map((c) => ({ ...c, may_develop: R.mayDevelop(c.view, c.author_claims, !!c.in_own_home), first_claim_ground: c.author_claims.length ? null : R.firstClaimGround(c.view, c.choice, !!c.in_own_home) }))
+
+const develop = {
+  note: 'Open ground (§3.10a): a plane object with survey true and ground 0 develops the plane: its base is every cell empty, and it is a first claim resolved by §7.5 exactly as a survey is, by own rank, then the earliest surveyed, then the lower author pubkey, builder pubkey and event id. Each view below decodes real plane objects against the reader\'s grounds and resolves the cells by §7.4. A cell gives what it shows, the id of the winning layer and its rank, or null when no counted layer changed it and it shows the base; ground_r3 is the cell in the revision 3 ground, for reference.',
+  open_ground: R.OPEN_GROUND,
+  develop_only_plaintext: JSON.stringify(developOnly),
+  develop_only_bytes: JSON.stringify(developOnly).length,
+  authors: { D: DEV, F: FR, T: TH, H: OW, reader: READER, stranger: S1 },
+  outside_the_home: {
+    chunk: [S(awayC.X), S(awayC.Y), S(awayC.Z), awayC.P],
+    note: 'A chunk in nobody\'s home. D develops plane P (surveyed 200) and places Glowcore and Rimeglass, and surveys the twin plane at revision 3. In layout A, F surveys plane P at revision 3 with surveyed 300, after D; in layout B with surveyed 100, before D (two claims made before either saw the other). F mines a rock cell and places Prismite.',
+    layers_a: layoutA, layers_b: layoutB,
+    views: [
+      { name: 'D, the developer (follows F): its own develop is rank 2 and decides; every cell nobody changed is empty, rock included', layout: 'a', ...strip(viewD) },
+      { name: 'F, the friend who surveyed (follows D): its own survey is rank 2 and decides; it sees the ground, can mine it, and sees D\'s blocks in the cells D changed', layout: 'a', ...strip(developView(awayC, layoutA, FR, [DEV], awayCells)) },
+      { name: 'T follows D and F (both rank 3): the earlier claim decides, D\'s develop at 200', layout: 'a', ...strip(developView(awayC, layoutA, TH, [DEV, FR], awayCells)) },
+      { name: 'T follows D and F, and F claimed first (100): F\'s survey decides, and D\'s plot is drawn over rock', layout: 'b', ...strip(developView(awayC, layoutB, TH, [DEV, FR], awayCells)) },
+      { name: 'T follows only D: D\'s develop (rank 3) beats F\'s earlier survey (rank 4)', layout: 'b', ...strip(developView(awayC, layoutB, TH, [DEV], awayCells)) },
+      { name: 'T follows nobody: both are strangers, and F\'s earlier survey decides', layout: 'b', ...strip(developView(awayC, layoutB, TH, [], awayCells)) },
+      { name: 'D\'s twin plane, viewed by T who follows D: a plane of its own, surveyed at revision 3 by D', layout: 'a', ...strip(developView(awayC, layoutA, TH, [DEV, FR], [['D placed Cobaltine (41) on the twin', twinCell]], R.GROUND_VALUES, twinP)) },
+    ],
+    mining_in_d_view: { note: 'Every cell of plane P that D\'s view shows as not empty is a block a counted layer placed: none comes from the ground, so mining in D\'s plot yields only placed blocks.', non_empty_cells_shown: shownNonEmpty, of_them_placed_by_a_layer: placedNonEmpty },
+  },
+  in_the_home: {
+    chunk: [S(homeC.X), S(homeC.Y), S(homeC.Z), homeC.P],
+    note: 'H\'s spawn chunk. H develops (surveyed 500) and places Glowcore. The reader, who is not H, surveyed earlier at revision 3 (surveyed 100), mined a rock cell and placed Prismite; a stranger surveyed at 50. Inside a home only a home owner\'s surveys count, so H\'s develop decides for every reader.',
+    layers: homeLayers,
+    views: [
+      { name: 'the reader (not H, follows S1): only H\'s develop counts; the base is open ground, and the reader\'s own blocks still show', ...strip(developView(homeC, homeLayers, READER, [S1], homeCells)) },
+      { name: 'H itself', ...strip(developView(homeC, homeLayers, OW, [], homeCells)) },
+    ],
+    face: {
+      chunk: [S(faceC.X), S(faceC.Y), S(faceC.Z), faceC.P],
+      note: 'A face neighbour in H\'s home, developed by D, who is not H.',
+      views: [
+        { name: 'H has surveyed it at revision 3 (surveyed 600, later than D): only H\'s survey counts, so D sees the ground there too', ...strip(developView(faceC, [faceD, faceH], DEV, [], faceCells)) },
+        { name: 'H has no layer there: nothing says whose home it is, and D\'s develop counts', ...strip(developView(faceC, [faceD], DEV, [], faceCells)) },
+      ],
+    },
+  },
+  older_reader: {
+    note: 'A reader that implements revisions 2 and 3 but not open ground, reading layout A while following D and F. D\'s developed plane is a diff under a ground it does not implement, so it is set aside: it does not count as a survey, and none of its cells takes part in the Stack. The reader shows what it would show had the plot never been made: F\'s survey decides, so the plot\'s cells show F\'s revision 3 ground (the Rimeglass cell shows its rock), the rollout gap of §3.10a that closes when the reader updates. D\'s layer is not dropped: its twin plane still counts. Beside it, the same reader once it implements open ground.',
+    views: [
+      { name: 'older reader, plane P', ...strip(developView(awayC, layoutA, TH, [DEV, FR], awayCells, [2, 3])) },
+      { name: 'older reader, the twin plane: D\'s layer still counts there', ...strip(developView(awayC, layoutA, TH, [DEV, FR], [['D placed Cobaltine (41) on the twin', twinCell]], [2, 3], twinP)) },
+      { name: 'the same reader implementing open ground, plane P', ...strip(developView(awayC, layoutA, TH, [DEV, FR], awayCells)) },
+    ],
+    whole_form: {
+      note: 'D\'s developed plane written whole. A reader that implements open ground decodes it against an empty base: its changed cells are the cells not empty. An older reader reads it for its values only (§3.10): it may show them to D, and the plane takes no part in the Stack.',
+      plane: wholePlot,
+      implementing_reader_changed: wholeNew.changed.map((o) => ({ ...xyz(o), value: wholeNew.values[o] })),
+      older_reader_values_only: !!wholeOld.valuesOnly,
+    },
+  },
+  ties: developTies,
+  writer_checks: { note: 'mayDevelop (§3.10a): the writer\'s own view has no counted survey or develop of the plane, and its author\'s own layers claim nothing there. first_claim_ground: what a first claim names (§3.10): the base of the writer\'s view when a counted layer claims the plane, otherwise the newest revision to survey or 0 to develop; null where the author already claims the plane. In the author\'s own home (in_own_home) other identities\' claims are ignored for both.', cases: writerChecks },
+}
+
 const out = {
   description: 'Test vectors for DECK-0009 (Blocks). Generated by blocks-vectors.mjs from blocks-reference.mjs. Not normative: where this file disagrees with the DECK, the DECK is right.',
   constants: {
@@ -281,5 +487,6 @@ const out = {
   chunks, runs, layer, builder_keys: keyCases, home: homeCases, stack,
   revision_3: { features: R.FEATURES_R3, chunks: chunksR3 },
   base_revision: { cases: baseRevisionCases, mixed },
+  develop,
 }
 process.stdout.write(JSON.stringify(out, null, 1) + '\n')

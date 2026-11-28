@@ -37,6 +37,10 @@ export const GROUND_REVISION = 2
 /** §3.10 Every revision this file computes: 2 (frozen) and 3. A writer surveys a fresh chunk at the newest. */
 export const GROUND_REVISIONS = [2, 3]
 export const NEWEST_GROUND_REVISION = 3
+/** §3.10a Open ground: the `ground` of a developed plane, a base with every cell empty. Not a revision of §3.2 to §3.9. */
+export const OPEN_GROUND = 0
+/** Every `ground` this file reads on a surveyed plane: open ground and the two revisions. */
+export const GROUND_VALUES = [OPEN_GROUND, 2, 3]
 
 // §2.3 Block ids.
 export const ID = {
@@ -548,7 +552,7 @@ export function encodeRuns(values) {
 export function decodePlane(pl, ground) {
   // ground: the revision 2 ground (a Uint8Array, as earlier versions of this file took it), or a function from a
   // revision to its ground, returning null for a revision this reader does not implement.
-  const groundFor = typeof ground === 'function' ? ground : (rev) => (rev === GROUND_REVISION ? ground : null)
+  const groundFor = typeof ground === 'function' ? ground : (rev) => (rev === GROUND_REVISION ? ground : rev === OPEN_GROUND ? openGround() : null)
   if (!pl || typeof pl !== 'object') throw new Error('plane: not an object')
   if (pl.plane !== 0 && pl.plane !== 1) throw new Error('plane: bad plane')
   if (typeof pl.survey !== 'boolean') throw new Error('plane: bad survey')
@@ -707,3 +711,58 @@ export function baseRevision(surveys) {
 }
 /** §5.4 A plane's survey date: its `surveyed`, or the layer's created_at when that is absent or later. */
 export const surveyedAt = (plane, createdAt) => (Number.isInteger(plane.surveyed) && plane.surveyed >= 0 && plane.surveyed <= createdAt ? plane.surveyed : createdAt)
+
+// ---------------------------------------------------------------------------------------------------------------
+// Open ground and DEVELOP (§3.10a)
+
+/** §3.10a The base of a developed plane: every cell empty (0). */
+export const openGround = () => new Uint8Array(CELLS)
+
+/**
+ * The ground of a chunk plane for a `ground` value: open ground for 0, the generated ground for a revision. `implemented`
+ * lists the values this reader reads (an older reader: [2, 3]); any other value gives null, and its plane is set aside.
+ */
+export function groundAt(X, Y, Z, P, value, implemented = GROUND_VALUES) {
+  if (!implemented.includes(value)) return null
+  return value === OPEN_GROUND ? openGround() : generateChunk(X, Y, Z, P, false, value)
+}
+
+/**
+ * §7.5 The counted surveys of one plane (a develop is a survey whose ground is open ground): for each counted layer whose
+ * plane object for this plane surveys and takes part in the Stack, { revision: its ground, rank: the author's own rank,
+ * surveyed, author, builder, id }. Inside a home only a home owner's surveys count. Co-builders never lift a survey.
+ * layers: [{ id, author, builder, created_at, plane: { survey, ground, surveyed } | null, takesPart }]
+ */
+export function countedSurveys(layers, ctx) {
+  const own = layers.map((l) => ownRank(l.author, ctx))
+  const anyHome = own.some((r) => r === 1)
+  const out = []
+  layers.forEach((l, i) => {
+    if (!l.plane || !l.plane.survey || !l.takesPart || (anyHome && own[i] !== 1)) return
+    out.push({ revision: l.plane.ground, rank: own[i], surveyed: surveyedAt(l.plane, l.created_at), author: l.author, builder: l.builder, id: l.id })
+  })
+  return out
+}
+
+/**
+ * §3.10a Whether a writer may develop a plane: its own view of the plane has no counted survey or develop (viewSurveys, from
+ * countedSurveys over the layers its user counts), and its author's own layers at the chunk claim nothing in this plane
+ * (authorClaims: the author's plane objects for it whose survey is true, readable or not). In the author's own home
+ * (inOwnHome) the view's claims are ignored: only the author's claims will count there.
+ */
+export function mayDevelop(viewSurveys, authorClaims, inOwnHome = false) {
+  // In the author's own home only the author's claims will count (§7.5), so other identities' claims are ignored (rule 1).
+  return (inOwnHome || viewSurveys.length === 0) && authorClaims.length === 0
+}
+
+/**
+ * §3.10 and §3.10a What a writer's first claim on a plane names: the base its own view gives (a revision, or open ground)
+ * when a counted layer already claims the plane; otherwise its user's choice, the newest revision to survey or open ground
+ * to develop.
+ */
+export function firstClaimGround(viewSurveys, choice, inOwnHome = false) {
+  const base = inOwnHome ? null : baseRevision(viewSurveys)
+  if (base !== null) return base
+  return choice === 'develop' ? OPEN_GROUND : NEWEST_GROUND_REVISION
+}
+
