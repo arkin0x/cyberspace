@@ -581,12 +581,12 @@ The recipe is standard (no location lock). Its box is 3 by 3 by 3, within the ba
 
 ### 8.6 The Quarry Charge (non-normative)
 
-How a Quarry Charge behaves is the client's, like everything an inventory holds (§9). ONOSENDAI's (arkinox, 2026-11-27):
+How a Quarry Charge behaves is the client's, like everything an inventory holds (§9). ONOSENDAI's (arkinox, 2026-11-27 and 2026-11-28):
 
 - **Placed like a block.** The player places a charge in an empty cell, as they would place a block.
-- **A fuse.** Once placed, it burns for a short fuse, then blasts.
+- **A fuse.** Once placed, it burns for 10 seconds, then blasts (arkinox, 2026-11-28).
 - **The blast.** It clears the 7 by 7 by 7 cells centred on the charge, written in the player's own layer as mining those cells would be (DECK-0009 §5.4), so that it changes the world only for the player and for readers who rank the player first, as any edit does.
-- **Pickups.** The blocks it clears are kept as floating pickups for 10 minutes, on the device only, which the player walks into to collect. Nobody else sees them, and nothing about them is published.
+- **Pickups.** The blocks it clears are kept as floating pickups for 10 minutes, on the device only. Nobody else sees them, and nothing about them is published. A pickup within 7 gibsons of the player who owns it moves to that player and is collected when it arrives (arkinox, 2026-11-28); a pickup further away floats where it is until the player comes within that distance or walks into it. However a pickup reaches the player, it is collected once, and a pickup collected by one route is gone from the other.
 - **How many.** There is no cap on how many charges a player holds. Each compile of the recipe adds 7, and placing one subtracts one. At zero, the charge stays in the inventory, shown at 0 and disabled, until more are compiled.
 
 ## 9. Inventory (non-normative)
