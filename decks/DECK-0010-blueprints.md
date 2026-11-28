@@ -30,7 +30,7 @@ This DECK writes down arkinox's rulings of 2026-11-26 and 2026-11-27: the arrang
 | The lookup | SHA-256 of the key, 64 lowercase hex (§3.4) |
 | The record | `kind 33343`, addressable, `d` = the lookup, signed by the creator; `content` the public sheet (shape, revealed blocks, settings, prize hints); the prize sealed with the key in an `encrypted` tag (§5) |
 | The card | `kind 3343`, a bag item or chest entry, signed by whoever placed it, whose `content` is the creator's signed record (§7) |
-| The Compiler | a held tool, kept on the device; its own recipe is the one recipe a bare hand can smash (§8) |
+| The Compiler | a held tool, kept on the device, made only from its own recipe; it extends a smash's reach from 3 to 16 (§8) |
 | A starter recipe | a blueprint whose record reveals every block, so that its arrangement is public (§8.4) |
 | A game recipe | a starter recipe this DECK defines, which every client knows built in and which alone may yield a tool: the Compiler's (§8.3) and the Quarry Charge's (§8.5) |
 
@@ -406,7 +406,7 @@ For each lookup it computed, the smasher's client gathers the candidate records:
 
 Every prize that opens is the smasher's. A client SHOULD show all of them, in the order of §6.2 (arkinox, 2026-11-27: several prizes from one smash should feel abundant). It MAY present them in a picker when there are more than 8. It MAY bound how many records it fetches for one lookup, to bound the work of one smash, and SHOULD then say that there are more.
 
-The lookups of the game recipes (§8.4) are the exception. A smash whose lookup is a game recipe's yields that recipe's prize from the client's own copy of the recipe: the Compiler (§8.3), or seven Quarry Charges (§8.5). The client SHOULD ignore records from relays under a game recipe's lookup, so that nobody can attach a stranger's prize to every player's game recipe. A bare-hand smash yields only the Compiler's recipe (§8.2).
+The lookups of the game recipes (§8.4) are the exception. A smash whose lookup is a game recipe's yields that recipe's prize from the client's own copy of the recipe: the Compiler (§8.3), or seven Quarry Charges (§8.5). The client SHOULD ignore records from relays under a game recipe's lookup, so that nobody can attach a stranger's prize to every player's game recipe.
 
 ### 6.2 Order
 
@@ -489,7 +489,7 @@ A bag that publishes its contents (`CYBERSPACE_V2.md` §7.7) counts a card as `b
 
 ### 8.1 The Compiler (normative for clients that implement smashing)
 
-The **Compiler** is a held tool: a techy hammer whose head is a small lattice cage (arkinox, 2026-11-26). It is kept on the device, like every item of the inventory (§9), kept forever and never used up. A smash is the Compiler striking a block (§4). A client:
+The **Compiler** is a held tool: a techy hammer whose head is a small lattice cage (arkinox, 2026-11-26). It is kept on the device, like every item of the inventory (§9), kept forever and never used up. **The Compiler extends the reach.** A smash with the Compiler in hand has a reach of 16 (§4.1); a bare hand has a reach of 3 (§8.2). Anything a bare hand can compile, the Compiler compiles too. A client:
 
 - MUST give the Compiler only as the prize of a smash of the Compiler's recipe (§8.3). There is no other way to obtain one: no gift, no tutorial grant, no purchase (arkinox, 2026-11-26).
 - SHOULD ask its user to hold before a smash strikes, and SHOULD cancel with nothing spent when the user lets go first. The suggested hold is 4 seconds with the Compiler in hand (arkinox, 2026-11-27: "we'll adjust these to taste"). Hold times are a client's tuning, not protocol: nothing published depends on them, and a client MAY choose its own.
@@ -498,14 +498,14 @@ ONOSENDAI keeps the Compiler in hotbar slot 1 once its user has one (arkinox, 20
 
 ### 8.2 The bare hand (normative for clients that implement smashing)
 
-The Compiler's recipe is the only recipe a bare hand can compile (arkinox, 2026-11-26). A **bare-hand smash** is a smash made with no Compiler in hand:
+A **bare-hand smash** is a smash made with no Compiler in hand. A bare hand compiles anything small enough to fit its reach (arkinox, 2026-11-28: "You should be able to compile anything without the compiler as long as it's small enough to fit within the range"):
 
 - A client SHOULD ask for a longer hold before a bare-hand smash strikes than with the Compiler. The suggested hold is 7 seconds (arkinox, 2026-11-27), a client's tuning like the Compiler's (§8.1).
 - A bare-hand smash has a reach of 3 (§4.1): its window is the 5 by 5 by 5 cells centred on the hit cell, and its arrangement is at most 3 cells on every axis. Otherwise it gathers, checks and deletes exactly as any smash does (§4.1 to §4.3), and makes the standard key and lookup of an arrangement.
-- The Compiler's recipe fits that reach: its box is 3 by 3 by 1, so a bare-hand smash struck on any of its five blocks compiles it.
-- It unseals only the Compiler's recipe (§8.3). A client MUST NOT unseal any other record from a bare-hand smash, and tells its user only that nothing compiled. It MUST NOT tell its user that some other blueprint would have compiled with the Compiler, which would be the pre-check that §4.4 forbids, after the fact.
+- Its arrangement is unsealed exactly as any smash's is (§6): the game recipes (§8.4) and every record whose arrangement is at most 3 cells on every axis compile bare-handed, player blueprints included. The Compiler's recipe (3 by 3 by 1) and the Quarry Charge's (3 by 3 by 3) both fit.
+- A group longer than 3 cells on an axis is not an arrangement for a bare hand (§4.2), so it compiles nothing, even when it would be an arrangement with the Compiler. A client MUST NOT tell its user, after such a smash, that the build would have compiled with the Compiler, which would be the pre-check that §4.4 forbids, after the fact.
 
-The long hold is on purpose: it makes the Compiler feel like an upgrade the moment a player has one.
+The long hold and the short reach are on purpose: they make the Compiler feel like an upgrade the moment a player has one.
 
 ### 8.3 The Compiler's recipe (normative)
 
@@ -576,7 +576,7 @@ z = 0      .        Rustband       .
 
 The layers below and above it each hold one Umberslate, at `x = 1, z = 1`.
 
-The recipe is standard (no location lock). Its box is 3 by 3 by 3, so it is within the bare hand's reach, but a bare hand compiles only the Compiler's recipe (§8.2): the Quarry Charge needs the Compiler. Its prize is `{"type": "tool", "tool": "quarry-charge", "count": 7}`: seven Quarry Charges.
+The recipe is standard (no location lock). Its box is 3 by 3 by 3, within the bare hand's reach, so it compiles with or without the Compiler (§8.2). Its prize is `{"type": "tool", "tool": "quarry-charge", "count": 7}`: seven Quarry Charges.
 
 **Which way it faces.** The Cinderrock on +X is the one block that sets the recipe's facing. Mirrored across X, with the Cinderrock at `x = 0` and a Rustband at `x = 2`, the build is a different arrangement with a different key, and compiles nothing; so is the build turned a quarter turn about Y, which puts the Cinderrock on +Z or −Z. Mirrored across Y or across Z, the build is the same arrangement, because it swaps two Umberslate or two Rustband. The vectors hold the recipe and its mirror image across X (§11).
 
@@ -622,7 +622,7 @@ The canonical relay, `wss://relay.onosendai.tech`, accepts a kind only once it i
 | `constants` | the domain label as text and hex, the rounds, the key length, the reach with the Compiler (16) and bare-handed (3), the largest side, the record cap and the two kinds |
 | `arrangements` | arrangements given by their box and cells, each with its encoding (in full, or its length and SHA-256 when it is too long to print), its key and its lookup: the Compiler's recipe; the same T upside down; the same T turned a quarter turn about Y, its head along Z; the Quarry Charge's recipe, its mirror image across X (a different key) and its mirror image across Z (the same key); one Gridstone; an L of 4 Ferrovein, the same L turned a quarter turn about Y, and the same L mirrored across X (three different keys); a hollow 3 by 3 by 3 cube of Gridstone and the solid cube (a hollow and a solid differ); two blocks joined only at a corner; an arrangement with a special id (197) and an extension id (300); and a diagonal of 16 blocks through a 16 by 16 by 16 box, each touching the next only at a corner, the longest encoding without a lock |
 | `location` | the Compiler's recipe built inside the chunk at (0, 0, 0), the region of height 5 at the origin (DECK-0009's origin chunk, whose lookup id is `3c5d8c49...c649`): the region's base, `region_n`, key and lookup id, the location encoding's length and SHA-256, its key and its lookup. Also the same recipe at height 6, which differs, and a box that straddles a border of height 5 regions and so has no location encoding there |
-| `gather` | worlds of occupied cells, each with a hit cell, whether the hand is bare, and what the smash gathers: the reach, the group, its extent, whether it is isolated, the occupied cells that spoil isolation (`intruders`: the occupied cells of the grown box outside the group, including any just outside the window), whether the group is the arrangement, and, when it is, the box and the lookup. The cases: the Compiler's recipe struck on each of its five blocks, with the Compiler and bare-handed (ten cases, one arrangement and one lookup); the recipe with a stray block touching it only at a corner (an arrangement with a different lookup); with a block two cells above it, outside the grown box (still the recipe); with a block inside its grown box that touches nothing (no arrangement); an L with a block in its notch (no arrangement); a 16-cell row struck at either end (one arrangement, one lookup); a 17-cell row struck in the middle (isolated, but too long); a 40-cell row struck in the middle (the window holds 31 of it: not isolated, too long); bare-handed, a 3-cell row struck at an end (an arrangement) and a 4-cell row struck at an end (not isolated); and two columns joined only by a bridge outside the window |
+| `gather` | worlds of occupied cells, each with a hit cell, whether the hand is bare, and what the smash gathers: the reach, the group, its extent, whether it is isolated, the occupied cells that spoil isolation (`intruders`: the occupied cells of the grown box outside the group, including any just outside the window), whether the group is the arrangement, and, when it is, the box and the lookup. The cases: the Compiler's recipe struck on each of its five blocks, with the Compiler and bare-handed (ten cases, one arrangement and one lookup); the recipe with a stray block touching it only at a corner (an arrangement with a different lookup); with a block two cells above it, outside the grown box (still the recipe); with a block inside its grown box that touches nothing (no arrangement); an L with a block in its notch (no arrangement); a 16-cell row struck at either end (one arrangement, one lookup); a 17-cell row struck in the middle (isolated, but too long); a 40-cell row struck in the middle (the window holds 31 of it: not isolated, too long); bare-handed, the Quarry Charge's recipe and a player's L of four (both arrangements: a bare hand compiles anything within its reach), a 3-cell row struck at an end (an arrangement) and a 4-cell row struck at an end (not isolated); and two columns joined only by a bridge outside the window |
 | `sheets` | the Compiler's recipe with every block revealed, with only the Glowcore revealed, and with nothing revealed: each sheet's `pal` and `cells`, and its expansion. Also sheets a reader MUST reject, each with the check it fails |
 | `record` | a record of the Compiler-shaped arrangement with a `sno` prize, signed with a test key, with only the Glowcore revealed and the prize as a description; its sheet, its prize plaintext, the AES-GCM nonce, the prize payload, its serialized length, and that the prize opens with the key and not with the key of the upside-down T. Also a location-locked record of the same arrangement at height 5, with silhouette views and the prize's name shown, whose prize does not open with the standard key; and records a reader MUST drop, each with the check it fails: a missing or unknown version, a `C` tag, a `client` tag, a `title` with an extra element, an unknown sheet field and an unknown prize field, a needless escape and a space in `content`, a tab in the title, a prize name too long and one empty after trimming, a wrong key mark, a hidden prize with text, a location lock with no height, an unused palette id, and one over the size cap (given by its length and hash) |
 | `card` | a card carrying that record, signed by the creator; a copy left by another key (§7.5), carrying the same record unchanged; a card whose record was altered, which a reader drops; and a card whose record is right but serialized with its fields in another order, which a reader drops because its `content` is not the canonical serialization |
@@ -680,7 +680,7 @@ Each of these was decided by Claude on delegation while writing this draft, and 
 11. **Makers may check their own build** (§4.4): the rule that the Compiler says nothing before a smash applies to solvers smashing. A maker's authoring tool may say whether a captured build stands alone, but never tests a build against a record and makes no key before publishing.
 12. **The relay whitelist** is done: `relay.onosendai.tech` accepts `33343` (cap 106,496) and refuses `3343` alone since cyberspace-relay #52 (§10).
 13. **Strict records** (§5.1 to §5.4): unknown tags and fields fail the record, the sheet and a card's record are written without needless escapes, and free text holds no control characters, so that the size of every card is bounded (§5.2). A malformed prize `name` fails the record rather than being ignored.
-14. **The bare hand's reach** is 3 (§8.2), so its window is 5 cells on each axis and the Compiler's recipe, 3 by 3 by 1, compiles bare-handed from any of its blocks (arkinox, 2026-11-27).
+14. **The bare hand's reach** is 3 (§8.2), so its window is 5 cells on each axis, and it compiles any arrangement at most 3 cells on every axis, from any of its blocks: the game recipes and player blueprints alike (arkinox, 2026-11-27 and 2026-11-28). The Compiler extends the reach to 16 (§8.1).
 
 ## 15. Implementations (non-normative)
 

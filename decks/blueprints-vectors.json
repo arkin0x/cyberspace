@@ -2017,6 +2017,196 @@
       "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
     },
     {
+      "name": "quarry-charge-bare",
+      "note": "The Quarry Charge's recipe at (200..202, 50..52, 200..202), struck bare-handed on its Cinderrock: 3 by 3 by 3 fits the bare reach, so it is an arrangement with the recipe's lookup; a bare hand compiles any arrangement within its reach (§8.2).",
+      "world": [
+        [
+          201,
+          50,
+          201,
+          2
+        ],
+        [
+          201,
+          51,
+          200,
+          5
+        ],
+        [
+          200,
+          51,
+          201,
+          5
+        ],
+        [
+          201,
+          51,
+          201,
+          40
+        ],
+        [
+          202,
+          51,
+          201,
+          7
+        ],
+        [
+          201,
+          51,
+          202,
+          5
+        ],
+        [
+          201,
+          52,
+          201,
+          2
+        ]
+      ],
+      "hit": [
+        202,
+        51,
+        201
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          201,
+          50,
+          201,
+          2
+        ],
+        [
+          201,
+          51,
+          200,
+          5
+        ],
+        [
+          200,
+          51,
+          201,
+          5
+        ],
+        [
+          201,
+          51,
+          201,
+          40
+        ],
+        [
+          202,
+          51,
+          201,
+          7
+        ],
+        [
+          201,
+          51,
+          202,
+          5
+        ],
+        [
+          201,
+          52,
+          201,
+          2
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 3
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 3
+      },
+      "lookup": "e12e7f66a13349efa89ad831967ef367411d0c9831081b8d420993c4afb46995"
+    },
+    {
+      "name": "bare-player-L",
+      "note": "A player's L of four Ferrovein, 3 by 1 by 2, struck bare-handed on its corner: an arrangement within the bare reach, with the lookup of the arrangement L.",
+      "world": [
+        [
+          300,
+          50,
+          300,
+          40
+        ],
+        [
+          301,
+          50,
+          300,
+          40
+        ],
+        [
+          302,
+          50,
+          300,
+          40
+        ],
+        [
+          302,
+          50,
+          301,
+          40
+        ]
+      ],
+      "hit": [
+        302,
+        50,
+        300
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          300,
+          50,
+          300,
+          40
+        ],
+        [
+          301,
+          50,
+          300,
+          40
+        ],
+        [
+          302,
+          50,
+          300,
+          40
+        ],
+        [
+          302,
+          50,
+          301,
+          40
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 1,
+        "z": 2
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 1,
+        "z": 2
+      },
+      "lookup": "f4ddb4c4a31adf650773dfe20dece41e37fb08196af9168a74b69ca144cff2b3"
+    },
+    {
       "name": "compiler-corner-stray",
       "note": "A Driftsilt (3) at (102, 49, 201), touching the T only at a corner of the lower Ferrovein: in the group, isolated, an arrangement with a different lookup.",
       "world": [
