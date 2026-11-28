@@ -83,7 +83,7 @@ check(byName.compiler.lookup === '84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7c
 const reg5 = B.regionOf(0n, 0n, 0n, 5)
 check(reg5.lookupId === '3c5d8c498f57d6d61527c53b824efe9edd768c2efd4d05acad6ea2775727c649', 'origin chunk lookup id (DECK-0009 §11)')
 const reg6 = B.regionOf(0n, 0n, 0n, 6)
-const atOrigin = B.COMPILER_RECIPE.map(([x, y, z, id]) => [x + 10, y + 4, z + 20, id])   // the box stands at (10..12, 4..6, 20)
+const atOrigin = B.COMPILER_RECIPE.map(([x, y, z, id]) => [x + 10, y + 4, z + 20, id])   // the box is at (10..12, 4..6, 20)
 const locBox = { lo: { x: 10n, y: 4n, z: 20n }, hi: { x: 12n, y: 6n, z: 20n } }
 check(B.regionHoldingBox(locBox.lo, locBox.hi, 5)?.lookupId === reg5.lookupId, 'box inside the origin chunk')
 const straddle = { lo: { x: 30n, y: 4n, z: 20n }, hi: { x: 32n, y: 5n, z: 22n } }
@@ -101,7 +101,7 @@ const location = {
   h5: locVector(reg5, 'Location lock at height 5: the origin chunk (DECK-0009\'s origin, lookup id 3c5d8c49...c649).'),
   h6: locVector(reg6, 'Location lock at height 6: a different region key, so a different key and lookup.'),
   straddle: {
-    note: 'A box at (30..32, 4..5, 20..22) crosses the border x = 32 of the height 5 regions, so it has no location encoding at height 5. At height 6 it stands in the region at the origin.',
+    note: 'A box at (30..32, 4..5, 20..22) crosses the border x = 32 of the height 5 regions, so it has no location encoding at height 5. At height 6 it lies in the region at the origin.',
     lo: { x: 30, y: 4, z: 20 }, hi: { x: 32, y: 5, z: 22 }, region_h5: null,
     region_h6: regInfo(B.regionHoldingBox(straddle.lo, straddle.hi, 6)),
   },
@@ -292,7 +292,7 @@ function sizeBounds() {
   const preview = 'This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech'
   const se = { id: F(64), pubkey: F(64), created_at: 9999999999, kind: 33335, tags: [['d', F(32)], ['encrypted', 'aes-256-gcm', 'A'.repeat(sealedB64), 'cyberspace:region'], ['alt', preview]], content: preview, sig: F(128) }
   const out = {
-    note: 'The worst case of §5.2 and §10: every tag and field present, a full palette, four views of 16,384 characters, all free text made of quotation marks, and the prize payload padded until the record is exactly at the cap. Placeholder values stand in for ids, keys and signatures, which have fixed lengths.',
+    note: 'The worst case of §5.2 and §10: every tag and field present, a full palette, four views of 16,384 characters, all free text made of quotation marks, and the prize payload padded until the record is exactly at the cap. Placeholder values take the place of ids, keys and signatures, which have fixed lengths.',
     record_bytes: Buffer.byteLength(R), structural_escapes: structural, escapes: esc(R), card_bytes: C, card_own_fields: C - Buffer.byteLength(R) - esc(R),
     chest_room_left: 131072 - Buffer.byteLength(JSON.stringify([cardEv])), sealed_entry_bytes: Buffer.byteLength(JSON.stringify(se)),
     relay_worst_bytes: Buffer.byteLength(R) + 8 * (64 + 280 + 280 + 64),

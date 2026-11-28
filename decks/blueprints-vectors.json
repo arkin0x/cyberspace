@@ -1100,7 +1100,7 @@
       "lookup": "729105baf5fc25cc89c56ca12eaab7b709d1d52803518927a851570df0ccab7f"
     },
     "straddle": {
-      "note": "A box at (30..32, 4..5, 20..22) crosses the border x = 32 of the height 5 regions, so it has no location encoding at height 5. At height 6 it stands in the region at the origin.",
+      "note": "A box at (30..32, 4..5, 20..22) crosses the border x = 32 of the height 5 regions, so it has no location encoding at height 5. At height 6 it lies in the region at the origin.",
       "lo": {
         "x": 30,
         "y": 4,
@@ -5692,7 +5692,7 @@
     }
   },
   "size_bounds": {
-    "note": "The worst case of §5.2 and §10: every tag and field present, a full palette, four views of 16,384 characters, all free text made of quotation marks, and the prize payload padded until the record is exactly at the cap. Placeholder values stand in for ids, keys and signatures, which have fixed lengths.",
+    "note": "The worst case of §5.2 and §10: every tag and field present, a full palette, four views of 16,384 characters, all free text made of quotation marks, and the prize payload padded until the record is exactly at the cap. Placeholder values take the place of ids, keys and signatures, which have fixed lengths.",
     "record_bytes": 98304,
     "structural_escapes": 148,
     "escapes": 2212,

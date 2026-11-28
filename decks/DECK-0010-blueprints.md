@@ -10,7 +10,7 @@ Requires: `CYBERSPACE_V2.md` §2 (coordinates and planes), §4.6 and §4.7 (Cant
 
 ## Abstract
 
-A **blueprint** is a recipe that anyone can make: an arrangement of specific blocks, standing on its own in cyberspace, that yields a specific thing. Its creator seals a **prize**, usually a SNO shard (DECK-0003), with a key that only the finished arrangement can produce. **The arrangement is the key.** Whoever builds the arrangement exactly, in the world's own axes, with nothing touching it, and smashes it with the **Compiler**, makes that key, finds the creator's record by a hash of it, and unseals the prize.
+A **blueprint** is a recipe that anyone can make: an arrangement of specific blocks, isolated in cyberspace (it touches no other block through a face, an edge or a corner), that yields a specific thing. Its creator seals a **prize**, usually a SNO shard (DECK-0003), with a key that only the finished arrangement can produce. **The arrangement is the key.** Whoever builds the arrangement exactly, in the world's own axes, with nothing touching it, and smashes it with the **Compiler**, makes that key, finds the creator's record by a hash of it, and unseals the prize.
 
 There is one blueprint and one data model. Each blueprint has three settings: how much of the recipe is revealed (the shape always, and anywhere from none to all of its blocks), how much of the prize is revealed (nothing, a description, or flat pictures of it), and what locks it (the blocks alone, or the blocks inside one region, whose region key then becomes part of the key).
 
@@ -67,11 +67,11 @@ This DECK writes down arkinox's rulings of 2026-11-26 and 2026-11-27: the arrang
 
 The life of a blueprint, in the client this DECK was written for:
 
-1. **Make.** A creator opens the BLUEPRINT tool in BUILD mode. They compose an arrangement in a 16 by 16 by 16 cage marked with the world's axes, or capture a stand-alone build from TERRAIN. They pick a prize, usually a shard from the workshop. They set the three settings. The client makes the key and the lookup, seals the prize with the key, and publishes the record. Nothing about the hidden blocks leaves the device.
+1. **Make.** A creator opens the BLUEPRINT tool in BUILD mode. They compose an arrangement in a 16 by 16 by 16 cage marked with the world's axes, or capture an isolated build from TERRAIN. They pick a prize, usually a shard from the workshop. They set the three settings. The client makes the key and the lookup, seals the prize with the key, and publishes the record. Nothing about the hidden blocks leaves the device.
 2. **Place.** Creating and placing are separate steps. The creator leaves cards for the blueprint wherever they like: at a place, like a message, sealed to that region as all v2 content is; inside a chest; or behind a door. A blueprint may have no card at all, and then people learn of it only from a feed (§5.7) or by building its shape.
 3. **Find.** Someone walks up to a card, or opens the chest or the door, and takes a copy. The card stays for the next person. It shows the shape as smoke, the blocks the creator revealed, the prize as far as the creator revealed it, and the lock.
 4. **Build.** The finder gathers the blocks and builds the arrangement in open air, facing the way it must face, with nothing touching it.
-5. **Smash.** The finder smashes it with the Compiler. The blocks always shatter. The client gathers what it smashed, checks that it stood alone, makes the key and the lookup, and asks relays for records with that lookup. Every prize that opens appears where the build stood, as a floating toy to collect, the way a chest's contents appear. If none does, the blocks are spent.
+5. **Smash.** The finder smashes it with the Compiler. The blocks always shatter. The client gathers what it smashed, checks that it is isolated, makes the key and the lookup, and asks relays for records with that lookup. Every prize that opens appears where the build was, as a floating toy to collect, the way a chest's contents appear. If none does, the blocks are spent.
 6. **Again.** The key never changes, so anyone can build the same arrangement again, as many times as they like, and each time it yields again.
 
 Nothing here changes the movement chain, and nothing is checked by a server. A record proves that its creator knew the arrangement, because only the arrangement's key can seal a prize that opens with it. A client that does not implement this DECK skips both kinds.
@@ -164,9 +164,9 @@ For the Compiler's recipe: key `593eabd69f12d642d07764e4a7599d1ce1aa1f75912928ef
 
 A blueprint with a **location lock** must be built inside one aligned region (`CYBERSPACE_V2.md` §4) of a height `h` that its record states (§5.3), from 1 to 85: the cube of `2^h` cells on each axis, the same height on all three axes, as a bag's region is (`CYBERSPACE_V2.md` §7.6). Its encoding is the standard encoding followed by the 32 bytes of that region's key, the `location_decryption_key` of `CYBERSPACE_V2.md` §7.2. The key and the lookup are then made from that longer encoding exactly as §3.4 says. The region key is the same in a region and its twin, so a location-locked blueprint can be built in either plane of its region.
 
-- **Where the box must stand.** The region is the region of height `h` that holds every cell of the box, in world coordinates. For a smashed group, a cell at window offset `o` on an axis has the world coordinate `(hit − (N − 1) + o) mod 2^85` on that axis (§4.1). A box that crosses a border of the regions of height `h` stands in no single region of that height, and has no location encoding at that height. A box that wraps past the end of an axis crosses a border at every height below 85.
+- **Where the box must be.** The region is the region of height `h` that holds every cell of the box, in world coordinates. For a smashed group, a cell at window offset `o` on an axis has the world coordinate `(hit − (N − 1) + o) mod 2^85` on that axis (§4.1). A box that crosses a border of the regions of height `h` lies in no single region of that height, and has no location encoding at that height. A box that wraps past the end of an axis crosses a border at every height below 85.
 - **Making one.** A creator's client takes the region of height `h` that holds the box where the creator composed or captured it, or one the creator names, and makes the key from the standard encoding and that region's key.
-- **Smashing.** A smasher's client computes the standard key of every arrangement it smashes. It SHOULD also compute a location key at every height `h` named by a location-locked record its user holds a card for, when the box stands in one region of that height, and MAY compute one at other heights. Each costs one more PBKDF2 (§3.6), and the region key itself costs work that grows with the height (`CYBERSPACE_V2.md` §7.1). A client MAY bound how many heights it tries for one smash, and MAY decline a height whose region key it cannot compute in reasonable time; a card that names such a height is still read and shown. A creator SHOULD choose a height that builders' clients can compute.
+- **Smashing.** A smasher's client computes the standard key of every arrangement it smashes. It SHOULD also compute a location key at every height `h` named by a location-locked record its user holds a card for, when the box lies in one region of that height, and MAY compute one at other heights. Each costs one more PBKDF2 (§3.6), and the region key itself costs work that grows with the height (`CYBERSPACE_V2.md` §7.1). A client MAY bound how many heights it tries for one smash, and MAY decline a height whose region key it cannot compute in reasonable time; a card that names such a height is still read and shown. A creator SHOULD choose a height that builders' clients can compute.
 - **What the record says.** The record states the height and never the region. A creator who wants finders to know where to build says so in the prize's description, or leaves the card near the place.
 
 A location lock asks whether the builder knows the region's key and built there. Like every region key, the key costs the same to compute from anywhere (`CYBERSPACE_V2.md` §7.1), so a location lock proves knowledge, not travel (§12).
@@ -204,7 +204,7 @@ The group is the **arrangement** when both of these hold:
 1. it is isolated; and
 2. its box is at most `N` cells on every axis.
 
-Whichever of its cells was struck, a construction that stands alone (nothing else in its grown box) and is at most `N` cells on every axis is gathered whole (§4.1), and nothing else joins it, because nothing else touches it. Its group, its box and its arrangement are therefore the same from every one of its cells, and so are its key and its lookup: striking any block of a correct construction compiles it.
+Whichever of its cells was struck, a construction that is isolated (nothing else is in its grown box) and is at most `N` cells on every axis is gathered whole (§4.1), and nothing else joins it, because nothing else touches it. Its group, its box and its arrangement are therefore the same from every one of its cells, and so are its key and its lookup: striking any block of a correct construction compiles it.
 
 Otherwise there is no arrangement: no encoding, no key, no lookup, and nothing compiles. This covers every way a build can fail:
 
@@ -231,7 +231,7 @@ A client MUST NOT tell its user, before a smash strikes, anything about what the
 
 A client MAY show, at any time, the build cage and stencil of a card its user holds (§7.4), which draw only what the card already reveals.
 
-**Makers are not solvers.** This rule governs a smash, which is how a solver tests a build. It does not govern a maker's authoring tool. A client's BLUEPRINT tool (§1) MAY tell a maker whether a build they are capturing from the world stands alone, and what its group, box and arrangement are, because capturing leaves the blocks in place, smashes nothing and unseals nothing, and the maker is making the arrangement, not guessing it. A client MUST NOT offer that check as a way to test a build against a record or a card, and MUST NOT make the key or the lookup of a captured build before its maker chooses to publish it, so that the authoring tool cannot serve as the pre-check this section forbids.
+**Makers are not solvers.** This rule governs a smash, which is how a solver tests a build. It does not govern a maker's authoring tool. A client's BLUEPRINT tool (§1) MAY tell a maker whether a build they are capturing from the world is isolated, and what its group, box and arrangement are, because capturing leaves the blocks in place, smashes nothing and unseals nothing, and the maker is making the arrangement, not guessing it. A client MUST NOT offer that check as a way to test a build against a record or a card, and MUST NOT make the key or the lookup of a captured build before its maker chooses to publish it, so that the authoring tool cannot serve as the pre-check this section forbids.
 
 ### 4.5 Finding the record
 
@@ -303,7 +303,7 @@ The sheet is a JSON object, UTF-8, with the fields below and no others. A reader
 
 **Written plainly (normative).** `content` MUST be the sheet written as compact JSON: no whitespace outside strings, each field at most once, and in strings no escape other than `\"` and `\\`. A reader checks this by parsing the sheet and writing it back compactly, with its fields in the order they appeared and strings escaped that way: the result MUST equal `content` byte for byte, and a reader MUST drop the record otherwise. JavaScript's `JSON.stringify` writes exactly this form for any sheet that obeys the free-text rule.
 
-**Runs.** `cells` is a runs array in the encoding DECK-0003 §1.4a uses for `facecolors`: a non-negative entry is a value, and a negative entry `−N` stands for N more copies of the value expanded just before it, so two negative entries in a row repeat the same value. The first entry MUST be non-negative; every non-negative entry MUST be below the length of `pal`; and the array MUST expand to exactly `sx × sy × sz` values. A reader MUST check the length while it expands and MUST reject the sheet at the first entry that would pass it, so that an array such as `[0, -1000000000]` costs nothing. A writer MUST write the shortest form, as DECK-0003 §1.4a requires: every run of two or more equal values as the value followed by one negative entry, never a value written twice in a row and never two negative entries in a row, so that a sheet has one spelling. A reader MUST accept any well-formed array.
+**Runs.** `cells` is a runs array in the encoding DECK-0003 §1.4a uses for `facecolors`: a non-negative entry is a value, and a negative entry `−N` means N more copies of the value expanded just before it, so two negative entries in a row repeat the same value. The first entry MUST be non-negative; every non-negative entry MUST be below the length of `pal`; and the array MUST expand to exactly `sx × sy × sz` values. A reader MUST check the length while it expands and MUST reject the sheet at the first entry that would pass it, so that an array such as `[0, -1000000000]` costs nothing. A writer MUST write the shortest form, as DECK-0003 §1.4a requires: every run of two or more equal values as the value followed by one negative entry, never a value written twice in a row and never two negative entries in a row, so that a sheet has one spelling. A reader MUST accept any well-formed array.
 
 **The recipe reveal.** Each cell of the box reads as `pal[index]`: empty, hidden or revealed. The occupied cells (hidden or revealed) are the shape, which is always public. A writer:
 
@@ -416,7 +416,7 @@ Two creators publish the same lookup only when they made the same arrangement (o
 
 ### 6.3 The yield
 
-Each unsealed prize appears to the smasher where the arrangement stood, exactly as something taken from a chest appears: a small floating toy at the centre of the box (or at eye height above that spot, when the box was taller than the smasher), turning slowly, with its name. A client SHOULD keep an uncollected toy on the device, where only its user sees it, until it is collected.
+Each unsealed prize appears to the smasher where the arrangement was, exactly as something taken from a chest appears: a small floating toy at the centre of the box (or at eye height above that spot, when the box was taller than the smasher), turning slowly, with its name. A client SHOULD keep an uncollected toy on the device, where only its user sees it, until it is collected.
 
 **Collecting (non-normative).** The owner's rule for ONOSENDAI (2026-11-27): the smasher walks into a prize to take it, or taps it and presses TAKE, or presses COLLECT ALL to take every prize of the smash at once. Several prizes appear together, each with its creator's name, and more than 8 may open in a picker with the same three ways to take them.
 
@@ -428,7 +428,7 @@ A collected prize is kept on the smasher's device with the record it came from, 
 
 ### 7.1 Shape
 
-A card is a nostr event carried inline in a bag's list of entries (`CYBERSPACE_V2.md` §7.6), in a room bag (DECK-0004 §3.7.2), or in a chest (DECK-0004 §3.2), or carried in a sealed entry (`kind 33335`) of a bag or room bag. It MUST NOT be published on its own, because its `C` says where it stands, and that belongs inside the key of its place.
+A card is a nostr event carried inline in a bag's list of entries (`CYBERSPACE_V2.md` §7.6), in a room bag (DECK-0004 §3.7.2), or in a chest (DECK-0004 §3.2), or carried in a sealed entry (`kind 33335`) of a bag or room bag. It MUST NOT be published on its own, because its `C` says where it is, and that belongs inside the key of its place.
 
 | Field | Value |
 |---|---|
@@ -483,7 +483,7 @@ A card that someone took and wants to place unchanged, with its original signer'
 
 ### 7.6 Contents
 
-A bag that publishes its contents (`CYBERSPACE_V2.md` §7.7) counts a card as `blueprint`, wherever it stands in the bag: inline, in a sealed entry, or inside a chest the bag holds. `blueprint` is written after `dna`. This DECK adds `blueprint` to the list of §7.7.
+A bag that publishes its contents (`CYBERSPACE_V2.md` §7.7) counts a card as `blueprint`, wherever it is in the bag: inline, in a sealed entry, or inside a chest the bag holds. `blueprint` is written after `dna`. This DECK adds `blueprint` to the list of §7.7.
 
 ## 8. The Compiler, game recipes and starter recipes
 
@@ -530,7 +530,7 @@ y = 0      .       Ferrovein      .
 
 Every other cell of the box is empty. The recipe is standard (no location lock). Its encoding, key and lookup are given in §3.3 and §3.4. Its prize is `{"type": "tool", "tool": "compiler"}`.
 
-The recipe is symmetric across X (the mirror that swaps `x = 0` and `x = 2` swaps the two Rustband), and, being one cell deep, under a half turn about Y, so a builder cannot get those wrong. A builder who stands the T upside down, with its head at the bottom, or turns it a quarter turn about Y so that its head runs along Z, builds a different arrangement.
+The recipe is symmetric across X (the mirror that swaps `x = 0` and `x = 2` swaps the two Rustband), and, being one cell deep, under a half turn about Y, so a builder cannot get those wrong. A builder who builds the T upside down, with its head at the bottom, or turns it a quarter turn about Y so that its head runs along Z, builds a different arrangement.
 
 A client knows this recipe without any relay: it carries the arrangement, computes or stores its lookup, and yields the Compiler from it (§6.1). Ferrovein and Rustband are common in the ground. Glowcore appears in about one chunk in ten (DECK-0009 §3.9), so finding a first Glowcore is a newcomer's first goal.
 
@@ -645,7 +645,7 @@ Some single values, for a quick check:
 - **A record proves its creator knew the arrangement.** A prize that opens with the key was sealed by someone who held the key, which takes the arrangement (or a table, above). Nobody can attach a prize to someone else's lookup without knowing the arrangement, except under the game recipes and other public arrangements; the game recipes' lookups are handled apart (§6.1), and no record can give a tool (§5.5).
 - **Solutions in layers.** A smash deletes the blocks in the smasher's layer, but if the build was already published in that layer before the smash, anyone who holds the chunk's region key can read the build's cells from the older version, and with them the solution. A builder who wants a solution private smashes within the session in which they placed the blocks, before the layer publishes (§4.3); ONOSENDAI then publishes nothing at all for those cells.
 - **What a lookup query reveals.** A smasher's query names the lookup, so a relay learns that someone, from some network address, just built that blueprint, or tried a guess. A smash of a non-matching group asks for a lookup that names nothing, which also tells the relay that a smash happened. A client SHOULD ask only relays it already reads.
-- **Location locks prove knowledge, not travel.** A region key costs the same from anywhere (`CYBERSPACE_V2.md` §7.1). A location lock asks that the builder know the key of a region of the stated height, which takes the region's work, and that the box stand in that region as the smasher's client sees it. A modified client can claim any position. The height is public, and narrows nothing by itself.
+- **Location locks prove knowledge, not travel.** A region key costs the same from anywhere (`CYBERSPACE_V2.md` §7.1). A location lock asks that the builder know the key of a region of the stated height, which takes the region's work, and that the box lie in that region as the smasher's client sees it. A modified client can claim any position. The height is public, and narrows nothing by itself.
 - **Pre-checking.** A modified client can make the key and ask the relay before smashing, which skips the gamble (§4.4). That costs the same time as any guess, and is the honor system's usual trade.
 - **Cards and credit.** A card's record keeps its creator's signature wherever it is copied (§7.5), so nobody can present a copy as their own blueprint. A copy shows who left it, from the container's signature. A finder who knows the arrangement can still publish a record of their own for it, with their own prize, as any creator can; that is a second blueprint with the same lookup, under that finder's name.
 - **Cards are not secret.** The record a card carries is public (§5.7). Finding a card is how blueprints reach people in play, not a lock on the record.
@@ -677,7 +677,7 @@ Each of these was decided by Claude on delegation while writing this draft, and 
 8. **The order of prizes** is the Stack's without the home (§6.2), and records under a game recipe's lookup are ignored (§6.1). Every prize that opens is shown (arkinox, 2026-11-27).
 9. **Unlisted records use `no-broadcast`** (§5.7) rather than a new tag.
 10. **Records are signed by the creator's identity**, not a builder key (§5.1).
-11. **Makers may check their own build** (§4.4): the rule that the Compiler says nothing before a smash applies to solvers smashing. A maker's authoring tool may say whether a captured build stands alone, but never tests a build against a record and makes no key before publishing.
+11. **Makers may check their own build** (§4.4): the rule that the Compiler says nothing before a smash applies to solvers smashing. A maker's authoring tool may say whether a captured build is isolated, but never tests a build against a record and makes no key before publishing.
 12. **The relay whitelist** is done: `relay.onosendai.tech` accepts `33343` (cap 106,496) and refuses `3343` alone since cyberspace-relay #52 (§10).
 13. **Strict records** (§5.1 to §5.4): unknown tags and fields fail the record, the sheet and a card's record are written without needless escapes, and free text holds no control characters, so that the size of every card is bounded (§5.2). A malformed prize `name` fails the record rather than being ignored.
 14. **The bare hand's reach** is 3 (§8.2), so its window is 5 cells on each axis, and it compiles any arrangement at most 3 cells on every axis, from any of its blocks: the game recipes and player blueprints alike (arkinox, 2026-11-27 and 2026-11-28). The Compiler extends the reach to 16 (§8.1).

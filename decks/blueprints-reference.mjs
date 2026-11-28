@@ -185,7 +185,7 @@ export function regionHoldingBox(lo, hi, h) {
 }
 
 // ---------- the public sheet (§5.3) ----------
-// Runs arrays (DECK-0003 §1.4a): a non-negative entry is a value, -N stands for N more copies of the
+// Runs arrays (DECK-0003 §1.4a): a non-negative entry is a value, -N means N more copies of the
 // value before it.
 export function toRuns(values) {
   const out = []
