@@ -118,7 +118,8 @@ export const lookupOf = (key) => hex(sha256(key))
 // here; a client works modulo 2^85 on each axis.
 // Gathering (§4.1, §4.2). bare = true is a bare-hand smash. N is the reach; the window is the hit's
 // minus (N - 1) to plus (N - 1) on each axis, (2N - 1) cells, the hit at its centre. The group is the
-// arrangement when it is isolated and at most N cells on every axis, whichever of its cells was struck.
+// arrangement when it is isolated (no other block touches it) and at most N cells on every axis,
+// whichever of its cells was struck.
 export function gather(world, hit, bare = false) {
   const [hx, hy, hz] = hit
   if (!world.get(k3(hx, hy, hz))) throw new Error('the hit cell is empty')
@@ -144,13 +145,19 @@ export function gather(world, hit, bare = false) {
     mx = Math.min(mx, x); my = Math.min(my, y); mz = Math.min(mz, z); Mx = Math.max(Mx, x); My = Math.max(My, y); Mz = Math.max(Mz, z)
   }
   const extent = { x: Mx - mx + 1, y: My - my + 1, z: Mz - mz + 1 }
-  // Isolation: every cell of the box grown by one, other than the group's own, is empty.
+  // Isolation (§4.2): no block outside the group touches a block of the group through a face, an edge or a
+  // corner. Inside the window the group already holds every block that touches it, so an intruder is always
+  // just outside the window. A block near the group that touches none of its blocks does not matter.
   const members = new Set(group.map(([x, y, z]) => k3(x, y, z)))
-  const intruders = []
-  for (let y = my - 1; y <= My + 1; y++) for (let z = mz - 1; z <= Mz + 1; z++) for (let x = mx - 1; x <= Mx + 1; x++) {
-    const key = k3(x, y, z)
-    if (!members.has(key) && world.get(key)) intruders.push([x, y, z])
+  const seenI = new Set(), intruders = []
+  for (const [x, y, z] of group) {
+    for (let dy = -1; dy <= 1; dy++) for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+      const nx = x + dx, ny = y + dy, nz = z + dz, key = k3(nx, ny, nz)
+      if (members.has(key) || seenI.has(key) || !world.get(key)) continue
+      seenI.add(key); intruders.push([nx, ny, nz])
+    }
   }
+  intruders.sort((a, b) => a[1] - b[1] || a[2] - b[2] || a[0] - b[0])
   const isolated = intruders.length === 0
   const fits = extent.x <= N && extent.y <= N && extent.z <= N
   return { reach: N, group, extent, isolated, intruders, fits, arrangement: isolated && fits ? arrangementFrom(group) : null }
