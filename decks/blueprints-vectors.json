@@ -1100,7 +1100,7 @@
       "lookup": "729105baf5fc25cc89c56ca12eaab7b709d1d52803518927a851570df0ccab7f"
     },
     "straddle": {
-      "note": "A box at (30..32, 4..5, 20..22) crosses the border x = 32 of the height 5 regions, so it has no location encoding at height 5. At height 6 it stands in the region at the origin.",
+      "note": "A box at (30..32, 4..5, 20..22) crosses the border x = 32 of the height 5 regions, so it has no location encoding at height 5. At height 6 it lies in the region at the origin.",
       "lo": {
         "x": 30,
         "y": 4,
@@ -2017,6 +2017,196 @@
       "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
     },
     {
+      "name": "quarry-charge-bare",
+      "note": "The Quarry Charge's recipe at (200..202, 50..52, 200..202), struck bare-handed on its Cinderrock: 3 by 3 by 3 fits the bare reach, so it is an arrangement with the recipe's lookup; a bare hand compiles any arrangement within its reach (§8.2).",
+      "world": [
+        [
+          201,
+          50,
+          201,
+          2
+        ],
+        [
+          201,
+          51,
+          200,
+          5
+        ],
+        [
+          200,
+          51,
+          201,
+          5
+        ],
+        [
+          201,
+          51,
+          201,
+          40
+        ],
+        [
+          202,
+          51,
+          201,
+          7
+        ],
+        [
+          201,
+          51,
+          202,
+          5
+        ],
+        [
+          201,
+          52,
+          201,
+          2
+        ]
+      ],
+      "hit": [
+        202,
+        51,
+        201
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          201,
+          50,
+          201,
+          2
+        ],
+        [
+          201,
+          51,
+          200,
+          5
+        ],
+        [
+          200,
+          51,
+          201,
+          5
+        ],
+        [
+          201,
+          51,
+          201,
+          40
+        ],
+        [
+          202,
+          51,
+          201,
+          7
+        ],
+        [
+          201,
+          51,
+          202,
+          5
+        ],
+        [
+          201,
+          52,
+          201,
+          2
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 3
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 3
+      },
+      "lookup": "e12e7f66a13349efa89ad831967ef367411d0c9831081b8d420993c4afb46995"
+    },
+    {
+      "name": "bare-player-L",
+      "note": "A player's L of four Ferrovein, 3 by 1 by 2, struck bare-handed on its corner: an arrangement within the bare reach, with the lookup of the arrangement L.",
+      "world": [
+        [
+          300,
+          50,
+          300,
+          40
+        ],
+        [
+          301,
+          50,
+          300,
+          40
+        ],
+        [
+          302,
+          50,
+          300,
+          40
+        ],
+        [
+          302,
+          50,
+          301,
+          40
+        ]
+      ],
+      "hit": [
+        302,
+        50,
+        300
+      ],
+      "bare": true,
+      "reach": 3,
+      "group": [
+        [
+          300,
+          50,
+          300,
+          40
+        ],
+        [
+          301,
+          50,
+          300,
+          40
+        ],
+        [
+          302,
+          50,
+          300,
+          40
+        ],
+        [
+          302,
+          50,
+          301,
+          40
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 1,
+        "z": 2
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 1,
+        "z": 2
+      },
+      "lookup": "f4ddb4c4a31adf650773dfe20dece41e37fb08196af9168a74b69ca144cff2b3"
+    },
+    {
       "name": "compiler-corner-stray",
       "note": "A Driftsilt (3) at (102, 49, 201), touching the T only at a corner of the lower Ferrovein: in the group, isolated, an arrangement with a different lookup.",
       "world": [
@@ -2119,7 +2309,7 @@
     },
     {
       "name": "compiler-clear-above",
-      "note": "A Gridstone at (101, 54, 200), two cells above the Glowcore: outside the grown box, not in the group; still the recipe.",
+      "note": "A Gridstone at (101, 54, 200), two cells above the Glowcore: it touches no block of the T, so it is not in the group and does not matter; still the recipe.",
       "world": [
         [
           101,
@@ -2213,8 +2403,103 @@
       "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
     },
     {
+      "name": "T-grown-box-neighbour",
+      "note": "A Gridstone at (99, 50, 201), at (-1, 0, 1) relative to the T's box: inside the box grown by one, but it touches no block of the T on a face, an edge or a corner, so the T is isolated and compiles (§4.2).",
+      "world": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ],
+        [
+          99,
+          50,
+          201,
+          1
+        ]
+      ],
+      "hit": [
+        101,
+        51,
+        200
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          101,
+          50,
+          200,
+          40
+        ],
+        [
+          101,
+          51,
+          200,
+          40
+        ],
+        [
+          100,
+          52,
+          200,
+          5
+        ],
+        [
+          101,
+          52,
+          200,
+          42
+        ],
+        [
+          102,
+          52,
+          200,
+          5
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
+    },
+    {
       "name": "compiler-in-grown-box",
-      "note": "A Gridstone at (103, 50, 201): inside the grown box (x 99..103, y 49..53, z 199..201) but touching nothing: not isolated, no arrangement.",
+      "note": "A Gridstone at (103, 50, 201), also inside the grown box and touching nothing: the T is isolated and compiles.",
       "world": [
         [
           101,
@@ -2297,19 +2582,19 @@
         "y": 3,
         "z": 1
       },
-      "isolated": false,
-      "intruders": [
-        [
-          103,
-          50,
-          201
-        ]
-      ],
-      "arrangement": false
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 3,
+        "z": 1
+      },
+      "lookup": "84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7cef26ddddae053f8564"
     },
     {
       "name": "L-notch",
-      "note": "An L of five Gridstone with a block in its notch at (0, 0, 2), touching nothing: not isolated, no arrangement (§4.2).",
+      "note": "An L of five Gridstone with a block in its notch at (0, 0, 2) that touches none of them: the L is isolated and is an arrangement; the notch block is not part of it.",
       "world": [
         [
           0,
@@ -2392,15 +2677,15 @@
         "y": 1,
         "z": 3
       },
-      "isolated": false,
-      "intruders": [
-        [
-          0,
-          0,
-          2
-        ]
-      ],
-      "arrangement": false
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "box": {
+        "x": 3,
+        "y": 1,
+        "z": 3
+      },
+      "lookup": "b1d6acc58aa269ac79600edc2ffe0af26d74df371b28bbb077857861805fede9"
     },
     {
       "name": "row-16-minus-end",
@@ -5502,7 +5787,7 @@
     }
   },
   "size_bounds": {
-    "note": "The worst case of §5.2 and §10: every tag and field present, a full palette, four views of 16,384 characters, all free text made of quotation marks, and the prize payload padded until the record is exactly at the cap. Placeholder values stand in for ids, keys and signatures, which have fixed lengths.",
+    "note": "The worst case of §5.2 and §10: every tag and field present, a full palette, four views of 16,384 characters, all free text made of quotation marks, and the prize payload padded until the record is exactly at the cap. Placeholder values take the place of ids, keys and signatures, which have fixed lengths.",
     "record_bytes": 98304,
     "structural_escapes": 148,
     "escapes": 2212,

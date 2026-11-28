@@ -83,7 +83,7 @@ check(byName.compiler.lookup === '84b131f9c9fd4fe30f118e8c115e7dfd86c7debd3d2f7c
 const reg5 = B.regionOf(0n, 0n, 0n, 5)
 check(reg5.lookupId === '3c5d8c498f57d6d61527c53b824efe9edd768c2efd4d05acad6ea2775727c649', 'origin chunk lookup id (DECK-0009 §11)')
 const reg6 = B.regionOf(0n, 0n, 0n, 6)
-const atOrigin = B.COMPILER_RECIPE.map(([x, y, z, id]) => [x + 10, y + 4, z + 20, id])   // the box stands at (10..12, 4..6, 20)
+const atOrigin = B.COMPILER_RECIPE.map(([x, y, z, id]) => [x + 10, y + 4, z + 20, id])   // the box is at (10..12, 4..6, 20)
 const locBox = { lo: { x: 10n, y: 4n, z: 20n }, hi: { x: 12n, y: 6n, z: 20n } }
 check(B.regionHoldingBox(locBox.lo, locBox.hi, 5)?.lookupId === reg5.lookupId, 'box inside the origin chunk')
 const straddle = { lo: { x: 30n, y: 4n, z: 20n }, hi: { x: 32n, y: 5n, z: 22n } }
@@ -101,7 +101,7 @@ const location = {
   h5: locVector(reg5, 'Location lock at height 5: the origin chunk (DECK-0009\'s origin, lookup id 3c5d8c49...c649).'),
   h6: locVector(reg6, 'Location lock at height 6: a different region key, so a different key and lookup.'),
   straddle: {
-    note: 'A box at (30..32, 4..5, 20..22) crosses the border x = 32 of the height 5 regions, so it has no location encoding at height 5. At height 6 it stands in the region at the origin.',
+    note: 'A box at (30..32, 4..5, 20..22) crosses the border x = 32 of the height 5 regions, so it has no location encoding at height 5. At height 6 it lies in the region at the origin.',
     lo: { x: 30, y: 4, z: 20 }, hi: { x: 32, y: 5, z: 22 }, region_h5: null,
     region_h6: regInfo(B.regionHoldingBox(straddle.lo, straddle.hi, 6)),
   },
@@ -138,10 +138,13 @@ const gatherCases = [
   gatherVector('T-bare-left-rustband', 'The Compiler\'s recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its left Rustband: the whole T, isolated, the recipe\'s lookup.', comp, [100, 52, 200], { bare: true, isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
   gatherVector('T-bare-glowcore', 'The Compiler\'s recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its Glowcore: the whole T, isolated, the recipe\'s lookup.', comp, [101, 52, 200], { bare: true, isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
   gatherVector('T-bare-right-rustband', 'The Compiler\'s recipe in open air (handle (101, 50..51, 200), head (100..102, 52, 200)), struck bare-handed (reach 3, window 5 cells) on its right Rustband: the whole T, isolated, the recipe\'s lookup.', comp, [102, 52, 200], { bare: true, isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
+  gatherVector('quarry-charge-bare', 'The Quarry Charge\'s recipe at (200..202, 50..52, 200..202), struck bare-handed on its Cinderrock: 3 by 3 by 3 fits the bare reach, so it is an arrangement with the recipe\'s lookup; a bare hand compiles any arrangement within its reach (§8.2).', placed(B.QUARRY_CHARGE_RECIPE, 200, 50, 200), [202, 51, 201], { bare: true, isolated: true, arrangement: true, group: 7, lookup: byName['quarry-charge'].lookup }),
+  gatherVector('bare-player-L', 'A player\'s L of four Ferrovein, 3 by 1 by 2, struck bare-handed on its corner: an arrangement within the bare reach, with the lookup of the arrangement L.', placed(L, 300, 50, 300), [302, 50, 300], { bare: true, isolated: true, arrangement: true, group: 4, lookup: byName.L.lookup }),
   gatherVector('compiler-corner-stray', 'A Driftsilt (3) at (102, 49, 201), touching the T only at a corner of the lower Ferrovein: in the group, isolated, an arrangement with a different lookup.', [...comp, [102, 49, 201, 3]], [101, 50, 200], { isolated: true, arrangement: true, group: 6 }),
-  gatherVector('compiler-clear-above', 'A Gridstone at (101, 54, 200), two cells above the Glowcore: outside the grown box, not in the group; still the recipe.', [...comp, [101, 54, 200, G]], [101, 50, 200], { isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
-  gatherVector('compiler-in-grown-box', 'A Gridstone at (103, 50, 201): inside the grown box (x 99..103, y 49..53, z 199..201) but touching nothing: not isolated, no arrangement.', [...comp, [103, 50, 201, G]], [101, 50, 200], { isolated: false, arrangement: false, group: 5 }),
-  gatherVector('L-notch', 'An L of five Gridstone with a block in its notch at (0, 0, 2), touching nothing: not isolated, no arrangement (§4.2).', [...Lnotch, [0, 0, 2, G]], [2, 0, 0], { isolated: false, arrangement: false, group: 5 }),
+  gatherVector('compiler-clear-above', 'A Gridstone at (101, 54, 200), two cells above the Glowcore: it touches no block of the T, so it is not in the group and does not matter; still the recipe.', [...comp, [101, 54, 200, G]], [101, 50, 200], { isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
+  gatherVector('T-grown-box-neighbour', 'A Gridstone at (99, 50, 201), at (-1, 0, 1) relative to the T\'s box: inside the box grown by one, but it touches no block of the T on a face, an edge or a corner, so the T is isolated and compiles (§4.2).', [...comp, [99, 50, 201, G]], [101, 51, 200], { isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
+  gatherVector('compiler-in-grown-box', 'A Gridstone at (103, 50, 201), also inside the grown box and touching nothing: the T is isolated and compiles.', [...comp, [103, 50, 201, G]], [101, 50, 200], { isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
+  gatherVector('L-notch', 'An L of five Gridstone with a block in its notch at (0, 0, 2) that touches none of them: the L is isolated and is an arrangement; the notch block is not part of it.', [...Lnotch, [0, 0, 2, G]], [2, 0, 0], { isolated: true, arrangement: true, group: 5 }),
   gatherVector('row-16-minus-end', 'A row of 16 Gridstone, x 0..15, struck at x 0, its minus end: the window is x -15..15, the whole row, isolated, 16 cells long: an arrangement.', row(16, 0), [0, 10, 10], { isolated: true, arrangement: true, group: 16 }),
   gatherVector('row-16-plus-end', 'The same row struck at x 15, its plus end: the same arrangement and lookup.', row(16, 0), [15, 10, 10], { isolated: true, arrangement: true, group: 16 }),
   gatherVector('row-17-middle', 'A row of 17, x 0..16, struck at x 8: the whole row is in the window and isolated, but 17 cells long, more than the reach: no arrangement.', row(17, 0), [8, 10, 10], { isolated: true, arrangement: false, group: 17 }),
@@ -290,7 +293,7 @@ function sizeBounds() {
   const preview = 'This is hidden at a place in cyberspace. Find it with ONOSENDAI: https://onosendai.tech'
   const se = { id: F(64), pubkey: F(64), created_at: 9999999999, kind: 33335, tags: [['d', F(32)], ['encrypted', 'aes-256-gcm', 'A'.repeat(sealedB64), 'cyberspace:region'], ['alt', preview]], content: preview, sig: F(128) }
   const out = {
-    note: 'The worst case of §5.2 and §10: every tag and field present, a full palette, four views of 16,384 characters, all free text made of quotation marks, and the prize payload padded until the record is exactly at the cap. Placeholder values stand in for ids, keys and signatures, which have fixed lengths.',
+    note: 'The worst case of §5.2 and §10: every tag and field present, a full palette, four views of 16,384 characters, all free text made of quotation marks, and the prize payload padded until the record is exactly at the cap. Placeholder values take the place of ids, keys and signatures, which have fixed lengths.',
     record_bytes: Buffer.byteLength(R), structural_escapes: structural, escapes: esc(R), card_bytes: C, card_own_fields: C - Buffer.byteLength(R) - esc(R),
     chest_room_left: 131072 - Buffer.byteLength(JSON.stringify([cardEv])), sealed_entry_bytes: Buffer.byteLength(JSON.stringify(se)),
     relay_worst_bytes: Buffer.byteLength(R) + 8 * (64 + 280 + 280 + 64),
