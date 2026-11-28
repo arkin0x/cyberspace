@@ -111,8 +111,9 @@ location.h5.encoding_length === 76 || (() => { throw new Error('location encodin
 // ---------- gather ----------
 function world(cells) { const m = new Map(); for (const [x, y, z, id] of cells) m.set(k3(x, y, z), id); return m }
 function gatherVector(name, note, cells, hit, expect) {
-  const r = B.gather(world(cells), hit, !!expect.bare)
+  const r = B.gather(world(cells), hit, !!expect.bare, expect.ground ? world(expect.ground) : null)
   const v = { name, note, world: cells, hit, bare: !!expect.bare, reach: r.reach, group: r.group, extent: r.extent, isolated: r.isolated, intruders: r.intruders, arrangement: !!r.arrangement }
+  if (expect.ground) { v.ground = expect.ground; v.changed = r.changed }
   if (r.arrangement) {
     const key = B.arrangementKey(B.encodeArrangement(r.arrangement))
     v.box = r.arrangement.size; v.lookup = B.lookupOf(key)
@@ -125,6 +126,8 @@ function gatherVector(name, note, cells, hit, expect) {
 }
 const placed = (cells, dx, dy, dz) => cells.map(([x, y, z, id]) => [x + dx, y + dy, z + dz, id])
 const comp = placed(B.COMPILER_RECIPE, 100, 50, 200)
+const island = []
+for (let z = 400; z <= 402; z++) for (let x = 400; x <= 402; x++) island.push([x, 60, z, G])
 const row = (n, x0) => Array.from({ length: n }, (_, i) => [x0 + i, 10, 10, G])
 const Lnotch = [[0, 0, 0, G], [1, 0, 0, G], [2, 0, 0, G], [2, 0, 1, G], [2, 0, 2, G]]
 const gatherCases = [
@@ -145,6 +148,8 @@ const gatherCases = [
   gatherVector('T-grown-box-neighbour', 'A Gridstone at (99, 50, 201), at (-1, 0, 1) relative to the T\'s box: inside the box grown by one, but it touches no block of the T on a face, an edge or a corner, so the T is isolated and compiles (§4.2).', [...comp, [99, 50, 201, G]], [101, 51, 200], { isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
   gatherVector('compiler-in-grown-box', 'A Gridstone at (103, 50, 201), also inside the grown box and touching nothing: the T is isolated and compiles.', [...comp, [103, 50, 201, G]], [101, 50, 200], { isolated: true, arrangement: true, group: 5, lookup: byName.compiler.lookup }),
   gatherVector('L-notch', 'An L of five Gridstone with a block in its notch at (0, 0, 2) that touches none of them: the L is isolated and is an arrangement; the notch block is not part of it.', [...Lnotch, [0, 0, 2, G]], [2, 0, 0], { isolated: true, arrangement: true, group: 5 }),
+  gatherVector('natural-island', 'A floating island of the ground nobody has edited: nine Gridstone in a 3 by 1 by 3 slab at (400..402, 60, 400..402), every one equal to the generated ground (the `ground` list). Isolated and within reach, but natural only: no arrangement; the smash breaks it and compiles nothing (§4.2, condition 3).', island, [401, 60, 401], { ground: island, isolated: true, arrangement: false, group: 9 }),
+  gatherVector('natural-island-plus-one', 'The same island with one placed Glowcore at (401, 61, 401), where the ground is empty: a changed block, so the group of ten is an arrangement; the nine natural Gridstone are read with their own id.', [...island, [401, 61, 401, GLOW]], [400, 60, 400], { ground: island, isolated: true, arrangement: true, group: 10 }),
   gatherVector('row-16-minus-end', 'A row of 16 Gridstone, x 0..15, struck at x 0, its minus end: the window is x -15..15, the whole row, isolated, 16 cells long: an arrangement.', row(16, 0), [0, 10, 10], { isolated: true, arrangement: true, group: 16 }),
   gatherVector('row-16-plus-end', 'The same row struck at x 15, its plus end: the same arrangement and lookup.', row(16, 0), [15, 10, 10], { isolated: true, arrangement: true, group: 16 }),
   gatherVector('row-17-middle', 'A row of 17, x 0..16, struck at x 8: the whole row is in the window and isolated, but 17 cells long, more than the reach: no arrangement.', row(17, 0), [8, 10, 10], { isolated: true, arrangement: false, group: 17 }),
