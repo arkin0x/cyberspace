@@ -28844,5 +28844,1685 @@
     "value": 40
    }
   }
+ },
+ "develop": {
+  "note": "Open ground (§3.10a): a plane object with survey true and ground 0 develops the plane: its base is every cell empty, and it is a first claim resolved by §7.5 exactly as a survey is, by own rank, then the earliest surveyed, then the lower author pubkey, builder pubkey and event id. Each view below decodes real plane objects against the reader's grounds and resolves the cells by §7.4. A cell gives what it shows, the id of the winning layer and its rank, or null when no counted layer changed it and it shows the base; ground_r3 is the cell in the revision 3 ground, for reference.",
+  "open_ground": 0,
+  "develop_only_plaintext": "{\"planes\":[{\"plane\":0,\"survey\":true,\"surveyed\":1800000000,\"ground\":0,\"form\":\"diff\",\"pal\":[null],\"cells\":[0,-32767]}]}",
+  "develop_only_bytes": 117,
+  "authors": {
+   "D": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+   "F": "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1",
+   "T": "7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a",
+   "H": "a8f5c0fd979e8fe9b2d1f947186bb57d074c615d057eabf456c6114c90745945",
+   "reader": "5252525252525252525252525252525252525252525252525252525252525252",
+   "stranger": "5151515151515151515151515151515151515151515151515151515151515151"
+  },
+  "outside_the_home": {
+   "chunk": [
+    "22481856041626105084248320",
+    "14044003616894163159701568",
+    "27348626732574327974997632",
+    1
+   ],
+   "note": "A chunk in nobody's home. D develops plane P (surveyed 200) and places Glowcore and Rimeglass, and surveys the twin plane at revision 3. In layout A, F surveys plane P at revision 3 with surveyed 300, after D; in layout B with surveyed 100, before D (two claims made before either saw the other). F mines a rock cell and places Prismite.",
+   "layers_a": [
+    {
+     "id": "0101010101010101010101010101010101010101010101010101010101010101",
+     "author": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+     "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "created_at": 1000,
+     "cobuilders": [],
+     "planes": [
+      {
+       "plane": 0,
+       "survey": true,
+       "surveyed": 200,
+       "ground": 3,
+       "form": "diff",
+       "pal": [
+        null,
+        41
+       ],
+       "cells": [
+        0,
+        -28990,
+        1,
+        0,
+        -3775
+       ]
+      },
+      {
+       "plane": 1,
+       "survey": true,
+       "surveyed": 200,
+       "ground": 0,
+       "form": "whole",
+       "pal": [
+        0,
+        10,
+        42
+       ],
+       "cells": [
+        0,
+        -8323,
+        1,
+        0,
+        -16383,
+        2,
+        0,
+        -8057
+       ]
+      }
+     ]
+    },
+    {
+     "id": "0202020202020202020202020202020202020202020202020202020202020202",
+     "author": "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1",
+     "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "created_at": 1100,
+     "cobuilders": [],
+     "planes": [
+      {
+       "plane": 1,
+       "survey": true,
+       "surveyed": 300,
+       "ground": 3,
+       "form": "diff",
+       "pal": [
+        null,
+        0,
+        8
+       ],
+       "cells": [
+        0,
+        -8991,
+        1,
+        0,
+        -18430,
+        2,
+        0,
+        -5342
+       ]
+      }
+     ]
+    }
+   ],
+   "layers_b": [
+    {
+     "id": "0101010101010101010101010101010101010101010101010101010101010101",
+     "author": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+     "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "created_at": 1000,
+     "cobuilders": [],
+     "planes": [
+      {
+       "plane": 0,
+       "survey": true,
+       "surveyed": 200,
+       "ground": 3,
+       "form": "diff",
+       "pal": [
+        null,
+        41
+       ],
+       "cells": [
+        0,
+        -28990,
+        1,
+        0,
+        -3775
+       ]
+      },
+      {
+       "plane": 1,
+       "survey": true,
+       "surveyed": 200,
+       "ground": 0,
+       "form": "whole",
+       "pal": [
+        0,
+        10,
+        42
+       ],
+       "cells": [
+        0,
+        -8323,
+        1,
+        0,
+        -16383,
+        2,
+        0,
+        -8057
+       ]
+      }
+     ]
+    },
+    {
+     "id": "0202020202020202020202020202020202020202020202020202020202020202",
+     "author": "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1",
+     "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "created_at": 1100,
+     "cobuilders": [],
+     "planes": [
+      {
+       "plane": 1,
+       "survey": true,
+       "surveyed": 100,
+       "ground": 3,
+       "form": "diff",
+       "pal": [
+        null,
+        0,
+        8
+       ],
+       "cells": [
+        0,
+        -8991,
+        1,
+        0,
+        -18430,
+        2,
+        0,
+        -5342
+       ]
+      }
+     ]
+    }
+   ],
+   "views": [
+    {
+     "name": "D, the developer (follows F): its own develop is rank 2 and decides; every cell nobody changed is empty, rock included",
+     "layout": "a",
+     "reader": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+     "follows": [
+      "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1"
+     ],
+     "reads_ground_values": [
+      0,
+      2,
+      3
+     ],
+     "plane": 1,
+     "set_aside": [],
+     "counted_surveys": [
+      {
+       "id": "0101010101010101010101010101010101010101010101010101010101010101",
+       "ground": 0,
+       "rank": 2,
+       "surveyed": 200
+      },
+      {
+       "id": "0202020202020202020202020202020202020202020202020202020202020202",
+       "ground": 3,
+       "rank": 3,
+       "surveyed": 300
+      }
+     ],
+     "base": "open ground (0): empty",
+     "base_ground": 0,
+     "cells": [
+      {
+       "label": "rock in the ground, nobody changed it",
+       "cell": 16912,
+       "x": 16,
+       "y": 16,
+       "z": 16,
+       "ground_r3": 2,
+       "value": 0,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "empty in the ground, nobody changed it",
+       "cell": 21008,
+       "x": 16,
+       "y": 20,
+       "z": 16,
+       "ground_r3": 0,
+       "value": 0,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "D placed Glowcore (42) in a cell the ground leaves empty",
+       "cell": 24709,
+       "x": 5,
+       "y": 24,
+       "z": 4,
+       "ground_r3": 0,
+       "value": 42,
+       "from": "0101010101010101010101010101010101010101010101010101010101010101",
+       "rank": 2
+      },
+      {
+       "label": "D placed Rimeglass (10) in a cell that is rock in the ground",
+       "cell": 8324,
+       "x": 4,
+       "y": 8,
+       "z": 4,
+       "ground_r3": 5,
+       "value": 10,
+       "from": "0101010101010101010101010101010101010101010101010101010101010101",
+       "rank": 2
+      },
+      {
+       "label": "F mined a cell of rock",
+       "cell": 8992,
+       "x": 0,
+       "y": 8,
+       "z": 25,
+       "ground_r3": 5,
+       "value": 0,
+       "from": "0202020202020202020202020202020202020202020202020202020202020202",
+       "rank": 3
+      },
+      {
+       "label": "F placed Prismite (8) in an empty cell",
+       "cell": 27424,
+       "x": 0,
+       "y": 26,
+       "z": 25,
+       "ground_r3": 0,
+       "value": 8,
+       "from": "0202020202020202020202020202020202020202020202020202020202020202",
+       "rank": 3
+      }
+     ]
+    },
+    {
+     "name": "F, the friend who surveyed (follows D): its own survey is rank 2 and decides; it sees the ground, can mine it, and sees D's blocks in the cells D changed",
+     "layout": "a",
+     "reader": "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1",
+     "follows": [
+      "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0"
+     ],
+     "reads_ground_values": [
+      0,
+      2,
+      3
+     ],
+     "plane": 1,
+     "set_aside": [],
+     "counted_surveys": [
+      {
+       "id": "0101010101010101010101010101010101010101010101010101010101010101",
+       "ground": 0,
+       "rank": 3,
+       "surveyed": 200
+      },
+      {
+       "id": "0202020202020202020202020202020202020202020202020202020202020202",
+       "ground": 3,
+       "rank": 2,
+       "surveyed": 300
+      }
+     ],
+     "base": "revision 3",
+     "base_ground": 3,
+     "cells": [
+      {
+       "label": "rock in the ground, nobody changed it",
+       "cell": 16912,
+       "x": 16,
+       "y": 16,
+       "z": 16,
+       "ground_r3": 2,
+       "value": 2,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "empty in the ground, nobody changed it",
+       "cell": 21008,
+       "x": 16,
+       "y": 20,
+       "z": 16,
+       "ground_r3": 0,
+       "value": 0,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "D placed Glowcore (42) in a cell the ground leaves empty",
+       "cell": 24709,
+       "x": 5,
+       "y": 24,
+       "z": 4,
+       "ground_r3": 0,
+       "value": 42,
+       "from": "0101010101010101010101010101010101010101010101010101010101010101",
+       "rank": 3
+      },
+      {
+       "label": "D placed Rimeglass (10) in a cell that is rock in the ground",
+       "cell": 8324,
+       "x": 4,
+       "y": 8,
+       "z": 4,
+       "ground_r3": 5,
+       "value": 10,
+       "from": "0101010101010101010101010101010101010101010101010101010101010101",
+       "rank": 3
+      },
+      {
+       "label": "F mined a cell of rock",
+       "cell": 8992,
+       "x": 0,
+       "y": 8,
+       "z": 25,
+       "ground_r3": 5,
+       "value": 0,
+       "from": "0202020202020202020202020202020202020202020202020202020202020202",
+       "rank": 2
+      },
+      {
+       "label": "F placed Prismite (8) in an empty cell",
+       "cell": 27424,
+       "x": 0,
+       "y": 26,
+       "z": 25,
+       "ground_r3": 0,
+       "value": 8,
+       "from": "0202020202020202020202020202020202020202020202020202020202020202",
+       "rank": 2
+      }
+     ]
+    },
+    {
+     "name": "T follows D and F (both rank 3): the earlier claim decides, D's develop at 200",
+     "layout": "a",
+     "reader": "7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a",
+     "follows": [
+      "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+      "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1"
+     ],
+     "reads_ground_values": [
+      0,
+      2,
+      3
+     ],
+     "plane": 1,
+     "set_aside": [],
+     "counted_surveys": [
+      {
+       "id": "0101010101010101010101010101010101010101010101010101010101010101",
+       "ground": 0,
+       "rank": 3,
+       "surveyed": 200
+      },
+      {
+       "id": "0202020202020202020202020202020202020202020202020202020202020202",
+       "ground": 3,
+       "rank": 3,
+       "surveyed": 300
+      }
+     ],
+     "base": "open ground (0): empty",
+     "base_ground": 0,
+     "cells": [
+      {
+       "label": "rock in the ground, nobody changed it",
+       "cell": 16912,
+       "x": 16,
+       "y": 16,
+       "z": 16,
+       "ground_r3": 2,
+       "value": 0,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "empty in the ground, nobody changed it",
+       "cell": 21008,
+       "x": 16,
+       "y": 20,
+       "z": 16,
+       "ground_r3": 0,
+       "value": 0,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "D placed Glowcore (42) in a cell the ground leaves empty",
+       "cell": 24709,
+       "x": 5,
+       "y": 24,
+       "z": 4,
+       "ground_r3": 0,
+       "value": 42,
+       "from": "0101010101010101010101010101010101010101010101010101010101010101",
+       "rank": 3
+      },
+      {
+       "label": "D placed Rimeglass (10) in a cell that is rock in the ground",
+       "cell": 8324,
+       "x": 4,
+       "y": 8,
+       "z": 4,
+       "ground_r3": 5,
+       "value": 10,
+       "from": "0101010101010101010101010101010101010101010101010101010101010101",
+       "rank": 3
+      },
+      {
+       "label": "F mined a cell of rock",
+       "cell": 8992,
+       "x": 0,
+       "y": 8,
+       "z": 25,
+       "ground_r3": 5,
+       "value": 0,
+       "from": "0202020202020202020202020202020202020202020202020202020202020202",
+       "rank": 3
+      },
+      {
+       "label": "F placed Prismite (8) in an empty cell",
+       "cell": 27424,
+       "x": 0,
+       "y": 26,
+       "z": 25,
+       "ground_r3": 0,
+       "value": 8,
+       "from": "0202020202020202020202020202020202020202020202020202020202020202",
+       "rank": 3
+      }
+     ]
+    },
+    {
+     "name": "T follows D and F, and F claimed first (100): F's survey decides, and D's plot is drawn over rock",
+     "layout": "b",
+     "reader": "7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a",
+     "follows": [
+      "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+      "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1"
+     ],
+     "reads_ground_values": [
+      0,
+      2,
+      3
+     ],
+     "plane": 1,
+     "set_aside": [],
+     "counted_surveys": [
+      {
+       "id": "0101010101010101010101010101010101010101010101010101010101010101",
+       "ground": 0,
+       "rank": 3,
+       "surveyed": 200
+      },
+      {
+       "id": "0202020202020202020202020202020202020202020202020202020202020202",
+       "ground": 3,
+       "rank": 3,
+       "surveyed": 100
+      }
+     ],
+     "base": "revision 3",
+     "base_ground": 3,
+     "cells": [
+      {
+       "label": "rock in the ground, nobody changed it",
+       "cell": 16912,
+       "x": 16,
+       "y": 16,
+       "z": 16,
+       "ground_r3": 2,
+       "value": 2,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "empty in the ground, nobody changed it",
+       "cell": 21008,
+       "x": 16,
+       "y": 20,
+       "z": 16,
+       "ground_r3": 0,
+       "value": 0,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "D placed Glowcore (42) in a cell the ground leaves empty",
+       "cell": 24709,
+       "x": 5,
+       "y": 24,
+       "z": 4,
+       "ground_r3": 0,
+       "value": 42,
+       "from": "0101010101010101010101010101010101010101010101010101010101010101",
+       "rank": 3
+      },
+      {
+       "label": "D placed Rimeglass (10) in a cell that is rock in the ground",
+       "cell": 8324,
+       "x": 4,
+       "y": 8,
+       "z": 4,
+       "ground_r3": 5,
+       "value": 10,
+       "from": "0101010101010101010101010101010101010101010101010101010101010101",
+       "rank": 3
+      },
+      {
+       "label": "F mined a cell of rock",
+       "cell": 8992,
+       "x": 0,
+       "y": 8,
+       "z": 25,
+       "ground_r3": 5,
+       "value": 0,
+       "from": "0202020202020202020202020202020202020202020202020202020202020202",
+       "rank": 3
+      },
+      {
+       "label": "F placed Prismite (8) in an empty cell",
+       "cell": 27424,
+       "x": 0,
+       "y": 26,
+       "z": 25,
+       "ground_r3": 0,
+       "value": 8,
+       "from": "0202020202020202020202020202020202020202020202020202020202020202",
+       "rank": 3
+      }
+     ]
+    },
+    {
+     "name": "T follows only D: D's develop (rank 3) beats F's earlier survey (rank 4)",
+     "layout": "b",
+     "reader": "7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a",
+     "follows": [
+      "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0"
+     ],
+     "reads_ground_values": [
+      0,
+      2,
+      3
+     ],
+     "plane": 1,
+     "set_aside": [],
+     "counted_surveys": [
+      {
+       "id": "0101010101010101010101010101010101010101010101010101010101010101",
+       "ground": 0,
+       "rank": 3,
+       "surveyed": 200
+      },
+      {
+       "id": "0202020202020202020202020202020202020202020202020202020202020202",
+       "ground": 3,
+       "rank": 4,
+       "surveyed": 100
+      }
+     ],
+     "base": "open ground (0): empty",
+     "base_ground": 0,
+     "cells": [
+      {
+       "label": "rock in the ground, nobody changed it",
+       "cell": 16912,
+       "x": 16,
+       "y": 16,
+       "z": 16,
+       "ground_r3": 2,
+       "value": 0,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "empty in the ground, nobody changed it",
+       "cell": 21008,
+       "x": 16,
+       "y": 20,
+       "z": 16,
+       "ground_r3": 0,
+       "value": 0,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "D placed Glowcore (42) in a cell the ground leaves empty",
+       "cell": 24709,
+       "x": 5,
+       "y": 24,
+       "z": 4,
+       "ground_r3": 0,
+       "value": 42,
+       "from": "0101010101010101010101010101010101010101010101010101010101010101",
+       "rank": 3
+      },
+      {
+       "label": "D placed Rimeglass (10) in a cell that is rock in the ground",
+       "cell": 8324,
+       "x": 4,
+       "y": 8,
+       "z": 4,
+       "ground_r3": 5,
+       "value": 10,
+       "from": "0101010101010101010101010101010101010101010101010101010101010101",
+       "rank": 3
+      },
+      {
+       "label": "F mined a cell of rock",
+       "cell": 8992,
+       "x": 0,
+       "y": 8,
+       "z": 25,
+       "ground_r3": 5,
+       "value": 0,
+       "from": "0202020202020202020202020202020202020202020202020202020202020202",
+       "rank": 4
+      },
+      {
+       "label": "F placed Prismite (8) in an empty cell",
+       "cell": 27424,
+       "x": 0,
+       "y": 26,
+       "z": 25,
+       "ground_r3": 0,
+       "value": 8,
+       "from": "0202020202020202020202020202020202020202020202020202020202020202",
+       "rank": 4
+      }
+     ]
+    },
+    {
+     "name": "T follows nobody: both are strangers, and F's earlier survey decides",
+     "layout": "b",
+     "reader": "7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a",
+     "follows": [],
+     "reads_ground_values": [
+      0,
+      2,
+      3
+     ],
+     "plane": 1,
+     "set_aside": [],
+     "counted_surveys": [
+      {
+       "id": "0101010101010101010101010101010101010101010101010101010101010101",
+       "ground": 0,
+       "rank": 4,
+       "surveyed": 200
+      },
+      {
+       "id": "0202020202020202020202020202020202020202020202020202020202020202",
+       "ground": 3,
+       "rank": 4,
+       "surveyed": 100
+      }
+     ],
+     "base": "revision 3",
+     "base_ground": 3,
+     "cells": [
+      {
+       "label": "rock in the ground, nobody changed it",
+       "cell": 16912,
+       "x": 16,
+       "y": 16,
+       "z": 16,
+       "ground_r3": 2,
+       "value": 2,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "empty in the ground, nobody changed it",
+       "cell": 21008,
+       "x": 16,
+       "y": 20,
+       "z": 16,
+       "ground_r3": 0,
+       "value": 0,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "D placed Glowcore (42) in a cell the ground leaves empty",
+       "cell": 24709,
+       "x": 5,
+       "y": 24,
+       "z": 4,
+       "ground_r3": 0,
+       "value": 42,
+       "from": "0101010101010101010101010101010101010101010101010101010101010101",
+       "rank": 4
+      },
+      {
+       "label": "D placed Rimeglass (10) in a cell that is rock in the ground",
+       "cell": 8324,
+       "x": 4,
+       "y": 8,
+       "z": 4,
+       "ground_r3": 5,
+       "value": 10,
+       "from": "0101010101010101010101010101010101010101010101010101010101010101",
+       "rank": 4
+      },
+      {
+       "label": "F mined a cell of rock",
+       "cell": 8992,
+       "x": 0,
+       "y": 8,
+       "z": 25,
+       "ground_r3": 5,
+       "value": 0,
+       "from": "0202020202020202020202020202020202020202020202020202020202020202",
+       "rank": 4
+      },
+      {
+       "label": "F placed Prismite (8) in an empty cell",
+       "cell": 27424,
+       "x": 0,
+       "y": 26,
+       "z": 25,
+       "ground_r3": 0,
+       "value": 8,
+       "from": "0202020202020202020202020202020202020202020202020202020202020202",
+       "rank": 4
+      }
+     ]
+    },
+    {
+     "name": "D's twin plane, viewed by T who follows D: a plane of its own, surveyed at revision 3 by D",
+     "layout": "a",
+     "reader": "7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a",
+     "follows": [
+      "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+      "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1"
+     ],
+     "reads_ground_values": [
+      0,
+      2,
+      3
+     ],
+     "plane": 0,
+     "set_aside": [],
+     "counted_surveys": [
+      {
+       "id": "0101010101010101010101010101010101010101010101010101010101010101",
+       "ground": 3,
+       "rank": 3,
+       "surveyed": 200
+      }
+     ],
+     "base": "revision 3",
+     "base_ground": 3,
+     "cells": [
+      {
+       "label": "D placed Cobaltine (41) on the twin",
+       "cell": 28991,
+       "x": 31,
+       "y": 28,
+       "z": 9,
+       "ground_r3": 0,
+       "value": 41,
+       "from": "0101010101010101010101010101010101010101010101010101010101010101",
+       "rank": 3
+      }
+     ]
+    }
+   ],
+   "mining_in_d_view": {
+    "note": "Every cell of plane P that D's view shows as not empty is a block a counted layer placed: none comes from the ground, so mining in D's plot yields only placed blocks.",
+    "non_empty_cells_shown": 3,
+    "of_them_placed_by_a_layer": 3
+   }
+  },
+  "in_the_home": {
+   "chunk": [
+    "22481856041626105084248160",
+    "14044003616894163159701568",
+    "27348626732574327974997632",
+    1
+   ],
+   "note": "H's spawn chunk. H develops (surveyed 500) and places Glowcore. The reader, who is not H, surveyed earlier at revision 3 (surveyed 100), mined a rock cell and placed Prismite; a stranger surveyed at 50. Inside a home only a home owner's surveys count, so H's develop decides for every reader.",
+   "layers": [
+    {
+     "id": "1111111111111111111111111111111111111111111111111111111111111111",
+     "author": "a8f5c0fd979e8fe9b2d1f947186bb57d074c615d057eabf456c6114c90745945",
+     "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "created_at": 1500,
+     "cobuilders": [],
+     "planes": [
+      {
+       "plane": 1,
+       "survey": true,
+       "surveyed": 500,
+       "ground": 0,
+       "form": "whole",
+       "pal": [
+        0,
+        42
+       ],
+       "cells": [
+        0,
+        -24707,
+        1,
+        0,
+        -8058
+       ]
+      }
+     ]
+    },
+    {
+     "id": "1212121212121212121212121212121212121212121212121212121212121212",
+     "author": "5252525252525252525252525252525252525252525252525252525252525252",
+     "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "created_at": 1200,
+     "cobuilders": [],
+     "planes": [
+      {
+       "plane": 1,
+       "survey": true,
+       "surveyed": 100,
+       "ground": 3,
+       "form": "diff",
+       "pal": [
+        null,
+        0,
+        8
+       ],
+       "cells": [
+        0,
+        -8983,
+        1,
+        0,
+        -18430,
+        2,
+        0,
+        -5350
+       ]
+      }
+     ]
+    },
+    {
+     "id": "1313131313131313131313131313131313131313131313131313131313131313",
+     "author": "5151515151515151515151515151515151515151515151515151515151515151",
+     "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "created_at": 900,
+     "cobuilders": [],
+     "planes": [
+      {
+       "plane": 1,
+       "survey": true,
+       "surveyed": 50,
+       "ground": 3,
+       "form": "diff",
+       "pal": [
+        null
+       ],
+       "cells": [
+        0,
+        -32767
+       ]
+      }
+     ]
+    }
+   ],
+   "views": [
+    {
+     "name": "the reader (not H, follows S1): only H's develop counts; the base is open ground, and the reader's own blocks still show",
+     "reader": "5252525252525252525252525252525252525252525252525252525252525252",
+     "follows": [
+      "5151515151515151515151515151515151515151515151515151515151515151"
+     ],
+     "reads_ground_values": [
+      0,
+      2,
+      3
+     ],
+     "plane": 1,
+     "set_aside": [],
+     "counted_surveys": [
+      {
+       "id": "1111111111111111111111111111111111111111111111111111111111111111",
+       "ground": 0,
+       "rank": 1,
+       "surveyed": 500
+      }
+     ],
+     "base": "open ground (0): empty",
+     "base_ground": 0,
+     "cells": [
+      {
+       "label": "rock in the ground, nobody changed it",
+       "cell": 16922,
+       "x": 26,
+       "y": 16,
+       "z": 16,
+       "ground_r3": 2,
+       "value": 0,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "H placed Glowcore (42)",
+       "cell": 24708,
+       "x": 4,
+       "y": 24,
+       "z": 4,
+       "ground_r3": 0,
+       "value": 42,
+       "from": "1111111111111111111111111111111111111111111111111111111111111111",
+       "rank": 1
+      },
+      {
+       "label": "the reader mined a cell of rock",
+       "cell": 8984,
+       "x": 24,
+       "y": 8,
+       "z": 24,
+       "ground_r3": 5,
+       "value": 0,
+       "from": "1212121212121212121212121212121212121212121212121212121212121212",
+       "rank": 2
+      },
+      {
+       "label": "the reader placed Prismite (8)",
+       "cell": 27416,
+       "x": 24,
+       "y": 26,
+       "z": 24,
+       "ground_r3": 0,
+       "value": 8,
+       "from": "1212121212121212121212121212121212121212121212121212121212121212",
+       "rank": 2
+      }
+     ]
+    },
+    {
+     "name": "H itself",
+     "reader": "a8f5c0fd979e8fe9b2d1f947186bb57d074c615d057eabf456c6114c90745945",
+     "follows": [],
+     "reads_ground_values": [
+      0,
+      2,
+      3
+     ],
+     "plane": 1,
+     "set_aside": [],
+     "counted_surveys": [
+      {
+       "id": "1111111111111111111111111111111111111111111111111111111111111111",
+       "ground": 0,
+       "rank": 1,
+       "surveyed": 500
+      }
+     ],
+     "base": "open ground (0): empty",
+     "base_ground": 0,
+     "cells": [
+      {
+       "label": "rock in the ground, nobody changed it",
+       "cell": 16922,
+       "x": 26,
+       "y": 16,
+       "z": 16,
+       "ground_r3": 2,
+       "value": 0,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "H placed Glowcore (42)",
+       "cell": 24708,
+       "x": 4,
+       "y": 24,
+       "z": 4,
+       "ground_r3": 0,
+       "value": 42,
+       "from": "1111111111111111111111111111111111111111111111111111111111111111",
+       "rank": 1
+      },
+      {
+       "label": "the reader mined a cell of rock",
+       "cell": 8984,
+       "x": 24,
+       "y": 8,
+       "z": 24,
+       "ground_r3": 5,
+       "value": 0,
+       "from": "1212121212121212121212121212121212121212121212121212121212121212",
+       "rank": 4
+      },
+      {
+       "label": "the reader placed Prismite (8)",
+       "cell": 27416,
+       "x": 24,
+       "y": 26,
+       "z": 24,
+       "ground_r3": 0,
+       "value": 8,
+       "from": "1212121212121212121212121212121212121212121212121212121212121212",
+       "rank": 4
+      }
+     ]
+    }
+   ],
+   "face": {
+    "chunk": [
+     "22481856041626105084248192",
+     "14044003616894163159701568",
+     "27348626732574327974997632",
+     1
+    ],
+    "note": "A face neighbour in H's home, developed by D, who is not H.",
+    "views": [
+     {
+      "name": "H has surveyed it at revision 3 (surveyed 600, later than D): only H's survey counts, so D sees the ground there too",
+      "reader": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+      "follows": [],
+      "reads_ground_values": [
+       0,
+       2,
+       3
+      ],
+      "plane": 1,
+      "set_aside": [],
+      "counted_surveys": [
+       {
+        "id": "2222222222222222222222222222222222222222222222222222222222222222",
+        "ground": 3,
+        "rank": 1,
+        "surveyed": 600
+       }
+      ],
+      "base": "revision 3",
+      "base_ground": 3,
+      "cells": [
+       {
+        "label": "rock in the ground, nobody changed it",
+        "cell": 16928,
+        "x": 0,
+        "y": 16,
+        "z": 17,
+        "ground_r3": 2,
+        "value": 2,
+        "from": null,
+        "rank": null
+       },
+       {
+        "label": "D placed Glowcore (42)",
+        "cell": 24708,
+        "x": 4,
+        "y": 24,
+        "z": 4,
+        "ground_r3": 0,
+        "value": 42,
+        "from": "2121212121212121212121212121212121212121212121212121212121212121",
+        "rank": 2
+       }
+      ]
+     },
+     {
+      "name": "H has no layer there: nothing says whose home it is, and D's develop counts",
+      "reader": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+      "follows": [],
+      "reads_ground_values": [
+       0,
+       2,
+       3
+      ],
+      "plane": 1,
+      "set_aside": [],
+      "counted_surveys": [
+       {
+        "id": "2121212121212121212121212121212121212121212121212121212121212121",
+        "ground": 0,
+        "rank": 2,
+        "surveyed": 200
+       }
+      ],
+      "base": "open ground (0): empty",
+      "base_ground": 0,
+      "cells": [
+       {
+        "label": "rock in the ground, nobody changed it",
+        "cell": 16928,
+        "x": 0,
+        "y": 16,
+        "z": 17,
+        "ground_r3": 2,
+        "value": 0,
+        "from": null,
+        "rank": null
+       },
+       {
+        "label": "D placed Glowcore (42)",
+        "cell": 24708,
+        "x": 4,
+        "y": 24,
+        "z": 4,
+        "ground_r3": 0,
+        "value": 42,
+        "from": "2121212121212121212121212121212121212121212121212121212121212121",
+        "rank": 2
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "older_reader": {
+   "note": "A reader that implements revisions 2 and 3 but not open ground, reading layout A while following D and F. D's developed plane is a diff under a ground it does not implement, so it is set aside: it does not count as a survey, and none of its cells is drawn. F's survey decides, and D's plot is not drawn at all, never drawn over rock. D's layer is not dropped: its twin plane still counts. Beside it, the same reader once it implements open ground.",
+   "views": [
+    {
+     "name": "older reader, plane P",
+     "reader": "7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a",
+     "follows": [
+      "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+      "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1"
+     ],
+     "reads_ground_values": [
+      2,
+      3
+     ],
+     "plane": 1,
+     "set_aside": [
+      "0101010101010101010101010101010101010101010101010101010101010101"
+     ],
+     "counted_surveys": [
+      {
+       "id": "0202020202020202020202020202020202020202020202020202020202020202",
+       "ground": 3,
+       "rank": 3,
+       "surveyed": 300
+      }
+     ],
+     "base": "revision 3",
+     "base_ground": 3,
+     "cells": [
+      {
+       "label": "rock in the ground, nobody changed it",
+       "cell": 16912,
+       "x": 16,
+       "y": 16,
+       "z": 16,
+       "ground_r3": 2,
+       "value": 2,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "empty in the ground, nobody changed it",
+       "cell": 21008,
+       "x": 16,
+       "y": 20,
+       "z": 16,
+       "ground_r3": 0,
+       "value": 0,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "D placed Glowcore (42) in a cell the ground leaves empty",
+       "cell": 24709,
+       "x": 5,
+       "y": 24,
+       "z": 4,
+       "ground_r3": 0,
+       "value": 0,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "D placed Rimeglass (10) in a cell that is rock in the ground",
+       "cell": 8324,
+       "x": 4,
+       "y": 8,
+       "z": 4,
+       "ground_r3": 5,
+       "value": 5,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "F mined a cell of rock",
+       "cell": 8992,
+       "x": 0,
+       "y": 8,
+       "z": 25,
+       "ground_r3": 5,
+       "value": 0,
+       "from": "0202020202020202020202020202020202020202020202020202020202020202",
+       "rank": 3
+      },
+      {
+       "label": "F placed Prismite (8) in an empty cell",
+       "cell": 27424,
+       "x": 0,
+       "y": 26,
+       "z": 25,
+       "ground_r3": 0,
+       "value": 8,
+       "from": "0202020202020202020202020202020202020202020202020202020202020202",
+       "rank": 3
+      }
+     ]
+    },
+    {
+     "name": "older reader, the twin plane: D's layer still counts there",
+     "reader": "7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a",
+     "follows": [
+      "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+      "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1"
+     ],
+     "reads_ground_values": [
+      2,
+      3
+     ],
+     "plane": 0,
+     "set_aside": [],
+     "counted_surveys": [
+      {
+       "id": "0101010101010101010101010101010101010101010101010101010101010101",
+       "ground": 3,
+       "rank": 3,
+       "surveyed": 200
+      }
+     ],
+     "base": "revision 3",
+     "base_ground": 3,
+     "cells": [
+      {
+       "label": "D placed Cobaltine (41) on the twin",
+       "cell": 28991,
+       "x": 31,
+       "y": 28,
+       "z": 9,
+       "ground_r3": 0,
+       "value": 41,
+       "from": "0101010101010101010101010101010101010101010101010101010101010101",
+       "rank": 3
+      }
+     ]
+    },
+    {
+     "name": "the same reader implementing open ground, plane P",
+     "reader": "7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a",
+     "follows": [
+      "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+      "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1"
+     ],
+     "reads_ground_values": [
+      0,
+      2,
+      3
+     ],
+     "plane": 1,
+     "set_aside": [],
+     "counted_surveys": [
+      {
+       "id": "0101010101010101010101010101010101010101010101010101010101010101",
+       "ground": 0,
+       "rank": 3,
+       "surveyed": 200
+      },
+      {
+       "id": "0202020202020202020202020202020202020202020202020202020202020202",
+       "ground": 3,
+       "rank": 3,
+       "surveyed": 300
+      }
+     ],
+     "base": "open ground (0): empty",
+     "base_ground": 0,
+     "cells": [
+      {
+       "label": "rock in the ground, nobody changed it",
+       "cell": 16912,
+       "x": 16,
+       "y": 16,
+       "z": 16,
+       "ground_r3": 2,
+       "value": 0,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "empty in the ground, nobody changed it",
+       "cell": 21008,
+       "x": 16,
+       "y": 20,
+       "z": 16,
+       "ground_r3": 0,
+       "value": 0,
+       "from": null,
+       "rank": null
+      },
+      {
+       "label": "D placed Glowcore (42) in a cell the ground leaves empty",
+       "cell": 24709,
+       "x": 5,
+       "y": 24,
+       "z": 4,
+       "ground_r3": 0,
+       "value": 42,
+       "from": "0101010101010101010101010101010101010101010101010101010101010101",
+       "rank": 3
+      },
+      {
+       "label": "D placed Rimeglass (10) in a cell that is rock in the ground",
+       "cell": 8324,
+       "x": 4,
+       "y": 8,
+       "z": 4,
+       "ground_r3": 5,
+       "value": 10,
+       "from": "0101010101010101010101010101010101010101010101010101010101010101",
+       "rank": 3
+      },
+      {
+       "label": "F mined a cell of rock",
+       "cell": 8992,
+       "x": 0,
+       "y": 8,
+       "z": 25,
+       "ground_r3": 5,
+       "value": 0,
+       "from": "0202020202020202020202020202020202020202020202020202020202020202",
+       "rank": 3
+      },
+      {
+       "label": "F placed Prismite (8) in an empty cell",
+       "cell": 27424,
+       "x": 0,
+       "y": 26,
+       "z": 25,
+       "ground_r3": 0,
+       "value": 8,
+       "from": "0202020202020202020202020202020202020202020202020202020202020202",
+       "rank": 3
+      }
+     ]
+    }
+   ],
+   "whole_form": {
+    "note": "D's developed plane written whole. A reader that implements open ground decodes it against an empty base: its changed cells are the cells not empty. An older reader reads it for its values only (§3.10): it may show them to D, and the plane takes no part in the Stack.",
+    "plane": {
+     "plane": 1,
+     "survey": true,
+     "surveyed": 200,
+     "ground": 0,
+     "form": "whole",
+     "pal": [
+      0,
+      42,
+      10
+     ],
+     "cells": [
+      0,
+      -8323,
+      2,
+      0,
+      -16383,
+      1,
+      0,
+      -8057
+     ]
+    },
+    "implementing_reader_changed": [
+     {
+      "x": 4,
+      "y": 8,
+      "z": 4,
+      "value": 10
+     },
+     {
+      "x": 5,
+      "y": 24,
+      "z": 4,
+      "value": 42
+     }
+    ],
+    "older_reader_values_only": true
+   }
+  },
+  "ties": [
+   {
+    "name": "a develop and a survey of one rank in the same second: the lower author pubkey decides (the developer, d0, is lower than e1)",
+    "surveys": [
+     {
+      "revision": 3,
+      "rank": 3,
+      "surveyed": 200,
+      "author": "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1",
+      "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "id": "0202020202020202020202020202020202020202020202020202020202020202"
+     },
+     {
+      "revision": 0,
+      "rank": 3,
+      "surveyed": 200,
+      "author": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+      "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "id": "0101010101010101010101010101010101010101010101010101010101010101"
+     }
+    ],
+    "base_ground": 0
+   },
+   {
+    "name": "the same, with the surveyor lower (0e): the survey decides",
+    "surveys": [
+     {
+      "revision": 0,
+      "rank": 3,
+      "surveyed": 200,
+      "author": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+      "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "id": "0101010101010101010101010101010101010101010101010101010101010101"
+     },
+     {
+      "revision": 3,
+      "rank": 3,
+      "surveyed": 200,
+      "author": "0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e",
+      "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "id": "0202020202020202020202020202020202020202020202020202020202020202"
+     }
+    ],
+    "base_ground": 3
+   },
+   {
+    "name": "one author, two builder keys that claimed the plane in the same second, one developing and one surveying: the lower builder pubkey decides",
+    "surveys": [
+     {
+      "revision": 3,
+      "rank": 2,
+      "surveyed": 200,
+      "author": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+      "builder": "2222222222222222222222222222222222222222222222222222222222222222",
+      "id": "0202020202020202020202020202020202020202020202020202020202020202"
+     },
+     {
+      "revision": 0,
+      "rank": 2,
+      "surveyed": 200,
+      "author": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+      "builder": "1111111111111111111111111111111111111111111111111111111111111111",
+      "id": "0101010101010101010101010101010101010101010101010101010101010101"
+     }
+    ],
+    "base_ground": 0
+   },
+   {
+    "name": "one author, one builder key, two layers held in the same second (a reader that kept two versions): the lower event id decides",
+    "surveys": [
+     {
+      "revision": 3,
+      "rank": 2,
+      "surveyed": 200,
+      "author": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+      "builder": "1111111111111111111111111111111111111111111111111111111111111111",
+      "id": "0202020202020202020202020202020202020202020202020202020202020202"
+     },
+     {
+      "revision": 0,
+      "rank": 2,
+      "surveyed": 200,
+      "author": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+      "builder": "1111111111111111111111111111111111111111111111111111111111111111",
+      "id": "0101010101010101010101010101010101010101010101010101010101010101"
+     }
+    ],
+    "base_ground": 0
+   },
+   {
+    "name": "rank first: a stranger who dates a develop 0 does not decide for a reader who follows a later surveyor",
+    "surveys": [
+     {
+      "revision": 0,
+      "rank": 4,
+      "surveyed": 0,
+      "author": "5151515151515151515151515151515151515151515151515151515151515151",
+      "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "id": "0101010101010101010101010101010101010101010101010101010101010101"
+     },
+     {
+      "revision": 3,
+      "rank": 3,
+      "surveyed": 500,
+      "author": "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1",
+      "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "id": "0202020202020202020202020202020202020202020202020202020202020202"
+     }
+    ],
+    "base_ground": 3
+   },
+   {
+    "name": "rank first the other way: a stranger who dates a survey 0 does not put rock under a followed developer's plot",
+    "surveys": [
+     {
+      "revision": 3,
+      "rank": 4,
+      "surveyed": 0,
+      "author": "5151515151515151515151515151515151515151515151515151515151515151",
+      "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "id": "0101010101010101010101010101010101010101010101010101010101010101"
+     },
+     {
+      "revision": 0,
+      "rank": 3,
+      "surveyed": 500,
+      "author": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+      "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "id": "0202020202020202020202020202020202020202020202020202020202020202"
+     }
+    ],
+    "base_ground": 0
+   }
+  ],
+  "writer_checks": {
+   "note": "mayDevelop (§3.10a): the writer's own view has no counted survey or develop of the plane, and its author's own layers claim nothing there. first_claim_ground: what a first claim names (§3.10): the base of the writer's view when a counted layer claims the plane, otherwise the newest revision to survey or 0 to develop; null where the author already claims the plane.",
+   "cases": [
+    {
+     "name": "D in a chunk nobody it counts has claimed: may develop",
+     "view": [],
+     "author_claims": [],
+     "choice": "develop",
+     "may_develop": true,
+     "first_claim_ground": 0
+    },
+    {
+     "name": "D chooses SURVEY there instead: the newest revision",
+     "view": [],
+     "author_claims": [],
+     "choice": "survey",
+     "may_develop": true,
+     "first_claim_ground": 3
+    },
+    {
+     "name": "F, who follows D and has not claimed the plane, after D developed it: may not develop, and building there names open ground, so F develops too",
+     "view": [
+      {
+       "id": "0101010101010101010101010101010101010101010101010101010101010101",
+       "author": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+       "revision": 0,
+       "rank": 3,
+       "surveyed": 200,
+       "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+     ],
+     "author_claims": [],
+     "choice": "survey",
+     "may_develop": false,
+     "first_claim_ground": 0
+    },
+    {
+     "name": "T, after a stranger surveyed the plane at revision 3: may not develop; building there surveys at revision 3",
+     "view": [
+      {
+       "id": "0202020202020202020202020202020202020202020202020202020202020202",
+       "author": "5151515151515151515151515151515151515151515151515151515151515151",
+       "revision": 3,
+       "rank": 4,
+       "surveyed": 300,
+       "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+     ],
+     "author_claims": [],
+     "choice": "develop",
+     "may_develop": false,
+     "first_claim_ground": 3
+    },
+    {
+     "name": "D, whose own layer developed the plane: may not develop it again or survey it (its claim never changes); its writer carries ground 0 forward",
+     "view": [
+      {
+       "id": "0101010101010101010101010101010101010101010101010101010101010101",
+       "author": "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+       "revision": 0,
+       "rank": 2,
+       "surveyed": 200,
+       "builder": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+     ],
+     "author_claims": [
+      {
+       "ground": 0,
+       "surveyed": 200
+      }
+     ],
+     "choice": "survey",
+     "may_develop": false,
+     "first_claim_ground": null
+    },
+    {
+     "name": "D's twin plane, unclaimed while plane P is developed: may develop (each plane is its own claim)",
+     "view": [],
+     "author_claims": [],
+     "choice": "develop",
+     "may_develop": true,
+     "first_claim_ground": 0
+    },
+    {
+     "name": "a reader who muted the only surveyor: its view has no counted survey, so it may develop",
+     "view": [],
+     "author_claims": [],
+     "choice": "develop",
+     "muted": [
+      "5151515151515151515151515151515151515151515151515151515151515151"
+     ],
+     "may_develop": true,
+     "first_claim_ground": 0
+    },
+    {
+     "name": "an author whose own layer holds a plane its writer cannot read (a ground it does not implement): may not develop or survey there",
+     "view": [],
+     "author_claims": [
+      {
+       "ground": 7,
+       "surveyed": 150
+      }
+     ],
+     "choice": "develop",
+     "may_develop": false,
+     "first_claim_ground": null
+    }
+   ]
+  }
  }
 }
