@@ -2688,6 +2688,400 @@
       "lookup": "b1d6acc58aa269ac79600edc2ffe0af26d74df371b28bbb077857861805fede9"
     },
     {
+      "name": "natural-island",
+      "note": "A floating island of the ground nobody has edited: nine Gridstone in a 3 by 1 by 3 slab at (400..402, 60, 400..402), every one equal to the generated ground (the `ground` list). Isolated and within reach, but natural only: no arrangement; the smash breaks it and compiles nothing (§4.2, condition 3).",
+      "world": [
+        [
+          400,
+          60,
+          400,
+          1
+        ],
+        [
+          401,
+          60,
+          400,
+          1
+        ],
+        [
+          402,
+          60,
+          400,
+          1
+        ],
+        [
+          400,
+          60,
+          401,
+          1
+        ],
+        [
+          401,
+          60,
+          401,
+          1
+        ],
+        [
+          402,
+          60,
+          401,
+          1
+        ],
+        [
+          400,
+          60,
+          402,
+          1
+        ],
+        [
+          401,
+          60,
+          402,
+          1
+        ],
+        [
+          402,
+          60,
+          402,
+          1
+        ]
+      ],
+      "hit": [
+        401,
+        60,
+        401
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          400,
+          60,
+          400,
+          1
+        ],
+        [
+          401,
+          60,
+          400,
+          1
+        ],
+        [
+          402,
+          60,
+          400,
+          1
+        ],
+        [
+          400,
+          60,
+          401,
+          1
+        ],
+        [
+          401,
+          60,
+          401,
+          1
+        ],
+        [
+          402,
+          60,
+          401,
+          1
+        ],
+        [
+          400,
+          60,
+          402,
+          1
+        ],
+        [
+          401,
+          60,
+          402,
+          1
+        ],
+        [
+          402,
+          60,
+          402,
+          1
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 1,
+        "z": 3
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": false,
+      "ground": [
+        [
+          400,
+          60,
+          400,
+          1
+        ],
+        [
+          401,
+          60,
+          400,
+          1
+        ],
+        [
+          402,
+          60,
+          400,
+          1
+        ],
+        [
+          400,
+          60,
+          401,
+          1
+        ],
+        [
+          401,
+          60,
+          401,
+          1
+        ],
+        [
+          402,
+          60,
+          401,
+          1
+        ],
+        [
+          400,
+          60,
+          402,
+          1
+        ],
+        [
+          401,
+          60,
+          402,
+          1
+        ],
+        [
+          402,
+          60,
+          402,
+          1
+        ]
+      ],
+      "changed": false
+    },
+    {
+      "name": "natural-island-plus-one",
+      "note": "The same island with one placed Glowcore at (401, 61, 401), where the ground is empty: a changed block, so the group of ten is an arrangement; the nine natural Gridstone are read with their own id.",
+      "world": [
+        [
+          400,
+          60,
+          400,
+          1
+        ],
+        [
+          401,
+          60,
+          400,
+          1
+        ],
+        [
+          402,
+          60,
+          400,
+          1
+        ],
+        [
+          400,
+          60,
+          401,
+          1
+        ],
+        [
+          401,
+          60,
+          401,
+          1
+        ],
+        [
+          402,
+          60,
+          401,
+          1
+        ],
+        [
+          400,
+          60,
+          402,
+          1
+        ],
+        [
+          401,
+          60,
+          402,
+          1
+        ],
+        [
+          402,
+          60,
+          402,
+          1
+        ],
+        [
+          401,
+          61,
+          401,
+          42
+        ]
+      ],
+      "hit": [
+        400,
+        60,
+        400
+      ],
+      "bare": false,
+      "reach": 16,
+      "group": [
+        [
+          400,
+          60,
+          400,
+          1
+        ],
+        [
+          401,
+          60,
+          400,
+          1
+        ],
+        [
+          402,
+          60,
+          400,
+          1
+        ],
+        [
+          400,
+          60,
+          401,
+          1
+        ],
+        [
+          401,
+          60,
+          401,
+          1
+        ],
+        [
+          402,
+          60,
+          401,
+          1
+        ],
+        [
+          400,
+          60,
+          402,
+          1
+        ],
+        [
+          401,
+          60,
+          402,
+          1
+        ],
+        [
+          402,
+          60,
+          402,
+          1
+        ],
+        [
+          401,
+          61,
+          401,
+          42
+        ]
+      ],
+      "extent": {
+        "x": 3,
+        "y": 2,
+        "z": 3
+      },
+      "isolated": true,
+      "intruders": [],
+      "arrangement": true,
+      "ground": [
+        [
+          400,
+          60,
+          400,
+          1
+        ],
+        [
+          401,
+          60,
+          400,
+          1
+        ],
+        [
+          402,
+          60,
+          400,
+          1
+        ],
+        [
+          400,
+          60,
+          401,
+          1
+        ],
+        [
+          401,
+          60,
+          401,
+          1
+        ],
+        [
+          402,
+          60,
+          401,
+          1
+        ],
+        [
+          400,
+          60,
+          402,
+          1
+        ],
+        [
+          401,
+          60,
+          402,
+          1
+        ],
+        [
+          402,
+          60,
+          402,
+          1
+        ]
+      ],
+      "changed": true,
+      "box": {
+        "x": 3,
+        "y": 2,
+        "z": 3
+      },
+      "lookup": "e88b9ffecbad2a5700b55519d083347ae454b88ff485e1b50e11beffe85eb145"
+    },
+    {
       "name": "row-16-minus-end",
       "note": "A row of 16 Gridstone, x 0..15, struck at x 0, its minus end: the window is x -15..15, the whole row, isolated, 16 cells long: an arrangement.",
       "world": [

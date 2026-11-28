@@ -120,7 +120,10 @@ export const lookupOf = (key) => hex(sha256(key))
 // minus (N - 1) to plus (N - 1) on each axis, (2N - 1) cells, the hit at its centre. The group is the
 // arrangement when it is isolated (no other block touches it) and at most N cells on every axis,
 // whichever of its cells was struck.
-export function gather(world, hit, bare = false) {
+// ground: an optional Map from "x,y,z" to the generated ground's id there (absent = 0). A group whose
+// every block equals the ground is natural and never an arrangement (§4.2, condition 3). Without a ground
+// map, every block counts as changed.
+export function gather(world, hit, bare = false, ground = null) {
   const [hx, hy, hz] = hit
   if (!world.get(k3(hx, hy, hz))) throw new Error('the hit cell is empty')
   const N = bare ? REACH_BARE : REACH_COMPILER, r = N - 1
@@ -160,7 +163,8 @@ export function gather(world, hit, bare = false) {
   intruders.sort((a, b) => a[1] - b[1] || a[2] - b[2] || a[0] - b[0])
   const isolated = intruders.length === 0
   const fits = extent.x <= N && extent.y <= N && extent.z <= N
-  return { reach: N, group, extent, isolated, intruders, fits, arrangement: isolated && fits ? arrangementFrom(group) : null }
+  const changed = !ground || group.some(([x, y, z, id]) => id !== (ground.get(k3(x, y, z)) ?? 0))
+  return { reach: N, group, extent, isolated, intruders, fits, changed, arrangement: isolated && fits && changed ? arrangementFrom(group) : null }
 }
 
 // ---------- regions, for the location lock (CYBERSPACE_V2.md §4.6, §4.7, §7.2) ----------
